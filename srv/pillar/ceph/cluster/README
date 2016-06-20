@@ -1,0 +1,2 @@
+Every minion *must* have an sls file; otherwise, salt will complain.  The include directive does not allow for absent files in the pillar.  (For the counter
+example see the external pillar, stack.py.)  For nodes that will not have Ceph roles use "unassigned".

@@ -1,0 +1,11 @@
+[global]
+fsid = {{ salt['pillar.get']('fsid') }}
+mon_initial_members = {{ salt['pillar.get']('mon_initial_members') | join(', ') }}
+mon_host = {{ salt['pillar.get']('mon_host') | join(', ') }}
+auth_cluster_required = cephx
+auth_service_required = cephx
+auth_client_required = cephx
+filestore_xattr_use_omap = true
+public_network = {{ salt['pillar.get']('public_network') }}
+cluster_network = {{ salt['pillar.get']('cluster_network') }}
+

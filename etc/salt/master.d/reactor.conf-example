@@ -1,0 +1,3 @@
+reactor:
+  - 'salt/minion/*/start':
+    - /srv/salt/ceph/reactor/highstate.sls

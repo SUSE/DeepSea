@@ -1,0 +1,5 @@
+# Something needs to generate this file for each cluster
+public_interface: eth0
+cluster_interface: eth0
+
+osd_method: osd

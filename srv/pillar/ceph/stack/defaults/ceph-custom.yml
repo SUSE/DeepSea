@@ -1,0 +1,5 @@
+
+public_interface: eth2
+cluster_interface: eth3
+
+osd_method: osd-custom
