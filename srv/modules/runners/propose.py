@@ -474,7 +474,10 @@ class CephRoles(object):
         current process for adding osds.
         """
         if self.cluster:
-            filename = "{}/cluster/{}.yml".format(dirname(self.stack), self.cluster)
+            cluster_dir = "{}/cluster".format(dirname(self.stack))
+            if not os.path.isdir(cluster_dir):
+                 os.makedirs(cluster_dir)
+            filename = "{}/{}.yml".format(cluster_dir, self.cluster)
             contents = {}
             contents['keyring'] = [ { 'admin': self.keyring_roles['admin'] } ]
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, self.keyring_roles['admin']))
