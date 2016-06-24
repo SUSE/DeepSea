@@ -92,9 +92,10 @@ def _get_minions_and_write_data(selector, cluster, overwrite):
 
         with open(filename, 'w') as yml:
             yml.write(yaml.dump(contents, Dumper=friendly_dumper, default_flow_style=False))
-    # TODO refresh pillar here? otherwise a successive run of this runner will
-    # overwrite previous assignment since the pillar data has not been updated
-    return """wrote cluster config to {}/
+    # refresh pillar data here so a subsequent run of this runner will not
+    # overwrite already assigned minion
+    local.cmd(selector, 'saltutil.refresh_pillar', [], expr_form="compound")
+    return '''wrote cluster config to {}/
     newly assigned nodes:\t{}
     masters:\t\t\t{}
     skipped nodes:\t\t{}'''.format(cluster_dir, node_count, master_count, skipped_count)
