@@ -14,7 +14,9 @@ This is alpha at best.  It works, but runners need refactoring, commenting, corr
 - Copy etc/salt/master.d/reactor.conf-example to /etc/salt/master.d/reactor.conf on the master, or set "startup_states: 'highstate'" in all the minion configs.
 - Accept all the salt keys on the master, make sure salt works (`salt '*' test.ping`)
 - Copy the srv tree from this repo to /srv on the salt master (be careful if you're copying onto an existing salt master which already has top.sls files and whatnot).
-- Create an SLS file in /srv/pillar/ceph/cluster/ for each host, indicating what cluster the host belongs to.  For ceph nodes, the file should contain just the line "cluster: ceph".  For the admin node (or salt master), use "cluster: unassigned".
+- Create an SLS file in /srv/pillar/ceph/cluster/ for each host, indicating what cluster the host belongs to.
+  - The easy way to do this is to just run `salt-run bootstrap.all`, which will make all salt minions ceph cluster nodes.
+  - Alternately, you can create the files manually.  For each one, the file should contain just the line "cluster: ceph".  For the admin node (or salt master), use "cluster: unassigned".
 - If necessary edit the sntp invocation in /srv/salt/ceph/sync/init.sls to point to a real NTP server (it tries to use the host named 'salt' by default).
 - Run `salt-run state.orchestrate ceph.stage0`
 - Run `salt-run state.orchestrate ceph.stage1`
