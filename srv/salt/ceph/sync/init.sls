@@ -4,6 +4,6 @@ load modules:
     - name: saltutil.sync_all
     - refresh: True
 
-sync time:
-  cmd.run:
-    - name: "sntp -S -c salt"
+include:
+  - .{{ salt['pillar.get']('time_service') }}
+

@@ -58,7 +58,10 @@ class CephStorage(object):
     def _secret(self):
         """
         """
-        cmd = [ "ceph-authtool", "--gen-print-key", "/dev/null" ]
+        cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
+        
+        if not os.path.isfile(cmd[0]):
+            raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         for line in proc.stdout:
             return line.rstrip()
@@ -189,6 +192,7 @@ class DiskConfiguration(object):
                 self.storage_nodes.update(ret)
         else:
             # salt-call mine.get '*' freedisks.list
+            ret = salt.utils.minions.mine_update('*', '', 'glob', options.__opts__)
             self.storage_nodes = salt.utils.minions.mine_get('*', 'freedisks.list', 'glob', options.__opts__)
 
 #        self.storage_nodes = { 'data5.ceph' : [

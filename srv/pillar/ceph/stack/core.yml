@@ -1,2 +1,5 @@
 
 assignment: preconfigured-byhostname
+
+time_service: ntp
+time_server: salt
