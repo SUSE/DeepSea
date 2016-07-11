@@ -1,5 +1,5 @@
 
-push proposals:
+iSCSI:
   salt.runner:
     - name: push.proposal
 
