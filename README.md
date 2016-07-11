@@ -15,7 +15,7 @@ This is alpha at best.  It works, but runners need refactoring, commenting, corr
 - Accept all the salt keys on the master, make sure salt works (`salt '*' test.ping`)
 - Copy the srv tree from this repo to /srv on the salt master (be careful if you're copying onto an existing salt master which already has top.sls files and whatnot).
 - Create an SLS file in /srv/pillar/ceph/cluster/ for each host, indicating what cluster the host belongs to.
-  - The easy way to do this is to just run `salt-run bootstrap.all`, which will make all salt minions ceph cluster nodes.
+  - The easy way to do this is to just run `salt-run bootstrap.all`, which will make all salt minions ceph cluster nodes. Note that `/srv/modules` needs to be added in `extension_modules` in the salt-master configuration. 
   - If you don't want to use all your minions for the cluster, use the
     bootstrap.selection runner. The runner expects a compound target selector as
     parameter (regarding compound targets refer to
