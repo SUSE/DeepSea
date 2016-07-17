@@ -19,3 +19,6 @@ def minions(**kwargs):
     minions = local.cmd(search , 'pillar.get', [ 'id' ], expr_form="compound")
     return minions.keys()
 
+def one_minion(**kwargs):
+    ret = minions(**kwargs)
+    return ret[0]

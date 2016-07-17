@@ -1,5 +1,5 @@
 
-setup:
-  salt.state:
-    - tgt: 'admin*'
-    - sls: ceph.configure
+
+include:
+  - ceph.configure.{{ salt['pillar.get']('configure_method', 'default') }}
+

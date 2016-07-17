@@ -1,8 +1,6 @@
 
-setup:
-  salt.state:
-    - tgt: 'admin*'
-    - sls: ceph.setup
+include:
+  - ceph.setup.{{ salt['pillar.get']('discovery_method', 'default') }}
 
 refresh_pillar:
   salt.state:

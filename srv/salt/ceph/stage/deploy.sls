@@ -1,4 +1,10 @@
 
+time:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.time
+
 admin:
   salt.state:
     - tgt: 'I@roles:admin and I@cluster:ceph'
