@@ -261,12 +261,12 @@ class DiskConfiguration(object):
         self.storage_nodes = {}
         if servers:
             for server in servers:
-                ret = salt.utils.minions.mine_get(server, 'freedisks.list', 'glob', options.__opts__)
+                ret = salt.utils.minions.mine_get(server, 'cephdisks.list', 'glob', options.__opts__)
                 self.storage_nodes.update(ret)
         else:
             # salt-call mine.get '*' freedisks.list
             ret = salt.utils.minions.mine_update('*', '', 'glob', options.__opts__)
-            self.storage_nodes = salt.utils.minions.mine_get('*', 'freedisks.list', 'glob', options.__opts__)
+            self.storage_nodes = salt.utils.minions.mine_get('*', 'cephdisks.list', 'glob', options.__opts__)
 
 
         self.servers = self.storage_nodes.keys()
