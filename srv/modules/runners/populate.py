@@ -30,7 +30,7 @@ all the possible configuration files for each server of the existing equipment. 
 Second, all the complexity of combining these files in kept in a policy.cfg at
 the root of /srv/pillar/ceph/proposals.  Assigning multiple roles to the same
 server or keeping them separate is controlled by specifying which files to 
-include in the policy.cfg.  Preinstalling a pollicy.cfg will allow the automatic
+include in the policy.cfg.  Preinstalling a policy.cfg will allow the automatic
 creation of a Ceph cluster.
 
 See the partner runner push.proposal for details.
@@ -148,7 +148,8 @@ class CephStorage(object):
         cluster_dir = "{}/{}/cluster".format(self.root_dir, name)
         if not os.path.isdir(cluster_dir):
             os.makedirs(cluster_dir)
-        filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
+        #filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
+        filename = cluster_dir + "/" +  server + ".sls"
         contents = {}
         contents['roles'] =  [ 'storage' ]
         self.writer.write(filename, contents)
@@ -392,7 +393,8 @@ class CephRoles(object):
             if not os.path.isdir(cluster_dir):
                 os.makedirs(cluster_dir)
             for server in self.servers:
-                filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
+                #filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
+                filename = cluster_dir + "/" +  server + ".sls"
                 contents = {}
                 contents['roles'] = [ role ]
                 self.writer.write(filename, contents)
@@ -459,7 +461,8 @@ class CephCluster(object):
                 cluster_dir = "{}/cluster-{}/cluster".format(self.root_dir, cluster)
                 if not os.path.isdir(cluster_dir):
                      os.makedirs(cluster_dir)
-                filename = "{}/{}.sls".format(cluster_dir, minion.split('.')[0])
+                #filename = "{}/{}.sls".format(cluster_dir, minion.split('.')[0])
+                filename = "{}/{}.sls".format(cluster_dir, minion)
                 contents = {}
                 contents['cluster'] = cluster
 
