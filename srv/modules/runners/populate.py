@@ -16,8 +16,8 @@ import json
 from os.path import dirname, basename, isdir
 import os
 import uuid
+import logging
 
-from layouts import *
 
 """
 WHY THIS RUNNER EXISTS:
@@ -37,6 +37,7 @@ See the partner runner push.proposal for details.
 
 """
 
+log = logging.getLogger(__name__)
 
 
 class Settings(object):
@@ -82,21 +83,27 @@ class SaltWriter(object):
     pillar uses sls extensions and stack.py uses yml.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Keep yaml human readable/editable.  Disable yaml references.
         """
         self.dumper = yaml.SafeDumper
         self.dumper.ignore_aliases = lambda self, data: True
 
+        if 'overwrite' in kwargs:
+            self.overwrite = kwargs['overwrite']
+        else:
+            self.overwrite = False
 
     def write(self, filename, contents):
         """
         Write a yaml file in the conventional way
         """
-        with open(filename, "w") as yml:
-            yml.write(yaml.dump(contents, Dumper=self.dumper, 
-                                          default_flow_style=False))
+        if self.overwrite or not os.path.isfile(filename):
+            log.info("Writing {}".format(filename))
+            with open(filename, "w") as yml:
+                yml.write(yaml.dump(contents, Dumper=self.dumper, 
+                                              default_flow_style=False))
 
 class CephStorage(object):
     """
@@ -491,7 +498,7 @@ def proposals(**kwargs):
     """
     settings = Settings()
 
-    salt_writer = SaltWriter()
+    salt_writer = SaltWriter(**kwargs)
 
     ceph_cluster = CephCluster(settings, salt_writer, **kwargs)
     ceph_cluster.generate()
