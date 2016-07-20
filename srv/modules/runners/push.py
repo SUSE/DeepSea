@@ -6,6 +6,7 @@ import yaml
 import pprint
 import logging
 import imp
+import re
 
 """
 This runner is the complement to the populate.proposals. 
@@ -53,7 +54,7 @@ stack = imp.load_source('pillar.stack', '/srv/modules/pillar/stack.py')
 log = logging.getLogger(__name__)
 
 
-def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg"):
+def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg", dryrun = False):
     """
     Read the passed filename, organize the files with common subdirectories
     and output the merged contents into the pillar.
@@ -61,7 +62,7 @@ def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg"):
     if not os.path.isfile(filename):
         log.warning("{} is missing - nothing to push".format(filename))
         return True
-    pillar_data = PillarData()
+    pillar_data = PillarData(dryrun)
     common = pillar_data.organize(filename)
     pillar_data.output(common)
     return True
@@ -74,12 +75,13 @@ class PillarData(object):
     tree.
     """
 
-    def __init__(self):
+    def __init__(self, dryrun):
         """
         The source is proposals_dir and the destination is pillar_dir
         """
         self.proposals_dir = "/srv/pillar/ceph/proposals"
         self.pillar_dir = "/srv/pillar/ceph"
+        self.dryrun = dryrun
 
 
     def output(self, common):
@@ -96,9 +98,11 @@ class PillarData(object):
             path_dir = os.path.dirname(filename)
             if not os.path.isdir(path_dir):
                 os.makedirs(path_dir)
-            with open(filename, "w") as yml:
-                yml.write(yaml.dump(merged, Dumper=friendly_dumper,
-                                              default_flow_style=False))
+            log.info("Writing {}".format(filename))
+            if not self.dryrun:
+                with open(filename, "w") as yml:
+                    yml.write(yaml.dump(merged, Dumper=friendly_dumper,
+                                                  default_flow_style=False))
     
     
     def _merge(self, pathname, common):
@@ -125,16 +129,22 @@ class PillarData(object):
                 # This would allow regex and slicing of the globbed filenames
                 line = line.rstrip()
                 if (line.startswith('#') or not line):
-                    log.debug("Skipping {}".format(line))
+                    log.debug("Ignoring '{}'".format(line))
                     continue
-                files = glob.glob(self.proposals_dir + "/" + line)
+                #files = glob.glob(self.proposals_dir + "/" + line)
+                files = self._parse(self.proposals_dir + "/" + line)
                 if not files:
                     log.warning("{} matched no files".format(line))
+                log.debug(line)
+                log.debug(files)
                 for filename in files:
-                    pathname = self._shift_dir(filename.replace(self.proposals_dir, ""))
-                    if not pathname in common:
-                        common[pathname] = []
-                    common[pathname].append(filename)
+                    if os.path.isfile(filename):
+                        pathname = self._shift_dir(filename.replace(self.proposals_dir, ""))
+                        if not pathname in common:
+                            common[pathname] = []
+                        common[pathname].append(filename)
+                    else:
+                        log.warning("{} does not exist".format(filename))
 
         # This should be in a conditional, but
         # getEffectiveLevel returns 1 no matter setting
@@ -145,6 +155,28 @@ class PillarData(object):
         return common
     
     
+    def _parse(self, line):
+        """
+        Return globbed files constrained by optional slices or regexes.
+        """
+        if " " in line:
+            parts = re.split('\s+', line)
+            files = sorted(glob.glob(parts[0]))
+            for kv in parts[1:]:
+                k, v = kv.split('=')
+                if k == "re":
+                    regex = re.compile(v)
+                    files = [m.group(0) for l in files for m in [regex.search(l)] if m]
+                elif k == "slice":
+                    files = eval("files{}".format(v))
+                else:
+                    log.warning("keyword {} unsupported", k) 
+                
+        else:
+            files = glob.glob(line)
+        return files
+
+
     def _shift_dir(self, path):
         """
         Remove the leftmost directory, expects beginning /
