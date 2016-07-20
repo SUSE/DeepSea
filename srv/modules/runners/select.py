@@ -21,4 +21,7 @@ def minions(**kwargs):
 
 def one_minion(**kwargs):
     ret = minions(**kwargs)
-    return ret[0]
+    if ret:
+        return ret[0]
+    else:
+        return 
