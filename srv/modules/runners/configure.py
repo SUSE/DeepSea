@@ -70,7 +70,8 @@ class ClusterAssignment(object):
         self.minions = local.cmd('*' , 'pillar.get', [ 'cluster' ])
 
         self.names = dict(self._clusters())
-        self.names.pop('unassigned')
+        if 'unassigned' in self.names:
+            self.names.pop('unassigned')
         
 
     def _clusters(self):
