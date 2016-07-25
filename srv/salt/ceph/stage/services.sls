@@ -2,4 +2,5 @@
 include:
   - .iscsi
   - .cephfs
+  - .rgw
 

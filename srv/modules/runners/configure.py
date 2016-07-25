@@ -112,7 +112,11 @@ def cluster(**kwargs):
         contents['mon_host'] = mon_host.values()
         contents['mon_initial_members'] = mon_initial_members.values()
 
-        pprint.pprint(contents)
+        if not contents['mon_host']:
+            raise RuntimeError("public_address missing from pillar")
+        if not contents['mon_initial_members']:
+            raise RuntimeError("No results for {}".format(search))
+        #pprint.pprint(contents)
 
         #contents = _contents(local, minions)
 
@@ -127,37 +131,37 @@ def cluster(**kwargs):
 
     return True
 
-def _contents(local, minions):
-    """
-    This strategy relies on retrieving a network interface for public and
-    cluster networks.  This can be problematic in some sites.
-
-    Another strategy is to take a best guess as to the public and cluster
-    network based on a combination of private networks and physical connections.
-    This has not been implemented.
-    """
-
-    contents = {}
-    contents['mon_initial_members'] = minions.values()
-
-    contents['mon_host'] = []
-    for minion in minions.keys():
-        # Find interface names for each minion
-        public_interface_name = local.cmd(minion , 'pillar.get', [ 'public_interface' ])[minion]
-        cluster_interface_name = local.cmd(minion , 'pillar.get', [ 'cluster_interface' ])[minion]
-
-        # Find the address for that interface
-        public_address = local.cmd(minion , 'network.interface', [ public_interface_name ])[minion][0]
-        cluster_address = local.cmd(minion , 'network.interface', [ cluster_interface_name ])[minion][0]
-
-        # Build list of public addresses
-        contents['mon_host'].append(public_address['address'])
-
-        # Generate the corresponding networks
-        public = ipaddress.ip_interface(u'{}/{}'.format(public_address['address'], public_address['netmask']))
-        contents['public_network'] = str(public.network)
-        cluster = ipaddress.ip_interface(u'{}/{}'.format(cluster_address['address'], cluster_address['netmask']))
-        contents['cluster_network'] = str(cluster.network)
-
-    return contents
+#def _contents(local, minions):
+#    """
+#    This strategy relies on retrieving a network interface for public and
+#    cluster networks.  This can be problematic in some sites.
+#
+#    Another strategy is to take a best guess as to the public and cluster
+#    network based on a combination of private networks and physical connections.
+#    This has not been implemented.
+#    """
+#
+#    contents = {}
+#    contents['mon_initial_members'] = minions.values()
+#
+#    contents['mon_host'] = []
+#    for minion in minions.keys():
+#        # Find interface names for each minion
+#        public_interface_name = local.cmd(minion , 'pillar.get', [ 'public_interface' ])[minion]
+#        cluster_interface_name = local.cmd(minion , 'pillar.get', [ 'cluster_interface' ])[minion]
+#
+#        # Find the address for that interface
+#        public_address = local.cmd(minion , 'network.interface', [ public_interface_name ])[minion][0]
+#        cluster_address = local.cmd(minion , 'network.interface', [ cluster_interface_name ])[minion][0]
+#
+#        # Build list of public addresses
+#        contents['mon_host'].append(public_address['address'])
+#
+#        # Generate the corresponding networks
+#        public = ipaddress.ip_interface(u'{}/{}'.format(public_address['address'], public_address['netmask']))
+#        contents['public_network'] = str(public.network)
+#        cluster = ipaddress.ip_interface(u'{}/{}'.format(cluster_address['address'], cluster_address['netmask']))
+#        contents['cluster_network'] = str(cluster.network)
+#
+#    return contents
 

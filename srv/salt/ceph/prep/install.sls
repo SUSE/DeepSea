@@ -1,5 +1,5 @@
 
 
 ceph install:
-  pkg.installed:
-    - name: ceph
+  cmd.run:
+    - name: "zypper --non-interactive --no-gpg-checks in ceph"
