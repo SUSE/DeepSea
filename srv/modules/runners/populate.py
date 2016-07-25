@@ -16,6 +16,7 @@ import json
 from os.path import dirname, basename, isdir
 import os
 import uuid
+import ipaddress
 import logging
 
 
@@ -141,7 +142,7 @@ class CephStorage(object):
         """
         Save the storage data structure for each server
         """
-        model_dir = "{}/{}/stack/{}/minions".format(self.root_dir, name, self.cluster)
+        model_dir = "{}/{}/stack/default/{}/minions".format(self.root_dir, name, self.cluster)
         if not os.path.isdir(model_dir):
             os.makedirs(model_dir)
         filename = model_dir + "/" +  server + ".yml"
@@ -166,7 +167,7 @@ class CephStorage(object):
         Save the osd keyring.  All osds on a server (or all servers) use the
         same keyring secret.
         """
-        role_dir = "{}/{}/stack/{}/roles".format(self.root_dir, name, self.cluster)
+        role_dir = "{}/{}/stack/default/{}/roles".format(self.root_dir, name, self.cluster)
         if not os.path.isdir(role_dir):
             os.makedirs(role_dir)
         filename = role_dir + "/storage.yml"
@@ -375,6 +376,8 @@ class CephRoles(object):
                                'mds': Utils.secret(),
                                'rgw': Utils.secret() }
 
+        self.networks = self._networks(self.servers)
+        self.public_network, self.cluster_network = self.public_cluster(self.networks) 
 
     def generate(self):
         """
@@ -386,7 +389,7 @@ class CephRoles(object):
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
                 os.makedirs(role_dir)
-            roles_dir = role_dir + "/stack/{}/roles".format(self.cluster)
+            roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
             if not os.path.isdir(roles_dir):
                 os.makedirs(roles_dir)
             if role in self.keyring_roles:
@@ -400,19 +403,43 @@ class CephRoles(object):
             if not os.path.isdir(cluster_dir):
                 os.makedirs(cluster_dir)
             for server in self.servers:
-                #filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
                 filename = cluster_dir + "/" +  server + ".sls"
                 contents = {}
                 contents['roles'] = [ role ]
                 self.writer.write(filename, contents)
 
             
-    def default_config(self):
+    def monitor_members(self):
         """
-        Provide the default configuration for any cluster
+        Create a file for mon_host and mon_initial_members
+        """
+        minion_dir = "{}/role-mon/stack/default/{}/minions".format(self.root_dir, self.cluster)
+        if not os.path.isdir(minion_dir):
+            os.makedirs(minion_dir)
+        for server in self.servers:
+            filename = minion_dir + "/" +  server + ".yml"
+            contents = {}
+            contents['public_address'] = self._public_interface(server) 
+            self.writer.write(filename, contents)
+
+    def _public_interface(self, server):
+        """
+        Find the public interface for a server
+        """
+        public_net = ipaddress.ip_network(u'{}'.format(self.public_network))
+        for entry in self.networks[public_net]:
+            if entry[0] == server:
+                print server, entry[2]
+                return entry[2]
+        return ""
+
+
+    def cluster_config(self):
+        """
+        Provide the default configuration for a cluster
         """
         if self.cluster:
-            cluster_dir = "{}/config/stack/{}".format(self.root_dir, self.cluster)
+            cluster_dir = "{}/config/stack/default/{}".format(self.root_dir, self.cluster)
             if not os.path.isdir(cluster_dir):
                  os.makedirs(cluster_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
@@ -421,14 +448,70 @@ class CephRoles(object):
             contents['osd_creation'] = "default"
             contents['pool_creation'] = "default"
 
-            # The goal is to magically find the public and cluster network
-            # instead of specifying the interfaces
-            contents['public_interface'] = "eth0"
-            contents['cluster_interface'] = "eth0"
+            contents['public_network'] = self.public_network
+            contents['cluster_network'] = self.cluster_network
   
             self.writer.write(filename, contents)
+
+    def _networks(self, minions):
+        """
+        Create a dictionary of networks with tuples of minion name, network
+        interface and current address.  (The network interface is not 
+        currently used.)
+        """
+
+        networks = {}
+        local = salt.client.LocalClient()
+
+        interfaces = local.cmd('*' , 'network.interfaces')
+
+        for minion in interfaces.keys():
+            for nic in interfaces[minion]:
+                for addr in interfaces[minion][nic]['inet']:
+                    if addr['address'].startswith('127'):
+                        # Skip loopbacks
+                        continue
+                    cidr = self._network(addr['address'], addr['netmask'])
+                    if cidr in networks:
+                        networks[cidr].append((minion, nic, addr['address']))
+                    else:
+                        networks[cidr] = [ (minion, nic, addr['address']) ]
+        return networks
+
+
+    def _network(self, address, netmask):
+        """
+        Return CIDR network
+        """
+        return ipaddress.ip_interface(u'{}/{}'.format(address, netmask)).network
         
+    def public_cluster(self, networks):
+        """
+        Guess which network is public and which network is cluster. The
+        public network should have the greatest quantity since the cluster
+        network is not required for some roles.  If those are equal, pick
+        the lowest numeric address.
+
+        Other strategies could include prioritising private addresses or
+        interface speeds.  However, this will be wrong for somebody.
+        """
+        priorities = []
+        for network in networks:
+            priorities.append( (len(networks[network]), network) )
+
+        priorities = sorted(priorities, cmp=network_sort)
+        return str(priorities[0][1]), str(priorities[1][1])
         
+def network_sort(a, b):
+    """
+    Sort quantity descending and network ascending.  
+    """
+    if a[0] < b[0]:
+        return 1
+    elif a[0] > b[0]:
+        return -1
+    else:
+        return cmp(a[1], b[1])
 
 class CephCluster(object):
     """
@@ -468,7 +551,6 @@ class CephCluster(object):
                 cluster_dir = "{}/cluster-{}/cluster".format(self.root_dir, cluster)
                 if not os.path.isdir(cluster_dir):
                      os.makedirs(cluster_dir)
-                #filename = "{}/{}.sls".format(cluster_dir, minion.split('.')[0])
                 filename = "{}/{}.sls".format(cluster_dir, minion)
                 contents = {}
                 contents['cluster'] = cluster
@@ -479,7 +561,7 @@ class CephCluster(object):
         """
         Specify global options for all clusters
         """
-        stack_dir = "{}/config/stack".format(self.root_dir)
+        stack_dir = "{}/config/stack/default".format(self.root_dir)
         if not os.path.isdir(stack_dir):
              os.makedirs(stack_dir)
         filename = "{}/global.yml".format(stack_dir)
@@ -518,7 +600,8 @@ def proposals(**kwargs):
         # Determine roles and save proposals
         ceph_roles = CephRoles(settings, name, ceph_cluster.minions, salt_writer)
         ceph_roles.generate()
-        ceph_roles.default_config()
+        ceph_roles.cluster_config()
+        ceph_roles.monitor_members()
         
     return [ True ]
 

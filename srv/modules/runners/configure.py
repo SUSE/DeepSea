@@ -89,7 +89,7 @@ class ClusterAssignment(object):
 def cluster(**kwargs):
     """
     Generate the ceph.conf data and populate the pillar.  Use the filename
-    generated.yml to convey that the contents should not be modified.
+    ceph_conf.yml to convey the contents.
     """
 
     salt_writer = SaltWriter()
@@ -104,15 +104,22 @@ def cluster(**kwargs):
         search = "I@cluster:{} and I@roles:mon".format(name)
 
         # mon create fails on FQDN at the moment
-        #minions = local.cmd(search , 'pillar.get', [ 'id' ], expr_form="compound")
-        minions = local.cmd(search , 'grains.get', [ 'host' ], expr_form="compound")
+        #mon_host = local.cmd(search , 'pillar.get', [ 'mon_host' ], expr_form="compound")
+        mon_host = local.cmd(search , 'pillar.get', [ 'public_address' ], expr_form="compound")
+        mon_initial_members = local.cmd(search , 'grains.get', [ 'host' ], expr_form="compound")
+        
+        contents = {}
+        contents['mon_host'] = mon_host.values()
+        contents['mon_initial_members'] = mon_initial_members.values()
 
-        contents = _contents(local, minions)
+        pprint.pprint(contents)
 
-        cluster_dir = "{}/{}".format(options.stack_dir, name)
+        #contents = _contents(local, minions)
+
+        cluster_dir = "{}/default/{}".format(options.stack_dir, name)
         if not os.path.isdir(cluster_dir):
              os.makedirs(cluster_dir)
-        filename = "{}/generated.yml".format(cluster_dir, name)
+        filename = "{}/ceph_conf.yml".format(cluster_dir, name)
 
         salt_writer.write(filename, contents)
 

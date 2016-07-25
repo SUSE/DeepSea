@@ -83,26 +83,61 @@ class PillarData(object):
         self.pillar_dir = "/srv/pillar/ceph"
         self.dryrun = dryrun
 
+        # Keep yaml human readable/editable
+        self.friendly_dumper = yaml.SafeDumper
+        self.friendly_dumper.ignore_aliases = lambda self, data: True
 
     def output(self, common):
         """
-        Write the merged YAML files to the correct locations
+        Write the merged YAML files to the correct locations, 
+        /srv/pillar/ceph/cluster and /srv/pillar/ceph/stack/default.
         """
-        # Keep yaml human readable/editable
-        friendly_dumper = yaml.SafeDumper
-        friendly_dumper.ignore_aliases = lambda self, data: True
     
         for pathname in common.keys():
             merged = self._merge(pathname, common)
             filename = self.pillar_dir + "/" + pathname
-            path_dir = os.path.dirname(filename)
-            if not os.path.isdir(path_dir):
-                os.makedirs(path_dir)
-            log.info("Writing {}".format(filename))
-            if not self.dryrun:
-                with open(filename, "w") as yml:
-                    yml.write(yaml.dump(merged, Dumper=friendly_dumper,
+            self._default(filename, merged)
+
+            if pathname.startswith("cluster"):
+                # Use the entire list of minions under cluster to populate
+                # stack/{cluster_name}/minions.  Skip unassigned.
+                if merged['cluster'] != "unassigned":
+                    custom = self.pillar_dir + "/" + re.sub(r'cluster', "stack/{}/minions".format(merged['cluster']), re.sub(r'sls', 'yml', pathname)) 
+                    self._custom(custom)
+            
+
+            if pathname.startswith("stack"):
+                # Mirror the default tree
+                default_path = re.sub(r'stack/default', "stack", pathname) 
+                custom = self.pillar_dir + "/" + default_path
+                self._custom(custom)
+
+    def _default(self, filename, merged):
+        """
+        Output the merged contents to the default tree
+        """
+        path_dir = os.path.dirname(filename)
+        if not os.path.isdir(path_dir):
+            os.makedirs(path_dir)
+        log.info("Writing {}".format(filename))
+        if not self.dryrun:
+            with open(filename, "w") as yml:
+                yml.write(yaml.dump(merged, Dumper=self.friendly_dumper,
                                                   default_flow_style=False))
+
+    def _custom(self, custom):
+        """
+        Create commented files to let the admin know where it's safe
+        to make custom changes.  Mirror the default tree. Never overwrite.
+        """
+        path_dir = os.path.dirname(custom)
+        if not os.path.isdir(path_dir):
+            os.makedirs(path_dir)
+        if not self.dryrun:
+            if not os.path.isfile(custom):
+                log.info("Writing {}".format(custom))
+                with open(custom, "w") as yml:
+                    yml.write("# Customizations for {}\n".format(custom))
     
     
     def _merge(self, pathname, common):
