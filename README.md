@@ -10,7 +10,8 @@ This is alpha at best.  It works, but runners need refactoring, commenting, corr
 
 - Install salt-master on one host
 - Install salt-minion on all the other hosts you want to be ceph nodes, and *also* on the master host
-- Install https://github.com/oms4suse/python-ceph-cfg on all hosts.
+- Install https://github.com/oms4suse/python-ceph-cfg on all hosts. If salt-minion is installed on all hosts & keys 
+accepted, this can be done by doing salt "*" pip.install git+https://github.com/oms4suse/python-ceph-cfg 
 - Copy etc/salt/master.d/reactor.conf-example to /etc/salt/master.d/reactor.conf on the master, or set "startup_states: 'highstate'" in all the minion configs.
 - Accept all the salt keys on the master, make sure salt works (`salt '*' test.ping`)
 - Copy the srv tree from this repo to /srv on the salt master (be careful if you're copying onto an existing salt master which already has top.sls files and whatnot).
