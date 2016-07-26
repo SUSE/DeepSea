@@ -93,7 +93,7 @@ def _get_minions_and_write_data(selector, cluster, overwrite):
             node_count += 1
 
         # verify that user salt has ownership cluster_dir
-        if pwd.getpwuid(stat(cluster_dir).st_uid).pw_name != 'salt':
+        if getpwuid(stat(cluster_dir).st_uid).pw_name != 'salt':
             raise Exception('Please make sure {dir} is owned by the salt user.'.format(dir=cluster_dir))
 
         with open(filename, 'w') as yml:
