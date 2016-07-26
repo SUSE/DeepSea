@@ -1,6 +1,7 @@
 
-stage/prep/begin:
+ceph/stage/prep/begin:
   event.send:
     - data:
-        status: "prep begins"
+        status: "prep stage begins"
+
 

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ `salt-run queue.list_length prep` -eq 0 ]
+then
+  if [ `salt-run jobs.active 2>/dev/null | wc -l` -eq 0 ]
+  then
+    # Send event
+    echo "Firing event"
+    salt 'admin.ceph' event.fire_master '{"data":"start deploying"}' 'stage/deploy/start'
+  fi
+fi
+
