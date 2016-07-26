@@ -500,7 +500,10 @@ class CephRoles(object):
             priorities.append( (len(networks[network]), network) )
 
         priorities = sorted(priorities, cmp=network_sort)
-        return str(priorities[0][1]), str(priorities[1][1])
+        if len(priorities) == 1:
+            return str(priorities[0][1]), str(priorities[0][1])
+        else:
+            return str(priorities[0][1]), str(priorities[1][1])
         
 def network_sort(a, b):
     """
