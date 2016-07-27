@@ -15,6 +15,7 @@ import yaml
 import json
 from os.path import dirname, basename, isdir
 import os
+import errno
 import uuid
 import ipaddress
 import logging
@@ -144,7 +145,7 @@ class CephStorage(object):
         """
         model_dir = "{}/{}/stack/default/{}/minions".format(self.root_dir, name, self.cluster)
         if not os.path.isdir(model_dir):
-            os.makedirs(model_dir)
+            create_dirs(model_dir, self.root_dir)
         filename = model_dir + "/" +  server + ".yml"
         contents = { 'storage': storage }
         self.writer.write(filename, contents)
@@ -155,7 +156,7 @@ class CephStorage(object):
         """
         cluster_dir = "{}/{}/cluster".format(self.root_dir, name)
         if not os.path.isdir(cluster_dir):
-            os.makedirs(cluster_dir)
+            create_dirs(cluster_dir, self.root_dir)
         #filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
         filename = cluster_dir + "/" +  server + ".sls"
         contents = {}
@@ -169,7 +170,7 @@ class CephStorage(object):
         """
         role_dir = "{}/{}/stack/default/{}/roles".format(self.root_dir, name, self.cluster)
         if not os.path.isdir(role_dir):
-            os.makedirs(role_dir)
+            create_dirs(role_dir, self.root_dir)
         filename = role_dir + "/storage.yml"
         contents = {}
         contents['keyring'] =  [ { 'osd': self.keyring } ]
@@ -388,10 +389,10 @@ class CephRoles(object):
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
-                os.makedirs(role_dir)
+                create_dirs(role_dir, self.root_dir)
             roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
             if not os.path.isdir(roles_dir):
-                os.makedirs(roles_dir)
+                create_dirs(roles_dir, self.root_dir)
             if role in self.keyring_roles:
                 filename = roles_dir + "/" +  role + ".yml"
                 contents = {}
@@ -401,7 +402,7 @@ class CephRoles(object):
 
             cluster_dir = role_dir + "/cluster"
             if not os.path.isdir(cluster_dir):
-                os.makedirs(cluster_dir)
+                create_dirs(cluster_dir, self.root_dir)
             for server in self.servers:
                 filename = cluster_dir + "/" +  server + ".sls"
                 contents = {}
@@ -415,7 +416,7 @@ class CephRoles(object):
         """
         minion_dir = "{}/role-mon/stack/default/{}/minions".format(self.root_dir, self.cluster)
         if not os.path.isdir(minion_dir):
-            os.makedirs(minion_dir)
+            create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
             filename = minion_dir + "/" +  server + ".yml"
             contents = {}
@@ -441,7 +442,7 @@ class CephRoles(object):
         if self.cluster:
             cluster_dir = "{}/config/stack/default/{}".format(self.root_dir, self.cluster)
             if not os.path.isdir(cluster_dir):
-                 os.makedirs(cluster_dir)
+                 create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, self.keyring_roles['admin']))
@@ -553,7 +554,7 @@ class CephCluster(object):
             for minion in self.minions:
                 cluster_dir = "{}/cluster-{}/cluster".format(self.root_dir, cluster)
                 if not os.path.isdir(cluster_dir):
-                     os.makedirs(cluster_dir)
+                     create_dirs(cluster_dir, self.root_dir)
                 filename = "{}/{}.sls".format(cluster_dir, minion)
                 contents = {}
                 contents['cluster'] = cluster
@@ -566,15 +567,22 @@ class CephCluster(object):
         """
         stack_dir = "{}/config/stack/default".format(self.root_dir)
         if not os.path.isdir(stack_dir):
-             os.makedirs(stack_dir)
+             create_dirs(stack_dir, self.root_dir)
         filename = "{}/global.yml".format(stack_dir)
         contents = {}
         contents['time_server'] = 'salt'
         contents['time_service'] = 'ntp'
 
         self.writer.write(filename, contents)
-        
 
+def create_dirs(path, root):
+    try:
+        os.makedirs(path)
+    except OSError as err:
+        if err.errno == errno.EACCES:
+            print "ERROR: Cannot create dir {}".format(path)
+            print "       Please make sure {} is owned by salt".format(root)
+            raise err
 
 def proposals(**kwargs):
     """
