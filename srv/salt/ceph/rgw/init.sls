@@ -18,8 +18,7 @@ rgw_create:
   module.run:
     - name: ceph.rgw_create
     - kwargs: {
-        name: mds.{{ grains['host'] }},
-      }
+        name: rgw.{{ grains['host'] }}
+        }
     - require:
-      - module: rgw_prep
-
+      - module: keyring_auth_add_rgw
