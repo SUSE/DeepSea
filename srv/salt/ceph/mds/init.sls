@@ -20,5 +20,5 @@ mds_create:
     - kwargs: {
         name: mds.{{ grains['host'] }},
         port: 6800,
-        addr: {{ salt['network.interfaces']()[pillar.public_interface]['inet'][0]['address'] }} 
+        addr: {{ salt['pillar.get']('public_address') }}
       }
