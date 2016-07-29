@@ -1,11 +1,10 @@
 
-delete minion:
-  runner.queue.delete:
-    - queue: prep
-    - items: {{ data['id'] }}
+delete:
+  runner.filequeue.vacate:
+    - kwargs:
+        queue: prep
+        item: {{ data['id'] }}
+        event: 'salt/ceph/start/discovery/stage'
 
 
-check:
-  runner.check.queue:
-    - queue: prep
 

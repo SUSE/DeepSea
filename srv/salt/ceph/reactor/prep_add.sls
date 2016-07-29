@@ -1,6 +1,7 @@
 
 add minion:
-  runner.queue.insert:
-    - queue: prep 
-    - items: {{ data['id'] }}
+  runner.filequeue.enqueue:
+    - kwargs:
+        queue: prep 
+        item: {{ data['id'] }}
 
