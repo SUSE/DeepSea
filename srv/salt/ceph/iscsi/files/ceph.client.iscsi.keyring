@@ -1,0 +1,4 @@
+[client.iscsi]
+	key = AQC6GaNXXZl1FhAAyFrnD1QwCRZ/OK22LbOXVw==
+	caps mon = "allow rx"
+	caps osd = "allow rwx"

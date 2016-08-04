@@ -1,4 +1,19 @@
 
+create key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.iscsi.authtool
+
+keyring:
+  salt.state:
+    - tgt: "I@roles:igw and I@cluster:ceph"
+    - sls: ceph.iscsi.keyring
+
+sysconfig:
+  salt.state:
+    - tgt: "I@roles:igw and I@cluster:ceph"
+    - sls: ceph.iscsi.sysconfig
+
 iscsi import:
   salt.state:
     - tgt: "{{ salt.saltutil.runner('select.one_minion', cluster='ceph', roles='igw') }}"

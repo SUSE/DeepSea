@@ -1,15 +1,14 @@
 
-lrbd install:
+install lrbd:
   cmd.run:
     - name: "zypper --non-interactive --no-gpg-checks in lrbd"
 
-lrbd:
+enable lrbd:
   service.running:
     - name: lrbd
     - enable: True
 
-reload:
-  cmd.run:
-    - name: "lrbd"
-    - shell: /bin/bash
-
+reload lrbd:
+  module.run:
+    - name: service.restart
+    - m_name: lrbd

@@ -1,0 +1,9 @@
+## Path:        Applications/System
+## Description: Ceph iSCSI configuration
+## ServiceReload: lrbd
+## Type:        string
+## Default:
+#
+# Command line options for lrbd(8) init script.
+#
+LRBD_OPTIONS="-n client.iscsi"
