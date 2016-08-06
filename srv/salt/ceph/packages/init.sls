@@ -2,5 +2,5 @@
 
 include:
   - .begin
-  - .updates
+  - .ceph
   - .complete
