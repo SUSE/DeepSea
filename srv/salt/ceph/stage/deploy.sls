@@ -1,9 +1,38 @@
 
+{# Salt orchestrate ignores return codes of other salt runners. #}
+#validate:
+#  salt.runner:
+#    - name: validate.pillar
+
+{# Until return codes fail correctly and the above can be uncommented, #}
+{# rely on the side effect of the runner printing its output and failing #}
+{# on a bogus state #}
+{% if salt['saltutil.runner']('validate.pillar', name='ceph') == False %}
+validate failed:
+  salt.state:
+    - name: just.exit
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}
+
 time:
   salt.state:
     - tgt: 'I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.time
+
+packages:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.packages
+
+configuration:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.configuration
 
 admin:
   salt.state:

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import salt.client
+import salt.utils.error
 import logging
 import ipaddress
 import pprint
@@ -24,6 +25,16 @@ Eventually, root assignment within the crushmap may live here.  The similar
 prerequisite is that osd assignment must be decided before segregating types
 of hardware.
 """
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 # Until I figure out the "right way" for managing common routines between
 # Salt runners, SaltWriter is a duplicate from populate.pillars.  (And yes, I 
@@ -438,47 +449,60 @@ class Validate(object):
     def report(self):
         """
         """
+        # Need to make colors optional, but looks better currently
         for attr in self.passed.keys():
-            print "{}: {}".format(attr, self.passed[attr])
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, self.passed[attr], bcolors.ENDC)
         for attr in self.errors.keys():
-            print "{}: {}".format(attr, self.errors[attr])
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, self.errors[attr], bcolors.ENDC)
 
-def pillar(**kwargs):
+def pillars(**kwargs):
+    """
+    """
+    options = SaltOptions()
+    local = salt.client.LocalClient()
+    cluster = ClusterAssignment(local)
+
+    for name in cluster.names:
+        pillar(name, **kwargs)
+
+
+def pillar(name, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
 
     #salt_writer = SaltWriter()
+    if name == None:
+        name = kwargs['name']
 
     options = SaltOptions()
     local = salt.client.LocalClient()
 
-    cluster = ClusterAssignment(local)
+    # Restrict search to this cluster
+    search = "I@cluster:{}".format(name)
 
-    for name in cluster.names:
-        # Restrict search to this cluster
-        search = "I@cluster:{}".format(name)
+    contents = local.cmd(search , 'pillar.items', [], expr_form="compound")
+    
+    v = Validate(name, contents)
+    v.fsid()
+    v.public_network()
+    v.cluster_network()
+    v.monitors()
+    v.storage()
+    v.admin_keyring()
+    v.mon_keyring()
+    v.mds_keyring()
+    v.rgw_keyring()
+    v.osd_keyring()
+    v.mon_host()
+    v.mon_initial_members()
+    v.osd_creation()
+    v.pool_creation()
+    v.time_server()
+    v.report()
 
-        contents = local.cmd(search , 'pillar.items', [], expr_form="compound")
-        
-        v = Validate(name, contents)
-        v.fsid()
-        v.public_network()
-        v.cluster_network()
-        v.monitors()
-        v.storage()
-        v.admin_keyring()
-        v.mon_keyring()
-        v.mds_keyring()
-        v.rgw_keyring()
-        v.osd_keyring()
-        v.mon_host()
-        v.mon_initial_members()
-        v.osd_creation()
-        v.pool_creation()
-        v.time_server()
-        v.report()
+    if v.errors:
+        return False
 
     return True
-
