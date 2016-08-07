@@ -30,13 +30,13 @@ packages:
 
 configuration:
   salt.state:
-    - tgt: 'I@cluster:ceph'
+    - tgt: 'I@cluster:ceph or {{ salt['pillar.get']('master_minion') }}'
     - tgt_type: compound
     - sls: ceph.configuration
 
 admin:
   salt.state:
-    - tgt: 'I@roles:admin and I@cluster:ceph'
+    - tgt: 'I@roles:admin and I@cluster:ceph or {{ salt['pillar.get']('master_minion') }}'
     - tgt_type: compound
     - sls: ceph.admin
 
@@ -45,12 +45,21 @@ monitors:
     - tgt: 'I@roles:mon and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.mon
+    - failhard: True
+
+storage auth:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.osd.auth
+    - failhard: True
 
 storage:
   salt.state:
     - tgt: 'I@roles:storage and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.osd
+    - failhard: True
 
 pools:
   salt.state:

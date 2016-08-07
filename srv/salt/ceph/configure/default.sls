@@ -20,5 +20,4 @@ refresh_pillar:
     - sls: ceph.refresh
 
 
-{# likely need a validate here if anything has been disabled #}
 

@@ -6,8 +6,6 @@ prepare {{ device }}:
     - kwargs: {
         osd_dev: {{ device }},
         }
-    - require:
-      - module: keyring_osd_auth_add
 
 activate {{ device }}:
   module.run:
@@ -27,8 +25,6 @@ prepare {{ data }}:
         osd_dev: {{ data }},
         journal_dev: {{ journal }}
         }
-    - require:
-      - module: keyring_osd_auth_add
 
 activate {{ device }}:
   module.run:

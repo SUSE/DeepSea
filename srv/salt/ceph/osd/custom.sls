@@ -10,8 +10,6 @@ prepare {{ device }}:
         osd_dev: {{ device }}2,
         journal_dev: {{ device }}1
         }
-    - require:
-      - module: keyring_osd_auth_add
 
 activate {{ device }}:
   module.run:
@@ -31,8 +29,6 @@ prepare {{ data }}:
         osd_dev: {{ data }},
         journal_dev: {{ journal }}
         }
-    - require:
-      - module: keyring_osd_auth_add
 
 activate {{ device }}:
   module.run:
