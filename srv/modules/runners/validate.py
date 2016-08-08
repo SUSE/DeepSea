@@ -339,7 +339,7 @@ class Validate(object):
                 msg = "Must have at least three entries"
                 self.errors[name] = [ msg ]
         else:
-            msg = "Missing {}".foramt(name)
+            msg = "Missing {}".format(name)
             self.errors[name] = [ msg ]
 
         if not name in self.errors:
