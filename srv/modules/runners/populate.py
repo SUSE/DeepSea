@@ -385,6 +385,7 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
+        master_contents = {}
         roles = [ 'admin', 'mon', 'mds', 'rgw', 'igw' ]
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
@@ -398,18 +399,38 @@ class CephRoles(object):
                 contents = {}
                 contents['keyring'] = [ { role: self.keyring_roles[role] } ]
                 self.writer.write(filename, contents)
+                if 'keyring' in master_contents:
+                    master_contents['keyring'].append({ role: self.keyring_roles[role] })
+                else:
+                    master_contents['keyring'] = [ { role: self.keyring_roles[role] } ]
 
 
-            cluster_dir = role_dir + "/cluster"
-            if not os.path.isdir(cluster_dir):
-                create_dirs(cluster_dir, self.root_dir)
-            for server in self.servers:
-                filename = cluster_dir + "/" +  server + ".sls"
-                contents = {}
-                contents['roles'] = [ role ]
-                self.writer.write(filename, contents)
 
+            self._cluster_assignment(role_dir, role)
+
+        role = 'master'
+        role_dir = "{}/role-{}".format(self.root_dir, role)
+        roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
+        if not os.path.isdir(roles_dir):
+            create_dirs(roles_dir, self.root_dir)
+        filename = roles_dir + "/" +  role + ".yml"
+        self.writer.write(filename, contents)
+
+        self._cluster_assignment(role_dir, role)
             
+    def _cluster_assignment(self, role_dir, role):
+        """
+        Create role related sls files
+        """
+        cluster_dir = role_dir + "/cluster"
+        if not os.path.isdir(cluster_dir):
+            create_dirs(cluster_dir, self.root_dir)
+        for server in self.servers:
+            filename = cluster_dir + "/" +  server + ".sls"
+            contents = {}
+            contents['roles'] = [ role ]
+            self.writer.write(filename, contents)
+
     def monitor_members(self):
         """
         Create a file for mon_host and mon_initial_members

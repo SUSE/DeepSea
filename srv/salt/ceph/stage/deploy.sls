@@ -30,13 +30,13 @@ packages:
 
 configuration:
   salt.state:
-    - tgt: 'I@cluster:ceph or {{ salt['pillar.get']('master_minion') }}'
+    - tgt: 'I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.configuration
 
 admin:
   salt.state:
-    - tgt: 'I@roles:admin and I@cluster:ceph or {{ salt['pillar.get']('master_minion') }}'
+    - tgt: 'I@roles:admin and I@cluster:ceph or I@roles:master'
     - tgt_type: compound
     - sls: ceph.admin
 
