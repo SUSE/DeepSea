@@ -135,7 +135,7 @@ class CephStorage(object):
                     name = model + "-" + str(count)
                     self._save_proposal(name, server, proposal)
                     self._save_roles(name, server)
-                    self._save_keyring(name)
+                    #self._save_keyring(name)
             count = 0
 
 
@@ -163,18 +163,21 @@ class CephStorage(object):
         contents['roles'] =  [ 'storage' ]
         self.writer.write(filename, contents)
 
-    def _save_keyring(self, name):
-        """
-        Save the osd keyring.  All osds on a server (or all servers) use the
-        same keyring secret.
-        """
-        role_dir = "{}/{}/stack/default/{}/roles".format(self.root_dir, name, self.cluster)
-        if not os.path.isdir(role_dir):
-            create_dirs(role_dir, self.root_dir)
-        filename = role_dir + "/storage.yml"
-        contents = {}
-        contents['keyring'] =  [ { 'osd': self.keyring } ]
-        self.writer.write(filename, contents)
+    # Regardless of hardware profile, we should use the same osd keyring and
+    # not a different keyring for every profile.  Moving to other keyring roles.
+    #
+    #def _save_keyring(self, name):
+    #    """
+    #    Save the osd keyring.  All osds on a server (or all servers) use the
+    #    same keyring secret.
+    #    """
+    #    role_dir = "{}/{}/stack/default/{}/roles".format(self.root_dir, name, self.cluster)
+    #    if not os.path.isdir(role_dir):
+    #        create_dirs(role_dir, self.root_dir)
+    #    filename = role_dir + "/storage.yml"
+    #    contents = {}
+    #    contents['keyring'] =  [ { 'osd': self.keyring } ]
+    #    self.writer.write(filename, contents)
 
 
 class HardwareProfile(object):
@@ -374,6 +377,7 @@ class CephRoles(object):
         self.root_dir = settings.root_dir
         self.keyring_roles = { 'admin': Utils.secret(), 
                                'mon': Utils.secret(), 
+                               'storage': Utils.secret(),
                                'mds': Utils.secret(),
                                'rgw': Utils.secret() }
 
@@ -386,7 +390,7 @@ class CephRoles(object):
         for every server.
         """
         master_contents = {}
-        roles = [ 'admin', 'mon', 'mds', 'rgw', 'igw' ]
+        roles = [ 'admin', 'mon', 'storage', 'mds', 'rgw', 'igw' ]
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
@@ -397,16 +401,20 @@ class CephRoles(object):
             if role in self.keyring_roles:
                 filename = roles_dir + "/" +  role + ".yml"
                 contents = {}
-                contents['keyring'] = [ { role: self.keyring_roles[role] } ]
+                role_key = self._role_mapping(role)
+
+                contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
                 self.writer.write(filename, contents)
                 if 'keyring' in master_contents:
-                    master_contents['keyring'].append({ role: self.keyring_roles[role] })
+                    master_contents['keyring'].append({ role_key: self.keyring_roles[role] })
                 else:
-                    master_contents['keyring'] = [ { role: self.keyring_roles[role] } ]
+                    master_contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
 
 
 
-            self._cluster_assignment(role_dir, role)
+            # All minions are not necessarily storage - see CephStorage
+            if role != 'storage':
+                self._cluster_assignment(role_dir, role)
 
         role = 'master'
         role_dir = "{}/role-{}".format(self.root_dir, role)
@@ -414,10 +422,19 @@ class CephRoles(object):
         if not os.path.isdir(roles_dir):
             create_dirs(roles_dir, self.root_dir)
         filename = roles_dir + "/" +  role + ".yml"
-        self.writer.write(filename, contents)
+        self.writer.write(filename, master_contents)
 
         self._cluster_assignment(role_dir, role)
             
+    def _role_mapping(self, role):
+        """
+        The storage role has osd keyrings.
+        """
+        if role == 'storage':
+            return 'osd'
+        return role
+
+
     def _cluster_assignment(self, role_dir, role):
         """
         Create role related sls files
@@ -451,7 +468,7 @@ class CephRoles(object):
         public_net = ipaddress.ip_network(u'{}'.format(self.public_network))
         for entry in self.networks[public_net]:
             if entry[0] == server:
-                print server, entry[2]
+                log.debug("Public interface for {}: {}".format(server, entry[2]))
                 return entry[2]
         return ""
 

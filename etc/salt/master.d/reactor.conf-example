@@ -1,5 +1,5 @@
 reactor:
-  - 'salt/minion/admin*/start':
+  - 'salt/minion/*/start':
     - /srv/salt/ceph/reactor/prep.sls
   - 'salt/ceph/stage/prep/*/begin':
     - /srv/salt/ceph/reactor/prep_add.sls

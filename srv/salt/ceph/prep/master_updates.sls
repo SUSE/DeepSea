@@ -12,12 +12,17 @@ kernel update:
     - unless: "zypper info kernel-default | grep -q '^Status: up-to-date'"
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
+{% set latest = salt['cmd.run']('rpm -q --last kernel-default | head -1', shell="/bin/bash" ) %}
+
+{% if kernel not in latest %}
+{% set marker = salt.saltutil.runner('filequeue.remove', queue='master', name='begin') %}
 
 reboot:
   cmd.run:
     - name: "shutdown -r now"
     - shell: /bin/bash
-    - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
     - failhard: True
+
+{% endif %}
 
 

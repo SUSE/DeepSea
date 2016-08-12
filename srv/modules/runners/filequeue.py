@@ -69,12 +69,21 @@ class FileQueue(object):
 
     def touch(self, name):
         """
-        Create or update filename
+        Create or update filename.  Return based on duplicate_fail.
         """
         filename = "{}/{}".format(self.queue_dir, name)
+        ret = os.path.isfile(filename)
         with open(filename, "w") as entry:
             log.info("creating {}".format(filename))
             entry.write("")
+
+        if (ret and 'duplicate_fail' in self.settings and 
+            self.settings['duplicate_fail']):
+            self._fire_event([ name, "present" ])
+            return False
+        self._fire_event([ name, "added" ])
+        return True
+        
 
     def ls(self):
         """
@@ -101,6 +110,7 @@ class FileQueue(object):
         files = self.ls()
         if files:
             log.debug("queue {} contains {}".format(self.queue_dir, result))
+            self._fire_event([ "populated" ])
             return False
         else:
             log.debug("queue {} is empty".format(self.queue_dir))
@@ -115,7 +125,9 @@ class FileQueue(object):
         if os.path.isfile(filename):
             log.debug("removing {}".format(filename))
             os.remove(filename)
+            self._fire_event([ name, "remove"])
             return True
+        self._fire_event([ name, "absent"])
         return False
 
     def vacate(self, name):
@@ -143,12 +155,15 @@ class FileQueue(object):
             self._fire_event([ name, "exists"])
         else:
             log.info("file {} is missing".format(filename))
+            self._fire_event([ name, "missing"])
         return ret
 
     def _fire_event(self, operation):
         """
         Fire optional Salt event for some operations
         """
+        if 'fire' in self.settings and not self.settings['fire']:
+            return
         settings = _skip_dunder(self.settings)
 
         tags = settings['event'].split('/')
@@ -293,12 +308,13 @@ def enqueue(name = None, **kwargs):
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
         if name:
-            fq.touch(name)
+            ret = fq.touch(name)
         elif 'item' in kwargs:
-            fq.touch(kwargs['item'])
+            ret = fq.touch(kwargs['item'])
         else:
             help()
-    return True
+            return
+    return ret
 
 add = salt.utils.alias_function(enqueue, 'add')
 push = salt.utils.alias_function(enqueue, 'push')
@@ -365,6 +381,7 @@ def check(name = None, **kwargs):
             return fq.check(kwargs['item'])
         else:
             help()
+            return
 
 def remove(name = None, **kwargs):
     """
@@ -380,7 +397,7 @@ def remove(name = None, **kwargs):
             return fq.remove(kwargs['item'])
         else:
             help()
-            return True
+            return
 
 def vacate(name = None, **kwargs):
     """
@@ -396,5 +413,5 @@ def vacate(name = None, **kwargs):
             return fq.vacate(kwargs['item'])
         else:
             help()
-            return True
+            return 
 
