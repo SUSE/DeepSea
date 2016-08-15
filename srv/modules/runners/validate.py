@@ -15,6 +15,12 @@ from collections import OrderedDict
 
 log = logging.getLogger(__name__)
 
+# Next items
+#
+# monitors require admin roles
+# make time_server optional
+# 
+
 """
 For Ceph, the generation of ceph.conf requires additional information.
 Although this information can be determined from Salt itself, the 
@@ -345,6 +351,21 @@ class Validate(object):
         if not name in self.errors:
             self.passed[name] = "valid"
 
+    def mon_role(self):
+        """
+        The monitors also need the admin role
+        """
+        for node in self.data.keys():
+            if 'roles' in self.data[node] and 'mon' in self.data[node]['roles']:
+                if 'admin' not in self.data[node]['roles']:
+                  msg = "host {} is a monitor and missing admin role".format(node)
+                  if 'mon_role' in self.errors:
+                      self.errors['mon_role'].append(msg) 
+                  else:
+                      self.errors['mon_role'] = [ msg ]
+
+        if not 'mon_role' in self.errors:
+            self.passed['mon_role'] = "valid"
 
     def mon_host(self):
         """
@@ -437,7 +458,10 @@ class Validate(object):
         """
         time_server = self.data[self.data.keys()[0]]['time_server']
         time_service = self.data[self.data.keys()[0]]['time_service']
-        time_service = "chrony"
+        if time_service == 'disabled':
+            self.passed['time_server'] = "disabled"
+            return
+
         if (time_service == 'ntp' and os.path.isfile('/usr/sbin/sntp')):
             self._ntp_check(time_server)
         else:
@@ -495,6 +519,7 @@ def pillar(name, **kwargs):
     v.mds_keyring()
     v.rgw_keyring()
     v.osd_keyring()
+    v.mon_role()
     v.mon_host()
     v.mon_initial_members()
     v.osd_creation()
