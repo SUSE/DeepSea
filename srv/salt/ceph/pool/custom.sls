@@ -24,21 +24,10 @@ swimming:
     - name: "ceph osd pool create swimming 128 erasure three-one"
     - unless: "ceph osd pool ls | grep -q swimming$"
 
-wait:
-  module.run:
-    - name: 'test.sleep'
-    - length: 3
-
-media:
-  cmd.run:
-    - name: "rbd -p swimming create media --size=2048"
-    - unless: "rbd -p swimming ls | grep -q media$"
-
 cache:
   cmd.run:
     - name: "ceph osd pool create swimming-cache 256 256"
     - unless: "ceph osd pool ls | grep -q swimming-cache"
-
 
 cache tier:
   cmd.run:
@@ -64,7 +53,12 @@ hit_set_count:
   cmd.run:
     - name: "ceph osd pool set swimming-cache hit_set_count 1200"
 
-
+# Images cannot be created on EC pools directly but will work on a 
+# replicated cache
+media:
+  cmd.run:
+    - name: "rbd -p swimming create media --size=2048"
+    - unless: "rbd -p swimming ls | grep -q media$"
 
 
 

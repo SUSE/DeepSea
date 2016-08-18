@@ -1,4 +1,5 @@
 
+
 packages:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -7,7 +8,9 @@ packages:
 prepare master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.prep.master
+    - sls: ceph.prep
+    - require:
+      - salt: packages
 
 
 #openattic:
@@ -15,9 +18,25 @@ prepare master:
 #    - tgt: {{ salt['pillar.get']('master_minion') }}
 #    - sls: ceph.openattic
 
-{% set marker = salt.saltutil.runner('filequeue.add', queue='master', name='complete') %}
 
-include:
-  - .prep
+complete marker:
+  salt.runner:
+    - name: filequeue.add
+    - queue: 'master'
+    - item: 'complete'
+    - require:
+      - salt: prepare master
 
-{% set marker = salt.saltutil.runner('filequeue.remove', queue='master', name='begin') %}
+ready:
+  salt.runner:
+    - name: minions.ready
+    - require:
+      - salt: complete marker
+
+prepare:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph
+    - require:
+      - salt: ready
+

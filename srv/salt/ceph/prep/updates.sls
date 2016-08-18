@@ -10,6 +10,8 @@ kernel update:
     - name: "zypper --non-interactive --no-gpg-checks up kernel-default"
     - shell: /bin/bash
     - unless: "zypper info kernel-default | grep -q '^Status: up-to-date'"
+    - require:
+      - cmd: zypper update
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
@@ -19,5 +21,7 @@ reboot:
     - shell: /bin/bash
     - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
     - failhard: True
+    - require:
+      - cmd: kernel update
 
 
