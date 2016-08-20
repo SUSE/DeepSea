@@ -79,9 +79,9 @@ class FileQueue(object):
 
         if (ret and 'duplicate_fail' in self.settings and 
             self.settings['duplicate_fail']):
-            self._fire_event([ name, "present" ])
+            self._fire_event(False, [ name, "present" ])
             return False
-        self._fire_event([ name, "added" ])
+        self._fire_event(True, [ name, "added" ])
         return True
         
 
@@ -109,12 +109,12 @@ class FileQueue(object):
         """
         files = self.ls()
         if files:
-            log.debug("queue {} contains {}".format(self.queue_dir, result))
-            self._fire_event([ "populated" ])
+            log.debug("queue {} contains {}".format(self.queue_dir, files))
+            self._fire_event(False, [ "populated" ])
             return False
         else:
             log.debug("queue {} is empty".format(self.queue_dir))
-            self._fire_event([ "empty" ])
+            self._fire_event(True, [ "empty" ])
             return True
 
     def remove(self, name):
@@ -125,9 +125,9 @@ class FileQueue(object):
         if os.path.isfile(filename):
             log.debug("removing {}".format(filename))
             os.remove(filename)
-            self._fire_event([ name, "remove"])
+            self._fire_event(True, [ name, "remove"])
             return True
-        self._fire_event([ name, "absent"])
+        self._fire_event(False, [ name, "absent"])
         return False
 
     def vacate(self, name):
@@ -135,13 +135,28 @@ class FileQueue(object):
         Remove file and check if empty in a single operation
 
         Note: Timing in Salt events creates race conditions if remove and empty
-        are called from the same reactor file.  
+        are called separately from the same reactor file.  
         """
         files = self.ls()
-        self.remove(name)
         log.debug("queue {} contains {}".format(self.queue_dir, files))
-        if len(files) == 1:
-            self.empty()
+        filename = "{}/{}".format(self.queue_dir, name)
+
+        if os.path.isfile(filename):
+            log.debug("deleting {}".format(filename))
+            os.remove(filename)
+
+        if files[0] == name:
+            if len(files) == 1:
+                log.debug("queue {} is vacated".format(self.queue_dir))
+                self._fire_event(True, [ "vacated" ])
+                return True
+            else:
+                log.debug("queue {} contains {}".format(self.queue_dir, files))
+                self._fire_event(False, [ "occupied" ])
+                return False
+        else:
+            log.debug("filename {} does not exist".format(filename))
+        
 
 
     def check(self, name):
@@ -152,15 +167,17 @@ class FileQueue(object):
         ret = os.path.isfile(filename)
         if ret:
             log.info("file {} exists".format(filename))
-            self._fire_event([ name, "exists"])
+            self._fire_event(True, [ name, "exists"])
         else:
             log.info("file {} is missing".format(filename))
-            self._fire_event([ name, "missing"])
+            self._fire_event(False, [ name, "missing"])
         return ret
 
-    def _fire_event(self, operation):
+    def _fire_event(self, result, operation):
         """
-        Fire optional Salt event for some operations
+        Fire optional Salt event for some operations.  Always send an
+        event unless 'fire_on' is set.  Then, only send an event when
+        matching
         """
         if 'fire' in self.settings and not self.settings['fire']:
             return
@@ -171,8 +188,10 @@ class FileQueue(object):
             tags += operation
         log.info("firing event for {}".format("/".join(tags)))
         
-        event = salt.utils.event.SaltEvent('master', __opts__['sock_dir'])
-        event.fire_event(settings, "/".join(tags))
+        if ('fire_on' not in settings or 
+            'fire_on' in settings and settings['fire_on'] == result):
+            event = salt.utils.event.SaltEvent('master', __opts__['sock_dir'])
+            event.fire_event(settings, "/".join(tags))
 
 
 class Lock():
