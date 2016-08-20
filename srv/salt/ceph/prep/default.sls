@@ -4,25 +4,32 @@ zypper update:
     - name: "zypper --non-interactive update --replacefiles"
     - shell: /bin/bash
     - unless: "zypper lu | grep -sq 'No updates found'"
+    - order: 10
 
 kernel update:
   cmd.run:
     - name: "zypper --non-interactive --no-gpg-checks up kernel-default"
     - shell: /bin/bash
     - unless: "zypper info kernel-default | grep -q '^Status: up-to-date'"
+    - require:
+      - cmd: zypper update
+    - order: 20
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
-{% set latest = salt['cmd.run']('rpm -q --last kernel-default | head -1', shell="/bin/bash" ) %}
-
-{% if kernel not in latest %}
-{% set marker = salt.saltutil.runner('filequeue.remove', queue='master', name='begin') %}
 
 reboot:
   cmd.run:
     - name: "shutdown -r now"
     - shell: /bin/bash
+    - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
     - failhard: True
+    - require:
+      - cmd: kernel update
+    - order: 30
 
-{% endif %}
+nop:
+  test.nop:
+    - require:
+      - cmd: kernel update
 
 

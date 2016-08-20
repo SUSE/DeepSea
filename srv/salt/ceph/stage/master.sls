@@ -1,5 +1,10 @@
 
 
+sync:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.sync
+
 packages:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -39,4 +44,5 @@ prepare:
     - sls: ceph
     - require:
       - salt: ready
+
 

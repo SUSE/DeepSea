@@ -1,6 +1,6 @@
 
 include:
-  - ceph.setup.{{ salt['pillar.get']('discovery_method', 'default') }}
+  - ceph.discovery.{{ salt['pillar.get']('discovery_method', 'default') }}
 
 refresh_pillar:
   salt.state:

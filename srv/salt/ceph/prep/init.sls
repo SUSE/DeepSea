@@ -2,5 +2,5 @@
 
 include:
   - .begin
-  - .updates
+  - .{{ salt['pillar.get']('update_method', 'default') }}
   - .complete
