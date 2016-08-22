@@ -1,5 +1,6 @@
 
 {% set FAIL_ON_WARNING = salt['pillar.get']('FAIL_ON_WARNING', 'True') %}
+
 {% if salt['saltutil.runner']('ready.check', name='ceph', fail_on_warning=FAIL_ON_WARNING)  == False %}
 ready check failed:
   salt.state:

@@ -76,11 +76,12 @@ class Checks(object):
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, self.warnings[attr], bcolors.ENDC)
 
 
-def check(name, fail_on_warnings=True, **kwargs):
+def check(name, fail_on_warning=True, **kwargs):
     """
     Check a cluster for runtime configurations that may cause issues for an
     installation.
     """
+    print "fow: ", fail_on_warning
 
     if name == None:
         name = kwargs['name']
@@ -92,7 +93,7 @@ def check(name, fail_on_warnings=True, **kwargs):
     c.firewall()
     c.report()
 
-    if c.warnings and fail_on_warnings:
+    if c.warnings and fail_on_warning:
         return False
     return True
 
