@@ -1,4 +1,14 @@
 
+{% set FAIL_ON_WARNING = salt['pillar.get']('FAIL_ON_WARNING', 'True') %}
+{% if salt['saltutil.runner']('ready.check', name='ceph', fail_on_warning=FAIL_ON_WARNING)  == False %}
+ready check failed:
+  salt.state:
+    - name: "Fail on Warning is True"
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}
+
 {# Salt orchestrate ignores return codes of other salt runners. #}
 #validate:
 #  salt.runner:

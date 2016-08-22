@@ -42,30 +42,6 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-# Until I figure out the "right way" for managing common routines between
-# Salt runners, SaltWriter is a duplicate from populate.pillars.  (And yes, I 
-# know I can make a library, but what do you expect as the user?)
-class SaltWriter(object):
-    """
-    All salt files are essentially yaml files in the pillar by default.  The 
-    pillar uses sls extensions and stack.py uses yml.
-    """
-
-    def __init__(self):
-        """
-        Keep yaml human readable/editable.  Disable yaml references.
-        """
-        self.dumper = yaml.SafeDumper
-        self.dumper.ignore_aliases = lambda self, data: True
-
-
-    def write(self, filename, contents):
-        """
-        Write a yaml file in the conventional way
-        """
-        with open(filename, "w") as yml:
-            yml.write(yaml.dump(contents, Dumper=self.dumper,
-                                          default_flow_style=False))
 
 class SaltOptions(object):
     """
@@ -482,7 +458,7 @@ class Validate(object):
 def pillars(**kwargs):
     """
     """
-    options = SaltOptions()
+    #options = SaltOptions()
     local = salt.client.LocalClient()
     cluster = ClusterAssignment(local)
 
@@ -496,11 +472,10 @@ def pillar(name, **kwargs):
     a Ceph cluster.
     """
 
-    #salt_writer = SaltWriter()
     if name == None:
         name = kwargs['name']
 
-    options = SaltOptions()
+    #options = SaltOptions()
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster
