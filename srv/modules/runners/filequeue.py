@@ -145,8 +145,8 @@ class FileQueue(object):
             log.debug("deleting {}".format(filename))
             os.remove(filename)
 
-        if files[0] == name:
-            if len(files) == 1:
+        if len(files) == 1:
+            if files[0] == name:
                 log.debug("queue {} is vacated".format(self.queue_dir))
                 self._fire_event(True, [ "vacated" ])
                 return True
