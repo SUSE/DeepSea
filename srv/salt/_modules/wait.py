@@ -80,7 +80,7 @@ class HealthCheck(object):
             log.debug("status == {}".format(settings['status']))
             return (current == settings['status'])
 
-def around(**kwargs):
+def until(**kwargs):
     """
     Wait around until the status matches.
     """
