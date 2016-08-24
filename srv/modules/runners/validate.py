@@ -90,12 +90,13 @@ class Validate(object):
     Perform checks on pillar data
     """
 
-    def __init__(self, name, data):
+    def __init__(self, name, data, grains):
         """
         Query the cluster assignment and remove unassigned
         """
         self.name = name
         self.data = data
+        self.grains = grains
         self.passed = OrderedDict()
         self.errors = OrderedDict()
 
@@ -152,6 +153,25 @@ class Validate(object):
         if not 'public_network' in self.errors:
             self.passed['public_network'] = "valid"
 
+    def public_interface(self):
+        """
+        """
+        for node in self.data.keys():
+            if ('roles' in self.data[node] and 
+                'master' in self.data[node]['roles']):
+                continue
+            found = False
+            for address in self.grains[node]['ipv4']:
+                if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(self.data[node]['public_network'])):
+                    found = True
+            if not found:
+                msg = "minion {} missing address on public network {}".format(node, self.data[node]['public_network'])
+                if 'public_interface' in self.errors:
+                    self.errors['public_interface'].append(msg)
+                else:
+                    self.errors['public_interface'] = [ msg ]
+        if not 'public_interface' in self.errors:
+            self.passed['public_interface'] = "valid"
 
     def monitors(self):
         """
@@ -224,6 +244,25 @@ class Validate(object):
                 self.errors['cluster_network'] = [ msg ]
         if not 'cluster_network' in self.errors:
             self.passed['cluster_network'] = "valid"
+
+    def cluster_interface(self):
+        """
+        """
+        for node in self.data.keys():
+            if ('roles' in self.data[node] and 
+                'storage' in self.data[node]['roles']):
+                found = False
+                for address in self.grains[node]['ipv4']:
+                    if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(self.data[node]['cluster_network'])):
+                        found = True
+                if not found:
+                    msg = "minion {} missing address on cluster network {}".format(node, self.data[node]['cluster_network'])
+                    if 'cluster_interface' in self.errors:
+                        self.errors['cluster_interface'].append(msg)
+                    else:
+                        self.errors['cluster_interface'] = [ msg ]
+        if not 'cluster_interface' in self.errors:
+            self.passed['cluster_interface'] = "valid"
 
     def _check_keyring(self, name, role = None):
         """
@@ -326,6 +365,20 @@ class Validate(object):
 
         if not name in self.errors:
             self.passed[name] = "valid"
+
+    def master_role(self):
+        """
+        The master role has keyrings
+        """
+        for node in self.data.keys():
+            if 'roles' in self.data[node] and 'master' in self.data[node]['roles']:
+                if 'keyring' not in self.data[node]:
+                    msg = "master role missing keyrings on {}, check /srv/pillar/ceph/proposals/policy.cfg for master.yml".format(node)
+                    self.errors['master_role'] = [ msg ]
+
+        if not 'master_role' in self.errors:
+            self.passed['master_role'] = "valid"
+
 
     def mon_role(self):
         """
@@ -455,6 +508,12 @@ class Validate(object):
         for attr in self.errors.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, self.errors[attr], bcolors.ENDC)
 
+def usage():
+    print "salt-run validate.pillar cluster"
+    print "salt-run validate.pillar name=cluster"
+    print "salt-run validate.pillars"
+
+
 def pillars(**kwargs):
     """
     """
@@ -466,14 +525,19 @@ def pillars(**kwargs):
         pillar(name, **kwargs)
 
 
-def pillar(name, **kwargs):
+def pillar(name = None, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
 
     if name == None:
-        name = kwargs['name']
+        if 'name' in kwargs:
+            name = kwargs['name']
+
+    if not name:
+        usage()
+        exit(1)
 
     #options = SaltOptions()
     local = salt.client.LocalClient()
@@ -481,12 +545,15 @@ def pillar(name, **kwargs):
     # Restrict search to this cluster
     search = "I@cluster:{}".format(name)
 
-    contents = local.cmd(search , 'pillar.items', [], expr_form="compound")
+    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
+    grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
     
-    v = Validate(name, contents)
+    v = Validate(name, pillar_data, grains_data)
     v.fsid()
     v.public_network()
+    v.public_interface()
     v.cluster_network()
+    v.cluster_interface()
     v.monitors()
     v.storage()
     v.admin_keyring()
@@ -494,6 +561,7 @@ def pillar(name, **kwargs):
     v.mds_keyring()
     v.rgw_keyring()
     v.osd_keyring()
+    v.master_role()
     v.mon_role()
     v.mon_host()
     v.mon_initial_members()

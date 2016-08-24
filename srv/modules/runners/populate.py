@@ -536,7 +536,16 @@ class CephRoles(object):
         """
         priorities = []
         for network in networks:
-            priorities.append( (len(networks[network]), network) )
+            quantity = len(networks[network])
+            # Minimum number of nodes, ignore other networks 
+            if quantity > 4:
+                priorities.append( (len(networks[network]), network) )
+                log.debug("Including network {}".format(network))
+            else:
+                log.warn("Ignoring network {}".format(network))
+
+        if not priorities:
+            raise ValueError("No network exists on at least 4 nodes")
 
         priorities = sorted(priorities, cmp=network_sort)
         if len(priorities) == 1:
