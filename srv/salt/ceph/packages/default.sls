@@ -1,7 +1,7 @@
 
 check lock:
   module.run:
-    - name: zypper.ready
+    - name: zypper_locks.ready
     - fire_event: True
 
 ceph install:
