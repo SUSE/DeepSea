@@ -113,7 +113,7 @@ def cluster(**kwargs):
         contents['mon_initial_members'] = mon_initial_members.values()
 
         if not contents['mon_host']:
-            raise RuntimeError("public_address missing from pillar")
+            raise RuntimeError("public_address missing from mon_host")
         if not contents['mon_initial_members']:
             raise RuntimeError("No results for {}".format(search))
         #pprint.pprint(contents)

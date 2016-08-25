@@ -1,4 +1,7 @@
 
+include:
+  - .keyring
+
 {% for device in salt['pillar.get']('storage:osds') %}
 prepare {{ device }}:
   module.run:
@@ -13,6 +16,7 @@ activate {{ device }}:
     - kwargs: {
         osd_dev: {{ device }}
         }
+    - fire_event: True
 
 {% endfor %}
 
@@ -25,6 +29,7 @@ prepare {{ data }}:
         osd_dev: {{ data }},
         journal_dev: {{ journal }}
         }
+    - fire_event: True
 
 activate {{ device }}:
   module.run:
@@ -32,6 +37,7 @@ activate {{ device }}:
     - kwargs: {
         osd_dev: {{ data }}
         }
+    - fire_event: True
 
 {% endfor %}
 {% endfor %}

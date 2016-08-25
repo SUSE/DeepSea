@@ -1,19 +1,22 @@
 
 
-sync:
+sync master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.sync
+    - order: 1
 
 packages:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.packages
+    - require:
+      - salt: sync master
 
 prepare master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.prep
+    - sls: ceph.updates
     - require:
       - salt: packages
 
@@ -38,11 +41,14 @@ ready:
     - require:
       - salt: complete marker
 
-prepare:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph
-    - require:
-      - salt: ready
+include:
+  - .prep.default
+
+#prepare:
+#  salt.state:
+#    - tgt: '*'
+#    - sls: ceph
+#    - require:
+#      - salt: ready
 
 

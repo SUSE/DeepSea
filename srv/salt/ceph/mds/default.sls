@@ -7,12 +7,14 @@ keyring_mds_save:
         'keyring_type' : 'mds',
         'secret' : {{ salt['pillar.get']('keyring:mds') }}
         }
+    - fire_event: True
 
 keyring_auth_add_mds:
   module.run:
     - name: ceph.keyring_mds_auth_add
     - require:
       - module: keyring_mds_save
+    - fire_event: True
 
 mds_create:
   module.run:
@@ -22,3 +24,4 @@ mds_create:
         port: 6800,
         addr: {{ salt['pillar.get']('public_address') }}
       }
+    - fire_event: True

@@ -7,5 +7,6 @@ keyring_admin_save:
         'keyring_type' : 'admin',
         'secret' : {{ salt['pillar.get']('keyring:admin') }} 
         }
+    - fire_event: True
 
 

@@ -7,12 +7,14 @@ keyring_rgw_save:
         'keyring_type' : 'rgw',
         'secret' : {{ salt['pillar.get']('keyring:rgw') }}
         }
+    - fire_event: True
 
 keyring_auth_add_rgw:
   module.run:
     - name: ceph.keyring_rgw_auth_add
     - require:
       - module: keyring_rgw_save
+    - fire_event: True
 
 rgw_create:
   module.run:
@@ -22,3 +24,4 @@ rgw_create:
         }
     - require:
       - module: keyring_auth_add_rgw
+    - fire_event: True

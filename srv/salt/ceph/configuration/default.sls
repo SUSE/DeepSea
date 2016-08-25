@@ -10,6 +10,7 @@
     - group: root
     - mode: 644
     - makedirs: True
+    - fire_event: True
 
 
 
