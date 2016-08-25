@@ -1,4 +1,5 @@
 
+
 zypper update:
   cmd.run:
     - name: "zypper --non-interactive update --replacefiles"
@@ -30,9 +31,5 @@ reboot:
     - order: 30
     - fire_event: True
 
-nop:
-  test.nop:
-    - require:
-      - cmd: kernel update
 
 

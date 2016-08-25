@@ -1,7 +1,14 @@
 
-install openattic:
-  cmd.run:
-    - name: "zypper --non-interactive --no-gpg-checks in openattic openattic-gui"
+
+openattic:
+  pkg.installed:
+    - pkgs:
+      - openattic
+      - openattic-gui
+
+#install openattic:
+#  cmd.run:
+#    - name: "zypper --non-interactive --no-gpg-checks in openattic openattic-gui"
 
 configure openattic:
   cmd.run:

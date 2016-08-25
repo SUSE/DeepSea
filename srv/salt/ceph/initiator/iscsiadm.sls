@@ -1,7 +1,13 @@
 
+
 open-iscsi:
-  cmd.run:
-    - name: "zypper --non-interactive --no-gpg-checks in open-iscsi"
+  pkg.installed:
+    - pkgs:
+      - open-iscsi
+
+#open-iscsi:
+#  cmd.run:
+#    - name: "zypper --non-interactive --no-gpg-checks in open-iscsi"
 
 iscsid:
   service.running:
