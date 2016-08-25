@@ -538,7 +538,7 @@ class CephRoles(object):
         for network in networks:
             quantity = len(networks[network])
             # Minimum number of nodes, ignore other networks 
-            if quantity > 4:
+            if quantity > 3:
                 priorities.append( (len(networks[network]), network) )
                 log.debug("Including network {}".format(network))
             else:
