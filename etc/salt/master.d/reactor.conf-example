@@ -1,8 +1,8 @@
 reactor:
   - 'salt/minion/*/start':
-    - /srv/salt/ceph/reactor/prep.sls
+    - /srv/salt/ceph/reactor/initialize.sls
   - 'salt/ceph/stage/prep/*/begin':
-    - /srv/salt/ceph/reactor/prep_add.sls
+    - /srv/salt/ceph/reactor/prep_begin.sls
   - 'salt/ceph/stage/prep/*/complete':
     - /srv/salt/ceph/reactor/prep_complete.sls
   - 'salt/ceph/start/discovery/stage':
