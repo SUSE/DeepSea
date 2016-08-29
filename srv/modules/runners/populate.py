@@ -163,21 +163,6 @@ class CephStorage(object):
         contents['roles'] =  [ 'storage' ]
         self.writer.write(filename, contents)
 
-    # Regardless of hardware profile, we should use the same osd keyring and
-    # not a different keyring for every profile.  Moving to other keyring roles.
-    #
-    #def _save_keyring(self, name):
-    #    """
-    #    Save the osd keyring.  All osds on a server (or all servers) use the
-    #    same keyring secret.
-    #    """
-    #    role_dir = "{}/{}/stack/default/{}/roles".format(self.root_dir, name, self.cluster)
-    #    if not os.path.isdir(role_dir):
-    #        create_dirs(role_dir, self.root_dir)
-    #    filename = role_dir + "/storage.yml"
-    #    contents = {}
-    #    contents['keyring'] =  [ { 'osd': self.keyring } ]
-    #    self.writer.write(filename, contents)
 
 
 class HardwareProfile(object):
@@ -192,6 +177,7 @@ class HardwareProfile(object):
         self.profiles = {}
         self.servers = {}
         self.rotates = {}
+        self.nvme = {}
 
     def add(self, hostname, drives):
         """
@@ -202,22 +188,51 @@ class HardwareProfile(object):
             if 'Vendor' in drive:
                 label = self._label(drive['Vendor'], drive['Capacity'])
             else:
+                # Virtual machines do not have vendors
                 label = self._label(drive['Model'], drive['Capacity'])
+
             if not label in self.rotates:
                 self.rotates[label] = drive['rotational']
+            if not label in self.nvme:
+                self.nvme[label] = (drive['Driver'] == "nvme")
+
+
             if label in self.model:
-                self.model[label].append(drive['Device File'])            
+                self.model[label].append(self._device(drive))
             else:
-                self.model[label] = [ drive['Device File'] ]            
+                self.model[label] = [ self._device(drive) ]
         name = self._name()
         self._profiles(name, hostname)
 
 
-    def _label(self, model, capacity):
+    def _device(self, drive):
         """
-        Strip vowels from model and spaces from capacity for a shorter label
+        Default to Device File value.  Use by-id if available.
         """
-        return re.sub(r'[AEIOUaeiou]', '', model) + re.sub(' ', '', capacity)
+        device = drive['Device File']
+        if 'Device Files' in drive:
+            for path in drive['Device Files'].split(', '):
+                if 'by-id' in path:
+                    device = path
+                    break
+        return device
+
+    def _label(self, vendor, capacity):
+        """
+        Use a single word for vendor. Strip spaces from capacity.
+        """
+        if ' ' in vendor:
+            vendor = self._brand(vendor)
+        return  vendor + re.sub(' ', '', capacity)
+
+    def _brand(self, vendor):
+        """
+        Some vendor strings are multiple words.
+        """
+        if re.search(r'intel', vendor, re.IGNORECASE):
+            return "Intel"
+        # Use last word for no matches
+        return vendor.split()[-1]
 
     def _profiles(self, name, hostname):
         """
@@ -229,19 +244,6 @@ class HardwareProfile(object):
         missing/failed drives or servers with disks out of order.
         """
         if name in self.profiles:
-            # ensure the device list is the same
-            for model in self.profiles[name]:
-                devices = self.profiles[name][model]
-                if self.model[model] != devices:
-                    parts = name.split('#')
-                    if len(parts) == 1:
-                        number = int(parts[1])
-                        new_name = name + "#" + str(number + 1)
-                    else:
-                        new_name = name + "#2"
-                    self._profiles(new_name, hostname)
-                    return
-
             self.servers[name].append(hostname)
         else:
             self.servers[name] = [ hostname ]
@@ -257,7 +259,21 @@ class HardwareProfile(object):
         quantities = {}
         for label in self.model.keys():
             quantities[str(len(self.model[label])) + label] = ""
-        return "-".join(sorted(quantities.keys()))
+        return "-".join(sorted(quantities.keys(), cmp=self._model_sort))
+
+    def _model_sort(self, a, b):
+        """
+        Sort by numeric, then alpha
+        """
+        x = re.match(r'(\d+)(\D+)', a) 
+        y = re.match(r'(\d+)(\D+)', b) 
+        if int(x.group(1)) < int(y.group(1)):
+            return -1
+        elif int(x.group(1)) > int(y.group(1)):
+            return 1
+        else:
+            return cmp(x.group(2), y.group(2))
+
 
 
 class DiskConfiguration(object):
@@ -298,13 +314,18 @@ class DiskConfiguration(object):
             if not configuration in self.proposals:
                 self.proposals[configuration] = []
             drives = self.hardware.profiles[configuration]
+
+            log.debug("configuration {} with no journals".format(configuration))
             self.proposals[configuration].append(self._assignments(drives))
             for drive_model in drives.keys():
-                # How many types of drives are SSDs
+                # How many types of drives are SSDs, NVMes
                 if self.hardware.rotates[drive_model] == '0':
+                    log.debug("configuration {} with {} journal".format(configuration, drive_model))
                     proposal = self._assignments(drives, drive_model)
                     if proposal:
                         self.proposals[configuration].append(proposal)
+                    else:
+                        log.warning("No proposal for {} as journal on {}".format(drive_model, configuration))
         
         
     def _assignments(self, drives, journal=None):
@@ -315,6 +336,34 @@ class DiskConfiguration(object):
             osds = data + journal on same device
             data+journals = data + journal on separate devices
         """
+        assignments, data, journals = self._separate_drives(drives, journal)
+
+        log.debug("osds: {}".format(assignments['osds']))
+        log.debug("data: {}".format(data))
+        log.debug("journals: {}".format(journals))
+        # check that data drives can be evenly divided by 6-3
+        if journal:
+            # How to make this configurable, where to retrieve any 
+            # configuration, etc. - placeholder for customization
+
+            results = self._nice_ratio(journal, assignments, data, journals)
+            if results:
+                return results
+
+            results = self._rounding(journal, assignments, data, journals)
+            if results:
+                return results
+
+            # No suggestion
+            return {}
+        else:
+            return assignments
+            
+
+    def _separate_drives(self, drives, journal):
+        """
+        Put a drive in one of three queues: osd, data or journal
+        """
         assignments = { 'osds': [], 'data+journals': [] }
         data = []
         journals = []
@@ -323,43 +372,66 @@ class DiskConfiguration(object):
             if drive_model == journal:
                 journals.extend(drives[drive_model])
             else:
-                if self.hardware.rotates[drive_model]:
+                if self.hardware.rotates[drive_model] == 1:
                     if journal:
                         data.extend(drives[drive_model])
                     else:
                         assignments['osds'].extend(drives[drive_model])
                 else:
-                    # SSD for caching
-                    assignments['osds'].extend(drives[drive_model])
+                    if journal and self.hardware.nvme[journal]:
+                        data.extend(drives[drive_model])
+                    else:
+                        # SSD, NVMe for tier caching
+                        assignments['osds'].extend(drives[drive_model])
+        return assignments, data, journals
 
-        # check that data drives can be evenly divided by 6-3
-        if journal:
-            # How to make this configurable, where to retrieve any 
-            # configuration, etc.
-            for partitions in range(6, 2, -1):
-                if (len(data) % partitions == 0):
-                    if (len(journals) >= len(data)/partitions):
-                        print "partitions: ", partitions
-                        print "journals: ", journals
-                        index = 0
-                        count = 1
-                        for device in data:
-                            print "device: ", device
-                            assignments['data+journals'].extend([ { "{}1".format(device):  "{}{}".format(journals[index], count) } ]) 
-                            count += 1
-                            if (count - 1) % partitions == 0:
-                                print "resetting"
-                                count = 1
-                                index += 1
-                        # Add unused journal drives as OSDs
-                        assignments['osds'].extend(journals[index:])
-                        return assignments
-            # No suggestion
-            return {}
-        else:
-            return assignments
-            
+    def _nice_ratio(self, journal, assignments, data, journals):
+        """
+        Check if data drives are divisible by 6, 5, 4 or 3 and that we have
+        sufficient journal drives.  Add unused journal drives as standalone
+        osds.
+        
+        """
+        for partitions in range(6, 2, -1):
+            if (data and len(data) % partitions == 0):
+                if (len(journals) >= len(data)/partitions):
+                    log.debug("Using {} partitions on {}".format(partitions, journal))
 
+                    assignments.update(self._assign(partitions, assignments, data, journals))
+                    # Add unused journal drives as OSDs
+                    assignments['osds'].extend(journals[index:])
+                    return assignments
+                else:
+                    log.debug("Not enough journals for {} partitions".format(partitions))
+            else:
+                log.debug("Skipping {} partitions".format(partitions))
+
+    def _rounding(self, journal, assignments, data, journals):
+        """
+        Divide the data drives by the journal drives and round up. Use if
+        partitions are 3-6 inclusive.
+   
+        """
+        partitions = len(data)/len(journals) + 1
+        if (partitions > 2 and partitions < 7):
+            log.debug("Rounding... using {} partitions on {}".format(partitions, journal))
+            return self._assign(partitions, assignments, data, journals)
+
+    def _assign(self, partitions, assignments, data, journals):
+        """
+        Create the data+journal assignment from the data and journals arrays
+        """
+        index = 0
+        count = 1
+        for device in data:
+            log.debug("device: {}".format(device))
+            assignments['data+journals'].extend([ { "{}1".format(device):  "{}{}".format(journals[index], count) } ]) 
+            count += 1
+            if (count - 1) % partitions == 0:
+                log.debug("next journal")
+                count = 1
+                index += 1
+        return assignments
 
 class CephRoles(object):
     """
@@ -506,15 +578,16 @@ class CephRoles(object):
 
         for minion in interfaces.keys():
             for nic in interfaces[minion]:
-                for addr in interfaces[minion][nic]['inet']:
-                    if addr['address'].startswith('127'):
-                        # Skip loopbacks
-                        continue
-                    cidr = self._network(addr['address'], addr['netmask'])
-                    if cidr in networks:
-                        networks[cidr].append((minion, nic, addr['address']))
-                    else:
-                        networks[cidr] = [ (minion, nic, addr['address']) ]
+                if 'inet' in interfaces[minion][nic]:
+                    for addr in interfaces[minion][nic]['inet']:
+                        if addr['address'].startswith('127'):
+                            # Skip loopbacks
+                            continue
+                        cidr = self._network(addr['address'], addr['netmask'])
+                        if cidr in networks:
+                            networks[cidr].append((minion, nic, addr['address']))
+                        else:
+                            networks[cidr] = [ (minion, nic, addr['address']) ]
         return networks
 
 
