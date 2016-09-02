@@ -173,6 +173,9 @@ class PillarData(object):
                 log.debug(line)
                 log.debug(files)
                 for filename in files:
+                    if os.stat(filename).st_size == 0:
+                        log.warning("Skipping empty file {}".format(filename))
+                        continue
                     if os.path.isfile(filename):
                         pathname = self._shift_dir(filename.replace(self.proposals_dir, ""))
                         if not pathname in common:

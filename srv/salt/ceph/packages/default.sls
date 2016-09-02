@@ -5,22 +5,10 @@ check lock:
     - fire_event: True
 
 
-ceph:
-  pkg.installed:
-    - pkgs:
-      - ceph
+ceph install:
+  cmd.run:
+    - name: "zypper --non-interactive --no-gpg-checks in ceph"
+    - require:
+      - module: check lock
     - fire_event: True
 
-#ceph install:
-#  cmd.run:
-#    - name: "zypper --non-interactive --no-gpg-checks in ceph"
-#    - require:
-#      - module: check lock
-#    - fire_event: True
-
-#ceph install:
-#  pkg.installed:
-#    - name: "ceph"
-#    - require:
-#      - module: check lock
-#    - fire_event: True

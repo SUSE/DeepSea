@@ -16,10 +16,27 @@ packages:
 prepare master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.updates
+    - sls: ceph.updates.{{ salt['pillar.get']('update_method', 'default') }}
     - require:
       - salt: packages
 
+{% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
+
+unlock:
+  salt.runner:
+    - name: filequeue.remove
+    - queue: 'master'
+    - item: 'lock'
+    - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
+    - require:
+      - salt: prepare master
+
+restart master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.updates.{{ salt['pillar.get']('restart_method', 'restart') }}
+    - require:
+      - salt: unlock
 
 #openattic:
 #  salt.state:
@@ -33,7 +50,7 @@ complete marker:
     - queue: 'master'
     - item: 'complete'
     - require:
-      - salt: prepare master
+      - salt: restart master
 
 ready:
   salt.runner:

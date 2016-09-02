@@ -34,10 +34,17 @@ updates:
     - require:
       - salt: repo
 
+restart:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.updates.restart
+    - require:
+      - salt: updates
+
 complete:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.events.complete_prep
     - require:
-      - salt: updates
+      - salt: restart
 

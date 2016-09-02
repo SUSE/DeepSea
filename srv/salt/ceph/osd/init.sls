@@ -1,5 +1,5 @@
 
 
 include:
-  - .{{ salt['pillar.get']('osd_creation') }}
+  - .{{ salt['pillar.get']('osd_method', 'default') }}
 

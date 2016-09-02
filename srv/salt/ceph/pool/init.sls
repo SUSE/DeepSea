@@ -1,3 +1,3 @@
 
 include:
-  - .{{ salt['pillar.get']('pool_creation') }}
+  - .{{ salt['pillar.get']('pool_method', 'default') }}
