@@ -1,0 +1,6 @@
+[mds.{{ mds }}]
+        key = {{ salt['pillar.get']('keyring:mon') }}
+        caps mds = "allow *"
+        caps mon = "allow profile mds"
+        caps osd = "allow rwx"
+

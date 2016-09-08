@@ -1,11 +1,13 @@
 
-
-keyring_osd_save:
-  module.run:
-    - name: ceph.keyring_save
-    - kwargs: {
-        'keyring_type' : 'osd',
-        'secret' : {{ salt['pillar.get']('keyring:osd') }}
-        }
+/var/lib/ceph/bootstrap-osd/ceph.keyring:
+  file.managed:
+    - source:
+      - salt://ceph/osd/files/keyring.j2
+    - template: jinja
+    - user: root
+    - group: root
+    - mode: 600
+    - makedirs: True
+    - fire_event: True
 
 

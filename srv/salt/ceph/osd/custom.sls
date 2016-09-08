@@ -5,20 +5,15 @@ include:
 
 {% for device in salt['pillar.get']('storage:osds') %}
 prepare {{ device }}:
-  module.run:
-    - name: ceph.osd_prepare
-    - kwargs: {
-        osd_dev: {{ device }}2,
-        journal_dev: {{ device }}1
-        }
+  cmd.run:
+    - name: "ceph-disk -v prepare --fs-type xfs --data-dev --journal-dev --cluster {{ salt['pillar.get']('cluster') }} --cluster-uuid {{ salt['pillar.get']('fsid') }} {{ device }}2 {{ device }}1"
+    - unless: "fsck {{ device }}2"
     - fire_event: True
 
 activate {{ device }}:
-  module.run:
-    - name: ceph.osd_activate
-    - kwargs: {
-        osd_dev: {{ device }}2
-        }
+  cmd.run:
+    - name: "ceph-disk -v activate --mark-init systemd --mount {{ device }}2"
+    - unless: "grep -q ^{{ device }}2 /proc/mounts"
     - fire_event: True
 
 {% endfor %}
@@ -26,20 +21,15 @@ activate {{ device }}:
 {% for pair in salt['pillar.get']('storage:data+journals') %}
 {% for data, journal in pair.items() %}
 prepare {{ data }}:
-  module.run:
-    - name: ceph.osd_prepare
-    - kwargs: {
-        osd_dev: {{ data }},
-        journal_dev: {{ journal }}
-        }
+  cmd.run:
+    - name: "ceph-disk -v prepare --fs-type xfs --data-dev --journal-dev --cluster {{ salt['pillar.get']('cluster') }} --cluster-uuid {{ salt['pillar.get']('fsid') }} {{ data }} {{ journal }}"
+    - unless: "fsck {{ data }}"
     - fire_event: True
 
 activate {{ device }}:
-  module.run:
-    - name: ceph.osd_activate
-    - kwargs: {
-        osd_dev: {{ data }}
-        }
+  cmd.run:
+    - name: "ceph-disk -v activate --mark-init systemd --mount {{ data }}"
+    - unless: "grep -q ^{{ data }} /proc/mounts"
     - fire_event: True
 
 {% endfor %}

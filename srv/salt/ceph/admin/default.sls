@@ -1,12 +1,12 @@
 
-
-keyring_admin_save:
-  module.run:
-    - name: ceph.keyring_save
-    - kwargs: {
-        'keyring_type' : 'admin',
-        'secret' : {{ salt['pillar.get']('keyring:admin') }} 
-        }
+/etc/ceph/ceph.client.admin.keyring:
+  file.managed:
+    - source: 
+      - salt://ceph/admin/files/keyring.j2
+    - template: jinja
+    - user: ceph
+    - group: ceph
+    - mode: 600
+    - makedirs: True
     - fire_event: True
-
 

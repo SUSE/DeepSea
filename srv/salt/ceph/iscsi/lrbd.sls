@@ -1,13 +1,9 @@
 
 
-lrbd:
-  pkg.installed:
-    - pkgs:
-      - lrbd
 
-#install lrbd:
-#  cmd.run:
-#    - name: "zypper --non-interactive --no-gpg-checks in lrbd"
+install lrbd:
+  cmd.run:
+    - name: "zypper --non-interactive --no-gpg-checks in lrbd"
 
 enable lrbd:
   service.running:

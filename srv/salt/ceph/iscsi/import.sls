@@ -1,13 +1,8 @@
 
 
-lrbd:
-  pkg.installed:
-    - pkgs:
-      - lrbd
-
-#lrbd install:
-#  cmd.run:
-#    - name: "zypper --non-interactive --no-gpg-checks in lrbd"
+lrbd install:
+  cmd.run:
+    - name: "zypper --non-interactive --no-gpg-checks in lrbd"
 
 /tmp/lrbd.conf:
   file.managed:

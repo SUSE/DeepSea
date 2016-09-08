@@ -15,6 +15,9 @@ import yaml
 import json
 from os.path import dirname, basename, isdir
 import os
+import struct
+import time
+import base64
 import errno
 import uuid
 import ipaddress
@@ -29,7 +32,7 @@ all of them would generate so many that the useful would be lost in the noise.
 Rather than following a template of a contrived example, this utility creates
 all the possible configuration files for each server of the existing equipment.  This should help those that can never seem to get their YAML indentation correct.
 
-Second, all the complexity of combining these files in kept in a policy.cfg at
+Second, all the complexity of combining these files is kept in a policy.cfg at
 the root of /srv/pillar/ceph/proposals.  Assigning multiple roles to the same
 server or keeping them separate is controlled by specifying which files to 
 include in the policy.cfg.  Preinstalling a policy.cfg will allow the automatic
@@ -71,13 +74,16 @@ class Utils(object):
         """
         Generate a secret
         """
-        cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
-        
-        if not os.path.isfile(cmd[0]):
-            raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        for line in proc.stdout:
-            return line.rstrip()
+        #cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
+        #
+        #if not os.path.isfile(cmd[0]):
+        #    raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
+        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        #for line in proc.stdout:
+        #    return line.rstrip()
+        key = os.urandom(16) 
+        header = struct.pack('<hiih',1,int(time.time()),0,len(key)) 
+        return base64.b64encode(header + key) 
 
 class SaltWriter(object):
     """

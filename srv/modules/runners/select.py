@@ -3,9 +3,9 @@
 import salt.client
 import pprint
 
-def minions(**kwargs):
+def minions(host = False, **kwargs):
     """
-    Just left as an example of massaging data for Jinja
+    Some targets needs to match all minions within a search criteria.
     """
     criteria = []
     for key in kwargs:
@@ -17,9 +17,16 @@ def minions(**kwargs):
 
     local = salt.client.LocalClient()
     minions = local.cmd(search , 'pillar.get', [ 'id' ], expr_form="compound")
+
+    if host:
+        return ([ k.split('.')[0] for k in minions.keys() ])
     return minions.keys()
 
 def one_minion(**kwargs):
+    """
+    Some steps only need to be run once, but on any minion in a specific
+    search.  Return the first matching key.
+    """
     ret = minions(**kwargs)
     if ret:
         return ret[0]
