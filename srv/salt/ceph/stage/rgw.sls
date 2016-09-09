@@ -10,10 +10,18 @@ rgw auth:
     - tgt_type: compound
     - sls: ceph.rgw.auth
 
+rgw minion keyring:
+  salt.state:
+    - tgt: "I@roles:rgw and I@cluster:ceph"
+    - tgt_type: compound
+    - sls: ceph.rgw.keyring
+    - require:
+        - salt: rgw auth
+
 rgw:
   salt.state:
     - tgt: "I@roles:rgw and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.rgw
     - require:
-        - salt: rgw auth
+        - salt: rgw minion keyring
