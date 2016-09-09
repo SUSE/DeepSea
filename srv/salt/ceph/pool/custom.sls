@@ -1,4 +1,11 @@
 
+wait:
+  module.run:
+    - name: wait.out
+    - kwargs:
+        'status': "HEALTH_ERR"
+    - fire_event: True
+
 backstore:
   cmd.run:
     - name: "rbd -p rbd create archive --size=1024"

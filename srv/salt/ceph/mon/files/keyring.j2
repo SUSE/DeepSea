@@ -1,0 +1,8 @@
+[mon.]
+        key = {{ salt['pillar.get']('keyring:mon') }}
+        caps mon = "allow *"
+[client.admin]
+	key = {{ salt['pillar.get']('keyring:admin') }}
+	caps mds = "allow *"
+	caps mon = "allow *"
+	caps osd = "allow *"
