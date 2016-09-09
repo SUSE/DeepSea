@@ -8,7 +8,7 @@ keyring {{ rgw_node }}:
   file.managed:
     - name: /var/lib/ceph/rgw/ceph-rgw.{{ grains['host'] }}/ceph.keyring
     - source:
-      - salt://ceph/mds/files/keyring.j2
+      - salt://ceph/rgw/files/keyring.j2
     - template: jinja
     - user: ceph
     - group: ceph
