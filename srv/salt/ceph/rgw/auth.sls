@@ -19,6 +19,6 @@ keyring {{ rgw_node }}:
 
 add auth {{ rgw_node }}:
   cmd.run:
-    - name: "ceph auth add client.{{ rgw_name }}.{{ grains['host'] }}  -i /var/lib/ceph/rgw/ceph-rgw.{{ grains['host'] }}/ceph.keyring"
+    - name: "ceph auth add client.{{ rgw_name }}.{{ rgw_node }}  -i /var/lib/ceph/rgw/ceph-rgw.{{ grains['host'] }}/ceph.keyring"
 
 {% endfor %}
