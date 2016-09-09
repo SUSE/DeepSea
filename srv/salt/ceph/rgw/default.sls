@@ -5,7 +5,7 @@ install rgw:
 
 start rgw:
   service.running:
-    - name: ceph-rgw@{{ rgw_name }}.{{ grains['host'] }}
+    - name: ceph-radosgw@{{ rgw_name }}.{{ grains['host'] }}
     - enable: True
     - require:
         - pkg: install rgw
