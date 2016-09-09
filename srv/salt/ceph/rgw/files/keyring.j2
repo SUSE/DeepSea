@@ -1,0 +1,6 @@
+{% set rgw_name = salt['pillar.get']('rgw_service_name', 'rgw')  %}
+[client.{{ rgw_name }}.{{ grains['host'] }}]
+        key = {{ salt['pillar.get']('keyring:rgw') }}
+        caps mds = "allow *"
+        caps mon = "allow *"
+        caps osd = "allow *"
