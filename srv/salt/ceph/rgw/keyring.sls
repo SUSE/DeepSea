@@ -1,7 +1,8 @@
 {% set cluster = salt['pillar.get']('cluster') %}
 # copying the same id rgw_host from auth would have from runner
-{% set rgw_id = salt['pillar.get']('rgw_service_name','rgw')+'.'+salt['grains.get']('id').split('.')[0] %}
-{% set rgw_data_dir = salt['pillar.get']('rgw_data','/var/lib/ceph/radosgw/' + cluster + '-' + rgw_instance) %}
+{% set rgw_instance = salt['grains.get']('id').split('.')[0] %}
+{% set rgw_id = salt['pillar.get']('rgw_service_name','rgw')+'.'+ rgw_instance %}
+{% set rgw_data_dir = salt['pillar.get']('rgw_data','/var/lib/ceph/radosgw/' + cluster + '-' + rgw_id) %}
 
 {{ rgw_data_dir }}/keyring:
   file.managed:
