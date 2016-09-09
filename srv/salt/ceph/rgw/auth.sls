@@ -14,6 +14,8 @@ keyring {{ rgw_node }}:
     - group: ceph
     - mode: 600
     - makedirs: True
+    - context:
+        rgw_node : {{ rgw_node }}
     - fire_event: True
 
 
