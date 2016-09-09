@@ -11,7 +11,7 @@ prepare {{ device }}:
 
 activate {{ device }}:
   cmd.run:
-    - name: "ceph-disk -v activate --mark-init systemd --mount {{ device }}"
+    - name: "ceph-disk -v activate --mark-init systemd --mount {{ device }}1"
     - unless: "grep -q ^{{ device }}2 /proc/mounts"
     - fire_event: True
 
