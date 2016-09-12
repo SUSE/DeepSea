@@ -457,6 +457,7 @@ class CephRoles(object):
                                'mon': Utils.secret(), 
                                'storage': Utils.secret(),
                                'mds': Utils.secret(),
+                               'igw': Utils.secret(),
                                'rgw': Utils.secret() }
 
         self.networks = self._networks(self.servers)

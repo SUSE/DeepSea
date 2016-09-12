@@ -1,10 +1,8 @@
 
-{% set keyring="/srv/salt/ceph/iscsi/files/ceph.client.iscsi.keyring" %}
+{% set keyring="/etc/ceph/ceph.client.iscsi.keyring" %}
 
-iscsi keyring:
-  cmd.run:
-    - name: "ceph-authtool -C -n client.iscsi --gen-key {{ keyring }} --cap osd 'allow rwx' --cap mon 'allow rx'"
-    - unless: "stat {{ keyring }}" 
+include:
+  - .keyring
 
 add auth:
   cmd.run:
