@@ -1,27 +1,12 @@
+{% set rgw_name = salt['pillar.get']('rgw_service_name', 'rgw')  %}
+{% set rgw_instance = salt['grains.get']('id').split('.')[0] %}
+install rgw:
+  pkg.installed:
+    - name: ceph-radosgw
 
-
-keyring_rgw_save:
-  module.run:
-    - name: ceph.keyring_save
-    - kwargs: {
-        'keyring_type' : 'rgw',
-        'secret' : {{ salt['pillar.get']('keyring:rgw') }}
-        }
-    - fire_event: True
-
-keyring_auth_add_rgw:
-  module.run:
-    - name: ceph.keyring_rgw_auth_add
+start rgw:
+  service.running:
+    - name: ceph-radosgw@{{ rgw_name }}.{{ rgw_instance }}
+    - enable: True
     - require:
-      - module: keyring_rgw_save
-    - fire_event: True
-
-rgw_create:
-  module.run:
-    - name: ceph.rgw_create
-    - kwargs: {
-        name: rgw.{{ grains['host'] }}
-        }
-    - require:
-      - module: keyring_auth_add_rgw
-    - fire_event: True
+        - pkg: install rgw
