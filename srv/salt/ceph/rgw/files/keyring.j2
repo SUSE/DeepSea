@@ -1,5 +1,5 @@
 {% set rgw_name = salt['pillar.get']('rgw_service_name', 'rgw')  %}
 [client.{{ rgw_name }}.{{ rgw_node }}]
-        key = {{ salt['pillar.get']('keyring:
+        key = {{ salt['pillar.get']('keyring:rgw') }}
         caps mon = "allow rwx"
         caps osd = "allow rwx"
