@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.1
+Version:        0.2
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -29,8 +29,8 @@ Url:            http://bugs.opensuse.org
 Source0:        deepsea-%{version}.tar.gz
 
 #BuildRequires:  
-#Requires:       
-BuildRoot:     %{_tmppath}/%{name}-%{version}-build
+Requires:       salt
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
 
@@ -90,7 +90,9 @@ install -d 755 %{buildroot}/%{_pillar}/ceph
 install -m 644 %{_pillar}/ceph/cluster/README %{buildroot}/%{_pillar}/ceph
 install -m 644 %{_pillar}/ceph/init.sls %{buildroot}/%{_pillar}/ceph
 install -m 644 %{_pillar}/ceph/master_minion.sls %{buildroot}/%{_pillar}/ceph
-install -m 644 %{_pillar}/ceph/stack/stack.cfg %{buildroot}/%{_pillar}/ceph
+
+install -d 755 %{buildroot}/%{_pillar}/ceph/stack
+install -m 644 %{_pillar}/ceph/stack/stack.cfg %{buildroot}/%{_pillar}/ceph/stack/stack.cfg
 
 install -m 644 %{_pillar}/top.sls %{buildroot}/%{_pillar}
 
@@ -256,36 +258,38 @@ install -m 644 srv/salt/top.sls %{buildroot}/srv/salt
 
 %files
 %defattr(-,salt,salt,-)
-/etc/salt/master.d/*
 /srv/modules/pillar/*
-/%{_runners}/*
-/%{_pillar}/top.sls
-/%{_pillar}/ceph/*
-/srv/salt/top.sls
-/srv/salt/_modules/*
-/%{_saltceph}/admin/*
-/%{_saltceph}/configuration/*
-/%{_saltceph}/events/*
-/%{_saltceph}/iscsi/*
-/%{_saltceph}/mds/*
-/%{_saltceph}/mine_functions/*
-/%{_saltceph}/mon/*
-/%{_saltceph}/openattic/*
-/%{_saltceph}/osd/*
-/%{_saltceph}/packages/*
-/%{_saltceph}/pool/*
-/%{_saltceph}/reactor/*
-/%{_saltceph}/refresh/*
-/%{_saltceph}/repo/*
-/%{_saltceph}/rgw/*
-/%{_saltceph}/stage/*
-/%{_saltceph}/sync/*
-/%{_saltceph}/time/*
-/%{_saltceph}/updates/*
+%config /etc/salt/master.d/*
+%config /%{_runners}/*
+%config /%{_pillar}/top.sls
+/%{_pillar}/ceph/README
+%config /%{_pillar}/ceph/init.sls
+%config(noreplace) /%{_pillar}/ceph/master_minion.sls
+%config /%{_pillar}/ceph/stack/stack.cfg
+%config /srv/salt/top.sls
+%config /srv/salt/_modules/*
+%config /%{_saltceph}/admin/*
+%config /%{_saltceph}/configuration/*
+%config /%{_saltceph}/events/*
+%config /%{_saltceph}/iscsi/*
+%config /%{_saltceph}/mds/*
+%config /%{_saltceph}/mine_functions/*
+%config /%{_saltceph}/mon/*
+%config /%{_saltceph}/openattic/*
+%config /%{_saltceph}/osd/*
+%config /%{_saltceph}/packages/*
+%config /%{_saltceph}/pool/*
+%config /%{_saltceph}/reactor/*
+%config /%{_saltceph}/refresh/*
+%config /%{_saltceph}/repo/*
+%config /%{_saltceph}/rgw/*
+%config /%{_saltceph}/stage/*
+%config /%{_saltceph}/sync/*
+%config /%{_saltceph}/time/*
+%config /%{_saltceph}/updates/*
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
-%{_docdir}/%{name}/examples/*
 
 #%files devel
 #%defattr(-,root,root,-)
