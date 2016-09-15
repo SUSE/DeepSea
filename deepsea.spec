@@ -33,16 +33,8 @@ Requires:       salt
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
+A collection of Salt files providing a deployment of Ceph as a series of stages.
 
-
-#%package        devel
-#Summary:        Development files for %{name}
-#Group:          Development/Libraries
-#Requires:       %{name} = %{version}
-#
-#%description    devel
-#The %{name}-devel package contains libraries and header files for
-#developing applications that use %{name}.
 
 %prep
 
@@ -129,8 +121,7 @@ install -m 644 %{_saltceph}/events/complete_prep.sls %{buildroot}/%{_saltceph}/e
 install -d 755 %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/authtool.sls %{buildroot}/%{_saltceph}/iscsi
 
-# Hardcoded secret... need to fix
-install -m 644 %{_saltceph}/iscsi/files/ceph.client.iscsi.keyring %{buildroot}/%{_saltceph}/iscsi
+install -m 644 %{_saltceph}/iscsi/files/keyring.j2 %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/files/sysconfig.lrbd %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/import-salt.sls %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/import.sls %{buildroot}/%{_saltceph}/iscsi
@@ -259,6 +250,36 @@ install -m 644 srv/salt/top.sls %{buildroot}/srv/salt
 %files
 %defattr(-,salt,salt,-)
 /srv/modules/pillar/*
+%dir /etc/salt
+%dir /etc/salt/master.d
+%dir /%{_runners}
+%dir /%{_pillar}
+%dir /%{_pillar}/ceph
+%dir /%{_pillar}/ceph/stack
+%dir /srv/modules
+%dir /srv/modules/pillar
+%dir /srv/salt
+%dir /srv/salt/_modules
+%dir /%{_saltceph}
+%dir /%{_saltceph}/admin
+%dir /%{_saltceph}/configuration
+%dir /%{_saltceph}/events
+%dir /%{_saltceph}/iscsi
+%dir /%{_saltceph}/mds
+%dir /%{_saltceph}/mine_functions
+%dir /%{_saltceph}/mon
+%dir /%{_saltceph}/openattic
+%dir /%{_saltceph}/osd
+%dir /%{_saltceph}/packages
+%dir /%{_saltceph}/pool
+%dir /%{_saltceph}/reactor
+%dir /%{_saltceph}/refresh
+%dir /%{_saltceph}/repo
+%dir /%{_saltceph}/rgw
+%dir /%{_saltceph}/stage
+%dir /%{_saltceph}/sync
+%dir /%{_saltceph}/time
+%dir /%{_saltceph}/updates
 %config /etc/salt/master.d/*
 %config /%{_runners}/*
 %config /%{_pillar}/top.sls
@@ -291,11 +312,6 @@ install -m 644 srv/salt/top.sls %{buildroot}/srv/salt
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 
-#%files devel
-#%defattr(-,root,root,-)
-#%doc
-#%{_includedir}/*
-#%{_libdir}/*.so
 
 %changelog
 * Thu Sep  8 2016 Eric Jackson
