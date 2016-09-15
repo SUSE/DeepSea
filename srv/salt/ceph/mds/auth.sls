@@ -4,7 +4,7 @@
 
 keyring {{ mds }}:
   file.managed:
-    - name: /var/lib/ceph/mds/ceph-mds.{{ grains['host'] }}/ceph.keyring
+    - name: /var/lib/ceph/mds/ceph-{{ grains['host'] }}/keyring
     - source:
       - salt://ceph/mds/files/keyring.j2
     - template: jinja
@@ -19,7 +19,7 @@ keyring {{ mds }}:
 
 add auth {{ mds }}:
   cmd.run:
-    - name: "ceph auth add mds.{{ mds }} -i /var/lib/ceph/mds/ceph-mds.{{ grains['host'] }}/ceph.keyring"
+    - name: "ceph auth add mds.{{ mds }} -i /var/lib/ceph/mds/ceph-{{ grains['host'] }}/keyring"
 
 {% endfor %}
 

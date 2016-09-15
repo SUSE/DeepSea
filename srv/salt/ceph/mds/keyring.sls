@@ -1,11 +1,11 @@
 
-/var/lib/ceph/mds/ceph-mds.{{ grains['host'] }}/ceph.keyring:
+/var/lib/ceph/mds/ceph-{{ grains['host'] }}/keyring:
   file.managed:
     - source:
       - salt://ceph/mds/files/keyring.j2
     - template: jinja
-    - user: salt
-    - group: salt
+    - user: ceph
+    - group: ceph
     - mode: 600
     - makedirs: True
     - context:
