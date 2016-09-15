@@ -1,0 +1,14 @@
+[global]
+directory={{ dir }}
+filename_format=seqential.$filenum
+wait_for_previous
+filesize={{ filesize }}
+blocksize={{ blocksize }}
+numjobs={{ number_of_workers}}
+
+{% for operation in operations %}
+
+[{{ number_of_workers}}w_{{ blocksize }}_{{ operations }}]
+rw={{ operation }}
+
+{% endfor %}
