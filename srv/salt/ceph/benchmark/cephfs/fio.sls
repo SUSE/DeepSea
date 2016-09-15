@@ -1,16 +1,21 @@
 
-fio:
+fio package:
   pkg.installed:
     - pkgs:
         - fio
 
-/etc/systemd/system/fio.service:
+fio service file:
   file.managed:
-    - source:
-      - salt://ceph/benchmark/cephfs/files/fio.service
-      - user: root
-      - group: root
-      - file_mode: 664
+    - name: /etc/systemd/system/fio.service
+    - source: salt://ceph/benchmark/cephfs/files/fio.service
+    - user: root
+    - group: root
+    - mode: 664
 
-fio:
-  service.running: []
+fio service:
+  service.running:
+    - name: fio
+    - require:
+      - pkg: fio package
+      - file: /etc/systemd/system/fio.service
+
