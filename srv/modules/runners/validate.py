@@ -499,6 +499,20 @@ class Validate(object):
         if not 'time_server' in self.errors:
             self.passed['time_server'] = "valid"
 
+    def fqdn(self):
+        """
+        Verify that fqdn matches minion id
+        """
+        for node in self.grains.keys():
+            if self.grains[node]['fqdn'] != node:
+                msg = "fqdn {} does not match minion id {}".format(self.grains[node]['fqdn'], node)
+                if 'fqdn' in self.errors:
+                    self.errors['fqdn'].append(msg)
+                else:
+                    self.errors['fqdn'] = [ msg ]
+        if not 'fqdn' in self.errors:
+            self.passed['fqdn'] = "valid"
+
     def report(self):
         """
         """
@@ -568,6 +582,7 @@ def pillar(name = None, **kwargs):
     v.osd_creation()
     v.pool_creation()
     v.time_server()
+    v.fqdn()
     v.report()
 
     if v.errors:
