@@ -2,8 +2,8 @@
 create mount point:
   file.directory:
     - name: /var/run/cephfs_bench
-    - user: root
-    - group: root
+    - user: salt
+    - group: salt
     - dir_mode: 755
     - file_mode: 644
     - clean: True
