@@ -6,9 +6,5 @@ filesize={{ filesize }}
 blocksize={{ blocksize }}
 numjobs={{ number_of_workers}}
 
-{% for operation in operations %}
-
-[{{ number_of_workers}}w_{{ blocksize }}_{{ operations }}]
+[{{ number_of_workers}}w_{{ blocksize }}_{{ operation }}]
 rw={{ operation }}
-
-{% endfor %}
