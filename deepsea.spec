@@ -31,6 +31,7 @@ Source0:        deepsea-%{version}.tar.gz
 #BuildRequires:  
 Requires:       salt
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+BuildArch:      noarch
 
 %description
 A collection of Salt files providing a deployment of Ceph as a series of stages.
