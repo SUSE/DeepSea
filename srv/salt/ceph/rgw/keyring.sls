@@ -1,10 +1,6 @@
-{% set cluster = salt['pillar.get']('cluster') %}
-# copying the same id rgw_host from auth would have from runner
-{% set rgw_instance = salt['grains.get']('id').split('.')[0] %}
-{% set rgw_id = salt['pillar.get']('rgw_service_name','rgw')+'.'+ rgw_instance %}
-{% set rgw_data_dir = salt['pillar.get']('rgw_data','/var/lib/ceph/radosgw/' + cluster + '-' + rgw_id) %}
 
-{{ rgw_data_dir }}/keyring:
+{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+/var/lib/ceph/radosgw/{{ pillar.get('cluster') }}-{{ config }}/keyring:
   file.managed:
     - source:
       - salt://ceph/rgw/files/keyring.j2
@@ -15,4 +11,5 @@
     - makedirs: True
     - fire_event: True
     - context:
-        rgw_node: {{ rgw_instance }}
+        config: {{ config }}
+{% endfor %}

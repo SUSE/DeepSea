@@ -1,12 +1,10 @@
 
 
-{% for rgw_node in salt.saltutil.runner('select.minions', host=True, cluster='ceph', roles='rgw') %}
+{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 
-# TODO allow multi rgw deployments on same node
-{% set rgw_name = salt['pillar.get']('rgw_service_name', 'rgw')  %}
-keyring {{ rgw_node }}:
+keyring {{ config }}:
   file.managed:
-    - name: /var/lib/ceph/rgw/ceph-rgw.{{ grains['host'] }}/ceph.keyring
+    - name: /var/lib/ceph/radosgw/{{ pillar.get('cluster') }}-{{ config }}/ceph.keyring
     - source:
       - salt://ceph/rgw/files/keyring.j2
     - template: jinja
@@ -15,12 +13,12 @@ keyring {{ rgw_node }}:
     - mode: 600
     - makedirs: True
     - context:
-        rgw_node : {{ rgw_node }}
+        config : {{ config }}
     - fire_event: True
 
 
-add auth {{ rgw_node }}:
+add auth {{ config }}:
   cmd.run:
-    - name: "ceph auth add client.{{ rgw_name }}.{{ rgw_node }}  -i /var/lib/ceph/rgw/ceph-rgw.{{ grains['host'] }}/ceph.keyring"
+    - name: "ceph auth add client.{{ config }}  -i /var/lib/ceph/radosgw/{{ pillar.get('cluster') }}-{{ config }}/ceph.keyring"
 
 {% endfor %}
