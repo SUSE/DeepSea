@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.2
+Version:        0.3
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -145,8 +145,9 @@ install -m 644 %{_saltceph}/mds/pools.sls %{buildroot}/%{_saltceph}/mds
 
 
 install -d 755 %{buildroot}/%{_saltceph}/mine_functions
-install -m 644 %{_saltceph}/mine_functions/files/mine_functions.conf %{buildroot}/%{_saltceph}/mine_functions
 install -m 644 %{_saltceph}/mine_functions/init.sls %{buildroot}/%{_saltceph}/mine_functions
+install -d 755 %{buildroot}/%{_saltceph}/mine_functions/files
+install -m 644 %{_saltceph}/mine_functions/files/mine_functions.conf %{buildroot}/%{_saltceph}/mine_functions/files
 
 install -d 755 %{buildroot}/%{_saltceph}/mon
 install -m 644 %{_saltceph}/mon/default.sls %{buildroot}/%{_saltceph}/mon
@@ -215,14 +216,20 @@ install -m 644 %{_saltceph}/stage/all.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/benchmark.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/cephfs.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/configure.sls %{buildroot}/%{_saltceph}/stage
-install -m 644 %{_saltceph}/stage/configure/default.sls %{buildroot}/%{_saltceph}/stage
+
+install -d 755 %{buildroot}/%{_saltceph}/stage/configure
+install -m 644 %{_saltceph}/stage/configure/default.sls %{buildroot}/%{_saltceph}/stage/configure
 install -m 644 %{_saltceph}/stage/deploy.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/discovery.sls %{buildroot}/%{_saltceph}/stage
-install -m 644 %{_saltceph}/stage/discovery/custom.sls %{buildroot}/%{_saltceph}/stage
-install -m 644 %{_saltceph}/stage/discovery/default.sls %{buildroot}/%{_saltceph}/stage
+
+install -d 755 %{buildroot}/%{_saltceph}/stage/discovery
+install -m 644 %{_saltceph}/stage/discovery/custom.sls %{buildroot}/%{_saltceph}/stage/discovery
+install -m 644 %{_saltceph}/stage/discovery/default.sls %{buildroot}/%{_saltceph}/stage/discovery
 install -m 644 %{_saltceph}/stage/iscsi.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/prep.sls %{buildroot}/%{_saltceph}/stage
-install -m 644 %{_saltceph}/stage/prep/default.sls %{buildroot}/%{_saltceph}/stage
+
+install -d 755 %{buildroot}/%{_saltceph}/stage/prep
+install -m 644 %{_saltceph}/stage/prep/default.sls %{buildroot}/%{_saltceph}/stage/prep
 install -m 644 %{_saltceph}/stage/prep_minions.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/removal.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/rgw.sls %{buildroot}/%{_saltceph}/stage
@@ -243,6 +250,12 @@ install -m 644 %{_saltceph}/updates/init.sls %{buildroot}/%{_saltceph}/updates
 install -m 644 %{_saltceph}/updates/restart.sls %{buildroot}/%{_saltceph}/updates
 
 install -m 644 srv/salt/top.sls %{buildroot}/srv/salt
+
+cd %{buildroot}/%{_saltceph}/stage && ln -sf prep.sls 0.sls
+cd %{buildroot}/%{_saltceph}/stage && ln -sf discovery.sls 1.sls
+cd %{buildroot}/%{_saltceph}/stage && ln -sf configure.sls 2.sls
+cd %{buildroot}/%{_saltceph}/stage && ln -sf deploy.sls 3.sls
+cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
 
 %post 
 
@@ -278,10 +291,13 @@ install -m 644 srv/salt/top.sls %{buildroot}/srv/salt
 %dir /%{_saltceph}/repo
 %dir /%{_saltceph}/rgw
 %dir /%{_saltceph}/stage
+%dir /%{_saltceph}/stage/configure
+%dir /%{_saltceph}/stage/discovery
+%dir /%{_saltceph}/stage/prep
 %dir /%{_saltceph}/sync
 %dir /%{_saltceph}/time
 %dir /%{_saltceph}/updates
-%config /etc/salt/master.d/*
+%config(noreplace) /etc/salt/master.d/*
 %config /%{_runners}/*
 %config /%{_pillar}/top.sls
 /%{_pillar}/ceph/README
