@@ -1,24 +1,28 @@
 
 
+{% if salt['saltutil.runner']('validate.setup') == False %}
+validate failed:
+  salt.state:
+    - name: just.exit
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}
+
+
 sync master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.sync
     - order: 1
 
-packages:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.packages
-    - require:
-      - salt: sync master
 
 prepare master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.{{ salt['pillar.get']('update_method', 'default') }}
     - require:
-      - salt: packages
+      - salt: sync master
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 

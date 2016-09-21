@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.3.1
+Version:        0.4
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -267,6 +267,8 @@ cd %{buildroot}/%{_saltceph}/stage && ln -sf deploy.sls 3.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
 
 %post 
+# Initialize to most likely value
+sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
 
 %postun 
 
