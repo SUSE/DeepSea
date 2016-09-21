@@ -19,4 +19,9 @@ fio:
       filesize: {{ run['filesize'] }}
       number_of_workers: {{ run['number_of_workers'] }}
       operation: {{ run['operation'] }}
+
+run {{ run['operation'] }}:
+  salt.runner:
+    - name: benchmark.run
+    - job: /var/run/cephfs_bench/{{ run['operation'] }}
 {% endfor %}
