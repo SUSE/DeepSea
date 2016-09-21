@@ -9,33 +9,33 @@ import imp
 import re
 
 """
-This runner is the complement to the populate.proposals. 
+This runner is the complement to the populate.proposals.
 
 The policy.cfg only includes matching files.  The admin may use globbing
 or specific filenames.  Comments and blank lines are ignored.  The file
-is expected to be created by hand currently, although the intent is to 
+is expected to be created by hand currently, although the intent is to
 provide examples for different strategies.  To avoid globbing entirely
 and manually create the file in a single command, run
 
 find * -name \*.sls -o -name \*.yml | sort > policy.cfg
 
-Proceed to remove all undesired assignments or consolidate lines into 
+Proceed to remove all undesired assignments or consolidate lines into
 equivalent globbing patterns.
 
-The four parts are 
+The four parts are
 
-Common configuration:  
+Common configuration:
     any yaml files in the config tree.  These files contain data needed for
     any cluster.
-Cluster assignment: 
+Cluster assignment:
     any cluster-* directories contain sls files assigning specific minions
     to specific clusters.  The cluster-unassigned will make Salt happy and
     conveys the explicit intent that a minion is not part of a Ceph cluster.
 Role assignment:
     any role-* directories contain sls files and stack related yaml files.
-    One or more roles can be included for any minion.  
+    One or more roles can be included for any minion.
 Hardware profile:
-    any directory beginning with a number represents a specific OSD 
+    any directory beginning with a number represents a specific OSD
     assignment for a particular chassis.  All sls and yaml files are
     included for a given hardware profile.
 
@@ -43,11 +43,11 @@ For automation, an optional fifth part is
 
 Customization:
     a custom subdirectory that may be present as part of the provisioning.
-    This entry is last and will overwrite any of the contents of the sls or 
+    This entry is last and will overwrite any of the contents of the sls or
     yaml files.
 
 All files are currently overwritten in the destination tree.
-    
+
 """
 
 stack = imp.load_source('pillar.stack', '/srv/modules/pillar/stack.py')
@@ -66,7 +66,7 @@ def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg", dryrun = False)
     common = pillar_data.organize(filename)
     pillar_data.output(common)
     return True
-    
+
 
 class PillarData(object):
     """
@@ -89,10 +89,10 @@ class PillarData(object):
 
     def output(self, common):
         """
-        Write the merged YAML files to the correct locations, 
+        Write the merged YAML files to the correct locations,
         /srv/pillar/ceph/cluster and /srv/pillar/ceph/stack/default.
         """
-    
+
         for pathname in common.keys():
             merged = self._merge(pathname, common)
             filename = self.pillar_dir + "/" + pathname
@@ -102,13 +102,13 @@ class PillarData(object):
                 # Use the entire list of minions under cluster to populate
                 # stack/{cluster_name}/minions.  Skip unassigned.
                 if merged['cluster'] != "unassigned":
-                    custom = self.pillar_dir + "/" + re.sub(r'cluster', "stack/{}/minions".format(merged['cluster']), re.sub(r'sls', 'yml', pathname)) 
+                    custom = self.pillar_dir + "/" + re.sub(r'cluster', "stack/{}/minions".format(merged['cluster']), re.sub(r'sls', 'yml', pathname))
                     self._custom(custom)
-            
+
 
             if pathname.startswith("stack"):
                 # Mirror the default tree
-                default_path = re.sub(r'stack/default', "stack", pathname) 
+                default_path = re.sub(r'stack/default', "stack", pathname)
                 custom = self.pillar_dir + "/" + default_path
                 self._custom(custom)
 
@@ -137,9 +137,15 @@ class PillarData(object):
             if not os.path.isfile(custom):
                 log.info("Writing {}".format(custom))
                 with open(custom, "w") as yml:
-                    yml.write("# Customizations for {}\n".format(custom))
-    
-    
+                    custom_split = custom.split("stack")
+                    custom_for = "{}{}{}".format(
+                            custom_split[0],
+                            "stack/default",
+                            custom_split[1])
+                    yml.write("# {}\n".format(custom))
+                    yml.write("# Overwrites configuration in {}\n".format(custom_for))
+
+
     def _merge(self, pathname, common):
         """
         Merge the files via stack.py
@@ -150,9 +156,9 @@ class PillarData(object):
                 content = yaml.safe_load(content)
                 merged = stack._merge_dict(merged, content)
         return merged
-        
-    
-    
+
+
+
     def organize(self, filename):
         """
         Associate all filenames with their common subdirectory.
@@ -191,8 +197,8 @@ class PillarData(object):
             for filename in common[pathname]:
                 log.debug("    {}".format(filename))
         return common
-    
-    
+
+
     def _parse(self, line):
         """
         Return globbed files constrained by optional slices or regexes.
@@ -208,8 +214,8 @@ class PillarData(object):
                 elif k == "slice":
                     files = eval("files{}".format(v))
                 else:
-                    log.warning("keyword {} unsupported", k) 
-                
+                    log.warning("keyword {} unsupported", k)
+
         else:
             files = glob.glob(line)
         return files
@@ -220,5 +226,5 @@ class PillarData(object):
         Remove the leftmost directory, expects beginning /
         """
         return "/".join(path.split('/')[2:])
-            
-    
+
+
