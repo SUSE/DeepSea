@@ -513,6 +513,12 @@ class Validate(object):
         if not 'fqdn' in self.errors:
             self.passed['fqdn'] = "valid"
 
+# Note: the master_minion and ceph_version are specific to the Stage 0 
+# validate.  These are also more similar to the ready.py for the firewall
+# check than to all the Stage 3 checks.  The difference is that these need
+# to error and not just issue a warning.  I expect that this runner and ready.py
+# will be combined at some point in the near future.
+
     def master_minion(self):
         """
         Verify that the master minion setting is a minion
@@ -527,6 +533,28 @@ class Validate(object):
             msg = "Could not find minion {}. Check /srv/pillar/ceph/master_minion.sls".format(self.data[node]['master_minion'])
             self.errors['master_minion'] = [ msg ]
 
+
+    def ceph_version(self):
+        """
+        Scan all minions for ceph versions in their repos.
+        """
+        JEWEL_VERSION="10.2"
+        local = salt.client.LocalClient()
+        # Maybe search by not unassigned?
+        contents = local.cmd("I@cluster:ceph" , 'cmd.run', [ '/usr/bin/zypper info ceph' ], expr_form="compound")
+        for minion in contents.keys():
+            m = re.search(r'Version: (\S+)', contents[minion])
+            version = m.group(1)
+
+            # String comparison works for now
+            if version < JEWEL_VERSION:
+                msg = "ceph version {} on minion {}".format(version, minion)
+                if 'ceph_version' in self.errors:
+                    self.errors['ceph_version'].append(msg)
+                else:
+                    self.errors['ceph_version'] = [ msg ]
+        if 'ceph_version' not in self.errors:
+            self.passed['ceph_version'] = "valid"
 
     def report(self):
         """
@@ -613,5 +641,6 @@ def setup():
     pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
     v = Validate("setup", pillar_data, [])
     v.master_minion()
+    v.ceph_version()
     v.report()
 
