@@ -1,3 +1,3 @@
-
 include:
-  .fio
+  - .fio
+  - .mount

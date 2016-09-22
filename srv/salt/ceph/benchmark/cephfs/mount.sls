@@ -1,7 +1,7 @@
 
 create mount point:
   file.directory:
-    - name: /var/run/cephfs_bench
+    - name: {{ salt['pillar.get']('benchmark:base-directory') }}
     - user: salt
     - group: salt
     - dir_mode: 755
@@ -17,4 +17,17 @@ mount cephfs:
     - opts : name=admin,secret={{ salt['pillar.get']('keyring:admin') }}
     - persist: False
     - require:
-      - file: /var/run/cephfs_bench
+      - file: create mount point
+
+# mount ceph seems to alter ownership of the mountpoint...so change back to salt
+fix mount point perms:
+  file.directory:
+    - name: {{ salt['pillar.get']('benchmark:base-directory') }}
+    - user: salt
+    - group: salt
+    - dir_mode: 755
+    - file_mode: 644
+    - clean: True
+    - makedirs: True
+    - require:
+      - mount: mount cephfs
