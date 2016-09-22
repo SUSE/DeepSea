@@ -142,7 +142,8 @@ class PillarData(object):
                             custom_split[0],
                             "stack/default",
                             custom_split[1])
-                    yml.write("# Customizations for {}\n".format(custom_for))
+                    yml.write("# {}\n".format(custom))
+                    yml.write("# Overwrites configuration in {}\n".format(custom_for))
 
 
     def _merge(self, pathname, common):

@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.3
+Version:        0.4
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -100,14 +100,16 @@ install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 install -d 755 %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/authtool.sls %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/default.sls %{buildroot}/%{_saltceph}/admin
-install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/admin
+install -d 755 %{buildroot}/%{_saltceph}/admin/files
+install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/admin/files
 install -m 644 %{_saltceph}/admin/init.sls %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/pcc.sls %{buildroot}/%{_saltceph}/admin
 
 install -d 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
-install -m 644 %{_saltceph}/configuration/files/ceph.conf.j2 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/init.sls %{buildroot}/%{_saltceph}/configuration
+install -d 755 %{buildroot}/%{_saltceph}/configuration/files
+install -m 644 %{_saltceph}/configuration/files/ceph.conf.j2 %{buildroot}/%{_saltceph}/configuration/files
 
 
 install -d 755 %{buildroot}/%{_saltceph}/events
@@ -122,8 +124,9 @@ install -m 644 %{_saltceph}/events/complete_prep.sls %{buildroot}/%{_saltceph}/e
 install -d 755 %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/authtool.sls %{buildroot}/%{_saltceph}/iscsi
 
-install -m 644 %{_saltceph}/iscsi/files/keyring.j2 %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/files/sysconfig.lrbd %{buildroot}/%{_saltceph}/iscsi
+install -d 755 %{buildroot}/%{_saltceph}/iscsi/files
+install -m 644 %{_saltceph}/iscsi/files/keyring.j2 %{buildroot}/%{_saltceph}/iscsi/files
 install -m 644 %{_saltceph}/iscsi/import-salt.sls %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/import.sls %{buildroot}/%{_saltceph}/iscsi
 install -m 644 %{_saltceph}/iscsi/keyring.sls %{buildroot}/%{_saltceph}/iscsi
@@ -136,8 +139,10 @@ install -d 755 %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/auth.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/bootstrap-auth.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/default.sls %{buildroot}/%{_saltceph}/mds
-install -m 644 %{_saltceph}/mds/files/bootstrap.j2 %{buildroot}/%{_saltceph}/mds
-install -m 644 %{_saltceph}/mds/files/keyring.j2 %{buildroot}/%{_saltceph}/mds
+
+install -d 755 %{buildroot}/%{_saltceph}/mds/files
+install -m 644 %{_saltceph}/mds/files/bootstrap.j2 %{buildroot}/%{_saltceph}/mds/files
+install -m 644 %{_saltceph}/mds/files/keyring.j2 %{buildroot}/%{_saltceph}/mds/files
 install -m 644 %{_saltceph}/mds/init.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/keyring.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/pcc.sls %{buildroot}/%{_saltceph}/mds
@@ -151,7 +156,9 @@ install -m 644 %{_saltceph}/mine_functions/files/mine_functions.conf %{buildroot
 
 install -d 755 %{buildroot}/%{_saltceph}/mon
 install -m 644 %{_saltceph}/mon/default.sls %{buildroot}/%{_saltceph}/mon
-install -m 644 %{_saltceph}/mon/files/keyring.j2 %{buildroot}/%{_saltceph}/mon
+
+install -d 755 %{buildroot}/%{_saltceph}/mon/files
+install -m 644 %{_saltceph}/mon/files/keyring.j2 %{buildroot}/%{_saltceph}/mon/files
 install -m 644 %{_saltceph}/mon/init.sls %{buildroot}/%{_saltceph}/mon
 install -m 644 %{_saltceph}/mon/pcc.sls %{buildroot}/%{_saltceph}/mon
 install -m 644 %{_saltceph}/mon/start.sls %{buildroot}/%{_saltceph}/mon
@@ -167,7 +174,9 @@ install -d 755 %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/auth.sls %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/custom.sls %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/default.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/files/keyring.j2 %{buildroot}/%{_saltceph}/osd
+
+install -d 755 %{buildroot}/%{_saltceph}/osd/files
+install -m 644 %{_saltceph}/osd/files/keyring.j2 %{buildroot}/%{_saltceph}/osd/files
 install -m 644 %{_saltceph}/osd/init.sls %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/keyring.sls %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/partition.sls %{buildroot}/%{_saltceph}/osd
@@ -258,6 +267,8 @@ cd %{buildroot}/%{_saltceph}/stage && ln -sf deploy.sls 3.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
 
 %post 
+# Initialize to most likely value
+sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
 
 %postun 
 
@@ -291,9 +302,6 @@ cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
 %dir /%{_saltceph}/repo
 %dir /%{_saltceph}/rgw
 %dir /%{_saltceph}/stage
-%dir /%{_saltceph}/stage/configure
-%dir /%{_saltceph}/stage/discovery
-%dir /%{_saltceph}/stage/prep
 %dir /%{_saltceph}/sync
 %dir /%{_saltceph}/time
 %dir /%{_saltceph}/updates
