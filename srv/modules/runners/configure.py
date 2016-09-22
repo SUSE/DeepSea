@@ -58,7 +58,7 @@ class SaltOptions(object):
             if 'stack' in ext:
                 # TODO only add stack.cfg here. Salt returns either a string
                 # (when there is on ext_module) or an array :(
-                # This needs a better solution...works only ih stack.cfg is 1st
+                # This needs a better solution...works only if stack.cfg is 1st
                 # entry in ext_modules
                 self.stack_dir = dirname(ext['stack'][0])
 
