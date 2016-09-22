@@ -31,7 +31,7 @@ deployment is currently broken. MDS deployment and CephFS creation works.
 - Run `salt-run state.orch ceph.stage.4 or salt-run state.orch ceph.stage.services`
 
 ### Details on policy.cfg
-The discovery state (or stage 1) creates many configuration proposals under
+The discovery stage (or stage 1) creates many configuration proposals under
 /srv/pillar/ceph/proposals. The files contain configuration options for ceph
 clusters, potential storage layouts and role assignments for the cluster
 minions. The policy.cfg specifies which of these files and options are to be
