@@ -87,7 +87,7 @@ class ClusterAssignment(object):
     
 class Validate(object):
     """
-    Perform checks on pillar data
+    Perform checks on pillar and grain data
     """
 
     def __init__(self, name, data, grains):
@@ -513,6 +513,21 @@ class Validate(object):
         if not 'fqdn' in self.errors:
             self.passed['fqdn'] = "valid"
 
+    def master_minion(self):
+        """
+        Verify that the master minion setting is a minion
+        """
+        local = salt.client.LocalClient()
+        for node in self.data.keys():
+            data = local.cmd(self.data[node]['master_minion'] , 'pillar.get', [ 'master_minion' ], expr_form="glob")
+            break
+        if data:
+            self.passed['master_minion'] = "valid"
+        else:
+            msg = "Could not find minion {}. Check /srv/pillar/ceph/master_minion.sls".format(self.data[node]['master_minion'])
+            self.errors['master_minion'] = [ msg ]
+
+
     def report(self):
         """
         """
@@ -589,3 +604,14 @@ def pillar(name = None, **kwargs):
         return False
 
     return True
+
+def setup():
+    """
+    Check that initial files prior to any stage are correct
+    """
+    local = salt.client.LocalClient()
+    pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
+    v = Validate("setup", pillar_data, [])
+    v.master_minion()
+    v.report()
+

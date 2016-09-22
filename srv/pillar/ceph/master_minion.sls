@@ -1,2 +1,2 @@
 
-master_minion: salt.ceph
+master_minion: _REPLACE_ME_
