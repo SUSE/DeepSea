@@ -6,27 +6,29 @@ from subprocess import check_output
 import logging
 
 log = logging.getLogger(__name__)
+local_client = salt.client.LocalClient()
+
+class Fio(object):
+
+    def __init__(self):
+        clients = local_client.cmd('I@roles:cephs-client and I@cluster:ceph',
+                'pillar.get', ['public_address'], expr_form='compound')
+        self.cmd_args = ['fio']
+
+        self.cmd_args.extend(['--client={}'.format(client) for client in clients])
+
+    def run(self, job):
+        output = check_ouput(self.cmd_args + [job])
+
+        return output
+
 
 def run(**kwargs):
     """
     Run a fio job
     """
-    job_file = ''
-    if 'job' in kwargs:
-        job_file = kwargs['job']
-    else:
-        return [ False ]
+    fio = Fio()
 
-    local = salt.client.LocalClient()
-
-    clients = local.cmd('I@roles:cephs-client and I@cluster:ceph', 'pillar.get',
-            ['public_address'], expr_form='compound')
-
-    fio_args = ''
-    # TODO: this only works with one client host sofar...will need to pass all args as array
-    for client in clients:
-        fio_args = '{}--client={}'.format(fio_args, clients[client])
-
-    output = check_output(['fio', fio_args, job_file])
+    output = fio.run('foo')
 
     return output

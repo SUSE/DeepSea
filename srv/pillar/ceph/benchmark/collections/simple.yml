@@ -1,0 +1,3 @@
+directory: simple
+jobs:
+    - fio/seq.yml

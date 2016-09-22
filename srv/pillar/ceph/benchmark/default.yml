@@ -1,0 +1,2 @@
+benchmark:
+  base-directory: /run/cephfs_bench
