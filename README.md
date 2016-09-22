@@ -6,7 +6,8 @@ These goal is to manage multiple ceph clusters with a single salt master.  At th
 The [diagram](deepsea.png) should explain the intended flow for the orchestration runners and related salt states.
 
 ## Status
-The stages 0-4 which covers optional provisioning to creating gateways for Ceph services are working.  Role removal is in progress.
+Automatic discovery, configuration and deployment of ceph clusters works. RGW
+deployment is currently broken. MDS deployment and CephFS creation works.
 
 
 ## Usage
@@ -16,16 +17,15 @@ Prepare Salt
 - Accept keys (e.g. salt-key -A -y)
 
 Install DeepSea
-- Install rpm (link TBD)
+- Install [rpm](https://build.opensuse.org/package/show/home:swiftgist/deepsea)
 
 Configure
-- Edit /etc/salt/master.d/logging.conf
-- Edit /srv/pillar/ceph/master_minion.sls
+- Edit [/srv/pillar/ceph/master_minion.sls](srv/pillar/ceph/master_minion.sls)
 
 Steps
 - Run `salt-run state.orch ceph.stage.0 or salt-run state.orch ceph.stage.prep`
 - Run `salt-run state.orch ceph.stage.1 or salt-run state.orch ceph.stage.discovery`
-- Create /srv/pillar/ceph/proposals/policy.cfg.  Examples are in ...
+- Create /srv/pillar/ceph/proposals/policy.cfg.  Examples are [here](doc/examples)
 - Run `salt-run state.orch ceph.stage.2 or salt-run state.orch ceph.stage.configure`
 - Run `salt-run state.orch ceph.stage.3 or salt-run state.orch ceph.stage.deploy`
 - Run `salt-run state.orch ceph.stage.4 or salt-run state.orch ceph.stage.services`
