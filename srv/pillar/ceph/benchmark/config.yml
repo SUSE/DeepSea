@@ -1,3 +1,3 @@
 benchmark:
-  base-directory: /run/cephfs_bench
+  work-directory: /run/cephfs_bench
   default-collection: simple.yml
