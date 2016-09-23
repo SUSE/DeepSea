@@ -1,15 +1,14 @@
 
+{% set keyring_name = "ceph.client.igw." + grains['host'] + ".keyring" %}
+
 /var/lib/ceph/mds/ceph-{{ grains['host'] }}/keyring:
   file.managed:
     - source:
-      - salt://ceph/mds/files/keyring.j2
+      - salt://ceph/mds/cache/{{ grains['host'] }}.keyring
     - template: jinja
     - user: ceph
     - group: ceph
     - mode: 600
     - makedirs: True
-    - context:
-      mds: {{ grains['host'] }}
     - fire_event: True
-
 

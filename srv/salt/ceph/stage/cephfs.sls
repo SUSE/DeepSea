@@ -7,7 +7,7 @@ cephfs pools:
 mds auth:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.mds.auth
+    - sls: ceph.mds.keyrings
     - require:
       - salt: cephfs pools
 
