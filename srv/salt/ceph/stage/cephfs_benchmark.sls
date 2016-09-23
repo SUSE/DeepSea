@@ -9,6 +9,8 @@ prep fio:
 run fio:
   salt.runner:
     - name: benchmark.run
+    - work_dir: {{ salt['pillar.get']('benchmark:work-directory') }}
+    - default_collection: {{ salt['pillar.get']('benchmark:default-collection') }}
 
 cleanup fio:
   salt.state:
