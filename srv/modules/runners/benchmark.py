@@ -15,11 +15,13 @@ local_client = salt.client.LocalClient()
 class Fio(object):
 
     def __init__(self, bench_dir, work_dir):
-        clients = local_client.cmd('I@roles:cephs-client and I@cluster:ceph',
-                'pillar.get', ['public_address'], expr_form='compound')
+        clients = local_client.cmd('I@roles:cephfs-client and I@cluster:ceph',
+                # 'pillar.get', ['public_address'], expr_form='compound')
+                'network.ip_addrs', [], expr_form='compound')
         self.cmd_args = ['fio']
 
-        self.cmd_args.extend(['--client={}'.format(client) for client in clients])
+        # TODO workaround until client roles are merged
+        self.cmd_args.extend(['--client={}'.format(clients[client][0]) for client in clients])
 
         self.bench_dir = bench_dir
         self.work_dir = work_dir
@@ -27,23 +29,26 @@ class Fio(object):
         self.jinja_env = Environment(loader=FileSystemLoader('{}/{}'.format(bench_dir,
             'templates')))
 
-    def run(self, job):
-        output = check_ouput(self.cmd_args + [job])
+    def run(self, job_spec):
+        jobfile = self._parse_job(job_spec)
+        output = check_output(self.cmd_args + [jobfile])
 
         return output
 
-    def parse_job(self, job_spec):
+    def _parse_job(self, job_spec):
         job = self._get_parameters(job_spec)
         # which template does the job want
 
         template = self.jinja_env.get_template(job['template'])
 
-        self._populate_and_write(template, job)
+        return self._populate_and_write(template, job)
 
     def _populate_and_write(self, template, job):
+        jobfile = '{}/jobfile'.format(self.work_dir)
 
         # render template and save job file
-        template.stream(job).dump('{}/jobfile'.format(self.work_dir))
+        template.stream(job).dump(jobfile)
+        return jobfile
 
     def _get_parameters(self, job_spec):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
@@ -93,13 +98,7 @@ def run(**kwargs):
 
     fio = Fio(bench_dir, work_dir)
 
-    print(default_collection)
     for job_spec in default_collection['jobs']:
-        # TODO render configuration into its template and run the job
-        print(job_spec)
-        print(type(job_spec))
-        fio.parse_job(job_spec)
-    #
-    # output = fio.run('foo')
-    #
-    # return output
+        print(fio.run(job_spec))
+
+    return True
