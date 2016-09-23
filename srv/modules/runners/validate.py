@@ -104,9 +104,9 @@ class Validate(object):
         """
         Validate fsid from first entry
         """
-        fsid = self.data[self.data.keys()[0]]['fsid']
+        fsid = self.data[self.data.keys()[0]].get("fsid", "")
         log.debug("fsid: {}".format(fsid))
-        if 'fsid':
+        if fsid:
             if len(fsid) == 36:
                 # More specific regex?
                 if re.match(r'\w+-\w+-\w+-\w+-\w+', fsid):
@@ -134,12 +134,13 @@ class Validate(object):
         """
         same_network = {}
         for node in self.data.keys():
-            log.debug("public_network: {} {}".format(node, self.data[node]['public_network']))
-            same_network[self.data[node]['public_network']] = ""
+            public_network = self.data[node].get("public_network", "")
+            log.debug("public_network: {} {}".format(node, public_network))
+            same_network[public_network] = ""
             try:
-                ipaddress.ip_network(u'{}'.format(self.data[node]['public_network']))
+                ipaddress.ip_network(u'{}'.format(public_network))
             except ValueError as err:
-                msg = "{} on {} is not valid".format(self.data[node]['public_network'], node)
+                msg = "{} on {} is not valid".format(public_network, node)
                 if 'public_network' in self.errors:
                     self.errors['public_network'].append(msg)
                 else:
@@ -161,11 +162,18 @@ class Validate(object):
                 'master' in self.data[node]['roles']):
                 continue
             found = False
+            public_network = self.data[node].get("public_network", "")
             for address in self.grains[node]['ipv4']:
-                if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(self.data[node]['public_network'])):
-                    found = True
+                try:
+                    if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(public_network)):
+                        found = True
+                except ValueError:
+                    # Don't care about reporting a ValueError here if
+                    # public_network is malformed, because the
+                    # previous validation in public_network() will do that.
+                    pass
             if not found:
-                msg = "minion {} missing address on public network {}".format(node, self.data[node]['public_network'])
+                msg = "minion {} missing address on public network {}".format(node, public_network)
                 if 'public_interface' in self.errors:
                     self.errors['public_interface'].append(msg)
                 else:
@@ -226,12 +234,13 @@ class Validate(object):
             if ('roles' in self.data[node] and 
                 'storage' in self.data[node]['roles']):
 
-                log.debug("cluster_network: {} {}".format(node, self.data[node]['cluster_network']))
-                same_network[self.data[node]['cluster_network']] = ""
+                cluster_network = self.data[node].get("cluster_network", "")
+                log.debug("cluster_network: {} {}".format(node, cluster_network))
+                same_network[cluster_network] = ""
                 try:
-                    ipaddress.ip_network(u'{}'.format(self.data[node]['cluster_network']))
+                    ipaddress.ip_network(u'{}'.format(cluster_network))
                 except ValueError as err:
-                    msg = "{} on {} is not valid".format(self.data[node]['cluster_network'], node)
+                    msg = "{} on {} is not valid".format(cluster_network, node)
                     if 'cluster_network' in self.errors:
                         self.errors['cluster_network'].append(msg)
                     else:
@@ -252,11 +261,18 @@ class Validate(object):
             if ('roles' in self.data[node] and 
                 'storage' in self.data[node]['roles']):
                 found = False
+                cluster_network = self.data[node].get("cluster_network", "")
                 for address in self.grains[node]['ipv4']:
-                    if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(self.data[node]['cluster_network'])):
-                        found = True
+                    try:
+                        if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(cluster_network)):
+                            found = True
+                    except ValueError:
+                        # Don't care about reporting a ValueError here if
+                        # cluster_network is malformed, because the
+                        # previous validation in cluster_network() will do that.
+                        pass
                 if not found:
-                    msg = "minion {} missing address on cluster network {}".format(node, self.data[node]['cluster_network'])
+                    msg = "minion {} missing address on cluster network {}".format(node, cluster_network)
                     if 'cluster_interface' in self.errors:
                         self.errors['cluster_interface'].append(msg)
                     else:
@@ -485,8 +501,8 @@ class Validate(object):
         """
         Check that time server is available
         """
-        time_server = self.data[self.data.keys()[0]]['time_server']
-        time_service = self.data[self.data.keys()[0]]['time_service']
+        time_server = self.data[self.data.keys()[0]].get("time_server", "")
+        time_service = self.data[self.data.keys()[0]].get("time_service", "")
         if time_service == 'disabled':
             self.passed['time_server'] = "disabled"
             return
