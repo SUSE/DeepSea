@@ -1,5 +1,0 @@
-
-[client.{{ config }}]
-        key = {{ salt['pillar.get']('keyring:' + config) }}
-        caps mon = "allow rwx"
-        caps osd = "allow rwx"

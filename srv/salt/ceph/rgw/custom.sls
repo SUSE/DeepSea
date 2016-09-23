@@ -4,12 +4,12 @@ install rgw:
     - name: "zypper --non-interactive --no-gpg-checks in ceph-radosgw"
 
 
-{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-start {{ config }}:
+{% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+start {{ role }}:
   service.running:
-    - name: ceph-radosgw@{{ config }}
+    - name: ceph-radosgw@{{ role + "." + grains['host'] }}
     - enable: True
     - require:
         - cmd: install rgw
-
 {% endfor %}
+

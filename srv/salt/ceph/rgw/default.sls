@@ -3,12 +3,13 @@ install rgw:
   pkg.installed:
     - name: ceph-radosgw
 
-{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-start {{ config }}:
+{% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+start {{ role }}:
   service.running:
-    - name: ceph-radosgw@{{ config }}
+    - name: ceph-radosgw@{{ role + "." + grains['host'] }}
     - enable: True
     - require:
         - pkg: install rgw
 
 {% endfor %}
+

@@ -1,15 +1,15 @@
 
-{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-/var/lib/ceph/radosgw/{{ pillar.get('cluster') }}-{{ config }}/keyring:
+
+{% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+
+/var/lib/ceph/radosgw/ceph-{{ role + "." + grains['host'] }}/keyring:
   file.managed:
     - source:
-      - salt://ceph/rgw/files/keyring.j2
-    - template: jinja
-    - user: salt
-    - group: salt
+      - salt://ceph/rgw/cache/client.{{ role + "." +  grains['host'] }}.keyring
+    - user: ceph
+    - group: ceph
     - mode: 600
     - makedirs: True
     - fire_event: True
-    - context:
-        config: {{ config }}
+
 {% endfor %}
