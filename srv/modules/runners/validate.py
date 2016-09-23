@@ -119,13 +119,14 @@ class Validate(object):
     Perform checks on pillar and grain data
     """
 
-    def __init__(self, name, data, grains):
+    def __init__(self, name, data, grains, printer):
         """
         Query the cluster assignment and remove unassigned
         """
         self.name = name
         self.data = data
         self.grains = grains
+        self.printer = printer
         self.passed = OrderedDict()
         self.errors = OrderedDict()
 
@@ -601,8 +602,8 @@ class Validate(object):
         if 'ceph_version' not in self.errors:
             self.passed['ceph_version'] = "valid"
 
-    def report(self, printer):
-        printer.add(self.name, self.passed, self.errors)
+    def report(self):
+        self.printer.add(self.name, self.passed, self.errors)
 
 def usage():
     print "salt-run validate.pillar cluster"
@@ -648,7 +649,7 @@ def pillar(name = None, printer=None, **kwargs):
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
     
-    v = Validate(name, pillar_data, grains_data)
+    v = Validate(name, pillar_data, grains_data, printer)
     v.fsid()
     v.public_network()
     v.public_interface()
@@ -669,7 +670,7 @@ def pillar(name = None, printer=None, **kwargs):
     v.pool_creation()
     v.time_server()
     v.fqdn()
-    v.report(printer)
+    v.report()
     
     if not has_printer:
         printer.print_result()
@@ -687,9 +688,9 @@ def setup(**kwargs):
     pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
     printer = printer = get_printer(**kwargs)
 
-    v = Validate("setup", pillar_data, [])
+    v = Validate("setup", pillar_data, [], printer)
     v.master_minion()
     v.ceph_version()
-    v.report(printer)
+    v.report()
     
     printer.print_result()
