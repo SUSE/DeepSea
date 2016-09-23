@@ -1,4 +1,4 @@
-[client.iscsi]
-	key = {{ salt['pillar.get']('keyring:igw') }}
+[{{ client }}]
+	key = {{ secret }}
 	caps mon = "allow *"
 	caps osd = "allow *"
