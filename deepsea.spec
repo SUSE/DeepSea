@@ -28,7 +28,6 @@ Group:          System/Libraries
 Url:            http://bugs.opensuse.org
 Source0:        deepsea-%{version}.tar.gz
 
-#BuildRequires:  
 Requires:       salt
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
@@ -273,28 +272,36 @@ sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/maste
 %postun 
 
 %files
-%defattr(-,salt,salt,-)
-/srv/modules/pillar/*
-%dir /etc/salt
-%dir /etc/salt/master.d
+%defattr(-,root,root,-)
+/srv/modules/pillar/stack.py
+%dir %attr(0750, root, salt) %_sysconfdir/salt
+%dir %attr(0755, root, salt) /srv/salt
+%dir %attr(0755, root, salt) /srv/pillar
+%dir %attr(0755, root, salt) %{_sysconfdir}/salt/master.d/
 %dir /%{_runners}
 %dir /%{_pillar}
 %dir /%{_pillar}/ceph
 %dir /%{_pillar}/ceph/stack
 %dir /srv/modules
 %dir /srv/modules/pillar
-%dir /srv/salt
 %dir /srv/salt/_modules
 %dir /%{_saltceph}
 %dir /%{_saltceph}/admin
+%dir /%{_saltceph}/admin/files
 %dir /%{_saltceph}/configuration
+%dir /%{_saltceph}/configuration/files
 %dir /%{_saltceph}/events
 %dir /%{_saltceph}/iscsi
+%dir /%{_saltceph}/iscsi/files
 %dir /%{_saltceph}/mds
+%dir /%{_saltceph}/mds/files
 %dir /%{_saltceph}/mine_functions
+%dir /%{_saltceph}/mine_functions/files
 %dir /%{_saltceph}/mon
+%dir /%{_saltceph}/mon/files
 %dir /%{_saltceph}/openattic
 %dir /%{_saltceph}/osd
+%dir /%{_saltceph}/osd/files
 %dir /%{_saltceph}/packages
 %dir /%{_saltceph}/pool
 %dir /%{_saltceph}/reactor
@@ -302,37 +309,53 @@ sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/maste
 %dir /%{_saltceph}/repo
 %dir /%{_saltceph}/rgw
 %dir /%{_saltceph}/stage
+%dir /%{_saltceph}/stage/configure
+%dir /%{_saltceph}/stage/discovery
+%dir /%{_saltceph}/stage/prep
 %dir /%{_saltceph}/sync
 %dir /%{_saltceph}/time
 %dir /%{_saltceph}/updates
-%config(noreplace) /etc/salt/master.d/*
-%config /%{_runners}/*
+%config(noreplace) /etc/salt/master.d/*.conf
+%config /%{_runners}/*.py
 %config /%{_pillar}/top.sls
 /%{_pillar}/ceph/README
 %config /%{_pillar}/ceph/init.sls
 %config(noreplace) /%{_pillar}/ceph/master_minion.sls
 %config /%{_pillar}/ceph/stack/stack.cfg
 %config /srv/salt/top.sls
-%config /srv/salt/_modules/*
-%config /%{_saltceph}/admin/*
-%config /%{_saltceph}/configuration/*
-%config /%{_saltceph}/events/*
-%config /%{_saltceph}/iscsi/*
-%config /%{_saltceph}/mds/*
-%config /%{_saltceph}/mine_functions/*
-%config /%{_saltceph}/mon/*
-%config /%{_saltceph}/openattic/*
-%config /%{_saltceph}/osd/*
-%config /%{_saltceph}/packages/*
-%config /%{_saltceph}/pool/*
-%config /%{_saltceph}/reactor/*
-%config /%{_saltceph}/refresh/*
-%config /%{_saltceph}/repo/*
-%config /%{_saltceph}/rgw/*
-%config /%{_saltceph}/stage/*
-%config /%{_saltceph}/sync/*
-%config /%{_saltceph}/time/*
-%config /%{_saltceph}/updates/*
+%config /srv/salt/_modules/*.py
+%config /%{_saltceph}/admin/*.sls
+%config /%{_saltceph}/admin/files/*.j2
+%config /%{_saltceph}/configuration/*.sls
+%config /%{_saltceph}/configuration/files/*.j2
+%config /%{_saltceph}/events/*.sls
+%config /%{_saltceph}/iscsi/*.sls
+%config /%{_saltceph}/iscsi/sysconfig.lrbd
+%config /%{_saltceph}/iscsi/files/*.j2
+%config /%{_saltceph}/mds/*.sls
+%config /%{_saltceph}/mds/files/*.j2
+%config /%{_saltceph}/mine_functions/*.sls
+%config /%{_saltceph}/mine_functions/files/*.conf
+%config /%{_saltceph}/mon/*.sls
+%config /%{_saltceph}/mon/files/*.j2
+%config /%{_saltceph}/openattic/*.sls
+%config /%{_saltceph}/openattic/ceph.client.openattic.keyring
+%config /%{_saltceph}/osd/*.sls
+%config /%{_saltceph}/osd/files/*.j2
+%config /%{_saltceph}/packages/*.sls
+%config /%{_saltceph}/pool/*.sls
+%config /%{_saltceph}/reactor/*.sls
+%config /%{_saltceph}/reactor/readycheck
+%config /%{_saltceph}/refresh/*.sls
+%config /%{_saltceph}/repo/*.sls
+%config /%{_saltceph}/rgw/*.sls
+%config /%{_saltceph}/stage/*.sls
+%config /%{_saltceph}/stage/configure/*.sls
+%config /%{_saltceph}/stage/discovery/*.sls
+%config /%{_saltceph}/stage/prep/*.sls
+%config /%{_saltceph}/sync/*.sls
+%config /%{_saltceph}/time/*.sls
+%config /%{_saltceph}/updates/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
