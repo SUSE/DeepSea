@@ -45,11 +45,26 @@ configuration:
     - tgt_type: compound
     - sls: ceph.configuration
 
+{# Yes, there's only one #}
+admin keyrings:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.admin.keyrings
+    - failhard: True
+
 admin:
   salt.state:
     - tgt: 'I@roles:admin and I@cluster:ceph or I@roles:master'
     - tgt_type: compound
     - sls: ceph.admin
+
+mon keyrings:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.mon.keyrings
+    - failhard: True
 
 monitors:
   salt.state:
