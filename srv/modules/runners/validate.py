@@ -5,9 +5,11 @@ import salt.utils.error
 import logging
 import ipaddress
 import pprint
+import json
 import yaml
 import os
 import re
+import sys
 from subprocess import call, Popen, PIPE
 from os.path import dirname
 
@@ -41,6 +43,33 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    
+class PrettyPrinter:
+    
+    def add(self, name, passed, errors):
+        # Need to make colors optional, but looks better currently
+        for attr in passed.keys():
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
+        for attr in errors.keys():
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
+            
+    def print_result(self):
+        pass
+            
+class JsonPrinter:
+    
+    def __init__(self):
+        self.result = {}
+    
+    def add(self, name, passed, errors):
+        self.result[name] = {'passed': passed, 'errors': errors}
+            
+    def print_result(self):
+        json.dump(self.result, sys.stdout)
+        
+def get_printer(__pub_output=None, **kwargs):
+    return JsonPrinter() if __pub_output in ['json', 'quiet'] else PrettyPrinter()
+    
 
 
 class SaltOptions(object):
@@ -572,14 +601,8 @@ class Validate(object):
         if 'ceph_version' not in self.errors:
             self.passed['ceph_version'] = "valid"
 
-    def report(self):
-        """
-        """
-        # Need to make colors optional, but looks better currently
-        for attr in self.passed.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, self.passed[attr], bcolors.ENDC)
-        for attr in self.errors.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, self.errors[attr], bcolors.ENDC)
+    def report(self, printer):
+        printer.add(self.name, self.passed, self.errors)
 
 def usage():
     print "salt-run validate.pillar cluster"
@@ -593,21 +616,25 @@ def pillars(**kwargs):
     #options = SaltOptions()
     local = salt.client.LocalClient()
     cluster = ClusterAssignment(local)
+    
+    printer = printer = get_printer(**kwargs)
+
 
     for name in cluster.names:
-        pillar(name, **kwargs)
+        pillar(name, printer=printer, **kwargs)
+    
+    printer.print_result()
 
 
-def pillar(name = None, **kwargs):
+def pillar(name = None, printer=None, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
-
-    if name == None:
-        if 'name' in kwargs:
-            name = kwargs['name']
-
+    has_printer = printer is not None
+    if not has_printer:
+        printer = get_printer(**kwargs)
+        
     if not name:
         usage()
         exit(1)
@@ -642,21 +669,27 @@ def pillar(name = None, **kwargs):
     v.pool_creation()
     v.time_server()
     v.fqdn()
-    v.report()
+    v.report(printer)
+    
+    if not has_printer:
+        printer.print_result()
 
     if v.errors:
         return False
 
     return True
 
-def setup():
+def setup(**kwargs):
     """
     Check that initial files prior to any stage are correct
     """
     local = salt.client.LocalClient()
     pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
+    printer = printer = get_printer(**kwargs)
+
     v = Validate("setup", pillar_data, [])
     v.master_minion()
     v.ceph_version()
-    v.report()
-
+    v.report(printer)
+    
+    printer.print_result()
