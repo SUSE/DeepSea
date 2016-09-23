@@ -64,26 +64,26 @@ class Settings(object):
         self.root_dir = "/srv/pillar/ceph/proposals"
 
 
-class Utils(object):
-    """
-    Class for common methods
-    """
-
-    @staticmethod
-    def secret():
-        """
-        Generate a secret
-        """
-        #cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
-        #
-        #if not os.path.isfile(cmd[0]):
-        #    raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
-        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        #for line in proc.stdout:
-        #    return line.rstrip()
-        key = os.urandom(16) 
-        header = struct.pack('<hiih',1,int(time.time()),0,len(key)) 
-        return base64.b64encode(header + key) 
+#class Utils(object):
+#    """
+#    Class for common methods
+#    """
+#
+#    @staticmethod
+#    def secret():
+#        """
+#        Generate a secret
+#        """
+#        #cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
+#        #
+#        #if not os.path.isfile(cmd[0]):
+#        #    raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
+#        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+#        #for line in proc.stdout:
+#        #    return line.rstrip()
+#        key = os.urandom(16) 
+#        header = struct.pack('<hiih',1,int(time.time()),0,len(key)) 
+#        return base64.b64encode(header + key) 
 
 class SaltWriter(object):
     """
@@ -126,7 +126,7 @@ class CephStorage(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        self.keyring = Utils.secret()
+        #self.keyring = Utils.secret()
 
 
     def save(self, servers, proposals):
@@ -453,15 +453,15 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        self.keyring_roles = { 'admin': Utils.secret(), 
-                               'mon': Utils.secret(), 
-                               'storage': Utils.secret(),
-                               'mds': Utils.secret(),
-                               'igw': Utils.secret() }
+        #self.keyring_roles = { 'admin': Utils.secret(), 
+        #                       'mon': Utils.secret(), 
+        #                       'storage': Utils.secret(),
+        #                       'mds': Utils.secret(),
+        #                       'igw': Utils.secret() }
 
-        # Add rgw roles
-        for rgw_role in self._rgw_configurations():
-            self.keyring_roles[rgw_role] = Utils.secret()
+        ## Add rgw roles
+        #for rgw_role in self._rgw_configurations():
+        #    self.keyring_roles[rgw_role] = Utils.secret()
 
         self.networks = self._networks(self.servers)
         self.public_network, self.cluster_network = self.public_cluster(self.networks) 
@@ -499,26 +499,27 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        #roles = [ 'admin', 'mon', 'storage', 'mds', 'rgw', 'igw' ]
-        roles = self.keyring_roles.keys()
+        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw' ] + self._rgw_configurations()
+
+        #roles = self.keyring_roles.keys()
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
                 create_dirs(role_dir, self.root_dir)
-            roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
-            if not os.path.isdir(roles_dir):
-                create_dirs(roles_dir, self.root_dir)
-            if role in self.keyring_roles:
-                filename = roles_dir + "/" +  role + ".yml"
-                contents = {}
-                role_key = self._role_mapping(role)
+            #roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
+            #if not os.path.isdir(roles_dir):
+            #    create_dirs(roles_dir, self.root_dir)
+            #if role in self.keyring_roles:
+            #    filename = roles_dir + "/" +  role + ".yml"
+            #    contents = {}
+            #    role_key = self._role_mapping(role)
 
-                contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
-                self.writer.write(filename, contents)
-                if 'keyring' in self.master_contents:
-                    self.master_contents['keyring'].append({ role_key: self.keyring_roles[role] })
-                else:
-                    self.master_contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
+            #    contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
+            #    self.writer.write(filename, contents)
+            #    if 'keyring' in self.master_contents:
+            #        self.master_contents['keyring'].append({ role_key: self.keyring_roles[role] })
+            #    else:
+            #        self.master_contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
 
             # All minions are not necessarily storage - see CephStorage
             if role != 'storage':
@@ -540,11 +541,11 @@ class CephRoles(object):
         """
         role = 'master'
         role_dir = "{}/role-{}".format(self.root_dir, role)
-        roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
-        if not os.path.isdir(roles_dir):
-            create_dirs(roles_dir, self.root_dir)
-        filename = roles_dir + "/" +  role + ".yml"
-        self.writer.write(filename, self.master_contents)
+        #roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
+        #if not os.path.isdir(roles_dir):
+        #    create_dirs(roles_dir, self.root_dir)
+        #filename = roles_dir + "/" +  role + ".yml"
+        #self.writer.write(filename, self.master_contents)
 
         self._role_assignment(role_dir, role)
             
