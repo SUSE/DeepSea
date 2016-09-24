@@ -279,12 +279,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %defattr(-,root,root,-)
 /srv/modules/pillar/stack.py
 %dir /%{_runners}
-%dir /%{_pillar}/ceph
+%dir /%{_pillar}
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph
 %dir /%{_pillar}/ceph/stack
 %dir /srv/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
-%dir /%{_saltceph}
+%dir %attr(0755, salt, salt) /%{_saltceph}
 %dir /%{_saltceph}/admin
 %dir /%{_saltceph}/admin/files
 %dir /%{_saltceph}/configuration

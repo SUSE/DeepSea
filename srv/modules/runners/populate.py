@@ -606,7 +606,7 @@ class CephRoles(object):
                  create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
-            contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, self.keyring_roles['admin']))
+            contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
             contents['admin_method'] = "default"
             contents['configuration_method'] = "default"
             contents['mds_method'] = "default"
