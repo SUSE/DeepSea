@@ -281,7 +281,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_runners}
 %dir /%{_pillar}
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph
-%dir /%{_pillar}/ceph/stack
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph/stack
 %dir /srv/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
