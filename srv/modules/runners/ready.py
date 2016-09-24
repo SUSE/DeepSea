@@ -81,8 +81,6 @@ def check(name, fail_on_warning=True, **kwargs):
     Check a cluster for runtime configurations that may cause issues for an
     installation.
     """
-    print "fow: ", fail_on_warning
-
     if name == None:
         name = kwargs['name']
 
