@@ -161,20 +161,15 @@ install -m 644 %{_saltceph}/openattic/keyring.sls %{buildroot}/%{_saltceph}/open
 install -m 644 %{_saltceph}/openattic/openattic.sls %{buildroot}/%{_saltceph}/openattic
 
 install -d 755 %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/auth.sls %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/custom.sls %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/default.sls %{buildroot}/%{_saltceph}/osd
+install -m 644 %{_saltceph}/osd/init.sls %{buildroot}/%{_saltceph}/osd
+install -m 644 %{_saltceph}/osd/keyrings.sls %{buildroot}/%{_saltceph}/osd
+install -m 644 %{_saltceph}/osd/partition.sls %{buildroot}/%{_saltceph}/osd
+install -m 644 %{_saltceph}/osd/scheduler.sls %{buildroot}/%{_saltceph}/osd
 
 install -d 755 %{buildroot}/%{_saltceph}/osd/files
 install -m 644 %{_saltceph}/osd/files/keyring.j2 %{buildroot}/%{_saltceph}/osd/files
-install -m 644 %{_saltceph}/osd/init.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/keyring.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/partition.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/pcc-auth.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/pcc-custom.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/pcc-keyring.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/pcc.sls %{buildroot}/%{_saltceph}/osd
-install -m 644 %{_saltceph}/osd/scheduler.sls %{buildroot}/%{_saltceph}/osd
 
 install -d 755 %{buildroot}/%{_saltceph}/packages
 install -m 644 %{_saltceph}/packages/custom-salt.sls %{buildroot}/%{_saltceph}/packages
