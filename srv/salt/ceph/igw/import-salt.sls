@@ -12,7 +12,7 @@ lrbd:
 /tmp/lrbd.conf:
   file.managed:
     - source: 
-      - salt://ceph/iscsi/files/lrbd.conf
+      - salt://ceph/igw/files/lrbd.conf
     - user: root
     - group: root
     - mode: 600
