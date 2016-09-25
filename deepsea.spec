@@ -90,6 +90,7 @@ install -m 644 %{_pillar}/ceph/stack/stack.cfg %{buildroot}/%{_pillar}/ceph/stac
 install -m 644 %{_pillar}/top.sls %{buildroot}/%{_pillar}
 
 install -d 755 %{buildroot}/srv/salt/_modules
+install -m 644 srv/salt/_modules/keyring.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/cephdisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/freedisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/retry.py %{buildroot}/srv/salt/_modules
@@ -98,12 +99,12 @@ install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 
 %define _saltceph srv/salt/ceph
 install -d 755 %{buildroot}/%{_saltceph}/admin
-install -m 644 %{_saltceph}/admin/authtool.sls %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/default.sls %{buildroot}/%{_saltceph}/admin
+install -m 644 %{_saltceph}/admin/init.sls %{buildroot}/%{_saltceph}/admin
+install -m 644 %{_saltceph}/admin/keyrings.sls %{buildroot}/%{_saltceph}/admin
+
 install -d 755 %{buildroot}/%{_saltceph}/admin/files
 install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/admin/files
-install -m 644 %{_saltceph}/admin/init.sls %{buildroot}/%{_saltceph}/admin
-install -m 644 %{_saltceph}/admin/pcc.sls %{buildroot}/%{_saltceph}/admin
 
 install -d 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
@@ -116,38 +117,28 @@ install -d 755 %{buildroot}/%{_saltceph}/events
 install -m 644 %{_saltceph}/events/begin_prep.sls %{buildroot}/%{_saltceph}/events
 install -m 644 %{_saltceph}/events/complete_prep.sls %{buildroot}/%{_saltceph}/events
 
-#install -m 644 %{_saltceph}/files/multipath.conf
-#install -m 644 %{_saltceph}/initiator/iscsiadm-salt.sls
-#install -m 644 %{_saltceph}/initiator/iscsiadm.sls
-#install -m 644 %{_saltceph}/initiator/multipathd.sls
+install -d 755 %{buildroot}/%{_saltceph}/igw
 
-install -d 755 %{buildroot}/%{_saltceph}/iscsi
-install -m 644 %{_saltceph}/iscsi/authtool.sls %{buildroot}/%{_saltceph}/iscsi
-
-install -m 644 %{_saltceph}/iscsi/files/sysconfig.lrbd %{buildroot}/%{_saltceph}/iscsi
-install -d 755 %{buildroot}/%{_saltceph}/iscsi/files
-install -m 644 %{_saltceph}/iscsi/files/keyring.j2 %{buildroot}/%{_saltceph}/iscsi/files
-install -m 644 %{_saltceph}/iscsi/import-salt.sls %{buildroot}/%{_saltceph}/iscsi
-install -m 644 %{_saltceph}/iscsi/import.sls %{buildroot}/%{_saltceph}/iscsi
-install -m 644 %{_saltceph}/iscsi/keyring.sls %{buildroot}/%{_saltceph}/iscsi
-install -m 644 %{_saltceph}/iscsi/lrbd-salt.sls %{buildroot}/%{_saltceph}/iscsi
-install -m 644 %{_saltceph}/iscsi/lrbd.sls %{buildroot}/%{_saltceph}/iscsi
-install -m 644 %{_saltceph}/iscsi/sysconfig.sls %{buildroot}/%{_saltceph}/iscsi
-
+install -d 755 %{buildroot}/%{_saltceph}/igw/files
+install -m 644 %{_saltceph}/igw/files/sysconfig.lrbd.j2 %{buildroot}/%{_saltceph}/igw/files
+install -m 644 %{_saltceph}/igw/files/keyring.j2 %{buildroot}/%{_saltceph}/igw/files
+install -m 644 %{_saltceph}/igw/import-salt.sls %{buildroot}/%{_saltceph}/igw
+install -m 644 %{_saltceph}/igw/import.sls %{buildroot}/%{_saltceph}/igw
+install -m 644 %{_saltceph}/igw/keyrings.sls %{buildroot}/%{_saltceph}/igw
+install -m 644 %{_saltceph}/igw/keyring.sls %{buildroot}/%{_saltceph}/igw
+install -m 644 %{_saltceph}/igw/lrbd-salt.sls %{buildroot}/%{_saltceph}/igw
+install -m 644 %{_saltceph}/igw/lrbd.sls %{buildroot}/%{_saltceph}/igw
+install -m 644 %{_saltceph}/igw/sysconfig.sls %{buildroot}/%{_saltceph}/igw
 
 install -d 755 %{buildroot}/%{_saltceph}/mds
-install -m 644 %{_saltceph}/mds/auth.sls %{buildroot}/%{_saltceph}/mds
-install -m 644 %{_saltceph}/mds/bootstrap-auth.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/default.sls %{buildroot}/%{_saltceph}/mds
-
-install -d 755 %{buildroot}/%{_saltceph}/mds/files
-install -m 644 %{_saltceph}/mds/files/bootstrap.j2 %{buildroot}/%{_saltceph}/mds/files
-install -m 644 %{_saltceph}/mds/files/keyring.j2 %{buildroot}/%{_saltceph}/mds/files
 install -m 644 %{_saltceph}/mds/init.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/keyring.sls %{buildroot}/%{_saltceph}/mds
-install -m 644 %{_saltceph}/mds/pcc.sls %{buildroot}/%{_saltceph}/mds
+install -m 644 %{_saltceph}/mds/keyrings.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/pools.sls %{buildroot}/%{_saltceph}/mds
 
+install -d 755 %{buildroot}/%{_saltceph}/mds/files
+install -m 644 %{_saltceph}/mds/files/keyring.j2 %{buildroot}/%{_saltceph}/mds/files
 
 install -d 755 %{buildroot}/%{_saltceph}/mine_functions
 install -m 644 %{_saltceph}/mine_functions/init.sls %{buildroot}/%{_saltceph}/mine_functions
@@ -156,12 +147,11 @@ install -m 644 %{_saltceph}/mine_functions/files/mine_functions.conf %{buildroot
 
 install -d 755 %{buildroot}/%{_saltceph}/mon
 install -m 644 %{_saltceph}/mon/default.sls %{buildroot}/%{_saltceph}/mon
+install -m 644 %{_saltceph}/mon/init.sls %{buildroot}/%{_saltceph}/mon
+install -m 644 %{_saltceph}/mon/keyrings.sls %{buildroot}/%{_saltceph}/mon
 
 install -d 755 %{buildroot}/%{_saltceph}/mon/files
 install -m 644 %{_saltceph}/mon/files/keyring.j2 %{buildroot}/%{_saltceph}/mon/files
-install -m 644 %{_saltceph}/mon/init.sls %{buildroot}/%{_saltceph}/mon
-install -m 644 %{_saltceph}/mon/pcc.sls %{buildroot}/%{_saltceph}/mon
-install -m 644 %{_saltceph}/mon/start.sls %{buildroot}/%{_saltceph}/mon
 
 install -d 755 %{buildroot}/%{_saltceph}/openattic
 install -m 644 %{_saltceph}/openattic/authtool.sls %{buildroot}/%{_saltceph}/openattic
@@ -218,7 +208,11 @@ install -m 644 %{_saltceph}/repo/init.sls %{buildroot}/%{_saltceph}/repo
 install -d 755 %{buildroot}/%{_saltceph}/rgw
 install -m 644 %{_saltceph}/rgw/default.sls %{buildroot}/%{_saltceph}/rgw
 install -m 644 %{_saltceph}/rgw/init.sls %{buildroot}/%{_saltceph}/rgw
-install -m 644 %{_saltceph}/rgw/pools.sls %{buildroot}/%{_saltceph}/rgw
+install -m 644 %{_saltceph}/rgw/keyring.sls %{buildroot}/%{_saltceph}/rgw
+install -m 644 %{_saltceph}/rgw/keyrings.sls %{buildroot}/%{_saltceph}/rgw
+
+install -d 755 %{buildroot}/%{_saltceph}/rgw/files
+install -m 644 %{_saltceph}/rgw/files/rgw.j2 %{buildroot}/%{_saltceph}/rgw/files
 
 install -d 755 %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/all.sls %{buildroot}/%{_saltceph}/stage
@@ -291,8 +285,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/configuration
 %dir /%{_saltceph}/configuration/files
 %dir /%{_saltceph}/events
-%dir /%{_saltceph}/iscsi
-%dir /%{_saltceph}/iscsi/files
+%dir /%{_saltceph}/igw
+%dir /%{_saltceph}/igw/files
 %dir /%{_saltceph}/mds
 %dir /%{_saltceph}/mds/files
 %dir /%{_saltceph}/mine_functions
@@ -308,6 +302,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/refresh
 %dir /%{_saltceph}/repo
 %dir /%{_saltceph}/rgw
+%dir /%{_saltceph}/rgw/files
 %dir /%{_saltceph}/stage
 %dir /%{_saltceph}/stage/configure
 %dir /%{_saltceph}/stage/discovery
@@ -329,9 +324,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/configuration/*.sls
 %config /%{_saltceph}/configuration/files/*.j2
 %config /%{_saltceph}/events/*.sls
-%config /%{_saltceph}/iscsi/*.sls
-%config /%{_saltceph}/iscsi/sysconfig.lrbd
-%config /%{_saltceph}/iscsi/files/*.j2
+%config /%{_saltceph}/igw/*.sls
+%config /%{_saltceph}/igw/files/*.j2
 %config /%{_saltceph}/mds/*.sls
 %config /%{_saltceph}/mds/files/*.j2
 %config /%{_saltceph}/mine_functions/*.sls
@@ -349,6 +343,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/refresh/*.sls
 %config /%{_saltceph}/repo/*.sls
 %config /%{_saltceph}/rgw/*.sls
+%config /%{_saltceph}/rgw/files/*.j2
 %config /%{_saltceph}/stage/*.sls
 %config /%{_saltceph}/stage/configure/*.sls
 %config /%{_saltceph}/stage/discovery/*.sls
