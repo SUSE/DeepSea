@@ -1,8 +1,7 @@
 
 {% set admin_keyring = "/srv/salt/ceph/admin/cache/ceph.client.admin.keyring" %}
 
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mon', host=True) %}
-{% set keyring_file = "/srv/salt/ceph/mon/cache/" + host + ".keyring" %}
+{% set keyring_file = "/srv/salt/ceph/mon/cache/mon.keyring" %}
 {{ keyring_file}}:
   file.managed:
     - source: 
@@ -17,6 +16,5 @@
       admin_secret: {{ salt['keyring.secret'](admin_keyring) }}
     - fire_event: True
 
-{% endfor %}
 
 

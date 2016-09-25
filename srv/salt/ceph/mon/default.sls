@@ -14,7 +14,7 @@ create_mon_dirs:
 /var/lib/ceph/tmp/keyring.mon:
   file.managed:
     - source: 
-      - salt://ceph/mon/cache/{{ grains['host'] }}.keyring
+      - salt://ceph/mon/cache/mon.keyring
     - user: ceph
     - group: ceph
     - mode: 600
