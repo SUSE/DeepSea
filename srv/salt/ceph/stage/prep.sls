@@ -18,6 +18,12 @@ sync master:
 #    - require:
 #      - salt: validate failed
 
+repo master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.repo
+    - require:
+      - salt: sync master
 
 prepare master:
   salt.state:
