@@ -268,6 +268,9 @@ cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
 %post 
 # Initialize to most likely value
 sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+# Restart salt-master if it's running, so it picks up
+# the config changes in /etc/salt/master.d/modules.conf
+systemctl try-restart salt-master > /dev/null 2>&1 || :
 
 %postun 
 
