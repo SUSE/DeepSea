@@ -1,5 +1,5 @@
 [client.admin]
-	key = {{ salt['pillar.get']('keyring:admin') }}
+	key = {{ secret }}
 	caps mds = "allow *"
 	caps mon = "allow *"
 	caps osd = "allow *"
