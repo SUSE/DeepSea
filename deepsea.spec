@@ -114,6 +114,7 @@ install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/
 install -m 644 %{_saltceph}/configuration/init.sls %{buildroot}/%{_saltceph}/configuration
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration/files
 install -m 644 %{_saltceph}/configuration/files/ceph.conf.j2 %{buildroot}/%{_saltceph}/configuration/files
+install -m 644 %{_saltceph}/configuration/files/ceph.conf.rgw %{buildroot}/%{_saltceph}/configuration/files
 
 
 install -d -m 755 %{buildroot}/%{_saltceph}/events
@@ -407,7 +408,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/admin/files/*.j2
 %config /%{_saltceph}/admin/key/*.sls
 %config /%{_saltceph}/configuration/*.sls
-%config /%{_saltceph}/configuration/files/*.j2
+%config /%{_saltceph}/configuration/files/ceph.conf*
 %config /%{_saltceph}/events/*.sls
 %config /%{_saltceph}/igw/*.sls
 %config /%{_saltceph}/igw/files/*.j2
