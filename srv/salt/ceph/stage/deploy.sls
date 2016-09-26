@@ -41,12 +41,6 @@ mon key:
     - sls: ceph.mon.key
     - failhard: True
 
-osd key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.osd.key
-    - failhard: True
 
 time:
   salt.state:
@@ -77,6 +71,13 @@ monitors:
     - tgt: 'I@roles:mon and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.mon
+    - failhard: True
+
+osd key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.osd.key
     - failhard: True
 
 storage:
