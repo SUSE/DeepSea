@@ -3,8 +3,8 @@ include:
   - .keyring
 
 install rgw:
-  cmd.run:
-    - name: "zypper --non-interactive --no-gpg-checks in ceph-radosgw"
+  pkg.installed:
+    - name: ceph-radosgw
 
 {% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 start {{ role }}:

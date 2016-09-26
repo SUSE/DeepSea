@@ -1,9 +1,9 @@
 
 
-/var/lib/ceph/mds/ceph-{{ grains['host'] }}/keyring:
+/var/lib/ceph/mds/ceph-mds/keyring:
   file.managed:
     - source:
-      - salt://ceph/mds/cache/{{ grains['host'] }}.keyring
+      - salt://ceph/mds/cache/mds.keyring
     - template: jinja
     - user: ceph
     - group: ceph

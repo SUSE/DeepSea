@@ -135,10 +135,12 @@ install -m 644 %{_saltceph}/igw/import/init.sls %{buildroot}/%{_saltceph}/igw/im
 install -d -m 755 %{buildroot}/%{_saltceph}/igw/key
 install -m 644 %{_saltceph}/igw/key/default.sls %{buildroot}/%{_saltceph}/igw/key
 install -m 644 %{_saltceph}/igw/key/init.sls %{buildroot}/%{_saltceph}/igw/key
+install -m 644 %{_saltceph}/igw/key/shared.sls %{buildroot}/%{_saltceph}/igw/key
 
 install -d -m 755 %{buildroot}/%{_saltceph}/igw/auth
 install -m 644 %{_saltceph}/igw/auth/default.sls %{buildroot}/%{_saltceph}/igw/auth
 install -m 644 %{_saltceph}/igw/auth/init.sls %{buildroot}/%{_saltceph}/igw/auth
+install -m 644 %{_saltceph}/igw/auth/shared.sls %{buildroot}/%{_saltceph}/igw/auth
 
 install -d -m 755 %{buildroot}/%{_saltceph}/igw/keyring
 install -m 644 %{_saltceph}/igw/keyring/default.sls %{buildroot}/%{_saltceph}/igw/keyring
@@ -155,10 +157,12 @@ install -m 644 %{_saltceph}/mds/init.sls %{buildroot}/%{_saltceph}/mds
 install -d -m 755 %{buildroot}/%{_saltceph}/mds/key
 install -m 644 %{_saltceph}/mds/key/default.sls %{buildroot}/%{_saltceph}/mds/key
 install -m 644 %{_saltceph}/mds/key/init.sls %{buildroot}/%{_saltceph}/mds/key
+install -m 644 %{_saltceph}/mds/key/shared.sls %{buildroot}/%{_saltceph}/mds/key
 
 install -d -m 755 %{buildroot}/%{_saltceph}/mds/auth
 install -m 644 %{_saltceph}/mds/auth/default.sls %{buildroot}/%{_saltceph}/mds/auth
 install -m 644 %{_saltceph}/mds/auth/init.sls %{buildroot}/%{_saltceph}/mds/auth
+install -m 644 %{_saltceph}/mds/auth/shared.sls %{buildroot}/%{_saltceph}/mds/auth
 
 install -d -m 755 %{buildroot}/%{_saltceph}/mds/keyring
 install -m 644 %{_saltceph}/mds/keyring/default.sls %{buildroot}/%{_saltceph}/mds/keyring
@@ -260,10 +264,12 @@ install -m 644 %{_saltceph}/rgw/init.sls %{buildroot}/%{_saltceph}/rgw
 install -d -m 755 %{buildroot}/%{_saltceph}/rgw/key
 install -m 644 %{_saltceph}/rgw/key/default.sls %{buildroot}/%{_saltceph}/rgw/key
 install -m 644 %{_saltceph}/rgw/key/init.sls %{buildroot}/%{_saltceph}/rgw/key
+install -m 644 %{_saltceph}/rgw/key/shared.sls %{buildroot}/%{_saltceph}/rgw/key
 
 install -d -m 755 %{buildroot}/%{_saltceph}/rgw/auth
 install -m 644 %{_saltceph}/rgw/auth/default.sls %{buildroot}/%{_saltceph}/rgw/auth
 install -m 644 %{_saltceph}/rgw/auth/init.sls %{buildroot}/%{_saltceph}/rgw/auth
+install -m 644 %{_saltceph}/rgw/auth/shared.sls %{buildroot}/%{_saltceph}/rgw/auth
 
 install -d -m 755 %{buildroot}/%{_saltceph}/rgw/keyring
 install -m 644 %{_saltceph}/rgw/keyring/default.sls %{buildroot}/%{_saltceph}/rgw/keyring

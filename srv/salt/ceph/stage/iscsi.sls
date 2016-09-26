@@ -7,11 +7,13 @@ auth:
 keyring:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
+    - tgt_type: compound
     - sls: ceph.igw.keyring
 
 sysconfig:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
+    - tgt_type: compound
     - sls: ceph.igw.sysconfig
 
 iscsi import:
