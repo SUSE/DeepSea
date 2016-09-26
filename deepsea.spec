@@ -28,7 +28,8 @@ Group:          System/Libraries
 Url:            http://bugs.opensuse.org
 Source0:        deepsea-%{version}.tar.gz
 
-Requires:       salt
+BuildRequires:  salt-master
+Requires:       salt-master
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
@@ -277,12 +278,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %files
 %defattr(-,root,root,-)
 /srv/modules/pillar/stack.py
-%dir %attr(0750, root, salt) %_sysconfdir/salt
-%dir %attr(0755, root, salt) /srv/salt
-%dir %attr(0755, root, salt) /srv/pillar
-%dir %attr(0755, root, salt) %{_sysconfdir}/salt/master.d/
 %dir /%{_runners}
-%dir /%{_pillar}
 %dir /%{_pillar}/ceph
 %dir /%{_pillar}/ceph/stack
 %dir /srv/modules
