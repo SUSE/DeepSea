@@ -53,6 +53,12 @@ admin keyrings:
     - sls: ceph.admin.keyrings
     - failhard: True
 
+sync1:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.sync
+
 admin:
   salt.state:
     - tgt: 'I@roles:admin and I@cluster:ceph or I@roles:master'
@@ -65,6 +71,12 @@ mon keyrings:
     - tgt_type: compound
     - sls: ceph.mon.keyrings
     - failhard: True
+
+sync2:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.sync
 
 monitors:
   salt.state:
@@ -79,6 +91,12 @@ storage auth:
     - tgt_type: compound
     - sls: ceph.osd.keyrings
     - failhard: True
+
+sync3:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.sync
 
 storage:
   salt.state:
