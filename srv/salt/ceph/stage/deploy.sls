@@ -27,6 +27,27 @@ validate failed:
 
 {% endif %}
 
+admin key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.admin.key
+    - failhard: True
+
+mon key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.mon.key
+    - failhard: True
+
+osd key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.osd.key
+    - failhard: True
+
 time:
   salt.state:
     - tgt: 'I@cluster:ceph'
@@ -45,38 +66,17 @@ configuration:
     - tgt_type: compound
     - sls: ceph.configuration
 
-admin key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.admin.key
-    - failhard: True
-
 admin:
   salt.state:
     - tgt: 'I@roles:admin and I@cluster:ceph or I@roles:master'
     - tgt_type: compound
     - sls: ceph.admin
 
-mon key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.mon.key
-    - failhard: True
-
 monitors:
   salt.state:
     - tgt: 'I@roles:mon and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.mon
-    - failhard: True
-
-osd key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.osd.key
     - failhard: True
 
 storage:
