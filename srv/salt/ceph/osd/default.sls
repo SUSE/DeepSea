@@ -1,11 +1,6 @@
 
-/var/lib/ceph/bootstrap-osd/ceph.keyring:
-  file.managed:
-    - source: 
-      - salt://ceph/osd/cache/bootstrap.keyring
-    - user: root
-    - group: root
-    - mode: 600
+include:
+  - .keyring
 
 {% for device in salt['pillar.get']('storage:osds') %}
 prepare {{ device }}:

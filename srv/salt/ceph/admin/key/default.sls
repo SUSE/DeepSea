@@ -16,3 +16,8 @@
     - fire_event: True
 
 
+verify {{ keyring_file }}:
+  module.run:
+    - name: retry.cmd
+    - kwargs:
+        cmd: "test -f {{ keyring_file }}"

@@ -45,19 +45,12 @@ configuration:
     - tgt_type: compound
     - sls: ceph.configuration
 
-{# Yes, there's only one #}
-admin keyrings:
+admin key:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
-    - sls: ceph.admin.keyrings
+    - sls: ceph.admin.key
     - failhard: True
-
-sync1:
-  salt.state:
-    - tgt: 'I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.sync
 
 admin:
   salt.state:
@@ -65,18 +58,12 @@ admin:
     - tgt_type: compound
     - sls: ceph.admin
 
-mon keyrings:
+mon key:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
-    - sls: ceph.mon.keyrings
+    - sls: ceph.mon.key
     - failhard: True
-
-sync2:
-  salt.state:
-    - tgt: 'I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.sync
 
 monitors:
   salt.state:
@@ -85,18 +72,12 @@ monitors:
     - sls: ceph.mon
     - failhard: True
 
-storage auth:
+osd key:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
-    - sls: ceph.osd.keyrings
+    - sls: ceph.osd.key
     - failhard: True
-
-sync3:
-  salt.state:
-    - tgt: 'I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.sync
 
 storage:
   salt.state:

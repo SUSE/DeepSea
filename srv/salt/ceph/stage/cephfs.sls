@@ -4,18 +4,12 @@ cephfs pools:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.mds.pools
 
-cephfs auth:
+mds auth:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.mds.keyrings
+    - sls: ceph.mds.key
 
-cephfs keyring:
-  salt.state:
-    - tgt: "I@roles:mds and I@cluster:ceph"
-    - tgt_type: compound
-    - sls: ceph.mds.keyring
-
-cephfs:
+mds:
   salt.state:
     - tgt: "I@roles:mds and I@cluster:ceph"
     - tgt_type: compound

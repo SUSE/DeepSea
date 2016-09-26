@@ -1,15 +1,15 @@
 
-iscsi auth:
+auth:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.igw.keyrings
+    - sls: ceph.igw.key
 
-iscsi keyring:
+keyring:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - sls: ceph.igw.keyring
 
-iscsi sysconfig:
+sysconfig:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - sls: ceph.igw.sysconfig
@@ -23,7 +23,7 @@ iscsi apply:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - tgt_type: compound
-    - sls: ceph.igw.lrbd
+    - sls: ceph.igw
 
 # Move these to somewhere else... TBD
 #multipathd:
@@ -31,10 +31,14 @@ iscsi apply:
 #    - tgt: "E@client.*"
 #    - tgt_type: compound
 #    - sls: initiator.multipathd
+#    - require:
+#      - salt: iscsi apply
 #
 #iscsiadm:
 #  salt.state:
 #    - tgt: "E@client.*"
 #    - tgt_type: compound
 #    - sls: initiator.iscsiadm
+#    - require:
+#      - salt: multipathd
 

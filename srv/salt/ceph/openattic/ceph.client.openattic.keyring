@@ -1,0 +1,4 @@
+[client.openattic]
+	key = AQBjoKNX3CV3GhAAxQdkmyVF1AM33rYWkM/ldA==
+	caps mon = "allow *"
+	caps osd = "allow *"
