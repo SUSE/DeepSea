@@ -13,8 +13,4 @@ role-admin/cluster/admin.subdomainA.sls
 role-admin/cluster/*.sls re=.*1[135]\.subdomainX\.sls$
 role-igw/cluster/*.sls re=.*2[4-6]\.subdomainX\.sls$
 role-mon/cluster/mon*.sls re=.*1[135]\.subdomainX\.sls$
-role-master/stack/default/ceph/roles/master.yml
-role-admin/stack/default/ceph/roles/admin.yml
-role-mon/stack/default/ceph/roles/mon.yml
 role-mon/stack/default/ceph/minions/*.yml re=.*1[135]\.subdomainX\.yml$
-role-storage/stack/default/ceph/roles/storage.yml

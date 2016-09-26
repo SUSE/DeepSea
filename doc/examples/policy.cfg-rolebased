@@ -16,11 +16,4 @@ role-igw/cluster/igw*.sls
 role-rgw/cluster/rgw*.sls
 role-mon/cluster/mon*.sls
 role-mds/cluster/mon[12]*.sls
-role-master/stack/default/ceph/roles/master.yml
-role-admin/stack/default/ceph/roles/admin.yml
-role-mon/stack/default/ceph/roles/mon.yml
 role-mon/stack/default/ceph/minions/mon*.yml
-role-mds/stack/default/ceph/roles/mds.yml
-role-igw/stack/default/ceph/roles/igw.yml
-role-rgw/stack/default/ceph/roles/rgw.yml
-role-storage/stack/default/ceph/roles/storage.yml

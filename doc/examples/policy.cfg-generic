@@ -12,9 +12,4 @@ role-master/cluster/*.sls slice=[2:3]
 role-admin/cluster/*.sls slice=[2:6]
 role-mon/cluster/*.sls slice[3:6]
 role-igw/cluster/*.sls slice=[6:9]
-role-master/stack/default/ceph/roles/master.yml
-role-admin/stack/default/ceph/roles/admin.yml
-role-mon/stack/default/ceph/roles/mon.yml
 role-mon/stack/default/ceph/minions/*.yml slice=[3:6]
-role-mds/stack/default/ceph/roles/mds.yml
-role-storage/stack/default/ceph/roles/storage.yml
