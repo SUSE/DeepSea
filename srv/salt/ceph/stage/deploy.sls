@@ -27,47 +27,15 @@ validate failed:
 
 {% endif %}
 
-admin key:
+{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw' ] %}
+{{ role }} key:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
-    - sls: ceph.admin.key
+    - sls: ceph.{{ role }}.key
     - failhard: True
 
-mon key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.mon.key
-    - failhard: True
-
-osd key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.osd.key
-    - failhard: True
-
-igw key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.igw.key
-    - failhard: True
-
-mds key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.mds.key
-    - failhard: True
-
-rgw key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.rgw.key
-    - failhard: True
+{% endfor %}
 
 
 time:
