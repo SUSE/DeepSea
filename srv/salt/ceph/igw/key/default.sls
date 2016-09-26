@@ -1,7 +1,7 @@
 
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw', host=True) %}
 {% set client = "client.igw." + host %}
-{% set keyring_file = "/srv/salt/ceph/igw/cache/ceph." +  client + ".keyring" %}
+{% set keyring_file = salt['keyring.file']('igw', client)  %}
 {{ keyring_file}}:
   file.managed:
     - source: 
@@ -14,9 +14,5 @@
     - context:
       client: {{ client }}
       secret: {{ salt['keyring.secret'](keyring_file) }}
-
-auth {{ keyring_file }}:
-  cmd.run:
-    - name: "ceph auth add {{ client }} -i {{ keyring_file }}"
 
 {% endfor %}

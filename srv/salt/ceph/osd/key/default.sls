@@ -1,6 +1,6 @@
 
 
-{% set keyring_file = "/srv/salt/ceph/osd/cache/bootstrap.keyring" %}
+{% set keyring_file = salt['keyring.file']('osd') %}
 {{ keyring_file}}:
   file.managed:
     - source: 
@@ -14,8 +14,5 @@
       secret: {{ salt['keyring.secret'](keyring_file) }}
     - fire_event: True
 
-auth {{ keyring_file }}:
-  cmd.run:
-    - name: "ceph auth add client.bootstrap-osd -i {{ keyring_file }}"
 
 

@@ -1,7 +1,4 @@
 
-include:
-  - .keyring
-
 install rgw:
   cmd.run:
     - name: "zypper --non-interactive --no-gpg-checks in ceph-radosgw"
@@ -12,12 +9,7 @@ start {{ role }}:
   service.running:
     - name: ceph-radosgw@{{ role + "." + grains['host'] }}
     - enable: True
-
-restart {{ role }}:
-  module.run:
-    - name: service.restart
-    - m_name: ceph-radosgw@{{ role + "." + grains['host'] }}
-
-
+    - require:
+        - cmd: install rgw
 {% endfor %}
 

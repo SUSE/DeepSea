@@ -2,7 +2,7 @@
 auth:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.igw.key
+    - sls: ceph.igw.auth
 
 keyring:
   salt.state:
