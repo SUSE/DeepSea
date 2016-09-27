@@ -1,3 +1,3 @@
 [client.bootstrap-osd]
-        key = {{ salt['pillar.get']('keyring:osd') }}
+        key = {{ secret }}
         caps mon = "allow profile bootstrap-osd"

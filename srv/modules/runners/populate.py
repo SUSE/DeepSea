@@ -64,26 +64,26 @@ class Settings(object):
         self.root_dir = "/srv/pillar/ceph/proposals"
 
 
-class Utils(object):
-    """
-    Class for common methods
-    """
-
-    @staticmethod
-    def secret():
-        """
-        Generate a secret
-        """
-        #cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
-        #
-        #if not os.path.isfile(cmd[0]):
-        #    raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
-        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        #for line in proc.stdout:
-        #    return line.rstrip()
-        key = os.urandom(16) 
-        header = struct.pack('<hiih',1,int(time.time()),0,len(key)) 
-        return base64.b64encode(header + key) 
+#class Utils(object):
+#    """
+#    Class for common methods
+#    """
+#
+#    @staticmethod
+#    def secret():
+#        """
+#        Generate a secret
+#        """
+#        #cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
+#        #
+#        #if not os.path.isfile(cmd[0]):
+#        #    raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
+#        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+#        #for line in proc.stdout:
+#        #    return line.rstrip()
+#        key = os.urandom(16) 
+#        header = struct.pack('<hiih',1,int(time.time()),0,len(key)) 
+#        return base64.b64encode(header + key) 
 
 class SaltWriter(object):
     """
@@ -126,7 +126,7 @@ class CephStorage(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        self.keyring = Utils.secret()
+        #self.keyring = Utils.secret()
 
 
     def save(self, servers, proposals):
@@ -453,57 +453,101 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        self.keyring_roles = { 'admin': Utils.secret(), 
-                               'mon': Utils.secret(), 
-                               'storage': Utils.secret(),
-                               'mds': Utils.secret(),
-                               'igw': Utils.secret(),
-                               'rgw': Utils.secret() }
+        #self.keyring_roles = { 'admin': Utils.secret(), 
+        #                       'mon': Utils.secret(), 
+        #                       'storage': Utils.secret(),
+        #                       'mds': Utils.secret(),
+        #                       'igw': Utils.secret() }
+
+        ## Add rgw roles
+        #for rgw_role in self._rgw_configurations():
+        #    self.keyring_roles[rgw_role] = Utils.secret()
 
         self.networks = self._networks(self.servers)
         self.public_network, self.cluster_network = self.public_cluster(self.networks) 
+
+        self.master_contents = {}
+
+    def _rgw_configurations(self):
+        """
+        Use the custom names for rgw configurations specified.  Otherwise,
+        default to 'rgw'.
+        """
+        local = salt.client.LocalClient()
+
+        # Should we add a master_minion lookup and have two calls instead?
+        _rgws = local.cmd('*' , 'pillar.get', [ 'rgw_configurations' ])
+        for node in _rgws.keys():
+            # Check the first one
+            if _rgws[node]:
+                return _rgws[node]
+            else:
+                return [ 'rgw' ]
 
     def generate(self):
         """
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        master_contents = {}
-        roles = [ 'admin', 'mon', 'storage', 'mds', 'rgw', 'igw' ]
+        self._standard_roles()
+        self._client_roles()
+        self._master_role()
+
+
+    def _standard_roles(self):
+        """
+        Create role named directories and create corresponding yaml files
+        for every server.
+        """
+        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw' ] + self._rgw_configurations()
+
+        #roles = self.keyring_roles.keys()
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
                 create_dirs(role_dir, self.root_dir)
-            roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
-            if not os.path.isdir(roles_dir):
-                create_dirs(roles_dir, self.root_dir)
-            if role in self.keyring_roles:
-                filename = roles_dir + "/" +  role + ".yml"
-                contents = {}
-                role_key = self._role_mapping(role)
+            #roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
+            #if not os.path.isdir(roles_dir):
+            #    create_dirs(roles_dir, self.root_dir)
+            #if role in self.keyring_roles:
+            #    filename = roles_dir + "/" +  role + ".yml"
+            #    contents = {}
+            #    role_key = self._role_mapping(role)
 
-                contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
-                self.writer.write(filename, contents)
-                if 'keyring' in master_contents:
-                    master_contents['keyring'].append({ role_key: self.keyring_roles[role] })
-                else:
-                    master_contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
-
-
+            #    contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
+            #    self.writer.write(filename, contents)
+            #    if 'keyring' in self.master_contents:
+            #        self.master_contents['keyring'].append({ role_key: self.keyring_roles[role] })
+            #    else:
+            #        self.master_contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
 
             # All minions are not necessarily storage - see CephStorage
             if role != 'storage':
-                self._cluster_assignment(role_dir, role)
+                self._role_assignment(role_dir, role)
 
+    def _client_roles(self):
+        """
+        Allows admins to target non-Ceph minions
+        """
+        roles = [ 'mds-client', 'rgw-client', 'igw-client', 'mds-nfs', 'rgw-nfs' ]
+        for role in roles:
+            role_dir = "{}/role-{}".format(self.root_dir, role)
+            self._role_assignment(role_dir, role)
+
+
+    def _master_role(self):
+        """
+        The master role can access all keyring secrets
+        """
         role = 'master'
         role_dir = "{}/role-{}".format(self.root_dir, role)
-        roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
-        if not os.path.isdir(roles_dir):
-            create_dirs(roles_dir, self.root_dir)
-        filename = roles_dir + "/" +  role + ".yml"
-        self.writer.write(filename, master_contents)
+        #roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
+        #if not os.path.isdir(roles_dir):
+        #    create_dirs(roles_dir, self.root_dir)
+        #filename = roles_dir + "/" +  role + ".yml"
+        #self.writer.write(filename, self.master_contents)
 
-        self._cluster_assignment(role_dir, role)
+        self._role_assignment(role_dir, role)
             
     def _role_mapping(self, role):
         """
@@ -514,7 +558,7 @@ class CephRoles(object):
         return role
 
 
-    def _cluster_assignment(self, role_dir, role):
+    def _role_assignment(self, role_dir, role):
         """
         Create role related sls files
         """
@@ -562,7 +606,7 @@ class CephRoles(object):
                  create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
-            contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, self.keyring_roles['admin']))
+            contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
             contents['admin_method'] = "default"
             contents['configuration_method'] = "default"
             contents['mds_method'] = "default"
@@ -672,6 +716,13 @@ class CephCluster(object):
 
         local = salt.client.LocalClient()
         self.minions = local.cmd('*' , 'grains.get', [ 'id' ])
+
+        # Should we add a master_minion lookup and have two calls instead?
+        _rgws = local.cmd('*' , 'pillar.get', [ 'rgw_configurations' ])
+        for node in _rgws.keys():
+            self.rgw_configurations = _rgws[node]
+            # Just need first
+            break
 
     def generate(self):
         """

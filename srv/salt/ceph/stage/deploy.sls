@@ -27,6 +27,17 @@ validate failed:
 
 {% endif %}
 
+{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw' ] %}
+{{ role }} key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.{{ role }}.key
+    - failhard: True
+
+{% endfor %}
+
+
 time:
   salt.state:
     - tgt: 'I@cluster:ceph'
@@ -58,7 +69,7 @@ monitors:
     - sls: ceph.mon
     - failhard: True
 
-storage auth:
+osd auth:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound

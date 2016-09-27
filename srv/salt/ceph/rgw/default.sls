@@ -1,12 +1,21 @@
-{% set rgw_name = salt['pillar.get']('rgw_service_name', 'rgw')  %}
-{% set rgw_instance = salt['grains.get']('id').split('.')[0] %}
+
+include:
+  - .keyring
+
 install rgw:
   pkg.installed:
     - name: ceph-radosgw
 
-start rgw:
+{% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+start {{ role }}:
   service.running:
-    - name: ceph-radosgw@{{ rgw_name }}.{{ rgw_instance }}
+    - name: ceph-radosgw@{{ role + "." + grains['host'] }}
     - enable: True
-    - require:
-        - pkg: install rgw
+
+restart {{ role }}:
+  module.run:
+    - name: service.restart
+    - m_name: ceph-radosgw@{{ role + "." + grains['host'] }}
+
+{% endfor %}
+

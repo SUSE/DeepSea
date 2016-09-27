@@ -9,3 +9,13 @@ filestore_xattr_use_omap = true
 public_network = {{ salt['pillar.get']('public_network') }}
 cluster_network = {{ salt['pillar.get']('cluster_network') }}
 
+{% if 'rgw' in pillar.get('roles') %}
+{% set default_rgw = [ 'rgw' ] %}
+{% else %}
+{% set default_rgw = [] %}
+{% endif %}
+
+{% for config in salt['pillar.get']('rgw_configurations', default_rgw ) %}
+{% include "ceph/configuration/files/ceph.conf." + config %}
+{% endfor %}
+

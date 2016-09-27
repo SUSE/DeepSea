@@ -1,0 +1,2 @@
+[ client.{{ config }} ]
+rgw frontends = "civetweb port=80"
