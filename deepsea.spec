@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.4.5
+Version:        0.5
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -323,7 +323,6 @@ install -m 644 %{_saltceph}/updates/default.sls %{buildroot}/%{_saltceph}/update
 install -m 644 %{_saltceph}/updates/init.sls %{buildroot}/%{_saltceph}/updates
 install -m 644 %{_saltceph}/updates/restart.sls %{buildroot}/%{_saltceph}/updates
 
-install -m 644 srv/salt/top.sls %{buildroot}/srv/salt
 
 cd %{buildroot}/%{_saltceph}/stage && ln -sf prep.sls 0.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf discovery.sls 1.sls
@@ -408,7 +407,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_pillar}/ceph/init.sls
 %config(noreplace) /%{_pillar}/ceph/master_minion.sls
 %config /%{_pillar}/ceph/stack/stack.cfg
-%config /srv/salt/top.sls
 %config /srv/salt/_modules/*.py
 %config /%{_saltceph}/admin/*.sls
 %config /%{_saltceph}/admin/files/*.j2
