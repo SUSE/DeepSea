@@ -1,4 +1,7 @@
 
+prevent empty rendering:
+  test.nop:
+    - name: skip
 
 {% set keyring_file = salt['keyring.file']('osd') %}
 auth {{ keyring_file }}:
