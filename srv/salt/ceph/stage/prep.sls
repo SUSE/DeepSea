@@ -10,6 +10,11 @@ validate failed:
 
 {% endif %}
 
+advisory:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: advise.salt_run
+    - unless: "test -f /var/cache/salt/minion/files/base/_modules/advise.py"
 
 sync master:
   salt.state:
