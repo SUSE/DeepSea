@@ -5,9 +5,11 @@ import salt.utils.error
 import logging
 import ipaddress
 import pprint
+import json
 import yaml
 import os
 import re
+import sys
 from subprocess import call, Popen, PIPE
 from os.path import dirname
 
@@ -41,6 +43,33 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    
+class PrettyPrinter:
+    
+    def add(self, name, passed, errors):
+        # Need to make colors optional, but looks better currently
+        for attr in passed.keys():
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
+        for attr in errors.keys():
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
+            
+    def print_result(self):
+        pass
+            
+class JsonPrinter:
+    
+    def __init__(self):
+        self.result = {}
+    
+    def add(self, name, passed, errors):
+        self.result[name] = {'passed': passed, 'errors': errors}
+            
+    def print_result(self):
+        json.dump(self.result, sys.stdout)
+        
+def get_printer(__pub_output=None, **kwargs):
+    return JsonPrinter() if __pub_output in ['json', 'quiet'] else PrettyPrinter()
+    
 
 
 class SaltOptions(object):
@@ -90,13 +119,14 @@ class Validate(object):
     Perform checks on pillar and grain data
     """
 
-    def __init__(self, name, data, grains):
+    def __init__(self, name, data, grains, printer):
         """
         Query the cluster assignment and remove unassigned
         """
         self.name = name
         self.data = data
         self.grains = grains
+        self.printer = printer
         self.passed = OrderedDict()
         self.errors = OrderedDict()
 
@@ -573,13 +603,7 @@ class Validate(object):
             self.passed['ceph_version'] = "valid"
 
     def report(self):
-        """
-        """
-        # Need to make colors optional, but looks better currently
-        for attr in self.passed.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, self.passed[attr], bcolors.ENDC)
-        for attr in self.errors.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, self.errors[attr], bcolors.ENDC)
+        self.printer.add(self.name, self.passed, self.errors)
 
 def usage():
     print "salt-run validate.pillar cluster"
@@ -593,21 +617,25 @@ def pillars(**kwargs):
     #options = SaltOptions()
     local = salt.client.LocalClient()
     cluster = ClusterAssignment(local)
+    
+    printer = printer = get_printer(**kwargs)
+
 
     for name in cluster.names:
-        pillar(name, **kwargs)
+        pillar(name, printer=printer, **kwargs)
+    
+    printer.print_result()
 
 
-def pillar(name = None, **kwargs):
+def pillar(name = None, printer=None, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
-
-    if name == None:
-        if 'name' in kwargs:
-            name = kwargs['name']
-
+    has_printer = printer is not None
+    if not has_printer:
+        printer = get_printer(**kwargs)
+        
     if not name:
         usage()
         exit(1)
@@ -621,7 +649,7 @@ def pillar(name = None, **kwargs):
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
     
-    v = Validate(name, pillar_data, grains_data)
+    v = Validate(name, pillar_data, grains_data, printer)
     v.fsid()
     v.public_network()
     v.public_interface()
@@ -643,20 +671,26 @@ def pillar(name = None, **kwargs):
     v.time_server()
     v.fqdn()
     v.report()
+    
+    if not has_printer:
+        printer.print_result()
 
     if v.errors:
         return False
 
     return True
 
-def setup():
+def setup(**kwargs):
     """
     Check that initial files prior to any stage are correct
     """
     local = salt.client.LocalClient()
     pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
-    v = Validate("setup", pillar_data, [])
+    printer = printer = get_printer(**kwargs)
+
+    v = Validate("setup", pillar_data, [], printer)
     v.master_minion()
     v.ceph_version()
     v.report()
-
+    
+    printer.print_result()

@@ -27,6 +27,13 @@ repo:
     - require:
       - salt: mine_functions
 
+common packages:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.packages.{{ salt['pillar.get']('common_deps_method', 'common_deps') }}
+    - require:
+      - salt: repo
+
 updates:
   salt.state:
     - tgt: '*'

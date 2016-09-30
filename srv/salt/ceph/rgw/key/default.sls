@@ -1,4 +1,8 @@
 
+prevent empty rendering:
+  test.nop:
+    - name: skip
+
 {% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
 {% set client = "client." + role + "." + host %}
