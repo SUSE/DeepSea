@@ -18,7 +18,6 @@ reboot:
     - shell: /bin/bash
     - unless: "echo {{ installed }} | grep -q {{ kernel }}"
     - failhard: True
-    - order: 30
     - fire_event: True
 
 

@@ -586,19 +586,21 @@ class Validate(object):
         """
         JEWEL_VERSION="10.2"
         local = salt.client.LocalClient()
-        # Maybe search by not unassigned?
-        contents = local.cmd("I@cluster:ceph" , 'cmd.run', [ '/usr/bin/zypper info ceph' ], expr_form="compound")
+        contents = local.cmd('*' , 'cmd.run', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
+        
         for minion in contents.keys():
             m = re.search(r'Version: (\S+)', contents[minion])
-            version = m.group(1)
+            # Skip minions with no ceph repo
+            if m:
+                version = m.group(1)
 
-            # String comparison works for now
-            if version < JEWEL_VERSION:
-                msg = "ceph version {} on minion {}".format(version, minion)
-                if 'ceph_version' in self.errors:
-                    self.errors['ceph_version'].append(msg)
-                else:
-                    self.errors['ceph_version'] = [ msg ]
+                # String comparison works for now
+                if version < JEWEL_VERSION:
+                    msg = "ceph version {} on minion {}".format(version, minion)
+                    if 'ceph_version' in self.errors:
+                        self.errors['ceph_version'].append(msg)
+                    else:
+                        self.errors['ceph_version'] = [ msg ]
         if 'ceph_version' not in self.errors:
             self.passed['ceph_version'] = "valid"
 

@@ -10,16 +10,12 @@ validate failed:
 
 {% endif %}
 
-advisory:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: advise.salt_run
-    - unless: "test -f /var/cache/salt/minion/files/base/_modules/advise.py"
-
 sync master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.sync
+
+{% set notice = salt['saltutil.runner']('advise.salt_run') %}
 
 repo master:
   salt.state:
@@ -33,7 +29,7 @@ prepare master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates
     - require:
-      - salt: sync master
+      - salt: repo master
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
@@ -49,7 +45,7 @@ unlock:
 restart master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.updates.{{ salt['pillar.get']('restart_method', 'restart') }}
+    - sls: ceph.updates.restart
     - require:
       - salt: unlock
 
