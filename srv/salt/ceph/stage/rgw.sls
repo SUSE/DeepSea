@@ -5,8 +5,11 @@ rgw auth:
     - tgt_type: compound
     - sls: ceph.rgw.auth
 
-rgw:
+{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+{{ config }}:
   salt.state:
-    - tgt: "I@roles:rgw and I@cluster:ceph"
+    - tgt: "I@roles:{{ config }} and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.rgw
+
+{% endfor %}
