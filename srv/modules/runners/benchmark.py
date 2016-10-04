@@ -19,7 +19,7 @@ class Fio(object):
                 'pillar.get', ['public_address'], expr_form='compound')
         self.cmd_args = ['fio']
 
-        self.cmd_args.extend(['--client={}'.format(clients[client][0]) for client in clients])
+        self.cmd_args.extend(['--client={}'.format(clients[client]) for client in clients])
 
         self.bench_dir = bench_dir
         self.work_dir = work_dir
