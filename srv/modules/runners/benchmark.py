@@ -15,12 +15,10 @@ local_client = salt.client.LocalClient()
 class Fio(object):
 
     def __init__(self, bench_dir, work_dir):
-        clients = local_client.cmd('I@roles:cephfs-client and I@cluster:ceph',
-                # 'pillar.get', ['public_address'], expr_form='compound')
-                'network.ip_addrs', [], expr_form='compound')
+        clients = local_client.cmd('I@roles:mds-client and I@cluster:ceph',
+                'pillar.get', ['public_address'], expr_form='compound')
         self.cmd_args = ['fio']
 
-        # TODO workaround until client roles are merged
         self.cmd_args.extend(['--client={}'.format(clients[client][0]) for client in clients])
 
         self.bench_dir = bench_dir
