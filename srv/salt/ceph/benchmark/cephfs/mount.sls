@@ -14,7 +14,7 @@ mount cephfs:
     - name:  {{ salt['pillar.get']('benchmark:work-directory') }}
     - device: {{ salt['pillar.get']('mon_host')|join(',') }}:/
     - fstype: ceph
-    - opts : name=admin,secret={{ salt['pillar.get']('keyring:admin') }}
+    - opts : name=admin,secret={{ salt.cmd.run('ceph-authtool -p /etc/ceph/ceph.client.admin.keyring') }}
     - persist: False
     - require:
       - file: create mount point
