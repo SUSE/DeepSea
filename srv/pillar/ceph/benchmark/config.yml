@@ -1,4 +1,5 @@
 benchmark:
   # where cephfs will be mounted on the client nodes
   work-directory: /run/cephfs_bench
+  job-file-directory: /run/cephfs_bench_jobs
   default-collection: simple.yml
