@@ -17,7 +17,8 @@ class Fio(object):
     def __init__(self, bench_dir, work_dir):
         clients = local_client.cmd('I@roles:mds-client and I@cluster:ceph',
                 'pillar.get', ['public_address'], expr_form='compound')
-        self.cmd_args = ['fio']
+        self.cmd = 'fio'
+        self.cmd_args = []
 
         self.cmd_args.extend(['--client={}'.format(clients[client]) for client in clients])
 
@@ -29,7 +30,10 @@ class Fio(object):
 
     def run(self, job_spec):
         jobfile = self._parse_job(job_spec)
-        output = check_output(self.cmd_args + [jobfile])
+        cmd = [None] * 2 * len(self.cmd_args)
+        cmd[::2] = self.cmd_args
+        cmd[1::2] = [jobfile] * len(self.cmd_args)
+        output = check_output([self.cmd] + cmd)
 
         return output
 
