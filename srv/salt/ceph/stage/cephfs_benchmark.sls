@@ -1,10 +1,16 @@
 
-prep fio:
+prep clients:
   salt.state:
     - tgt: "I@roles:mds-client and I@cluster:ceph"
     - tgt_type: compound
     - sls:
       - ceph.benchmark.cephfs
+
+prep master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls:
+      - ceph.benchmark.cephfs.prepare_master
 
 run fio:
   salt.runner:
