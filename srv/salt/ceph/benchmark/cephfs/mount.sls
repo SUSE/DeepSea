@@ -19,6 +19,10 @@ mount cephfs:
     - require:
       - file: create mount point
 
+# file.directory seems to have a race when run from several minions on a
+# networked FS. Not sure if we can get around that.
+# failse with OSError: [Errno 17] File exists in
+# salt/modules/file.py", line 4406, in makedirs_perms
 create subdir for work files:
   file.directory:
     - name: {{ salt['pillar.get']('benchmark:work-directory') }}/bench_files

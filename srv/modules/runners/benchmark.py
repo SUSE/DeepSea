@@ -5,7 +5,7 @@ import salt.config
 
 import logging
 from jinja2 import Environment, FileSystemLoader
-from os.path import dirname
+from os.path import dirname, basename, splitext
 from subprocess import check_output
 import yaml
 
@@ -14,15 +14,18 @@ local_client = salt.client.LocalClient()
 
 class Fio(object):
 
-    def __init__(self, bench_dir, work_dir):
+    def __init__(self, bench_dir, work_dir, log_dir):
         clients = local_client.cmd('I@roles:mds-client and I@cluster:ceph',
                 'pillar.get', ['public_address'], expr_form='compound')
         self.cmd = 'fio'
-        self.cmd_args = []
 
-        self.cmd_args.extend(['--client={}'.format(clients[client]) for client in clients])
+        self.cmd_args = ['--output-format=json']
+
+        self.client_args = []
+        self.client_args.extend(['--client={}'.format(clients[client]) for client in clients])
 
         self.bench_dir = bench_dir
+        self.log_dir = log_dir
         self.work_dir = work_dir
 
         self.jinja_env = Environment(loader=FileSystemLoader('{}/{}'.format(bench_dir,
@@ -30,10 +33,17 @@ class Fio(object):
 
     def run(self, job_spec):
         jobfile = self._parse_job(job_spec)
-        cmd = [None] * 2 * len(self.cmd_args)
-        cmd[::2] = self.cmd_args
-        cmd[1::2] = [jobfile] * len(self.cmd_args)
-        output = check_output([self.cmd] + cmd)
+        '''
+        create a list that alternates between --client arguments and job files
+        e.g. [--client=host1, jobfile, --client=host2, jobfile]
+        fio expects a job file for every remote agent
+        '''
+        cmd = [None] * 2 * len(self.client_args)
+        cmd[::2] = self.client_args
+        cmd[1::2] = [jobfile] * len(self.client_args)
+        self.cmd_args.extend(['--output={}/{}.json'.format(self.log_dir,
+            splitext(basename(job_spec))[0])])
+        output = check_output([self.cmd] + self.cmd_args + cmd)
 
         return output
 
@@ -77,7 +87,12 @@ def run(**kwargs):
     else:
         return 1
 
-
+    log_dir = ''
+    if 'log_dir' in kwargs:
+        log_dir = kwargs['log_dir']
+        print('log dir is {}'.format(log_dir))
+    else:
+        return 1
 
     __opts__ = salt.config.client_config('/etc/salt/master')
     bench_dir = ''
@@ -98,7 +113,7 @@ def run(**kwargs):
             print(error)
             exit(1)
 
-    fio = Fio(bench_dir, work_dir)
+    fio = Fio(bench_dir, work_dir, log_dir)
 
     for job_spec in default_collection['jobs']:
         print(fio.run(job_spec))
