@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.5.2
+Version:        0.5.3
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -96,6 +96,7 @@ install -m 644 srv/salt/_modules/keyring.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/cephdisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/freedisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/retry.py %{buildroot}/srv/salt/_modules
+install -m 644 srv/salt/_modules/rgw.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/wait.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 
@@ -114,8 +115,15 @@ install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/adm
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/init.sls %{buildroot}/%{_saltceph}/configuration
+install -m 644 %{_saltceph}/configuration/shared.sls %{buildroot}/%{_saltceph}/configuration
+
+install -d -m 755 %{buildroot}/%{_saltceph}/configuration/check
+install -m 644 %{_saltceph}/configuration/check/default.sls %{buildroot}/%{_saltceph}/configuration/check
+install -m 644 %{_saltceph}/configuration/check/init.sls %{buildroot}/%{_saltceph}/configuration/check
+
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration/files
 install -m 644 %{_saltceph}/configuration/files/ceph.conf.j2 %{buildroot}/%{_saltceph}/configuration/files
+install -m 644 %{_saltceph}/configuration/files/ceph.conf-shared.j2 %{buildroot}/%{_saltceph}/configuration/files
 install -m 644 %{_saltceph}/configuration/files/ceph.conf.rgw %{buildroot}/%{_saltceph}/configuration/files
 
 
@@ -364,6 +372,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/admin/key
 %dir /%{_saltceph}/configuration
 %dir /%{_saltceph}/configuration/files
+%dir /%{_saltceph}/configuration/check
 %dir /%{_saltceph}/events
 %dir /%{_saltceph}/igw
 %dir /%{_saltceph}/igw/files
@@ -423,6 +432,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/admin/files/*.j2
 %config /%{_saltceph}/admin/key/*.sls
 %config /%{_saltceph}/configuration/*.sls
+%config /%{_saltceph}/configuration/check/*.sls
 %config /%{_saltceph}/configuration/files/ceph.conf*
 %config /%{_saltceph}/events/*.sls
 %config /%{_saltceph}/igw/*.sls
