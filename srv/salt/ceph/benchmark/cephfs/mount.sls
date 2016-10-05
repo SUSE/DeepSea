@@ -19,14 +19,13 @@ mount cephfs:
     - require:
       - file: create mount point
 
-# mount ceph seems to alter ownership of the mountpoint...so change back to salt
-fix mount point perms:
+create subdir for work files:
   file.directory:
-    - name: {{ salt['pillar.get']('benchmark:work-directory') }}
+    - name: {{ salt['pillar.get']('benchmark:work-directory') }}/bench_files
     - user: salt
     - group: salt
-    - dir_mode: 755
-    - file_mode: 644
+    - dir_mode: 777
+    - file_mode: 666
     - clean: True
     - makedirs: True
     - require:
