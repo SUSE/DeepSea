@@ -4,9 +4,16 @@ prevent empty rendering:
     - name: skip
 
 {% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+check {{ role }}:
+  file.exists:
+    - name: /srv/salt/ceph/rgw/files/{{ role }}.j2
+    - failhard: True
+
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
 {% set client = "client." + role + "." + host %}
 {% set keyring_file = salt['keyring.file']('rgw', client)  %}
+
+
 {{ keyring_file}}:
   file.managed:
     - source: 

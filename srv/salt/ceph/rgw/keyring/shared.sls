@@ -1,6 +1,6 @@
 
 
-{% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+{% for role in salt['rgw.configurations']() %}
 
 /var/lib/ceph/radosgw/ceph-{{ role }}/keyring:
   file.managed:

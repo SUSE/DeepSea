@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.5.1
+Version:        0.5.3
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -67,6 +67,7 @@ install -m 644 srv/modules/pillar/stack.py %{buildroot}/srv/modules/pillar
 %define _runners srv/modules/runners
 install -d -m 755 %{buildroot}/%{_runners}
 install -m 644 %{_runners}/__init__.py %{buildroot}/%{_runners}
+install -m 644 %{_runners}/advise.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/bootstrap.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/check.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/configure.py %{buildroot}/%{_runners}
@@ -90,10 +91,12 @@ install -m 644 %{_pillar}/ceph/stack/stack.cfg %{buildroot}/%{_pillar}/ceph/stac
 install -m 644 %{_pillar}/top.sls %{buildroot}/%{_pillar}
 
 install -d -m 755 %{buildroot}/srv/salt/_modules
+install -m 644 srv/salt/_modules/advise.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/keyring.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/cephdisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/freedisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/retry.py %{buildroot}/srv/salt/_modules
+install -m 644 srv/salt/_modules/rgw.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/wait.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 
@@ -112,8 +115,15 @@ install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/adm
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/init.sls %{buildroot}/%{_saltceph}/configuration
+install -m 644 %{_saltceph}/configuration/shared.sls %{buildroot}/%{_saltceph}/configuration
+
+install -d -m 755 %{buildroot}/%{_saltceph}/configuration/check
+install -m 644 %{_saltceph}/configuration/check/default.sls %{buildroot}/%{_saltceph}/configuration/check
+install -m 644 %{_saltceph}/configuration/check/init.sls %{buildroot}/%{_saltceph}/configuration/check
+
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration/files
 install -m 644 %{_saltceph}/configuration/files/ceph.conf.j2 %{buildroot}/%{_saltceph}/configuration/files
+install -m 644 %{_saltceph}/configuration/files/ceph.conf-shared.j2 %{buildroot}/%{_saltceph}/configuration/files
 install -m 644 %{_saltceph}/configuration/files/ceph.conf.rgw %{buildroot}/%{_saltceph}/configuration/files
 
 
@@ -239,6 +249,10 @@ install -m 644 %{_saltceph}/packages/custom-salt.sls %{buildroot}/%{_saltceph}/p
 install -m 644 %{_saltceph}/packages/default.sls %{buildroot}/%{_saltceph}/packages
 install -m 644 %{_saltceph}/packages/init.sls %{buildroot}/%{_saltceph}/packages
 
+install -d -m 755 %{buildroot}/%{_saltceph}/packages/common
+install -m 644 %{_saltceph}/packages/common/default.sls %{buildroot}/%{_saltceph}/packages/common
+install -m 644 %{_saltceph}/packages/common/init.sls %{buildroot}/%{_saltceph}/packages/common
+
 install -d -m 755 %{buildroot}/%{_saltceph}/pool
 install -m 644 %{_saltceph}/pool/custom.sls %{buildroot}/%{_saltceph}/pool
 install -m 644 %{_saltceph}/pool/default.sls %{buildroot}/%{_saltceph}/pool
@@ -321,7 +335,10 @@ install -m 644 %{_saltceph}/time/ntp.sls %{buildroot}/%{_saltceph}/time
 install -d -m 755 %{buildroot}/%{_saltceph}/updates
 install -m 644 %{_saltceph}/updates/default.sls %{buildroot}/%{_saltceph}/updates
 install -m 644 %{_saltceph}/updates/init.sls %{buildroot}/%{_saltceph}/updates
-install -m 644 %{_saltceph}/updates/restart.sls %{buildroot}/%{_saltceph}/updates
+
+install -d -m 755 %{buildroot}/%{_saltceph}/updates/restart
+install -m 644 %{_saltceph}/updates/restart/default.sls %{buildroot}/%{_saltceph}/updates/restart
+install -m 644 %{_saltceph}/updates/restart/init.sls %{buildroot}/%{_saltceph}/updates/restart
 
 
 cd %{buildroot}/%{_saltceph}/stage && ln -sf prep.sls 0.sls
@@ -355,6 +372,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/admin/key
 %dir /%{_saltceph}/configuration
 %dir /%{_saltceph}/configuration/files
+%dir /%{_saltceph}/configuration/check
 %dir /%{_saltceph}/events
 %dir /%{_saltceph}/igw
 %dir /%{_saltceph}/igw/files
@@ -384,6 +402,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/osd/partition
 %dir /%{_saltceph}/osd/scheduler
 %dir /%{_saltceph}/packages
+%dir /%{_saltceph}/packages/common
 %dir /%{_saltceph}/pool
 %dir /%{_saltceph}/reactor
 %dir /%{_saltceph}/refresh
@@ -400,6 +419,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/sync
 %dir /%{_saltceph}/time
 %dir /%{_saltceph}/updates
+%dir /%{_saltceph}/updates/restart
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /%{_runners}/*.py
 %config /%{_pillar}/top.sls
@@ -412,6 +432,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/admin/files/*.j2
 %config /%{_saltceph}/admin/key/*.sls
 %config /%{_saltceph}/configuration/*.sls
+%config /%{_saltceph}/configuration/check/*.sls
 %config /%{_saltceph}/configuration/files/ceph.conf*
 %config /%{_saltceph}/events/*.sls
 %config /%{_saltceph}/igw/*.sls
@@ -442,6 +463,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/osd/partition/*.sls
 %config /%{_saltceph}/osd/scheduler/*.sls
 %config /%{_saltceph}/packages/*.sls
+%config /%{_saltceph}/packages/common/*.sls
 %config /%{_saltceph}/pool/*.sls
 %config /%{_saltceph}/reactor/*.sls
 %config /%{_saltceph}/refresh/*.sls
@@ -458,6 +480,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/sync/*.sls
 %config /%{_saltceph}/time/*.sls
 %config /%{_saltceph}/updates/*.sls
+%config /%{_saltceph}/updates/restart/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*

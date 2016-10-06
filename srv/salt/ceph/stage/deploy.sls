@@ -50,6 +50,13 @@ packages:
     - tgt_type: compound
     - sls: ceph.packages
 
+configuration check:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.configuration.check
+    - failhard: True
+
 configuration:
   salt.state:
     - tgt: 'I@cluster:ceph'

@@ -30,7 +30,7 @@ repo:
 common packages:
   salt.state:
     - tgt: '*'
-    - sls: ceph.packages.{{ salt['pillar.get']('common_deps_method', 'common_deps') }}
+    - sls: ceph.packages.common
     - require:
       - salt: repo
 
