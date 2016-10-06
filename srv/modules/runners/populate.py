@@ -134,14 +134,15 @@ class CephStorage(object):
         Save each proposal for each server of each model
         """
         count = 0
-        for model in servers.keys():
-            for proposal in proposals[model]:
-                count += 1
-                for server in servers[model]:
-                    name = model + "-" + str(count)
-                    self._save_proposal(name, server, proposal)
-                    self._save_roles(name, server)
-                    #self._save_keyring(name)
+            #log.debug("model: {}".format(model))
+        for server in proposals.keys():
+            count += 1
+            for model in proposals[server]:
+                name = model + "-" + str(count)
+                proposal = proposals[server][model]
+                self._save_proposal(name, server, proposal)
+                self._save_roles(name, server)
+                #self._save_keyring(name)
             count = 0
 
 
@@ -242,20 +243,20 @@ class HardwareProfile(object):
 
     def _profiles(self, name, hostname):
         """
-        Create a profile and track all storage servers that match that profile.
-        if the name already exists, verify that the order matches.  If so, add
-        to list.  If not, create a new name and try again.
-
-        Hardware profiles with a single server will alert the sysadmin to 
-        missing/failed drives or servers with disks out of order.
         """
-        if name in self.profiles:
-            self.servers[name].append(hostname)
-        else:
-            self.servers[name] = [ hostname ]
-            self.profiles[name] = {}
-            for label in self.model.keys():
-                self.profiles[name][label] = self.model[label]
+        #if name in self.servers:
+        #    self.servers[name].append( hostname )
+        #else:
+        #    self.servers[name] = [ hostname ]
+        if hostname not in self.profiles:
+            self.profiles[hostname] = {}
+        if name not in self.profiles[hostname]:
+            self.profiles[hostname][name] = {}
+        for label in self.model.keys():
+            if label not in self.profiles[hostname][name]:
+                self.profiles[hostname][name][label] = {}
+            self.profiles[hostname][name][label] = self.model[label]
+
         
         
     def _name(self):
@@ -316,23 +317,28 @@ class DiskConfiguration(object):
         for server in self.storage_nodes:
             self.hardware.add(server, self.storage_nodes[server])
 
-        for configuration in self.hardware.profiles:
-            if not configuration in self.proposals:
-                self.proposals[configuration] = []
-            drives = self.hardware.profiles[configuration]
+        for server in self.hardware.profiles.keys():
+            if server not in self.proposals:
+                self.proposals[server] = {}
+            for configuration in self.hardware.profiles[server]:
+                if configuration not in self.proposals[server]:
+                    self.proposals[server][configuration] = []
 
-            log.debug("configuration {} with no journals".format(configuration))
-            self.proposals[configuration].append(self._assignments(drives))
-            for drive_model in drives.keys():
-                # How many types of drives are SSDs, NVMes
-                if self.hardware.rotates[drive_model] == '0':
-                    log.debug("configuration {} with {} journal".format(configuration, drive_model))
-                    proposal = self._assignments(drives, drive_model)
-                    if proposal:
-                        self.proposals[configuration].append(proposal)
-                    else:
-                        log.warning("No proposal for {} as journal on {}".format(drive_model, configuration))
+                drives = self.hardware.profiles[server][configuration]
+
+                log.debug("configuration {} with no journals".format(configuration))
+                self.proposals[server][configuration].append(self._assignments(drives))
+                for drive_model in drives.keys():
+                    # How many types of drives are SSDs, NVMes
+                    if self.hardware.rotates[drive_model] == '0':
+                        log.debug("configuration {} with {} journal".format(configuration, drive_model))
+                        proposal = self._assignments(drives, drive_model)
+                        if proposal:
+                            self.proposals[server][configuration].append(proposal)
+                        else:
+                            log.warning("No proposal for {} as journal on {}".format(drive_model, configuration))
         
+       
         
     def _assignments(self, drives, journal=None):
         """
