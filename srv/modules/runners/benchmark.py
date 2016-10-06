@@ -17,6 +17,10 @@ class Fio(object):
     def __init__(self, bench_dir, work_dir, log_dir):
         clients = local_client.cmd('I@roles:mds-client and I@cluster:ceph',
                 'pillar.get', ['public_address'], expr_form='compound')
+
+        if not clients:
+            raise Exception('No mds-client roles defined')
+
         self.cmd = 'fio'
 
         self.cmd_args = ['--output-format=json']
