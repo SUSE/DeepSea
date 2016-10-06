@@ -68,6 +68,7 @@ install -m 644 srv/modules/pillar/stack.py %{buildroot}/srv/modules/pillar
 install -d -m 755 %{buildroot}/%{_runners}
 install -m 644 %{_runners}/__init__.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/advise.py %{buildroot}/%{_runners}
+install -m 644 %{_runners}/benchmark.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/bootstrap.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/check.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/configure.py %{buildroot}/%{_runners}
@@ -87,6 +88,23 @@ install -m 644 %{_pillar}/ceph/master_minion.sls %{buildroot}/%{_pillar}/ceph
 
 install -d -m 755 %{buildroot}/%{_pillar}/ceph/stack
 install -m 644 %{_pillar}/ceph/stack/stack.cfg %{buildroot}/%{_pillar}/ceph/stack/stack.cfg
+
+%define _bench_pillar srv/pillar/ceph/benchmark
+install -d -m 755 %{buildroot}/%{_bench_pillar}
+install -m 644 %{_bench_pillar}/benchmark.cfg %{buildroot}/%{_bench_pillar}
+install -m 644 %{_bench_pillar}/config.yml %{buildroot}/%{_bench_pillar}
+
+install -d -m 755 %{buildroot}/%{_bench_pillar}/collections
+install -m 644 %{_bench_pillar}/collections/default.yml %{buildroot}/%{_bench_pillar}/collections
+
+install -d -m 755 %{buildroot}/%{_bench_pillar}/collections
+install -m 644 %{_bench_pillar}/fio/multi_rw.yml %{buildroot}/%{_bench_pillar}/fio
+install -m 644 %{_bench_pillar}/fio/seq_reads.yml %{buildroot}/%{_bench_pillar}/fio
+install -m 644 %{_bench_pillar}/fio/seq_writes.yml %{buildroot}/%{_bench_pillar}/fio
+
+install -d -m 755 %{buildroot}/%{_bench_pillar}/templates
+install -m 644 %{_bench_pillar}/templates/job.j2 %{buildroot}/%{_bench_pillar}/templates
+install -m 644 %{_bench_pillar}/templates/multi_job.j2 %{buildroot}/%{_bench_pillar}/templates
 
 install -m 644 %{_pillar}/top.sls %{buildroot}/%{_pillar}
 
@@ -111,6 +129,20 @@ install -m 644 %{_saltceph}/admin/key/init.sls %{buildroot}/%{_saltceph}/admin/k
 
 install -d -m 755 %{buildroot}/%{_saltceph}/admin/files
 install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/admin/files
+
+install -d -m 755 %{buildroot}/%{_saltceph}/benchmark/cephfs
+install -m 644 %{_saltceph}/benchmark/cleanup.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/cleanup_working_subdir.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/default.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/fio.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/fio_service.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/init.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/mount.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/prepare_master.sls %{buildroot}/%{_saltceph}/benchmark
+install -m 644 %{_saltceph}/benchmark/working_subdir.sls %{buildroot}/%{_saltceph}/benchmark
+
+install -d -m 755 %{buildroot}/%{_saltceph}/benchmark/cephfs/files
+install -m 644 %{_saltceph}/benchmark/files/fio.service.sls %{buildroot}/%{_saltceph}/benchmark/files
 
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
@@ -302,6 +334,7 @@ install -m 644 %{_saltceph}/rgw/files/rgw.j2 %{buildroot}/%{_saltceph}/rgw/files
 install -d -m 755 %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/all.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/benchmark.sls %{buildroot}/%{_saltceph}/stage
+install -m 644 %{_saltceph}/stage/benchmark_cephfs.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/cephfs.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/configure.sls %{buildroot}/%{_saltceph}/stage
 
@@ -363,6 +396,10 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_pillar}
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph/stack
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark/collections
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark/fio
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark/templates
 %dir /srv/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
@@ -370,6 +407,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/admin
 %dir /%{_saltceph}/admin/files
 %dir /%{_saltceph}/admin/key
+%dir /%{_saltceph}/benchmark/cephfs
+%dir /%{_saltceph}/benchmark/cephfs/files
 %dir /%{_saltceph}/configuration
 %dir /%{_saltceph}/configuration/files
 %dir /%{_saltceph}/configuration/check
