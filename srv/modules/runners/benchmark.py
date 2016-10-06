@@ -45,9 +45,9 @@ class Fio(object):
         cmd = [None] * 2 * len(self.client_args)
         cmd[::2] = self.client_args
         cmd[1::2] = [jobfile] * len(self.client_args)
-        self.cmd_args.extend(['--output={}/{}.json'.format(self.log_dir,
-            splitext(basename(job_spec))[0])])
-        output = check_output([self.cmd] + self.cmd_args + cmd)
+        output_args = ['--output={}/{}.json'.format(self.log_dir,
+            splitext(basename(job_spec))[0])]
+        output = check_output([self.cmd] + self.cmd_args + output_args + cmd)
 
         return output
 
