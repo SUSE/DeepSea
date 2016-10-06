@@ -39,3 +39,13 @@ minions. The policy.cfg specifies which of these files and options are to be
 used for the deployment.
 
 *to be extended*
+
+## Generating Load
+Once a cluster is deployed one might want to generate some load or run
+benchmarks to verify the cluster works as expected.
+- To load test CephFS run `salt-run state.orch ceph.stage.cephfs_benchmark`.
+  This requires a running MDS (deploy in stage 4) and at least on minion with
+  the mds-client role. The cephfs_benchmark stage will then mount the CephFS
+  instance on the mds-client and run a bunch of fio tests. See the [benchmark
+  readme](srv/pillar/ceph/benchmark/README.md) for futher details.
+- *more to come*
