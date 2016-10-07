@@ -554,10 +554,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %files
 %defattr(-,root,root,-)
 /srv/modules/pillar/stack.py
-<<<<<<< HEAD
-%dir /srv/modules/runners
-%dir %attr(0755, salt, salt) /srv/pillar/ceph
-%dir %attr(0755, salt, salt) /srv/pillar/ceph/stack
+%dir /%{_runners}
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph
+%dir %attr(0755, salt, salt) /%{_pillar}/ceph/stack
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark/collections
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph/benchmark/fio
@@ -671,13 +670,17 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/updates/restart
 %dir /srv/salt/ceph/wait
 %config(noreplace) /etc/salt/master.d/*.conf
-<<<<<<< HEAD
-%config /srv/modules/runners/*.py
-%config /srv/pillar/top.sls
-/srv/pillar/ceph/README
-%config /srv/pillar/ceph/init.sls
-%config(noreplace) /srv/pillar/ceph/master_minion.sls
-%config /srv/pillar/ceph/stack/stack.cfg
+%config /%{_runners}/*.py
+%config /%{_pillar}/top.sls
+/%{_pillar}/ceph/README
+%config /%{_pillar}/ceph/init.sls
+%config(noreplace) /%{_pillar}/ceph/master_minion.sls
+%config /%{_pillar}/ceph/benchmark/benchmark.cfg
+%config /%{_pillar}/ceph/benchmark/config.yml
+%config /%{_pillar}/ceph/benchmark/collections/*.yml
+%config /%{_pillar}/ceph/benchmark/fio/*.yml
+%config /%{_pillar}/ceph/benchmark/templates/*.j2
+%config /%{_pillar}/ceph/stack/stack.cfg
 %config /srv/salt/_modules/*.py
 %config /%{_saltceph}/admin/*.sls
 %config /%{_saltceph}/admin/files/*.j2
