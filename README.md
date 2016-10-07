@@ -43,7 +43,7 @@ used for the deployment.
 ## Generating Load
 Once a cluster is deployed one might want to generate some load or run
 benchmarks to verify the cluster works as expected.
-- To load test CephFS run `salt-run state.orch ceph.stage.cephfs_benchmark`.
+- To load test CephFS run `salt-run state.orch ceph.benchmarks.cephfs`.
   This requires a running MDS (deploy in stage 4) and at least on minion with
   the mds-client role. The cephfs_benchmark stage will then mount the CephFS
   instance on the mds-client and run a bunch of fio tests. See the [benchmark

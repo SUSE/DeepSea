@@ -132,19 +132,22 @@ install -m 644 %{_saltceph}/admin/key/init.sls %{buildroot}/%{_saltceph}/admin/k
 install -d -m 755 %{buildroot}/%{_saltceph}/admin/files
 install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/admin/files
 
-install -d -m 755 %{buildroot}/%{_saltceph}/benchmark/cephfs
-install -m 644 %{_saltceph}/benchmark/cleanup.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/cleanup_working_subdir.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/default.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/fio.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/fio_service.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/init.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/mount.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/prepare_master.sls %{buildroot}/%{_saltceph}/benchmark
-install -m 644 %{_saltceph}/benchmark/working_subdir.sls %{buildroot}/%{_saltceph}/benchmark
+install -d -m 755 %{buildroot}/%{_saltceph}/benchmarks
+install -m 644 %{_saltceph}/benchmarks/cephfs.sls %{buildroot}/%{_saltceph}/benchmarks
 
-install -d -m 755 %{buildroot}/%{_saltceph}/benchmark/cephfs/files
-install -m 644 %{_saltceph}/benchmark/files/fio.service.sls %{buildroot}/%{_saltceph}/benchmark/files
+install -d -m 755 %{buildroot}/%{_saltceph}/cephfs
+install -d -m 755 %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/cleanup_working_subdir.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/default.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/fio.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/fio_service.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/init.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/mount.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/prepare_master.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+install -m 644 %{_saltceph}/cephfs/benchmarks/working_subdir.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
+
+install -d -m 755 %{buildroot}/%{_saltceph}/cephfs/benchmarks/files
+install -m 644 %{_saltceph}/cephfs/benchmarks/files/fio.service.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks/files
 
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
