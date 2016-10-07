@@ -4,19 +4,19 @@ prep clients:
     - tgt: "I@roles:mds-client and I@cluster:ceph"
     - tgt_type: compound
     - sls:
-      - ceph.benchmark.cephfs
+      - ceph.cephfs.benchmarks
 
 one subdir:
   salt.state:
     - tgt: {{  salt.saltutil.runner('select.one_minion', cluster='ceph', roles='mds-client') }}
     - sls:
-      -ceph.benchmark.cephfs.working_subdir
+      - ceph.cephfs.benchmarks.working_subdir
 
 prep master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls:
-      - ceph.benchmark.cephfs.prepare_master
+      - ceph.cephfs.benchmarks.prepare_master
 
 run fio:
   salt.runner:
@@ -29,11 +29,11 @@ clean subdir:
   salt.state:
     - tgt: {{  salt.saltutil.runner('select.one_minion', cluster='ceph', roles='mds-client') }}
     - sls:
-      -ceph.benchmark.cephfs.cleanup_working_subdir
+      - ceph.cephfs.benchmarks.cleanup_working_subdir
 
 cleanup fio:
   salt.state:
     - tgt: "I@roles:mds-client and I@cluster:ceph"
     - tgt_type: compound
     - sls:
-      - ceph.benchmark.cephfs.cleanup
+      - ceph.cephfs.benchmarks.cleanup
