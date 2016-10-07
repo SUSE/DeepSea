@@ -8,5 +8,3 @@ create subdir for work files:
     - file_mode: 666
     - clean: True
     - makedirs: True
-    - require:
-      - mount: mount cephfs
