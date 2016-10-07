@@ -56,7 +56,11 @@ class SaltOptions(object):
         self.__opts__ = salt.config.client_config('/etc/salt/master')
         for ext in self.__opts__['ext_pillar']:
             if 'stack' in ext:
-                self.stack_dir = dirname(ext['stack'])
+                # TODO only add stack.cfg here. Salt returns either a string
+                # (when there is on ext_module) or an array :(
+                # This needs a better solution...works only if stack.cfg is 1st
+                # entry in ext_modules
+                self.stack_dir = dirname(ext['stack'][0])
 
 class ClusterAssignment(object):
     """
