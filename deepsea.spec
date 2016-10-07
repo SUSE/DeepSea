@@ -467,12 +467,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config(noreplace) /%{_pillar}/ceph/master_minion.sls
 %config /%{_pillar}/ceph/benchmark/benchmark.cfg
 %config /%{_pillar}/ceph/benchmark/config.yml
-%config /%{_pillar}/ceph/benchmark/collections/default.yml
-%config /%{_pillar}/ceph/benchmark/fio/multi_rw.yml
-%config /%{_pillar}/ceph/benchmark/fio/seq_reads.yml
-%config /%{_pillar}/ceph/benchmark/fio/seq_writes.yml
-%config /%{_pillar}/ceph/benchmark/templates/job.j2
-%config /%{_pillar}/ceph/benchmark/templates/multi_job.j2
+%config /%{_pillar}/ceph/benchmark/collections/*.yml
+%config /%{_pillar}/ceph/benchmark/fio/*.yml
+%config /%{_pillar}/ceph/benchmark/templates/*.j2
 %config /%{_pillar}/ceph/stack/stack.cfg
 %config /srv/salt/_modules/*.py
 %config /%{_saltceph}/admin/*.sls
