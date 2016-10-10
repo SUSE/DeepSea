@@ -459,20 +459,11 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        #self.keyring_roles = { 'admin': Utils.secret(), 
-        #                       'mon': Utils.secret(), 
-        #                       'storage': Utils.secret(),
-        #                       'mds': Utils.secret(),
-        #                       'igw': Utils.secret() }
-
-        ## Add rgw roles
-        #for rgw_role in self._rgw_configurations():
-        #    self.keyring_roles[rgw_role] = Utils.secret()
-
         self.networks = self._networks(self.servers)
         self.public_network, self.cluster_network = self.public_cluster(self.networks) 
 
-        self.master_contents = {}
+        #self.master_contents = {}
+        self.available_roles = []
 
     def _rgw_configurations(self):
         """
@@ -506,26 +497,12 @@ class CephRoles(object):
         for every server.
         """
         roles = [ 'admin', 'mon', 'storage', 'mds', 'igw' ] + self._rgw_configurations()
+        self.available_roles.extend(roles)
 
-        #roles = self.keyring_roles.keys()
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
                 create_dirs(role_dir, self.root_dir)
-            #roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
-            #if not os.path.isdir(roles_dir):
-            #    create_dirs(roles_dir, self.root_dir)
-            #if role in self.keyring_roles:
-            #    filename = roles_dir + "/" +  role + ".yml"
-            #    contents = {}
-            #    role_key = self._role_mapping(role)
-
-            #    contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
-            #    self.writer.write(filename, contents)
-            #    if 'keyring' in self.master_contents:
-            #        self.master_contents['keyring'].append({ role_key: self.keyring_roles[role] })
-            #    else:
-            #        self.master_contents['keyring'] = [ { role_key: self.keyring_roles[role] } ]
 
             # All minions are not necessarily storage - see CephStorage
             if role != 'storage':
@@ -536,6 +513,8 @@ class CephRoles(object):
         Allows admins to target non-Ceph minions
         """
         roles = [ 'mds-client', 'rgw-client', 'igw-client', 'mds-nfs', 'rgw-nfs' ]
+        self.available_roles.extend(roles)
+
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             self._role_assignment(role_dir, role)
@@ -546,13 +525,9 @@ class CephRoles(object):
         The master role can access all keyring secrets
         """
         role = 'master'
-        role_dir = "{}/role-{}".format(self.root_dir, role)
-        #roles_dir = role_dir + "/stack/default/{}/roles".format(self.cluster)
-        #if not os.path.isdir(roles_dir):
-        #    create_dirs(roles_dir, self.root_dir)
-        #filename = roles_dir + "/" +  role + ".yml"
-        #self.writer.write(filename, self.master_contents)
+        self.available_roles.extend([ role ])
 
+        role_dir = "{}/role-{}".format(self.root_dir, role)
         self._role_assignment(role_dir, role)
             
     def _role_mapping(self, role):
@@ -626,6 +601,7 @@ class CephRoles(object):
 
             contents['public_network'] = self.public_network
             contents['cluster_network'] = self.cluster_network
+            contents['available_roles'] = self.available_roles
   
             self.writer.write(filename, contents)
 
