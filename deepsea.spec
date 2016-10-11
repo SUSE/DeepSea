@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.5.4
+Version:        0.5.5
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -74,6 +74,7 @@ install -m 644 %{_runners}/configure.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/filequeue.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/minions.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/populate.py %{buildroot}/%{_runners}
+install -m 644 %{_runners}/rescinded.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/push.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/ready.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/select.py %{buildroot}/%{_runners}
@@ -95,6 +96,7 @@ install -m 644 srv/salt/_modules/advise.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/keyring.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/cephdisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/freedisks.py %{buildroot}/srv/salt/_modules
+install -m 644 srv/salt/_modules/osd.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/retry.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/rgw.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/wait.py %{buildroot}/srv/salt/_modules
@@ -271,6 +273,93 @@ install -m 644 %{_saltceph}/reactor/prep_minion.sls %{buildroot}/%{_saltceph}/re
 install -d -m 755 %{buildroot}/%{_saltceph}/refresh
 install -m 644 %{_saltceph}/refresh/init.sls %{buildroot}/%{_saltceph}/refresh
 
+install -d -m 755 %{buildroot}/%{_saltceph}/remove
+
+install -d -m 755 %{buildroot}/%{_saltceph}/remove/igw/auth
+install -m 644 %{_saltceph}/remove/igw/auth/init.sls %{buildroot}/%{_saltceph}/remove/igw/auth
+install -m 644 %{_saltceph}/remove/igw/auth/default.sls %{buildroot}/%{_saltceph}/remove/igw/auth
+
+install -d -m 755 %{buildroot}/%{_saltceph}/remove/storage
+install -m 644 %{_saltceph}/remove/storage/init.sls %{buildroot}/%{_saltceph}/remove/storage
+install -m 644 %{_saltceph}/remove/storage/default.sls %{buildroot}/%{_saltceph}/remove/storage
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind
+install -m 644 %{_saltceph}/rescind/init.sls %{buildroot}/%{_saltceph}/rescind
+install -m 644 %{_saltceph}/rescind/default.sls %{buildroot}/%{_saltceph}/rescind
+install -m 644 %{_saltceph}/rescind/nop.sls %{buildroot}/%{_saltceph}/rescind
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/admin
+install -m 644 %{_saltceph}/rescind/admin/init.sls %{buildroot}/%{_saltceph}/rescind/admin
+install -m 644 %{_saltceph}/rescind/admin/default.sls %{buildroot}/%{_saltceph}/rescind/admin
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw-client
+install -m 644 %{_saltceph}/rescind/igw-client/init.sls %{buildroot}/%{_saltceph}/rescind/igw-client
+install -m 644 %{_saltceph}/rescind/igw-client/default.sls %{buildroot}/%{_saltceph}/rescind/igw-client
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw
+install -m 644 %{_saltceph}/rescind/igw/init.sls %{buildroot}/%{_saltceph}/rescind/igw
+install -m 644 %{_saltceph}/rescind/igw/default.sls %{buildroot}/%{_saltceph}/rescind/igw
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw/keyring
+install -m 644 %{_saltceph}/rescind/igw/keyring/init.sls %{buildroot}/%{_saltceph}/rescind/igw/keyring
+install -m 644 %{_saltceph}/rescind/igw/keyring/default.sls %{buildroot}/%{_saltceph}/rescind/igw/keyring
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw/sysconfig
+install -m 644 %{_saltceph}/rescind/igw/sysconfig/init.sls %{buildroot}/%{_saltceph}/rescind/igw/sysconfig
+install -m 644 %{_saltceph}/rescind/igw/sysconfig/default.sls %{buildroot}/%{_saltceph}/rescind/igw/sysconfig
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/master
+install -m 644 %{_saltceph}/rescind/master/init.sls %{buildroot}/%{_saltceph}/rescind/master
+install -m 644 %{_saltceph}/rescind/master/default.sls %{buildroot}/%{_saltceph}/rescind/master
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/mds-client
+install -m 644 %{_saltceph}/rescind/mds-client/init.sls %{buildroot}/%{_saltceph}/rescind/mds-client
+install -m 644 %{_saltceph}/rescind/mds-client/default.sls %{buildroot}/%{_saltceph}/rescind/mds-client
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/mds-nfs
+install -m 644 %{_saltceph}/rescind/mds-nfs/init.sls %{buildroot}/%{_saltceph}/rescind/mds-nfs
+install -m 644 %{_saltceph}/rescind/mds-nfs/default.sls %{buildroot}/%{_saltceph}/rescind/mds-nfs
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/mds
+install -m 644 %{_saltceph}/rescind/mds/init.sls %{buildroot}/%{_saltceph}/rescind/mds
+install -m 644 %{_saltceph}/rescind/mds/default.sls %{buildroot}/%{_saltceph}/rescind/mds
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/mds/keyring
+install -m 644 %{_saltceph}/rescind/mds/keyring/init.sls %{buildroot}/%{_saltceph}/rescind/mds/keyring
+install -m 644 %{_saltceph}/rescind/mds/keyring/default.sls %{buildroot}/%{_saltceph}/rescind/mds/keyring
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/mon
+install -m 644 %{_saltceph}/rescind/mon/init.sls %{buildroot}/%{_saltceph}/rescind/mon
+install -m 644 %{_saltceph}/rescind/mon/default.sls %{buildroot}/%{_saltceph}/rescind/mon
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/admin
+install -m 644 %{_saltceph}/rescind/admin/init.sls %{buildroot}/%{_saltceph}/rescind/admin
+install -m 644 %{_saltceph}/rescind/admin/default.sls %{buildroot}/%{_saltceph}/rescind/admin
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/rgw-client
+install -m 644 %{_saltceph}/rescind/rgw-client/init.sls %{buildroot}/%{_saltceph}/rescind/rgw-client
+install -m 644 %{_saltceph}/rescind/rgw-client/default.sls %{buildroot}/%{_saltceph}/rescind/rgw-client
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/rgw-nfs
+install -m 644 %{_saltceph}/rescind/rgw-nfs/init.sls %{buildroot}/%{_saltceph}/rescind/rgw-nfs
+install -m 644 %{_saltceph}/rescind/rgw-nfs/default.sls %{buildroot}/%{_saltceph}/rescind/rgw-nfs
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/rgw
+install -m 644 %{_saltceph}/rescind/rgw/init.sls %{buildroot}/%{_saltceph}/rescind/rgw
+install -m 644 %{_saltceph}/rescind/rgw/default.sls %{buildroot}/%{_saltceph}/rescind/rgw
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/rgw/keyring
+install -m 644 %{_saltceph}/rescind/rgw/keyring/init.sls %{buildroot}/%{_saltceph}/rescind/rgw/keyring
+install -m 644 %{_saltceph}/rescind/rgw/keyring/default.sls %{buildroot}/%{_saltceph}/rescind/rgw/keyring
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/storage
+install -m 644 %{_saltceph}/rescind/storage/init.sls %{buildroot}/%{_saltceph}/rescind/storage
+install -m 644 %{_saltceph}/rescind/storage/default.sls %{buildroot}/%{_saltceph}/rescind/storage
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/storage/keyring
+install -m 644 %{_saltceph}/rescind/storage/keyring/init.sls %{buildroot}/%{_saltceph}/rescind/storage/keyring
+install -m 644 %{_saltceph}/rescind/storage/keyring/default.sls %{buildroot}/%{_saltceph}/rescind/storage/keyring
+
 install -d -m 755 %{buildroot}/%{_saltceph}/repo
 install -m 644 %{_saltceph}/repo/custom.sls %{buildroot}/%{_saltceph}/repo
 install -m 644 %{_saltceph}/repo/default.sls %{buildroot}/%{_saltceph}/repo
@@ -346,6 +435,7 @@ cd %{buildroot}/%{_saltceph}/stage && ln -sf discovery.sls 1.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf configure.sls 2.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf deploy.sls 3.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
+cd %{buildroot}/%{_saltceph}/stage && ln -sf removal.sls 5.sls
 
 %post 
 # Initialize to most likely value
@@ -407,6 +497,24 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/reactor
 %dir /%{_saltceph}/refresh
 %dir /%{_saltceph}/repo
+%dir /%{_saltceph}/remove
+%dir /%{_saltceph}/rescind
+%dir /%{_saltceph}/rescind/admin
+%dir /%{_saltceph}/rescind/igw-client
+%dir /%{_saltceph}/rescind/igw
+%dir /%{_saltceph}/rescind/igw/keyring
+%dir /%{_saltceph}/rescind/igw/sysconfig
+%dir /%{_saltceph}/rescind/master
+%dir /%{_saltceph}/rescind/mds-client
+%dir /%{_saltceph}/rescind/mds-nfs
+%dir /%{_saltceph}/rescind/mds
+%dir /%{_saltceph}/rescind/mds/keyring
+%dir /%{_saltceph}/rescind/mon
+%dir /%{_saltceph}/rescind/rgw-client
+%dir /%{_saltceph}/rescind/rgw-nfs
+%dir /%{_saltceph}/rescind/rgw
+%dir /%{_saltceph}/rescind/storage
+%dir /%{_saltceph}/rescind/storage/keyring
 %dir /%{_saltceph}/rgw
 %dir /%{_saltceph}/rgw/files
 %dir /%{_saltceph}/rgw/key
@@ -468,6 +576,26 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/reactor/*.sls
 %config /%{_saltceph}/refresh/*.sls
 %config /%{_saltceph}/repo/*.sls
+%config /%{_saltceph}/remove/igw/auth/*.sls
+%config /%{_saltceph}/remove/storage/*.sls
+%config /%{_saltceph}/rescind/*.sls
+%config /%{_saltceph}/rescind/admin/*.sls
+%config /%{_saltceph}/rescind/igw-client/*.sls
+%config /%{_saltceph}/rescind/igw/*.sls
+%config /%{_saltceph}/rescind/igw/keyring/*.sls
+%config /%{_saltceph}/rescind/igw/sysconfig/*.sls
+%config /%{_saltceph}/rescind/master/*.sls
+%config /%{_saltceph}/rescind/mds-client/*.sls
+%config /%{_saltceph}/rescind/mds-nfs/*.sls
+%config /%{_saltceph}/rescind/mds/*.sls
+%config /%{_saltceph}/rescind/mds/keyring/*.sls
+%config /%{_saltceph}/rescind/mon/*.sls
+%config /%{_saltceph}/rescind/rgw-client/*.sls
+%config /%{_saltceph}/rescind/rgw-nfs/*.sls
+%config /%{_saltceph}/rescind/rgw/*.sls
+%config /%{_saltceph}/rescind/rgw/keyring/*.sls
+%config /%{_saltceph}/rescind/storage/*.sls
+%config /%{_saltceph}/rescind/storage/keyring/*.sls
 %config /%{_saltceph}/rgw/*.sls
 %config /%{_saltceph}/rgw/files/*.j2
 %config /%{_saltceph}/rgw/key/*.sls
