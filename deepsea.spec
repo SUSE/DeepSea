@@ -498,6 +498,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/refresh
 %dir /%{_saltceph}/repo
 %dir /%{_saltceph}/remove
+%dir /%{_saltceph}/remove/igw
+%dir /%{_saltceph}/remove/igw/auth
+%dir /%{_saltceph}/remove/storage
 %dir /%{_saltceph}/rescind
 %dir /%{_saltceph}/rescind/admin
 %dir /%{_saltceph}/rescind/igw-client
@@ -513,6 +516,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/rescind/rgw-client
 %dir /%{_saltceph}/rescind/rgw-nfs
 %dir /%{_saltceph}/rescind/rgw
+%dir /%{_saltceph}/rescind/rgw/keyring
 %dir /%{_saltceph}/rescind/storage
 %dir /%{_saltceph}/rescind/storage/keyring
 %dir /%{_saltceph}/rgw
