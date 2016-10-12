@@ -9,8 +9,9 @@ clear osd.{{ id }}:
     - id: {{ id }}
 
 down id {{ id }}:
-  cmd.run:
-    - name: "ceph osd down {{ id }}"
+  module.run:
+    - name: osd.down
+    - id: {{ id }}
 
 remove osd.{{ id }}:
   cmd.run:

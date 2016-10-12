@@ -27,7 +27,7 @@ validate failed:
 
 {% endif %}
 
-{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw' ] %}
+{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw', 'openattic' ] %}
 {{ role }} key:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}

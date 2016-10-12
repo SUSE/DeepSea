@@ -1,5 +1,4 @@
 
+
 include:
-  - .authtool
-  - .keyring
-  - .openattic
+  - .{{ salt['pillar.get']('openattic_method', 'default') }}

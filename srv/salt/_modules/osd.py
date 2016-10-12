@@ -11,6 +11,14 @@ from subprocess import call, Popen, PIPE
 
 log = logging.getLogger(__name__)
 
+"""
+The first functions are different queries for osds.  These can be combined.
+
+The two classes should be combined as well.  I thought I would wait for now.
+"""
+
+
+# These first three methods should be combined... saving for later
 def paths():
     """
     Return an array of pathnames
@@ -60,8 +68,79 @@ def ids():
     """
     return list()
 
+class OSDState(object):
+    """
+    Manage the OSD state
+    """
+
+    def __init__(self, id, **kwargs):
+        """
+        Initialize settings, connect to Ceph cluster
+        """
+        self.id = id
+        self.settings = { 
+            'conf': "/etc/ceph/ceph.conf" ,
+            'filename': '/var/run/ceph/osd.{}-weight'.format(id),
+            'timeout': 3600,
+            'delay': 6
+        }
+        self.settings.update(kwargs)
+        self.cluster=rados.Rados(conffile=self.settings['conf'])
+        self.cluster.connect()
+
+    def down(self):
+        """
+        """
+        print self.osd_tree()
+        
+
+    def osd_tree(self):
+        """
+        """
+        cmd = json.dumps({"prefix":"osd tree", "format":"json" })
+        ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+        log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
+        for entry in json.loads(output)['nodes']:
+            print entry
+            if entry['id'] == self.id:
+                return entry
+        log.warn("ID {} not found".format(self.id))
+        return {}
+
+    def wait(self):
+        """
+        Wait until PGs reach 0 or timeout expires
+        """
+        i = 0
+        while i < self.settings['timeout']/self.settings['delay']:
+            entry = self.osd_tree()
+            if 'pgs' in entry:
+                if entry['pgs'] == 0:
+                    log.info("osd.{} has no PGs".format(self.id))
+                    return 
+                else:
+                    log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
+            else:
+                log.warn("osd.{} does not exist".format(self.id))
+                return
+            i += 1
+            time.sleep(self.settings['delay'])
+
+        log.debug("Timeout expired")
+        raise RuntimeError("Timeout expired")
+
+def down(id, **kwargs):
+    """
+    Set an OSD to down and wait until the status is down
+    """
+    o = OSDState(id, **kwargs)
+    o.down()
+
+
+
 class OSDWeight(object):
     """
+    Manage the setting and restoring of OSD crush weights
     """
 
     def __init__(self, id, **kwargs):
