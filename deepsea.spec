@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.5.5
+Version:        0.5.6
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -210,13 +210,24 @@ install -d -m 755 %{buildroot}/%{_saltceph}/mon/files
 install -m 644 %{_saltceph}/mon/files/keyring.j2 %{buildroot}/%{_saltceph}/mon/files
 
 install -d -m 755 %{buildroot}/%{_saltceph}/openattic
-install -m 644 %{_saltceph}/openattic/authtool.sls %{buildroot}/%{_saltceph}/openattic
+install -m 644 %{_saltceph}/openattic/default.sls %{buildroot}/%{_saltceph}/openattic
+install -m 644 %{_saltceph}/openattic/init.sls %{buildroot}/%{_saltceph}/openattic
+
+install -d -m 755 %{buildroot}/%{_saltceph}/openattic/auth
+install -m 644 %{_saltceph}/openattic/auth/default.sls %{buildroot}/%{_saltceph}/openattic/auth/
+install -m 644 %{_saltceph}/openattic/auth/init.sls %{buildroot}/%{_saltceph}/openattic/auth/
 
 install -d -m 755 %{buildroot}/%{_saltceph}/openattic/files
 install -m 644 %{_saltceph}/openattic/files/keyring.j2 %{buildroot}/%{_saltceph}/openattic/files/keyring.j2
-install -m 644 %{_saltceph}/openattic/init.sls %{buildroot}/%{_saltceph}/openattic
-install -m 644 %{_saltceph}/openattic/keyring.sls %{buildroot}/%{_saltceph}/openattic
-install -m 644 %{_saltceph}/openattic/openattic.sls %{buildroot}/%{_saltceph}/openattic
+
+install -d -m 755 %{buildroot}/%{_saltceph}/openattic/key
+install -m 644 %{_saltceph}/openattic/key/default.sls %{buildroot}/%{_saltceph}/openattic/key/
+install -m 644 %{_saltceph}/openattic/key/init.sls %{buildroot}/%{_saltceph}/openattic/key/
+
+install -d -m 755 %{buildroot}/%{_saltceph}/openattic/keyring
+install -m 644 %{_saltceph}/openattic/keyring/default.sls %{buildroot}/%{_saltceph}/openattic/keyring/
+install -m 644 %{_saltceph}/openattic/keyring/init.sls %{buildroot}/%{_saltceph}/openattic/keyring/
+
 
 install -d -m 755 %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/default.sls %{buildroot}/%{_saltceph}/osd
@@ -403,6 +414,7 @@ install -d -m 755 %{buildroot}/%{_saltceph}/stage/discovery
 install -m 644 %{_saltceph}/stage/discovery/custom.sls %{buildroot}/%{_saltceph}/stage/discovery
 install -m 644 %{_saltceph}/stage/discovery/default.sls %{buildroot}/%{_saltceph}/stage/discovery
 install -m 644 %{_saltceph}/stage/iscsi.sls %{buildroot}/%{_saltceph}/stage
+install -m 644 %{_saltceph}/stage/openattic.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/prep.sls %{buildroot}/%{_saltceph}/stage
 
 install -d -m 755 %{buildroot}/%{_saltceph}/stage/prep
@@ -483,7 +495,10 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/mon/files
 %dir /%{_saltceph}/mon/key
 %dir /%{_saltceph}/openattic
+%dir /%{_saltceph}/openattic/auth
 %dir /%{_saltceph}/openattic/files
+%dir /%{_saltceph}/openattic/key
+%dir /%{_saltceph}/openattic/keyring
 %dir /%{_saltceph}/osd
 %dir /%{_saltceph}/osd/files
 %dir /%{_saltceph}/osd/key
@@ -566,6 +581,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/mon/files/*.j2
 %config /%{_saltceph}/mon/key/*.sls
 %config /%{_saltceph}/openattic/*.sls
+%config /%{_saltceph}/openattic/auth/*.sls
+%config /%{_saltceph}/openattic/key/*.sls
+%config /%{_saltceph}/openattic/keyring/*.sls
 %config /%{_saltceph}/openattic/files/*.j2
 %config /%{_saltceph}/osd/*.sls
 %config /%{_saltceph}/osd/files/*.j2
