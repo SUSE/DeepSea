@@ -101,8 +101,8 @@ def run(**kwargs):
 
     job_dir = ''
     if 'job_dir' in kwargs:
-        log_dir = kwargs['job_dir']
-        print('job dir is {}'.format(log_dir))
+        job_dir = kwargs['job_dir']
+        print('job dir is {}'.format(job_dir))
     else:
         return 1
 
