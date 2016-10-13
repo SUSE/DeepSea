@@ -31,7 +31,7 @@ class Fio(object):
         self.bench_dir = bench_dir
         self.log_dir = log_dir
         self.work_dir = work_dir
-        self.work_dir = job_dir
+        self.job_dir = job_dir
 
         self.jinja_env = Environment(loader=FileSystemLoader('{}/{}'.format(bench_dir,
             'templates')))
