@@ -1,4 +1,9 @@
 
+remove mon:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.remove.mon
 
 empty osds:
   salt.state:

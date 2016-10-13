@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('purge_storage', 'default') }}
+  - .{{ salt['pillar.get']('remove_storage', 'default') }}
