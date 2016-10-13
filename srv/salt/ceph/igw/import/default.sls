@@ -15,7 +15,7 @@ lrbd:
 
 configure:
   cmd.run:
-    - name: ". /etc/sysconfig/lrbd; lrbd $LRBD_OPTIONS  -f /tmp/lrbd.conf"
+    - name: ". /etc/sysconfig/lrbd; lrbd $LRBD_OPTIONS -f /tmp/lrbd.conf"
     - shell: /bin/bash
     - require:
       - file: /tmp/lrbd.conf

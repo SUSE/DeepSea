@@ -1,4 +1,11 @@
 
+update mines:
+  salt.function:
+    - name: mine.update
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+
+
 remove mon:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
