@@ -14,7 +14,7 @@ local_client = salt.client.LocalClient()
 
 class Fio(object):
 
-    def __init__(self, bench_dir, work_dir, log_dir):
+    def __init__(self, bench_dir, work_dir, log_dir, job_dir):
         clients = local_client.cmd('I@roles:mds-client and I@cluster:ceph',
                 'pillar.get', ['public_address'], expr_form='compound')
 
@@ -31,6 +31,7 @@ class Fio(object):
         self.bench_dir = bench_dir
         self.log_dir = log_dir
         self.work_dir = work_dir
+        self.work_dir = job_dir
 
         self.jinja_env = Environment(loader=FileSystemLoader('{}/{}'.format(bench_dir,
             'templates')))
@@ -60,7 +61,7 @@ class Fio(object):
         return self._populate_and_write(template, job)
 
     def _populate_and_write(self, template, job):
-        jobfile = '{}/jobfile'.format(self.work_dir)
+        jobfile = '{}/jobfile'.format(self.job_dir)
 
         # render template and save job file
         template.stream(job).dump(jobfile)
@@ -98,6 +99,13 @@ def run(**kwargs):
     else:
         return 1
 
+    job_dir = ''
+    if 'job_dir' in kwargs:
+        log_dir = kwargs['job_dir']
+        print('job dir is {}'.format(log_dir))
+    else:
+        return 1
+
     __opts__ = salt.config.client_config('/etc/salt/master')
     bench_dir = ''
     for ext in __opts__['ext_pillar']:
@@ -117,7 +125,7 @@ def run(**kwargs):
             print(error)
             exit(1)
 
-    fio = Fio(bench_dir, work_dir, log_dir)
+    fio = Fio(bench_dir, work_dir, log_dir, job_dir)
 
     for job_spec in default_collection['jobs']:
         print(fio.run(job_spec))

@@ -23,6 +23,7 @@ run fio:
     - name: benchmark.run
     - work_dir: {{ salt['pillar.get']('benchmark:work-directory') }}
     - log_dir: {{ salt['pillar.get']('benchmark:log-file-directory') }}
+    - job_dir: {{ salt['pillar.get']('benchmark:job-file-directory') }}
     - default_collection: {{ salt['pillar.get']('benchmark:default-collection') }}
 
 clean subdir:
