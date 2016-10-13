@@ -1,6 +1,0 @@
-runs:
-  - dir: /var/run/cephfs_bench
-    filesize: 1g
-    blocksize: 4m
-    number_of_workers: 1
-    operation: write
