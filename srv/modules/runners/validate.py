@@ -130,6 +130,15 @@ class Validate(object):
         self.passed = OrderedDict()
         self.errors = OrderedDict()
 
+        self._minion_check()
+
+    def _minion_check(self):
+        """
+        """
+        if not self.data:
+            log.error("No minions responded")
+            os._exit(1)
+
     def fsid(self):
         """
         Validate fsid from first entry
