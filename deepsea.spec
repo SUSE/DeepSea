@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.5.6
+Version:        0.5.7
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -96,6 +96,7 @@ install -m 644 srv/salt/_modules/advise.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/keyring.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/cephdisks.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/freedisks.py %{buildroot}/srv/salt/_modules
+install -m 644 srv/salt/_modules/mon.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/osd.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/retry.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/rgw.py %{buildroot}/srv/salt/_modules
@@ -228,6 +229,9 @@ install -d -m 755 %{buildroot}/%{_saltceph}/openattic/keyring
 install -m 644 %{_saltceph}/openattic/keyring/default.sls %{buildroot}/%{_saltceph}/openattic/keyring/
 install -m 644 %{_saltceph}/openattic/keyring/init.sls %{buildroot}/%{_saltceph}/openattic/keyring/
 
+install -d -m 755 %{buildroot}/%{_saltceph}/openattic/oaconfig
+install -m 644 %{_saltceph}/openattic/oaconfig/default.sls %{buildroot}/%{_saltceph}/openattic/oaconfig/
+install -m 644 %{_saltceph}/openattic/oaconfig/init.sls %{buildroot}/%{_saltceph}/openattic/oaconfig/
 
 install -d -m 755 %{buildroot}/%{_saltceph}/osd
 install -m 644 %{_saltceph}/osd/default.sls %{buildroot}/%{_saltceph}/osd
@@ -290,6 +294,18 @@ install -d -m 755 %{buildroot}/%{_saltceph}/remove/igw/auth
 install -m 644 %{_saltceph}/remove/igw/auth/init.sls %{buildroot}/%{_saltceph}/remove/igw/auth
 install -m 644 %{_saltceph}/remove/igw/auth/default.sls %{buildroot}/%{_saltceph}/remove/igw/auth
 
+install -d -m 755 %{buildroot}/%{_saltceph}/remove/mds
+install -m 644 %{_saltceph}/remove/mds/init.sls %{buildroot}/%{_saltceph}/remove/mds
+install -m 644 %{_saltceph}/remove/mds/default.sls %{buildroot}/%{_saltceph}/remove/mds
+
+install -d -m 755 %{buildroot}/%{_saltceph}/remove/mon
+install -m 644 %{_saltceph}/remove/mon/init.sls %{buildroot}/%{_saltceph}/remove/mon
+install -m 644 %{_saltceph}/remove/mon/default.sls %{buildroot}/%{_saltceph}/remove/mon
+
+install -d -m 755 %{buildroot}/%{_saltceph}/remove/rgw
+install -m 644 %{_saltceph}/remove/rgw/init.sls %{buildroot}/%{_saltceph}/remove/rgw
+install -m 644 %{_saltceph}/remove/rgw/default.sls %{buildroot}/%{_saltceph}/remove/rgw
+
 install -d -m 755 %{buildroot}/%{_saltceph}/remove/storage
 install -m 644 %{_saltceph}/remove/storage/init.sls %{buildroot}/%{_saltceph}/remove/storage
 install -m 644 %{_saltceph}/remove/storage/default.sls %{buildroot}/%{_saltceph}/remove/storage
@@ -314,6 +330,10 @@ install -m 644 %{_saltceph}/rescind/igw/default.sls %{buildroot}/%{_saltceph}/re
 install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw/keyring
 install -m 644 %{_saltceph}/rescind/igw/keyring/init.sls %{buildroot}/%{_saltceph}/rescind/igw/keyring
 install -m 644 %{_saltceph}/rescind/igw/keyring/default.sls %{buildroot}/%{_saltceph}/rescind/igw/keyring
+
+install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw/lrbd
+install -m 644 %{_saltceph}/rescind/igw/lrbd/init.sls %{buildroot}/%{_saltceph}/rescind/igw/lrbd
+install -m 644 %{_saltceph}/rescind/igw/lrbd/default.sls %{buildroot}/%{_saltceph}/rescind/igw/lrbd
 
 install -d -m 755 %{buildroot}/%{_saltceph}/rescind/igw/sysconfig
 install -m 644 %{_saltceph}/rescind/igw/sysconfig/init.sls %{buildroot}/%{_saltceph}/rescind/igw/sysconfig
@@ -499,6 +519,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/openattic/files
 %dir /%{_saltceph}/openattic/key
 %dir /%{_saltceph}/openattic/keyring
+%dir /%{_saltceph}/openattic/oaconfig
 %dir /%{_saltceph}/osd
 %dir /%{_saltceph}/osd/files
 %dir /%{_saltceph}/osd/key
@@ -515,12 +536,16 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/remove
 %dir /%{_saltceph}/remove/igw
 %dir /%{_saltceph}/remove/igw/auth
+%dir /%{_saltceph}/remove/mon
+%dir /%{_saltceph}/remove/mds
+%dir /%{_saltceph}/remove/rgw
 %dir /%{_saltceph}/remove/storage
 %dir /%{_saltceph}/rescind
 %dir /%{_saltceph}/rescind/admin
 %dir /%{_saltceph}/rescind/igw-client
 %dir /%{_saltceph}/rescind/igw
 %dir /%{_saltceph}/rescind/igw/keyring
+%dir /%{_saltceph}/rescind/igw/lrbd
 %dir /%{_saltceph}/rescind/igw/sysconfig
 %dir /%{_saltceph}/rescind/master
 %dir /%{_saltceph}/rescind/mds-client
@@ -584,6 +609,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/openattic/auth/*.sls
 %config /%{_saltceph}/openattic/key/*.sls
 %config /%{_saltceph}/openattic/keyring/*.sls
+%config /%{_saltceph}/openattic/oaconfig/*.sls
 %config /%{_saltceph}/openattic/files/*.j2
 %config /%{_saltceph}/osd/*.sls
 %config /%{_saltceph}/osd/files/*.j2
@@ -599,12 +625,16 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/refresh/*.sls
 %config /%{_saltceph}/repo/*.sls
 %config /%{_saltceph}/remove/igw/auth/*.sls
+%config /%{_saltceph}/remove/mon/*.sls
+%config /%{_saltceph}/remove/mds/*.sls
+%config /%{_saltceph}/remove/rgw/*.sls
 %config /%{_saltceph}/remove/storage/*.sls
 %config /%{_saltceph}/rescind/*.sls
 %config /%{_saltceph}/rescind/admin/*.sls
 %config /%{_saltceph}/rescind/igw-client/*.sls
 %config /%{_saltceph}/rescind/igw/*.sls
 %config /%{_saltceph}/rescind/igw/keyring/*.sls
+%config /%{_saltceph}/rescind/igw/lrbd/*.sls
 %config /%{_saltceph}/rescind/igw/sysconfig/*.sls
 %config /%{_saltceph}/rescind/master/*.sls
 %config /%{_saltceph}/rescind/mds-client/*.sls
