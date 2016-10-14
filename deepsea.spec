@@ -97,7 +97,7 @@ install -m 644 %{_bench_pillar}/config.yml %{buildroot}/%{_bench_pillar}
 install -d -m 755 %{buildroot}/%{_bench_pillar}/collections
 install -m 644 %{_bench_pillar}/collections/default.yml %{buildroot}/%{_bench_pillar}/collections
 
-install -d -m 755 %{buildroot}/%{_bench_pillar}/collections
+install -d -m 755 %{buildroot}/%{_bench_pillar}/fio
 install -m 644 %{_bench_pillar}/fio/multi_rw.yml %{buildroot}/%{_bench_pillar}/fio
 install -m 644 %{_bench_pillar}/fio/seq_reads.yml %{buildroot}/%{_bench_pillar}/fio
 install -m 644 %{_bench_pillar}/fio/seq_writes.yml %{buildroot}/%{_bench_pillar}/fio
@@ -147,7 +147,7 @@ install -m 644 %{_saltceph}/cephfs/benchmarks/prepare_master.sls %{buildroot}/%{
 install -m 644 %{_saltceph}/cephfs/benchmarks/working_subdir.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks
 
 install -d -m 755 %{buildroot}/%{_saltceph}/cephfs/benchmarks/files
-install -m 644 %{_saltceph}/cephfs/benchmarks/files/fio.service.sls %{buildroot}/%{_saltceph}/cephfs/benchmarks/files
+install -m 644 %{_saltceph}/cephfs/benchmarks/files/fio.service %{buildroot}/%{_saltceph}/cephfs/benchmarks/files
 
 install -d -m 755 %{buildroot}/%{_saltceph}/configuration
 install -m 644 %{_saltceph}/configuration/default.sls %{buildroot}/%{_saltceph}/configuration
@@ -545,14 +545,14 @@ cd %{buildroot}/%{_saltceph}/stage && ln -sf deploy 3
 cd %{buildroot}/%{_saltceph}/stage && ln -sf services 4
 cd %{buildroot}/%{_saltceph}/stage && ln -sf removal 5
 
-%post 
+%post
 # Initialize to most likely value
 sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
 # Restart salt-master if it's running, so it picks up
 # the config changes in /etc/salt/master.d/modules.conf
 systemctl try-restart salt-master > /dev/null 2>&1 || :
 
-%postun 
+%postun
 
 %files
 %defattr(-,root,root,-)
@@ -568,110 +568,107 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
-%dir %attr(0755, salt, salt) /srv/salt/ceph
-%dir /srv/salt/ceph/admin
-%dir /srv/salt/ceph/admin/files
-%dir /srv/salt/ceph/admin/key
-%dir /srv/salt/ceph/configuration
-%dir /srv/salt/ceph/configuration/files
-%dir /srv/salt/ceph/configuration/check
-%dir /srv/salt/ceph/events
-%dir /srv/salt/ceph/igw
-%dir /srv/salt/ceph/igw/config
-%dir /srv/salt/ceph/igw/files
-%dir /srv/salt/ceph/igw/import
-%dir /srv/salt/ceph/igw/key
-%dir /srv/salt/ceph/igw/auth
-%dir /srv/salt/ceph/igw/keyring
-%dir /srv/salt/ceph/igw/restart
-%dir /srv/salt/ceph/igw/sysconfig
-%dir /srv/salt/ceph/mds
-%dir /srv/salt/ceph/mds/files
-%dir /srv/salt/ceph/mds/key
-%dir /srv/salt/ceph/mds/auth
-%dir /srv/salt/ceph/mds/keyring
-%dir /srv/salt/ceph/mds/pools
-%dir /srv/salt/ceph/mds/restart
-%dir /srv/salt/ceph/mines
-%dir /srv/salt/ceph/mines/files
-%dir /srv/salt/ceph/mon
-%dir /srv/salt/ceph/mon/files
-%dir /srv/salt/ceph/mon/key
-%dir /srv/salt/ceph/mon/restart
-%dir /srv/salt/ceph/openattic
-%dir /srv/salt/ceph/openattic/auth
-%dir /srv/salt/ceph/openattic/files
-%dir /srv/salt/ceph/openattic/key
-%dir /srv/salt/ceph/openattic/keyring
-%dir /srv/salt/ceph/openattic/oaconfig
-%dir /srv/salt/ceph/osd
-%dir /srv/salt/ceph/osd/files
-%dir /srv/salt/ceph/osd/key
-%dir /srv/salt/ceph/osd/auth
-%dir /srv/salt/ceph/osd/keyring
-%dir /srv/salt/ceph/osd/partition
-%dir /srv/salt/ceph/osd/restart
-%dir /srv/salt/ceph/osd/scheduler
-%dir /srv/salt/ceph/packages
-%dir /srv/salt/ceph/packages/common
-%dir /srv/salt/ceph/pool
-%dir /srv/salt/ceph/reactor
-%dir /srv/salt/ceph/refresh
-%dir /srv/salt/ceph/repo
-%dir /srv/salt/ceph/remove
-%dir /srv/salt/ceph/remove/igw
-%dir /srv/salt/ceph/remove/igw/auth
-%dir /srv/salt/ceph/remove/mon
-%dir /srv/salt/ceph/remove/mds
-%dir /srv/salt/ceph/remove/rgw
-%dir /srv/salt/ceph/remove/storage
-%dir /srv/salt/ceph/rescind
-%dir /srv/salt/ceph/rescind/admin
-%dir /srv/salt/ceph/rescind/client-cephfs
-%dir /srv/salt/ceph/rescind/client-iscsi
-%dir /srv/salt/ceph/rescind/client-radosgw
-%dir /srv/salt/ceph/rescind/igw
-%dir /srv/salt/ceph/rescind/igw/keyring
-%dir /srv/salt/ceph/rescind/igw/lrbd
-%dir /srv/salt/ceph/rescind/igw/sysconfig
-%dir /srv/salt/ceph/rescind/master
-%dir /srv/salt/ceph/rescind/mds-nfs
-%dir /srv/salt/ceph/rescind/mds
-%dir /srv/salt/ceph/rescind/mds/keyring
-%dir /srv/salt/ceph/rescind/mon
-%dir /srv/salt/ceph/rescind/rgw-nfs
-%dir /srv/salt/ceph/rescind/rgw
-%dir /srv/salt/ceph/rescind/rgw/keyring
-%dir /srv/salt/ceph/rescind/storage
-%dir /srv/salt/ceph/rescind/storage/keyring
-%dir /srv/salt/ceph/restart
-%dir /srv/salt/ceph/rgw
-%dir /srv/salt/ceph/rgw/files
-%dir /srv/salt/ceph/rgw/key
-%dir /srv/salt/ceph/rgw/auth
-%dir /srv/salt/ceph/rgw/keyring
-%dir /srv/salt/ceph/rgw/restart
-%dir /srv/salt/ceph/stage
-%dir /srv/salt/ceph/stage/all
-%dir /srv/salt/ceph/stage/benchmark
-%dir /srv/salt/ceph/stage/cephfs
-%dir /srv/salt/ceph/stage/configure
-%dir /srv/salt/ceph/stage/deploy
-%dir /srv/salt/ceph/stage/discovery
-%dir /srv/salt/ceph/stage/iscsi
-%dir /srv/salt/ceph/stage/openattic
-%dir /srv/salt/ceph/stage/prep
-%dir /srv/salt/ceph/stage/prep/master
-%dir /srv/salt/ceph/stage/prep/minion
-%dir /srv/salt/ceph/stage/radosgw
-%dir /srv/salt/ceph/stage/removal
-%dir /srv/salt/ceph/stage/services
-%dir /srv/salt/ceph/sync
-%dir /srv/salt/ceph/time
-%dir /srv/salt/ceph/time/ntp
-%dir /srv/salt/ceph/updates
-%dir /srv/salt/ceph/updates/restart
-%dir /srv/salt/ceph/wait
+%dir %attr(0755, salt, salt) /%{_saltceph}
+%dir /%{_saltceph}/admin
+%dir /%{_saltceph}/admin/files
+%dir /%{_saltceph}/admin/key
+%dir /%{_saltceph}/benchmarks
+%dir /%{_saltceph}/cephfs
+%dir /%{_saltceph}/cephfs/benchmarks
+%dir /%{_saltceph}/cephfs/benchmarks/files
+%dir /%{_saltceph}/configuration
+%dir /%{_saltceph}/configuration/files
+%dir /%{_saltceph}/configuration/check
+%dir /%{_saltceph}/events
+%dir /%{_saltceph}/igw
+%dir /%{_saltceph}/igw/config
+%dir /%{_saltceph}/igw/files
+%dir /%{_saltceph}/igw/import
+%dir /%{_saltceph}/igw/key
+%dir /%{_saltceph}/igw/auth
+%dir /%{_saltceph}/igw/keyring
+%dir /%{_saltceph}/igw/sysconfig
+%dir /%{_saltceph}/mds
+%dir /%{_saltceph}/mds/files
+%dir /%{_saltceph}/mds/key
+%dir /%{_saltceph}/mds/auth
+%dir /%{_saltceph}/mds/keyring
+%dir /%{_saltceph}/mds/pools
+%dir /%{_saltceph}/mines
+%dir /%{_saltceph}/mines/files
+%dir /%{_saltceph}/mon
+%dir /%{_saltceph}/mon/files
+%dir /%{_saltceph}/mon/key
+%dir /%{_saltceph}/openattic
+%dir /%{_saltceph}/openattic/auth
+%dir /%{_saltceph}/openattic/files
+%dir /%{_saltceph}/openattic/key
+%dir /%{_saltceph}/openattic/keyring
+%dir /%{_saltceph}/openattic/oaconfig
+%dir /%{_saltceph}/osd
+%dir /%{_saltceph}/osd/files
+%dir /%{_saltceph}/osd/key
+%dir /%{_saltceph}/osd/auth
+%dir /%{_saltceph}/osd/keyring
+%dir /%{_saltceph}/osd/partition
+%dir /%{_saltceph}/osd/scheduler
+%dir /%{_saltceph}/packages
+%dir /%{_saltceph}/packages/common
+%dir /%{_saltceph}/pool
+%dir /%{_saltceph}/reactor
+%dir /%{_saltceph}/refresh
+%dir /%{_saltceph}/repo
+%dir /%{_saltceph}/remove
+%dir /%{_saltceph}/remove/igw
+%dir /%{_saltceph}/remove/igw/auth
+%dir /%{_saltceph}/remove/mon
+%dir /%{_saltceph}/remove/mds
+%dir /%{_saltceph}/remove/rgw
+%dir /%{_saltceph}/remove/storage
+%dir /%{_saltceph}/rescind
+%dir /%{_saltceph}/rescind/admin
+%dir /%{_saltceph}/rescind/igw-client
+%dir /%{_saltceph}/rescind/igw
+%dir /%{_saltceph}/rescind/igw/keyring
+%dir /%{_saltceph}/rescind/igw/lrbd
+%dir /%{_saltceph}/rescind/igw/sysconfig
+%dir /%{_saltceph}/rescind/master
+%dir /%{_saltceph}/rescind/mds-client
+%dir /%{_saltceph}/rescind/mds-nfs
+%dir /%{_saltceph}/rescind/mds
+%dir /%{_saltceph}/rescind/mds/keyring
+%dir /%{_saltceph}/rescind/mon
+%dir /%{_saltceph}/rescind/rgw-client
+%dir /%{_saltceph}/rescind/rgw-nfs
+%dir /%{_saltceph}/rescind/rgw
+%dir /%{_saltceph}/rescind/rgw/keyring
+%dir /%{_saltceph}/rescind/storage
+%dir /%{_saltceph}/rescind/storage/keyring
+%dir /%{_saltceph}/rgw
+%dir /%{_saltceph}/rgw/files
+%dir /%{_saltceph}/rgw/key
+%dir /%{_saltceph}/rgw/auth
+%dir /%{_saltceph}/rgw/keyring
+%dir /%{_saltceph}/stage
+%dir /%{_saltceph}/stage/all
+%dir /%{_saltceph}/stage/benchmark
+%dir /%{_saltceph}/stage/cephfs
+%dir /%{_saltceph}/stage/configure
+%dir /%{_saltceph}/stage/deploy
+%dir /%{_saltceph}/stage/discovery
+%dir /%{_saltceph}/stage/iscsi
+%dir /%{_saltceph}/stage/openattic
+%dir /%{_saltceph}/stage/prep
+%dir /%{_saltceph}/stage/prep/master
+%dir /%{_saltceph}/stage/prep/minion
+%dir /%{_saltceph}/stage/radosgw
+%dir /%{_saltceph}/stage/removal
+%dir /%{_saltceph}/stage/services
+%dir /%{_saltceph}/sync
+%dir /%{_saltceph}/time
+%dir /%{_saltceph}/time/ntp
+%dir /%{_saltceph}/updates
+%dir /%{_saltceph}/updates/restart
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /%{_runners}/*.py
 %config /%{_pillar}/top.sls
@@ -688,8 +685,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/admin/*.sls
 %config /%{_saltceph}/admin/files/*.j2
 %config /%{_saltceph}/admin/key/*.sls
-%config /%{_saltceph}/benchmark/cephfs/*.sls
-%config /%{_saltceph}/benchmark/files/fio.service
+%config /%{_saltceph}/benchmarks/cephfs.sls
+%config /%{_saltceph}/cephfs/benchmarks/*.sls
+%config /%{_saltceph}/cephfs/benchmarks/files/fio.service
 %config /%{_saltceph}/configuration/*.sls
 %config /%{_saltceph}/configuration/check/*.sls
 %config /%{_saltceph}/configuration/files/ceph.conf*
