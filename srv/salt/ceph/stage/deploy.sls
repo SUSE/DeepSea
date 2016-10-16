@@ -27,16 +27,6 @@ validate failed:
 
 {% endif %}
 
-{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw', 'openattic' ] %}
-{{ role }} key:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.{{ role }}.key
-    - failhard: True
-
-{% endfor %}
-
 
 time:
   salt.state:

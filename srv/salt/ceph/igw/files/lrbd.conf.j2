@@ -1,0 +1,55 @@
+{
+    "auth": [
+        {
+            "authentication": "none", 
+            "target": "iqn.2016-11.org.linux-iscsi.igw.x86:sn.demo"
+        }
+    ], 
+    "targets": [
+        {
+            "hosts": [
+{% for minion in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw', host=True) %}
+                {
+                    "host": "{{ minion }}", 
+                    "portal": "portal-{{ minion }}"
+
+{% if loop.last %}
+                } 
+{% else %}
+                }, 
+{% endif %}
+{% endfor %}
+            ], 
+            "target": "iqn.2016-11.org.linux-iscsi.igw.x86:sn.demo"
+        }
+    ], 
+    "portals": [
+{% for minion, address in salt.saltutil.runner('select.attr', cluster='ceph', roles='igw', attr='public_address', host=True) %}
+        {
+            "name": "portal-{{ minion }}", 
+            "addresses": [
+                "{{ address }}"
+            ]
+{% if loop.last %}
+        } 
+{% else %}
+        }, 
+{% endif %}
+{% endfor %}
+    ], 
+    "pools": [
+        {
+            "pool": "rbd", 
+            "gateways": [
+                {
+                    "target": "iqn.2016-11.org.linux-iscsi.igw.x86:sn.demo", 
+                    "tpg": [
+                        {
+                            "image": "demo"
+                        } 
+                    ]
+                }
+            ]
+        }  
+    ]
+}

@@ -103,11 +103,14 @@ def cluster(**kwargs):
         # Restrict search to monitors for this cluster
         search = "I@cluster:{} and I@roles:mon".format(name)
 
-        # mon create fails on FQDN at the moment
-        #mon_host = local.cmd(search , 'pillar.get', [ 'mon_host' ], expr_form="compound")
         mon_host = local.cmd(search , 'pillar.get', [ 'public_address' ], expr_form="compound")
         mon_initial_members = local.cmd(search , 'grains.get', [ 'host' ], expr_form="compound")
         
+        search = "I@cluster:{} and I@roles:mon".format(name)
+        #igw_hosts = local.cmd(search , 'pillar.get', [ 'public_address' ], expr_form="compound")
+        igw_hosts = local.cmd(search , 'grains.get', [ 'host' ], expr_form="compound")
+
+
         contents = {}
         contents['mon_host'] = mon_host.values()
         contents['mon_initial_members'] = mon_initial_members.values()

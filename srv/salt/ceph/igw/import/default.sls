@@ -8,7 +8,7 @@ lrbd:
 /tmp/lrbd.conf:
   file.managed:
     - source: 
-      - salt://ceph/igw/files/lrbd.conf
+      - salt://ceph/igw/cache/lrbd.conf
     - user: root
     - group: root
     - mode: 600
