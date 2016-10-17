@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.5.7
+Version:        0.5.8
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -141,6 +141,11 @@ install -m 644 %{_saltceph}/igw/init.sls %{buildroot}/%{_saltceph}/igw
 install -d -m 755 %{buildroot}/%{_saltceph}/igw/files
 install -m 644 %{_saltceph}/igw/files/sysconfig.lrbd.j2 %{buildroot}/%{_saltceph}/igw/files
 install -m 644 %{_saltceph}/igw/files/keyring.j2 %{buildroot}/%{_saltceph}/igw/files
+install -m 644 %{_saltceph}/igw/files/lrbd.conf.j2 %{buildroot}/%{_saltceph}/igw/files
+
+install -d -m 755 %{buildroot}/%{_saltceph}/igw/config
+install -m 644 %{_saltceph}/igw/config/default.sls %{buildroot}/%{_saltceph}/igw/config
+install -m 644 %{_saltceph}/igw/config/init.sls %{buildroot}/%{_saltceph}/igw/config
 
 install -d -m 755 %{buildroot}/%{_saltceph}/igw/import
 install -m 644 %{_saltceph}/igw/import/default.sls %{buildroot}/%{_saltceph}/igw/import
@@ -423,10 +428,11 @@ install -d -m 755 %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/all.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/benchmark.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/cephfs.sls %{buildroot}/%{_saltceph}/stage
-install -m 644 %{_saltceph}/stage/configure.sls %{buildroot}/%{_saltceph}/stage
 
 install -d -m 755 %{buildroot}/%{_saltceph}/stage/configure
 install -m 644 %{_saltceph}/stage/configure/default.sls %{buildroot}/%{_saltceph}/stage/configure
+install -m 644 %{_saltceph}/stage/configure/init.sls %{buildroot}/%{_saltceph}/stage/configure
+
 install -m 644 %{_saltceph}/stage/deploy.sls %{buildroot}/%{_saltceph}/stage
 install -m 644 %{_saltceph}/stage/discovery.sls %{buildroot}/%{_saltceph}/stage
 
@@ -464,7 +470,7 @@ install -m 644 %{_saltceph}/updates/restart/init.sls %{buildroot}/%{_saltceph}/u
 
 cd %{buildroot}/%{_saltceph}/stage && ln -sf prep.sls 0.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf discovery.sls 1.sls
-cd %{buildroot}/%{_saltceph}/stage && ln -sf configure.sls 2.sls
+cd %{buildroot}/%{_saltceph}/stage && ln -sf configure 2
 cd %{buildroot}/%{_saltceph}/stage && ln -sf deploy.sls 3.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf services.sls 4.sls
 cd %{buildroot}/%{_saltceph}/stage && ln -sf removal.sls 5.sls
@@ -482,7 +488,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %defattr(-,root,root,-)
 /srv/modules/pillar/stack.py
 %dir /%{_runners}
-%dir /%{_pillar}
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph
 %dir %attr(0755, salt, salt) /%{_pillar}/ceph/stack
 %dir /srv/modules
@@ -497,6 +502,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/configuration/check
 %dir /%{_saltceph}/events
 %dir /%{_saltceph}/igw
+%dir /%{_saltceph}/igw/config
 %dir /%{_saltceph}/igw/files
 %dir /%{_saltceph}/igw/import
 %dir /%{_saltceph}/igw/key
@@ -589,6 +595,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/events/*.sls
 %config /%{_saltceph}/igw/*.sls
 %config /%{_saltceph}/igw/files/*.j2
+%config /%{_saltceph}/igw/config/*.sls
 %config /%{_saltceph}/igw/import/*.sls
 %config /%{_saltceph}/igw/key/*.sls
 %config /%{_saltceph}/igw/auth/*.sls
@@ -654,6 +661,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/rgw/auth/*.sls
 %config /%{_saltceph}/rgw/keyring/*.sls
 %config /%{_saltceph}/stage/*.sls
+%config /%{_saltceph}/stage/2
 %config /%{_saltceph}/stage/configure/*.sls
 %config /%{_saltceph}/stage/discovery/*.sls
 %config /%{_saltceph}/stage/prep/*.sls
