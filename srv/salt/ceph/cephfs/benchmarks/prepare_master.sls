@@ -19,5 +19,4 @@ create log file dir:
     - group: salt
     - dir_mode: 755
     - file_mode: 644
-    - clean: True
     - makedirs: True
