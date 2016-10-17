@@ -4,6 +4,7 @@ import salt.client
 import salt.config
 
 import logging
+import datetime
 from jinja2 import Environment, FileSystemLoader
 from os.path import dirname, basename, splitext
 from subprocess import check_output
@@ -46,8 +47,9 @@ class Fio(object):
         cmd = [None] * 2 * len(self.client_args)
         cmd[::2] = self.client_args
         cmd[1::2] = [jobfile] * len(self.client_args)
-        output_args = ['--output={}/{}.json'.format(self.log_dir,
-            splitext(basename(job_spec))[0])]
+        output_args = ['--output={}/{}_{}.json'.format(self.log_dir,
+            splitext(basename(job_spec))[0],
+            datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))]
         output = check_output([self.cmd] + self.cmd_args + output_args + cmd)
 
         return output
