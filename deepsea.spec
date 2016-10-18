@@ -68,7 +68,6 @@ install -m 644 srv/modules/pillar/stack.py %{buildroot}/srv/modules/pillar
 install -d -m 755 %{buildroot}/%{_runners}
 install -m 644 %{_runners}/__init__.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/advise.py %{buildroot}/%{_runners}
-install -m 644 %{_runners}/bootstrap.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/check.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/configure.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/filequeue.py %{buildroot}/%{_runners}
