@@ -5,6 +5,7 @@ import salt.config
 
 import logging
 import datetime
+import ipaddress
 from jinja2 import Environment, FileSystemLoader
 from os.path import dirname, basename, splitext
 from subprocess import check_output
@@ -16,18 +17,36 @@ local_client = salt.client.LocalClient()
 class Fio(object):
 
     def __init__(self, bench_dir, work_dir, log_dir, job_dir):
-        clients = local_client.cmd('I@roles:mds-client and I@cluster:ceph',
-                'pillar.get', ['public_address'], expr_form='compound')
+        '''
+        get a list of the minions ip addresses and pick the one that falls into
+        the public_network
+        '''
+        search = 'I@roles:mds-client and I@cluster:ceph'
+        public_network = list(local_client.cmd(search, 'pillar.get',
+                ['public_network'], expr_form='compound').values())[0]
+
+        minion_ip_lists = local_client.cmd(search, 'network.ip_addrs', [],
+                expr_form = 'compound')
+
+        if not minion_ip_lists:
+            raise Exception('No mds-client roles defined')
+
+        clients = []
+        ip_filter = lambda add: ipaddress.ip_address(add.decode()) in ipaddress.ip_network(public_network.decode())
+        for minion, ip_list in minion_ip_lists.items():
+            clients.extend(list(filter(ip_filter, ip_list)))
 
         if not clients:
-            raise Exception('No mds-client roles defined')
+            raise Exception(
+            '''Mds-clients do not have an ip address in the public
+            network of the Ceph Cluster.''')
 
         self.cmd = 'fio'
 
         self.cmd_args = ['--output-format=json']
 
         self.client_args = []
-        self.client_args.extend(['--client={}'.format(clients[client]) for client in clients])
+        self.client_args.extend(['--client={}'.format(client) for client in clients])
 
         self.bench_dir = bench_dir
         self.log_dir = log_dir
