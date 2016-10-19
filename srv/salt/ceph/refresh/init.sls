@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('refresh_method', 'default') }}
+  - .{{ salt['pillar.get']('refresh_init', 'default') }}

@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('sync_method', 'default') }}
+  - .{{ salt['pillar.get']('sync_init', 'default') }}

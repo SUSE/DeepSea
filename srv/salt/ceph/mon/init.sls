@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('mon_method', 'default') }}
+  - .{{ salt['pillar.get']('mon_init', 'default') }}

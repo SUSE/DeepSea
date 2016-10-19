@@ -9,10 +9,10 @@ sync:
     - tgt: '*'
     - sls: ceph.sync
 
-mine_functions:
+mines:
   salt.state:
     - tgt: '*'
-    - sls: ceph.mine_functions
+    - sls: ceph.mines
 
 repo:
   salt.state:

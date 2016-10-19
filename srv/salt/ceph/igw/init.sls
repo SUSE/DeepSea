@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('igw_method', 'default') }}
+  - .{{ salt['pillar.get']('igw_init', 'default') }}

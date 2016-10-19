@@ -1,5 +1,5 @@
 
 include:
-  - .{{ salt['pillar.get']('repo_method', 'default') }}
+  - .{{ salt['pillar.get']('repo_init', 'default') }}
 
 
