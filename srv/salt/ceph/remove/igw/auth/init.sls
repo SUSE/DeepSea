@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('rescind_igw_auth', 'default') }}
+  - .{{ salt['pillar.get']('remove_igw_auth', 'default') }}
