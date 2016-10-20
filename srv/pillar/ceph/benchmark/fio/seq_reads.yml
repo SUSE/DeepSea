@@ -1,5 +1,0 @@
-template: job.fio.j2
-filesize: 500m
-blocksize: 4m
-number_of_workers: 1
-operation: read
