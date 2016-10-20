@@ -103,6 +103,11 @@ install -m 644 srv/salt/_modules/wait.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 
 %define _saltceph srv/salt/ceph
+
+install -d -m 755 %{buildroot}/%{_saltceph}/restart
+install -m 644 %{_saltceph}/restart/init.sls %{buildroot}/%{_saltceph}/restart
+install -m 644 %{_saltceph}/restart/storage/default.sls %{buildroot}/%{_saltceph}/restart
+
 install -d -m 755 %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/default.sls %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/init.sls %{buildroot}/%{_saltceph}/admin
