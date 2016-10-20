@@ -1,6 +1,4 @@
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw', host=True) %}
-
-wait for {{ host }}:
+wait:
   module.run:
    - name: wait.out
    - kwargs:
@@ -8,7 +6,7 @@ wait for {{ host }}:
    - fire_event: True
    - failhard: True
 
-restart {{ host }}:
+restart:
   cmd.run:
     - name: "lrbd"
     - fire_event: True

@@ -1,16 +1,11 @@
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw', host=True) %}
-
-wait for {{ host }}:
+wait for:
   module.run:
    - name: wait.out
    - kwargs:
        'status': "HEALTH_ERR"
    - fire_event: True
-   - failhard: True
          
-restart {{ host }}:
+restart:
   cmd.run:
-    - name: "systemctl restart ceph-radosgw@rgw.{{ host }}.service"
+    - name: "systemctl restart ceph-radosgw@rgw.{{ grains['host'] }}.service"
     - fire_event: True
-
-{% endfor %}
