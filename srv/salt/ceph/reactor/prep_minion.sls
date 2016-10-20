@@ -5,7 +5,7 @@ ceph.sync:
   local.state.apply:
     - tgt: {{ data['id'] }}
 
-ceph.mine_functions:
+ceph.mines:
   local.state.apply:
     - tgt: {{ data['id'] }}
 

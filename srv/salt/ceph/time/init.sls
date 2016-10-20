@@ -1,5 +1,5 @@
 
 
 include:
-  - .{{ salt['pillar.get']('time_service') }}
+  - .{{ salt['pillar.get']('time_init', 'default') }}
 

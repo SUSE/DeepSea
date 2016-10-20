@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('rgw_method', 'default') }}
+  - .{{ salt['pillar.get']('rgw_init', 'default') }}

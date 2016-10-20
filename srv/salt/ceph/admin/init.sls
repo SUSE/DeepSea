@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('admin_method', 'default') }}
+  - .{{ salt['pillar.get']('admin_init', 'default') }}

@@ -1,4 +1,4 @@
 
-refresh_pillar:
-  module.run:
-    - name: saltutil.refresh_pillar
+
+include:
+  - .{{ salt['pillar.get']('refresh_init', 'default') }}

@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('packages_method', 'default') }}
+  - .{{ salt['pillar.get']('packages_init', 'default') }}

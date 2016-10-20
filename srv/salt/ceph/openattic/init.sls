@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('openattic_method', 'default') }}
+  - .{{ salt['pillar.get']('openattic_init', 'default') }}

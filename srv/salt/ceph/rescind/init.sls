@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('rescind_method', 'default') }}
+  - .{{ salt['pillar.get']('rescind_init', 'default') }}

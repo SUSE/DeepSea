@@ -319,75 +319,7 @@ class Validate(object):
         if not 'cluster_interface' in self.errors:
             self.passed['cluster_interface'] = "valid"
 
-    def _check_keyring(self, name, role = None):
-        """
-        Check for a matching role and keyring.
-        """
-        if role:
-            _role = role
-        else:
-            _role = name
 
-        _keyring = "{}_keyring".format(name) 
-        for node in self.data.keys():
-            if ('roles' in self.data[node] and 
-                _role in self.data[node]['roles']):
-                if 'keyring' in self.data[node]:
-                    for entry in self.data[node]['keyring']:
-                        if name in entry:
-                            keyring = entry[name]
-                            size = len(keyring)
-                            if size == 40:
-                                pass
-                            else:
-                                msg = "keyring is {} characters, not 40".format(size)
-                                if _keyring in self.errors:
-                                    self.errors[_keyring].append(msg)
-                                else:
-                                    self.errors[_keyring] = [ msg ]
-                else:
-                    msg = "{} keyring is missing on {}.  ".format(name, node)
-                    stack_dir = "/srv/pillar/ceph/stack"
-                    keyring_yml = "{}/roles/{}.yml".format(self.name, name)
-                    check = "Check {0}/{1} and {0}/default/{1}".format(stack_dir, keyring_yml)
-                    if _keyring in self.errors:
-                        self.errors[_keyring].append(msg + check)
-                    else:
-                        self.errors[_keyring] = [ msg + check ]
-        
-        if not _keyring in self.errors:
-            self.passed[_keyring] = "valid"
-
-
-    def admin_keyring(self):
-        """
-        The admin role requires an admin keyring
-        """
-        self._check_keyring('mon')
-
-    def mon_keyring(self):
-        """
-        The mon role requires an mon keyring
-        """
-        self._check_keyring('mon')
-
-    def osd_keyring(self):
-        """
-        The storage role requires an osd keyring
-        """
-        self._check_keyring('osd', 'storage')
-
-    def mds_keyring(self):
-        """
-        The mds role requires an mds keyring
-        """
-        self._check_keyring('mds')
-
-    def rgw_keyring(self):
-        """
-        The rgw role requires an rgw keyring
-        """
-        self._check_keyring('rgw')
 
     def _monitor_check(self, name):
         """
@@ -396,6 +328,14 @@ class Validate(object):
         for node in self.data.keys():
             if name in self.data[node]:
                 same_hosts[",".join(self.data[node][name])] = ""
+                if self.data[node][name][0].strip() == "":
+                    msg = "host {} is missing values for {}.  ".format(node, name) 
+                    msg += "Verify that role-mon/stack/default/ceph/minions/*.yml or similar is in your policy.cfg"
+                    if name in self.errors:
+                        continue
+                        #self.errors[name].append(msg)
+                    else:
+                        self.errors[name] = [ msg ]
             else:
                 msg = "host {} is missing {}".format(node, name)
                 if name in self.errors:
@@ -423,13 +363,24 @@ class Validate(object):
 
     def master_role(self):
         """
-        The master role has keyrings
+        At least one minion has a master role
         """
+        found = False
+        matched = False
         for node in self.data.keys():
             if 'roles' in self.data[node] and 'master' in self.data[node]['roles']:
-                if 'keyring' not in self.data[node]:
-                    msg = "master role missing keyrings on {}, check /srv/pillar/ceph/proposals/policy.cfg for master.yml".format(node)
-                    self.errors['master_role'] = [ msg ]
+                
+                found = True
+                if 'master_minion' in self.data[node] and node == self.data[node]['master_minion']:
+                    matched = True
+
+        if not found:
+            msg = "No minion assigned master role"
+            self.errors['master_role'] = [ msg ]
+
+        if not matched:
+            msg = "The master_minion does not match any minion assigned the master role"
+            self.errors['master_role'] = [ msg ]
 
         if not 'master_role' in self.errors:
             self.passed['master_role'] = "valid"
@@ -668,12 +619,7 @@ def pillar(name = None, printer=None, **kwargs):
     v.cluster_interface()
     v.monitors()
     v.storage()
-    #v.admin_keyring()
-    #v.mon_keyring()
-    #v.mds_keyring()
-    #v.rgw_keyring()
-    #v.osd_keyring()
-    #v.master_role()
+    v.master_role()
     v.mon_role()
     v.mon_host()
     v.mon_initial_members()
