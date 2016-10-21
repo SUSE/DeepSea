@@ -1,0 +1,15 @@
+[global]
+directory={{ dir }}
+filename_format=f.$filenum
+wait_for_previous
+filesize={{ filesize }}
+numjobs={{ number_of_workers}}
+
+{% for op in operations %}
+{% for bs in blocksizes %}
+[{{ number_of_workers}}rw_{{ bs }}_{{ op }}]
+rw={{ op }}
+blocksize={{ bs }}
+
+{% endfor %}
+{% endfor %}

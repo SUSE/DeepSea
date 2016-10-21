@@ -1,7 +1,0 @@
-template: multi_job.j2
-filesize: 500m
-blocksizes:
-  - 500k
-  - 1m
-  - 4m
-number_of_workers: 1
