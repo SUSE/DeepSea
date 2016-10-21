@@ -1,1 +1,4 @@
-Welcome to the DeepSea wiki!
+
+* [Intro](intro.md)
+* [Management](management.md)
+* [Policy](policy.md)
