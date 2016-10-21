@@ -72,6 +72,7 @@ install -m 644 %{_runners}/check.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/configure.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/filequeue.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/minions.py %{buildroot}/%{_runners}
+install -m 644 %{_runners}/nettest.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/populate.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/rescinded.py %{buildroot}/%{_runners}
 install -m 644 %{_runners}/push.py %{buildroot}/%{_runners}
@@ -133,6 +134,9 @@ install -m 644 %{_saltceph}/configuration/files/ceph.conf.j2 %{buildroot}/%{_sal
 install -m 644 %{_saltceph}/configuration/files/ceph.conf-shared.j2 %{buildroot}/%{_saltceph}/configuration/files
 install -m 644 %{_saltceph}/configuration/files/ceph.conf.rgw %{buildroot}/%{_saltceph}/configuration/files
 
+install -d -m 755 %{buildroot}/%{_saltceph}/diagnose
+install -m 644 %{_saltceph}/diagnose/iperf3.sls %{buildroot}/%{_saltceph}/diagnose/iperf3.sls
+install -m 644 %{_saltceph}/diagnose/ping.sls %{buildroot}/%{_saltceph}/diagnose/ping.sls
 
 install -d -m 755 %{buildroot}/%{_saltceph}/events
 install -m 644 %{_saltceph}/events/begin_prep.sls %{buildroot}/%{_saltceph}/events
@@ -178,6 +182,13 @@ install -m 644 %{_saltceph}/igw/sysconfig/shared.sls %{buildroot}/%{_saltceph}/i
 install -d -m 755 %{buildroot}/%{_saltceph}/igw/restart
 install -m 644 %{_saltceph}/igw/restart/default.sls %{buildroot}/%{_saltceph}/igw/restart
 install -m 644 %{_saltceph}/igw/restart/init.sls %{buildroot}/%{_saltceph}/igw/restart
+
+install -d -m 755 %{buildroot}/%{_saltceph}/iperf
+install -m 644 %{_saltceph}/iperf/init.sls %{buildroot}/%{_saltceph}/iperf
+install -m 644 %{_saltceph}/iperf/packages-suse.sls %{buildroot}/%{_saltceph}/iperf
+install -m 644 %{_saltceph}/iperf/packages.sls %{buildroot}/%{_saltceph}/iperf
+install -m 644 %{_saltceph}/iperf/remove.sls %{buildroot}/%{_saltceph}/iperf
+install -m 644 %{_saltceph}/iperf/systemd-iperf.service %{buildroot}/%{_saltceph}/iperf
 
 install -d -m 755 %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/default.sls %{buildroot}/%{_saltceph}/mds
@@ -563,6 +574,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/configuration
 %dir /%{_saltceph}/configuration/files
 %dir /%{_saltceph}/configuration/check
+%dir /%{_saltceph}/diagnose
 %dir /%{_saltceph}/events
 %dir /%{_saltceph}/igw
 %dir /%{_saltceph}/igw/config
@@ -573,6 +585,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/igw/keyring
 %dir /%{_saltceph}/igw/sysconfig
 %dir /%{_saltceph}/igw/restart
+%dir /%{_saltceph}/iperf
 %dir /%{_saltceph}/mds
 %dir /%{_saltceph}/mds/files
 %dir /%{_saltceph}/mds/key
@@ -675,6 +688,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/configuration/*.sls
 %config /%{_saltceph}/configuration/check/*.sls
 %config /%{_saltceph}/configuration/files/ceph.conf*
+%config /%{_saltceph}/diagnose/*.sls
 %config /%{_saltceph}/events/*.sls
 %config /%{_saltceph}/igw/*.sls
 %config /%{_saltceph}/igw/files/*.j2
@@ -685,6 +699,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/igw/keyring/*.sls
 %config /%{_saltceph}/igw/sysconfig/*.sls
 %config /%{_saltceph}/igw/restart/*.sls
+%config /%{_saltceph}/iperf/*.sls
+%config /%{_saltceph}/iperf/*.service
 %config /%{_saltceph}/mds/*.sls
 %config /%{_saltceph}/mds/files/*.j2
 %config /%{_saltceph}/mds/key/*.sls
