@@ -138,7 +138,7 @@ class CephStorage(object):
         for server in proposals.keys():
             count += 1
             for model in proposals[server]:
-                name = model + "-" + str(count)
+                name = "profile-" + model + "-" + str(count)
                 proposal = proposals[server][model]
                 self._save_proposal(name, server, proposal)
                 self._save_roles(name, server)
@@ -512,7 +512,7 @@ class CephRoles(object):
         """
         Allows admins to target non-Ceph minions
         """
-        roles = [ 'mds-client', 'rgw-client', 'igw-client', 'mds-nfs', 'rgw-nfs' ]
+        roles = [ 'client-cephfs', 'client-radosgw', 'client-iscsi', 'mds-nfs', 'rgw-nfs' ]
         self.available_roles.extend(roles)
 
         for role in roles:
