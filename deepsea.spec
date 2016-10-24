@@ -103,6 +103,11 @@ install -m 644 srv/salt/_modules/wait.py %{buildroot}/srv/salt/_modules
 install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 
 %define _saltceph srv/salt/ceph
+
+install -d -m 755 %{buildroot}/%{_saltceph}/restart
+install -m 644 %{_saltceph}/restart/init.sls %{buildroot}/%{_saltceph}/restart
+install -m 644 %{_saltceph}/restart/storage/default.sls %{buildroot}/%{_saltceph}/restart
+
 install -d -m 755 %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/default.sls %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/init.sls %{buildroot}/%{_saltceph}/admin
@@ -170,6 +175,10 @@ install -m 644 %{_saltceph}/igw/sysconfig/default.sls %{buildroot}/%{_saltceph}/
 install -m 644 %{_saltceph}/igw/sysconfig/init.sls %{buildroot}/%{_saltceph}/igw/sysconfig
 install -m 644 %{_saltceph}/igw/sysconfig/shared.sls %{buildroot}/%{_saltceph}/igw/sysconfig
 
+install -d -m 755 %{buildroot}/%{_saltceph}/igw/restart
+install -m 644 %{_saltceph}/igw/restart/default.sls %{buildroot}/%{_saltceph}/igw/restart
+install -m 644 %{_saltceph}/igw/restart/init.sls %{buildroot}/%{_saltceph}/igw/restart
+
 install -d -m 755 %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/default.sls %{buildroot}/%{_saltceph}/mds
 install -m 644 %{_saltceph}/mds/init.sls %{buildroot}/%{_saltceph}/mds
@@ -197,6 +206,15 @@ install -m 644 %{_saltceph}/mds/pools/init.sls %{buildroot}/%{_saltceph}/mds/poo
 install -d -m 755 %{buildroot}/%{_saltceph}/mds/files
 install -m 644 %{_saltceph}/mds/files/keyring.j2 %{buildroot}/%{_saltceph}/mds/files
 
+install -d -m 755 %{buildroot}/%{_saltceph}/mds/restart
+install -m 644 %{_saltceph}/mds/restart/default.sls %{buildroot}/%{_saltceph}/mds/restart
+install -m 644 %{_saltceph}/mds/restart/init.sls %{buildroot}/%{_saltceph}/mds/restart
+
+install -d -m 755 %{buildroot}/%{_saltceph}/mine_functions
+install -m 644 %{_saltceph}/mine_functions/init.sls %{buildroot}/%{_saltceph}/mine_functions
+install -d -m 755 %{buildroot}/%{_saltceph}/mine_functions/files
+install -m 644 %{_saltceph}/mine_functions/files/mine_functions.conf %{buildroot}/%{_saltceph}/mine_functions/files
+
 install -d -m 755 %{buildroot}/%{_saltceph}/mines
 install -m 644 %{_saltceph}/mines/default.sls %{buildroot}/%{_saltceph}/mines
 install -m 644 %{_saltceph}/mines/init.sls %{buildroot}/%{_saltceph}/mines
@@ -212,6 +230,9 @@ install -d -m 755 %{buildroot}/%{_saltceph}/mon/key
 install -m 644 %{_saltceph}/mon/key/default.sls %{buildroot}/%{_saltceph}/mon/key
 install -m 644 %{_saltceph}/mon/key/init.sls %{buildroot}/%{_saltceph}/mon/key
 
+install -d -m 755 %{buildroot}/%{_saltceph}/mon/restart
+install -m 644 %{_saltceph}/mon/restart/default.sls %{buildroot}/%{_saltceph}/mon/restart
+install -m 644 %{_saltceph}/mon/restart/init.sls %{buildroot}/%{_saltceph}/mon/restart
 
 install -d -m 755 %{buildroot}/%{_saltceph}/mon/files
 install -m 644 %{_saltceph}/mon/files/keyring.j2 %{buildroot}/%{_saltceph}/mon/files
@@ -263,6 +284,9 @@ install -d -m 755 %{buildroot}/%{_saltceph}/osd/scheduler
 install -m 644 %{_saltceph}/osd/scheduler/default.sls %{buildroot}/%{_saltceph}/osd/scheduler
 install -m 644 %{_saltceph}/osd/scheduler/init.sls %{buildroot}/%{_saltceph}/osd/scheduler
 
+install -d -m 755 %{buildroot}/%{_saltceph}/osd/restart
+install -m 644 %{_saltceph}/osd/restart/default.sls %{buildroot}/%{_saltceph}/osd/restart
+install -m 644 %{_saltceph}/osd/restart/init.sls %{buildroot}/%{_saltceph}/osd/restart
 
 install -d -m 755 %{buildroot}/%{_saltceph}/osd/files
 install -m 644 %{_saltceph}/osd/files/keyring.j2 %{buildroot}/%{_saltceph}/osd/files
@@ -423,6 +447,10 @@ install -m 644 %{_saltceph}/rgw/keyring/default.sls %{buildroot}/%{_saltceph}/rg
 install -m 644 %{_saltceph}/rgw/keyring/init.sls %{buildroot}/%{_saltceph}/rgw/keyring
 install -m 644 %{_saltceph}/rgw/keyring/shared.sls %{buildroot}/%{_saltceph}/rgw/keyring
 
+install -d -m 755 %{buildroot}/%{_saltceph}/rgw/restart
+install -m 644 %{_saltceph}/rgw/restart/default.sls %{buildroot}/%{_saltceph}/rgw/restart
+install -m 644 %{_saltceph}/rgw/restart/init.sls %{buildroot}/%{_saltceph}/rgw/restart
+
 install -d -m 755 %{buildroot}/%{_saltceph}/rgw/files
 install -m 644 %{_saltceph}/rgw/files/rgw.j2 %{buildroot}/%{_saltceph}/rgw/files
 
@@ -544,17 +572,22 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/igw/auth
 %dir /%{_saltceph}/igw/keyring
 %dir /%{_saltceph}/igw/sysconfig
+%dir /%{_saltceph}/igw/restart
 %dir /%{_saltceph}/mds
 %dir /%{_saltceph}/mds/files
 %dir /%{_saltceph}/mds/key
 %dir /%{_saltceph}/mds/auth
 %dir /%{_saltceph}/mds/keyring
 %dir /%{_saltceph}/mds/pools
+%dir /%{_saltceph}/mds/restart
+%dir /%{_saltceph}/mine_functions
+%dir /%{_saltceph}/mine_functions/files
 %dir /%{_saltceph}/mines
 %dir /%{_saltceph}/mines/files
 %dir /%{_saltceph}/mon
 %dir /%{_saltceph}/mon/files
 %dir /%{_saltceph}/mon/key
+%dir /%{_saltceph}/mon/restart
 %dir /%{_saltceph}/openattic
 %dir /%{_saltceph}/openattic/auth
 %dir /%{_saltceph}/openattic/files
@@ -568,6 +601,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/osd/keyring
 %dir /%{_saltceph}/osd/partition
 %dir /%{_saltceph}/osd/scheduler
+%dir /%{_saltceph}/osd/restart
 %dir /%{_saltceph}/packages
 %dir /%{_saltceph}/packages/common
 %dir /%{_saltceph}/pool
@@ -600,11 +634,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/rescind/rgw/keyring
 %dir /%{_saltceph}/rescind/storage
 %dir /%{_saltceph}/rescind/storage/keyring
+%dir /%{_saltceph}/restart
 %dir /%{_saltceph}/rgw
 %dir /%{_saltceph}/rgw/files
 %dir /%{_saltceph}/rgw/key
 %dir /%{_saltceph}/rgw/auth
 %dir /%{_saltceph}/rgw/keyring
+%dir /%{_saltceph}/rgw/restart
 %dir /%{_saltceph}/stage
 %dir /%{_saltceph}/stage/all
 %dir /%{_saltceph}/stage/benchmark
@@ -648,17 +684,22 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/igw/auth/*.sls
 %config /%{_saltceph}/igw/keyring/*.sls
 %config /%{_saltceph}/igw/sysconfig/*.sls
+%config /%{_saltceph}/igw/restart/*.sls
 %config /%{_saltceph}/mds/*.sls
 %config /%{_saltceph}/mds/files/*.j2
 %config /%{_saltceph}/mds/key/*.sls
 %config /%{_saltceph}/mds/auth/*.sls
 %config /%{_saltceph}/mds/keyring/*.sls
 %config /%{_saltceph}/mds/pools/*.sls
+%config /%{_saltceph}/mds/restart/*.sls
+%config /%{_saltceph}/mine_functions/*.sls
+%config /%{_saltceph}/mine_functions/files/*.conf
 %config /%{_saltceph}/mines/*.sls
 %config /%{_saltceph}/mines/files/*.conf
 %config /%{_saltceph}/mon/*.sls
 %config /%{_saltceph}/mon/files/*.j2
 %config /%{_saltceph}/mon/key/*.sls
+%config /%{_saltceph}/mon/restart/*.sls
 %config /%{_saltceph}/openattic/*.sls
 %config /%{_saltceph}/openattic/auth/*.sls
 %config /%{_saltceph}/openattic/key/*.sls
@@ -672,6 +713,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/osd/keyring/*.sls
 %config /%{_saltceph}/osd/partition/*.sls
 %config /%{_saltceph}/osd/scheduler/*.sls
+%config /%{_saltceph}/osd/restart/*.sls
 %config /%{_saltceph}/packages/*.sls
 %config /%{_saltceph}/packages/common/*.sls
 %config /%{_saltceph}/pool/*.sls
@@ -702,11 +744,14 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/rescind/rgw/keyring/*.sls
 %config /%{_saltceph}/rescind/storage/*.sls
 %config /%{_saltceph}/rescind/storage/keyring/*.sls
+%config /%{_saltceph}/restart/*.sls
 %config /%{_saltceph}/rgw/*.sls
 %config /%{_saltceph}/rgw/files/*.j2
 %config /%{_saltceph}/rgw/key/*.sls
 %config /%{_saltceph}/rgw/auth/*.sls
 %config /%{_saltceph}/rgw/keyring/*.sls
+%config /%{_saltceph}/rgw/restart/*.sls
+%config /%{_saltceph}/stage/*.sls
 %config /%{_saltceph}/stage/0
 %config /%{_saltceph}/stage/1
 %config /%{_saltceph}/stage/2
