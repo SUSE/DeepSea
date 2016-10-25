@@ -1,5 +1,5 @@
 {% for id in salt['osd.list']() %}
-    wait:
+    wait {{ id }}:
       module.run:
        - name: wait.out
        - kwargs:
