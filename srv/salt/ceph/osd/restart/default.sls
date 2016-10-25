@@ -1,5 +1,5 @@
 {% for id in salt['osd.list']() %}
-    wait {{ id }}:
+   wait until osd #{{ id }} can be restarted: 
       module.run:
        - name: wait.out
        - kwargs:
@@ -7,7 +7,7 @@
        - fire_event: True
        - failhard: True
      
-    restart {{ id }}:
+    restart osd #{{ id }}:
       cmd.run:
         - name: "systemctl restart ceph-osd@{{ id }}.service"
         - fire_event: True
