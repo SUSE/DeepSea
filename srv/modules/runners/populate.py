@@ -136,13 +136,12 @@ class CephStorage(object):
         count = 0
             #log.debug("model: {}".format(model))
         for server in proposals.keys():
-            count += 1
             for model in proposals[server]:
-                name = "profile-" + model + "-" + str(count)
-                proposal = proposals[server][model]
-                self._save_proposal(name, server, proposal)
-                self._save_roles(name, server)
-                #self._save_keyring(name)
+                for proposal in proposals[server][model]:
+                    count += 1
+                    name = 'profile-{}-{}'.format(model, str(count))
+                    self._save_proposal(name, server, proposal)
+                    self._save_roles(name, server)
             count = 0
 
 
