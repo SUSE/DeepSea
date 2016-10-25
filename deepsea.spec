@@ -107,7 +107,7 @@ install -m 644 srv/salt/_modules/zypper_locks.py %{buildroot}/srv/salt/_modules
 
 install -d -m 755 %{buildroot}/%{_saltceph}/restart
 install -m 644 %{_saltceph}/restart/init.sls %{buildroot}/%{_saltceph}/restart
-install -m 644 %{_saltceph}/restart/storage/default.sls %{buildroot}/%{_saltceph}/restart
+install -m 644 %{_saltceph}/restart/default.sls %{buildroot}/%{_saltceph}/restart
 
 install -d -m 755 %{buildroot}/%{_saltceph}/admin
 install -m 644 %{_saltceph}/admin/default.sls %{buildroot}/%{_saltceph}/admin
@@ -220,11 +220,6 @@ install -m 644 %{_saltceph}/mds/files/keyring.j2 %{buildroot}/%{_saltceph}/mds/f
 install -d -m 755 %{buildroot}/%{_saltceph}/mds/restart
 install -m 644 %{_saltceph}/mds/restart/default.sls %{buildroot}/%{_saltceph}/mds/restart
 install -m 644 %{_saltceph}/mds/restart/init.sls %{buildroot}/%{_saltceph}/mds/restart
-
-install -d -m 755 %{buildroot}/%{_saltceph}/mine_functions
-install -m 644 %{_saltceph}/mine_functions/init.sls %{buildroot}/%{_saltceph}/mine_functions
-install -d -m 755 %{buildroot}/%{_saltceph}/mine_functions/files
-install -m 644 %{_saltceph}/mine_functions/files/mine_functions.conf %{buildroot}/%{_saltceph}/mine_functions/files
 
 install -d -m 755 %{buildroot}/%{_saltceph}/mines
 install -m 644 %{_saltceph}/mines/default.sls %{buildroot}/%{_saltceph}/mines
@@ -593,8 +588,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/mds/keyring
 %dir /%{_saltceph}/mds/pools
 %dir /%{_saltceph}/mds/restart
-%dir /%{_saltceph}/mine_functions
-%dir /%{_saltceph}/mine_functions/files
 %dir /%{_saltceph}/mines
 %dir /%{_saltceph}/mines/files
 %dir /%{_saltceph}/mon
@@ -708,8 +701,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/mds/keyring/*.sls
 %config /%{_saltceph}/mds/pools/*.sls
 %config /%{_saltceph}/mds/restart/*.sls
-%config /%{_saltceph}/mine_functions/*.sls
-%config /%{_saltceph}/mine_functions/files/*.conf
 %config /%{_saltceph}/mines/*.sls
 %config /%{_saltceph}/mines/files/*.conf
 %config /%{_saltceph}/mon/*.sls
@@ -767,7 +758,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/rgw/auth/*.sls
 %config /%{_saltceph}/rgw/keyring/*.sls
 %config /%{_saltceph}/rgw/restart/*.sls
-%config /%{_saltceph}/stage/*.sls
 %config /%{_saltceph}/stage/0
 %config /%{_saltceph}/stage/1
 %config /%{_saltceph}/stage/2
