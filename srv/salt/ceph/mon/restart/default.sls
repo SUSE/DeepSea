@@ -1,4 +1,4 @@
-wait for {{ grains['host'] }}:
+wait:
   module.run:
    - name: wait.out
    - kwargs:
@@ -6,7 +6,7 @@ wait for {{ grains['host'] }}:
    - fire_event: True
    - failhard: True
 
-restart @{{ grains['host'] }}:
+restart:
   cmd.run:
     - name: "systemctl restart ceph-mon@{{ grains['host'] }}.service"
     - fire_event: True

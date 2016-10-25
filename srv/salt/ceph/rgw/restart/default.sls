@@ -1,4 +1,4 @@
-wait for:
+wait:
   module.run:
    - name: wait.out
    - kwargs:
