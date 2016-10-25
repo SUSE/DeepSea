@@ -384,7 +384,7 @@ class DiskConfiguration(object):
             if drive_model == journal:
                 journals.extend(drives[drive_model])
             else:
-                if self.hardware.rotates[drive_model] == 1:
+                if self.hardware.rotates[drive_model] == '1':
                     if journal:
                         data.extend(drives[drive_model])
                     else:
@@ -409,10 +409,7 @@ class DiskConfiguration(object):
                 if (len(journals) >= len(data)/partitions):
                     log.debug("Using {} partitions on {}".format(partitions, journal))
 
-                    assignments.update(self._assign(partitions, assignments, data, journals))
-                    # Add unused journal drives as OSDs
-                    assignments['osds'].extend(journals[index:])
-                    return assignments
+                    return assignments.update(self._assign(partitions, assignments, data, journals))
                 else:
                     log.debug("Not enough journals for {} partitions".format(partitions))
             else:
