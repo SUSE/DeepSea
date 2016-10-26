@@ -1,12 +1,11 @@
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mon', host=True) %}
-    
-    wait until {{ host }} can be restarted:
-       module.run:
-         - name: wait.out
-         - tgt: {{ salt['pillar.get']('master_minion') }}
-         - kwargs:
-            'status': "HEALTH_ERR"
-         - fire_event: True
+{% set master = salt['pillar.get']('master_minion') %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mon') %}
+
+    wait until {{ host }} with role mon can be restarted:
+      salt.state:
+        - tgt: {{ master }}
+        - sls: ceph.wait
+
 
     restarting mons on {{ host }}:
       salt.state:
@@ -17,16 +16,12 @@
 
 {% endfor %}
 
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='storage', host=True) %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='storage') %}
     
-    wait until {{ host }} can be restarted:
-       module.run:
-         - name: wait.out
-         - tgt: {{ salt['pillar.get']('master_minion') }}
-         - kwargs:
-            'status': "HEALTH_ERR"
-         - fire_event: True
-
+    wait until {{ host }} with role osd can be restarted:
+      salt.state:
+        - tgt: {{ master }}
+        - sls: ceph.wait
 
     restarting osds on {{ host }}:
       salt.state:
@@ -37,15 +32,12 @@
 
 {% endfor %}
 
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw', host=True) %}
-    
-    wait until {{ host }} can be restarted:
-       module.run:
-         - name: wait.out
-         - tgt: {{ salt['pillar.get']('master_minion') }}
-         - kwargs:
-            'status': "HEALTH_ERR"
-         - fire_event: True
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') %}
+
+    wait until {{ host }} with role rgw can be restarted:
+      salt.state:
+        - tgt: {{ master }}
+        - sls: ceph.wait
 
 
     restarting rgw on {{ host }}:
@@ -57,16 +49,12 @@
 
 {% endfor %}
 
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mds', host=True) %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') %}
     
-    wait until {{ host }} can be restarted:
-       module.run:
-         - name: wait.out
-         - tgt: {{ salt['pillar.get']('master_minion') }}
-         - kwargs:
-            'status': "HEALTH_ERR"
-         - fire_event: True
-
+    wait until {{ host }} with role mds can be restarted:
+      salt.state:
+        - tgt: {{ master }}
+        - sls: ceph.wait
 
     restarting mds on {{ host }}:
       salt.state:
@@ -77,16 +65,12 @@
 
 {% endfor %}
 
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw', host=True) %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
     
-    wait until {{ host }} can be restarted:
-       module.run:
-         - name: wait.out
-         - tgt: {{ salt['pillar.get']('master_minion') }}
-         - kwargs:
-            'status': "HEALTH_ERR"
-         - fire_event: True
-
+    wait until {{ host }} with role igw can be restarted:
+      salt.state:
+        - tgt: {{ master }}
+        - sls: ceph.wait
 
     restarting igw on {{ host }}:
       salt.state:
@@ -96,3 +80,4 @@
         - failhard: True
 
 {% endfor %}
+
