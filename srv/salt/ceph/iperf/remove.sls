@@ -1,10 +1,16 @@
 iperd_stopped:
-  service.running:
+  service.dead:
     - enable: False
     - name : iperfd
-    - running: False
 
 
 iperfd_service_remove:
   file.absent:
     - name : /usr/lib/systemd/system/iperfd.service
+
+
+iperfd_service_remove_reload_systemd:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - watch:
+      - file: /usr/lib/systemd/system/iperfd.service
