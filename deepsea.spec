@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.6.1
+Version:        0.6.2
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
