@@ -433,7 +433,7 @@ class DiskConfiguration(object):
         count = 1
         for device in data:
             log.debug("device: {}".format(device))
-            assignments['data+journals'].extend([ { "{}1".format(device):  "{}{}".format(journals[index], count) } ]) 
+            assignments['data+journals'].extend([{"{}".format(device): "{}".format(journals[index])}])
             count += 1
             if (count - 1) % partitions == 0:
                 log.debug("next journal")
