@@ -2,6 +2,9 @@
 
 import salt.client
 import select
+import logging
+
+log = logging.getLogger(__name__)
 
 def minion_link_ipv4(host = False, **kwargs):
     """
@@ -17,6 +20,10 @@ def minion_link_ipv4(host = False, **kwargs):
     for node in node_list:
         ipv4_list = set()
         address_list = local_client.cmd(node, 'grains.get', ['ipv4'])
+        if not node in address_list.keys():
+            log.error("Failed getting ipv4 address from node:{node}".format(node=node))
+            log.warning("Skipping all tests for node:{node}".format(node=node))
+            continue
         for addr in address_list[node]:
             if addr == '127.0.0.1':
                 continue
