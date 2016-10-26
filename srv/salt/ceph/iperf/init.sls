@@ -14,8 +14,14 @@ iperfd_service_add:
     - makedirs: True
 
 
+iperfd_service_add_reload_systemd:
+  cmd.run:
+    - name: systemctl daemon-reload
+    - watch:
+      - file: /usr/lib/systemd/system/iperfd.service
+
+
 iperd_running:
   service.running:
-    - enable: True
     - name : iperfd
     - running: True
