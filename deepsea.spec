@@ -524,6 +524,10 @@ install -d -m 755 %{buildroot}/%{_saltceph}/updates/restart
 install -m 644 %{_saltceph}/updates/restart/default.sls %{buildroot}/%{_saltceph}/updates/restart
 install -m 644 %{_saltceph}/updates/restart/init.sls %{buildroot}/%{_saltceph}/updates/restart
 
+install -d -m 755 %{buildroot}/%{_saltceph}/wait
+install -m 644 %{_saltceph}/wait/default.sls %{buildroot}/%{_saltceph}/wait
+install -m 644 %{_saltceph}/wait/init.sls %{buildroot}/%{_saltceph}/wait
+
 
 cd %{buildroot}/%{_saltceph}/stage && ln -sf prep 0
 cd %{buildroot}/%{_saltceph}/stage && ln -sf discovery 1
@@ -653,6 +657,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /%{_saltceph}/time/ntp
 %dir /%{_saltceph}/updates
 %dir /%{_saltceph}/updates/restart
+%dir /%{_saltceph}/wait
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /%{_runners}/*.py
 %config /%{_pillar}/top.sls
@@ -766,6 +771,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/time/ntp/*.sls
 %config /%{_saltceph}/updates/*.sls
 %config /%{_saltceph}/updates/restart/*.sls
+%config /%{_saltceph}/wait/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
