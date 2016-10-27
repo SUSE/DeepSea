@@ -1,4 +1,4 @@
 restart:
   cmd.run:
-    - name: "lrbd"
+    - name: "systemctl restart lrbd"
     - fire_event: True
