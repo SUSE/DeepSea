@@ -68,6 +68,8 @@ install:
 	install -m 644 srv/salt/ceph/igw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/igw/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/sysconfig
 	install -m 644 srv/salt/ceph/igw/sysconfig/*.sls $(DESTDIR)/srv/salt/ceph/igw/sysconfig/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart
+	install -m 644 srv/salt/ceph/igw/restart/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
@@ -81,6 +83,9 @@ install:
 	install -m 644 srv/salt/ceph/mds/pools/*.sls $(DESTDIR)/srv/salt/ceph/mds/pools/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/files
 	install -m 644 srv/salt/ceph/mds/files/*.j2 $(DESTDIR)/srv/salt/ceph/mds/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart
+	install -m 644 srv/salt/ceph/mds/restart/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart
+
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
 	install -m 644 srv/salt/ceph/mines/*.sls $(DESTDIR)/srv/salt/ceph/mines/
@@ -93,6 +98,8 @@ install:
 	install -m 644 srv/salt/ceph/mon/key/*.sls $(DESTDIR)/srv/salt/ceph/mon/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/files
 	install -m 644 srv/salt/ceph/mon/files/*.j2 $(DESTDIR)/srv/salt/ceph/mon/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart
+	install -m 644 srv/salt/ceph/mon/restart/*.sls $(DESTDIR)/srv/salt/ceph/mon/restart
 	# state files - openattic
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic
 	install -m 644 srv/salt/ceph/openattic/*.sls $(DESTDIR)/srv/salt/ceph/openattic/
@@ -122,6 +129,9 @@ install:
 	install -m 644 srv/salt/ceph/osd/scheduler/*.sls $(DESTDIR)/srv/salt/ceph/osd/scheduler/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/files
 	install -m 644 srv/salt/ceph/osd/files/*.j2 $(DESTDIR)/srv/salt/ceph/osd/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/restart
+	install -m 644 srv/salt/ceph/osd/restart/default.sls $(DESTDIR)/srv/salt/ceph/osd/restart
+	install -m 644 srv/salt/ceph/osd/restart/init.sls $(DESTDIR)/srv/salt/ceph/osd/restart
 	# state files - packages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/packages
 	install -m 644 srv/salt/ceph/packages/*.sls $(DESTDIR)/srv/salt/ceph/packages/
@@ -193,6 +203,9 @@ install:
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
+	# state files - restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart
+	install -m 644 srv/salt/ceph/restart/*.sls $(DESTDIR)/srv/salt/ceph/restart/
 	# state files - rgw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw
 	install -m 644 srv/salt/ceph/rgw/default.sls $(DESTDIR)/srv/salt/ceph/rgw/
@@ -206,6 +219,9 @@ install:
 	install -m 644 srv/salt/ceph/rgw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rgw/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/files
 	install -m 644 srv/salt/ceph/rgw/files/*.j2 $(DESTDIR)/srv/salt/ceph/rgw/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
+	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
+	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	# state files - orchestrate stages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/all
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
@@ -247,6 +263,10 @@ install:
 	install -m 644 srv/salt/ceph/updates/*.sls $(DESTDIR)/srv/salt/ceph/updates/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/restart
 	install -m 644 srv/salt/ceph/updates/restart/*.sls $(DESTDIR)/srv/salt/ceph/updates/restart/
+	# state files - wait
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
+	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
+
 	# state files - orchestrate stage symlinks
 	ln -sf prep		$(DESTDIR)/srv/salt/ceph/stage/0
 	ln -sf discovery	$(DESTDIR)/srv/salt/ceph/stage/1
