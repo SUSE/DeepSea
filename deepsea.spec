@@ -78,6 +78,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/key
 %dir /srv/salt/ceph/igw/auth
 %dir /srv/salt/ceph/igw/keyring
+%dir /srv/salt/ceph/igw/restart
 %dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/mds
 %dir /srv/salt/ceph/mds/files
@@ -85,11 +86,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mds/auth
 %dir /srv/salt/ceph/mds/keyring
 %dir /srv/salt/ceph/mds/pools
+%dir /srv/salt/ceph/mds/restart
 %dir /srv/salt/ceph/mines
 %dir /srv/salt/ceph/mines/files
 %dir /srv/salt/ceph/mon
 %dir /srv/salt/ceph/mon/files
 %dir /srv/salt/ceph/mon/key
+%dir /srv/salt/ceph/mon/restart
 %dir /srv/salt/ceph/openattic
 %dir /srv/salt/ceph/openattic/auth
 %dir /srv/salt/ceph/openattic/files
@@ -102,6 +105,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/osd/auth
 %dir /srv/salt/ceph/osd/keyring
 %dir /srv/salt/ceph/osd/partition
+%dir /srv/salt/ceph/osd/restart
 %dir /srv/salt/ceph/osd/scheduler
 %dir /srv/salt/ceph/packages
 %dir /srv/salt/ceph/packages/common
@@ -135,11 +139,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/rgw/keyring
 %dir /srv/salt/ceph/rescind/storage
 %dir /srv/salt/ceph/rescind/storage/keyring
+%dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/rgw
 %dir /srv/salt/ceph/rgw/files
 %dir /srv/salt/ceph/rgw/key
 %dir /srv/salt/ceph/rgw/auth
 %dir /srv/salt/ceph/rgw/keyring
+%dir /srv/salt/ceph/rgw/restart
 %dir /srv/salt/ceph/stage
 %dir /srv/salt/ceph/stage/all
 %dir /srv/salt/ceph/stage/benchmark
@@ -160,6 +166,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/updates
 %dir /srv/salt/ceph/updates/restart
+%dir /srv/salt/ceph/wait
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py
 %config /srv/pillar/top.sls
@@ -182,6 +189,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/key/*.sls
 %config /srv/salt/ceph/igw/auth/*.sls
 %config /srv/salt/ceph/igw/keyring/*.sls
+%config /srv/salt/ceph/igw/restart/*.sls
 %config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
@@ -189,11 +197,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mds/auth/*.sls
 %config /srv/salt/ceph/mds/keyring/*.sls
 %config /srv/salt/ceph/mds/pools/*.sls
+%config /srv/salt/ceph/mds/restart/*.sls
 %config /srv/salt/ceph/mines/*.sls
 %config /srv/salt/ceph/mines/files/*.conf
 %config /srv/salt/ceph/mon/*.sls
 %config /srv/salt/ceph/mon/files/*.j2
 %config /srv/salt/ceph/mon/key/*.sls
+%config /srv/salt/ceph/mon/restart/*.sls
 %config /srv/salt/ceph/openattic/*.sls
 %config /srv/salt/ceph/openattic/auth/*.sls
 %config /srv/salt/ceph/openattic/key/*.sls
@@ -206,6 +216,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/osd/auth/*.sls
 %config /srv/salt/ceph/osd/keyring/*.sls
 %config /srv/salt/ceph/osd/partition/*.sls
+%config /srv/salt/ceph/osd/restart/*.sls
 %config /srv/salt/ceph/osd/scheduler/*.sls
 %config /srv/salt/ceph/packages/*.sls
 %config /srv/salt/ceph/packages/common/*.sls
@@ -237,11 +248,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/rgw/keyring/*.sls
 %config /srv/salt/ceph/rescind/storage/*.sls
 %config /srv/salt/ceph/rescind/storage/keyring/*.sls
+%config /srv/salt/ceph/restart/*.sls
 %config /srv/salt/ceph/rgw/*.sls
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/key/*.sls
 %config /srv/salt/ceph/rgw/auth/*.sls
 %config /srv/salt/ceph/rgw/keyring/*.sls
+%config /srv/salt/ceph/rgw/restart/*.sls
 %config /srv/salt/ceph/stage/0
 %config /srv/salt/ceph/stage/1
 %config /srv/salt/ceph/stage/2
@@ -267,6 +280,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/updates/*.sls
 %config /srv/salt/ceph/updates/restart/*.sls
+%config /srv/salt/ceph/wait/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
