@@ -18,6 +18,7 @@ deployment is currently broken. MDS deployment and CephFS creation works.
 
 ### Install DeepSea
 - Install [rpm](https://build.opensuse.org/package/show/home:swiftgist/deepsea)
+- For non-RPM-distros, try `make install`.
 
 ### Configure
 - Edit [/srv/pillar/ceph/master_minion.sls](srv/pillar/ceph/master_minion.sls)
