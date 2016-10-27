@@ -3,16 +3,28 @@
 import salt.client
 import salt.config
 
+import ast
 import logging
 import datetime
 import ipaddress
 from jinja2 import Environment, FileSystemLoader
 from os.path import dirname, basename, splitext
 from subprocess import check_output
+import sys
 import yaml
 
 log = logging.getLogger(__name__)
 local_client = salt.client.LocalClient()
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 class Fio(object):
 
@@ -152,3 +164,57 @@ def run(**kwargs):
         print(fio.run(job_spec))
 
     return True
+
+def baseline(**kwargs):
+    '''
+    trigger 'ceph tell osd.$n bench' on all $n OSDs and check the results for
+    slow outliers
+    '''
+    # get all osd ids
+    osd_list = local_client.cmd('I@cluster:ceph and I@roles:storage', 'osd.list', [],
+                expr_form = 'compound')
+    ids = [osd_id for (osd, osd_ids) in osd_list.items() for osd_id in osd_ids]
+
+    # gotta get the master_minion...not pretty but works
+    master_minion = local_client.cmd('I@roles:master', 'pillar.get',
+            ['master_minion'], expr_form= 'compound').items()[0][1]
+
+    sys.stdout.write('Running osd benchmarks')
+    sys.stdout.flush()
+    results = []
+    for id in ids:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        output = local_client.cmd(master_minion, 'cmd.run',
+                ['ceph tell osd.{} bench'.format(id)])
+        results.append(output)
+
+    # minion output is a string, so must be parsed; ditch the key
+    parsed_results = [ast.literal_eval(r[master_minion]) for r in results]
+
+    avg = reduce(lambda r1, r2: r1 + r2['bytes_per_sec'], parsed_results, 0)/len(parsed_results)
+
+    print('\n\nAverage OSD performance: {}/s\n'.format(__human_size(avg)))
+
+    dev = [abs(r['bytes_per_sec'] - avg) / (avg*0.01) for r in parsed_results]
+
+    outlier = False
+    for d, id in zip(dev, ids):
+        if(d >= 10):
+            print('{}osd.{} deviates {}{:2.2f}%{}{} from the average{}'.format(bcolors.FAIL, id, bcolors.BOLD,
+                        d, bcolors.ENDC, bcolors.FAIL, bcolors.ENDC))
+            outlier = True
+
+    if not outlier:
+        print('{}All osds operate within a 10% margin{}'.format(bcolors.OKGREEN, bcolors.ENDC))
+    print('\n')
+
+
+    return True
+
+def __human_size(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
