@@ -154,8 +154,8 @@ install:
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw-client
-	install -m 644 srv/salt/ceph/rescind/igw-client/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw-client/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi
+	install -m 644 srv/salt/ceph/rescind/client-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw
 	install -m 644 srv/salt/ceph/rescind/igw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/keyring
@@ -166,8 +166,8 @@ install:
 	install -m 644 srv/salt/ceph/rescind/igw/sysconfig/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/sysconfig/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/master
 	install -m 644 srv/salt/ceph/rescind/master/*.sls $(DESTDIR)/srv/salt/ceph/rescind/master/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mds-client
-	install -m 644 srv/salt/ceph/rescind/mds-client/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mds-client/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-cephfs
+	install -m 644 srv/salt/ceph/rescind/client-cephfs/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-cephfs/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mds-nfs
 	install -m 644 srv/salt/ceph/rescind/mds-nfs/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mds-nfs/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mds
@@ -178,8 +178,8 @@ install:
 	install -m 644 srv/salt/ceph/rescind/mon/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mon/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw-client
-	install -m 644 srv/salt/ceph/rescind/rgw-client/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw-client/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-radosgw
+	install -m 644 srv/salt/ceph/rescind/client-radosgw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-radosgw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw-nfs
 	install -m 644 srv/salt/ceph/rescind/rgw-nfs/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw-nfs/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw
