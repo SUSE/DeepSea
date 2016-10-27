@@ -23,6 +23,7 @@ import uuid
 import ipaddress
 import logging
 
+import sys
 
 """
 WHY THIS RUNNER EXISTS:
@@ -762,6 +763,37 @@ def create_dirs(path, root):
             print "ERROR: Cannot create dir {}".format(path)
             print "       Please make sure {} is owned by salt".format(root)
             raise err
+
+def show(**kwargs):
+    """
+    """
+    settings = Settings()
+
+    salt_writer = SaltWriter(**kwargs)
+
+    ceph_cluster = CephCluster(settings, salt_writer, **kwargs)
+    ceph_cluster.generate()
+
+    # Allow overriding of hardware profile class
+    hardwareprofile = HardwareProfile()
+
+    for name in ceph_cluster.names:
+        # Common cluster configuration
+        ceph_storage = CephStorage(settings, name, salt_writer)
+        dc = DiskConfiguration(settings, ceph_cluster.minions)
+        #pprint.pprint(dc.storage_nodes)
+        fields = [ 'Capacity', 'Device File', 'Model', 'rotational' ]
+        for minion,details in dc.storage_nodes.iteritems():
+            print minion + ":"
+            for drive in details:
+                for k,v in drive.iteritems(): 
+                    if k in fields:
+                        if k == 'rotational':
+                            if drive[k] == '1':
+                                sys.stdout.write(" rotates")
+                        else:
+                            sys.stdout.write(" " + v)
+                print
 
 def proposals(**kwargs):
     """
