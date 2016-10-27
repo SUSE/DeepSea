@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.6.3
+Version:        0.6.4
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -118,18 +118,18 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/remove/storage
 %dir /srv/salt/ceph/rescind
 %dir /srv/salt/ceph/rescind/admin
-%dir /srv/salt/ceph/rescind/igw-client
+%dir /srv/salt/ceph/rescind/client-cephfs
+%dir /srv/salt/ceph/rescind/client-iscsi
+%dir /srv/salt/ceph/rescind/client-radosgw
 %dir /srv/salt/ceph/rescind/igw
 %dir /srv/salt/ceph/rescind/igw/keyring
 %dir /srv/salt/ceph/rescind/igw/lrbd
 %dir /srv/salt/ceph/rescind/igw/sysconfig
 %dir /srv/salt/ceph/rescind/master
-%dir /srv/salt/ceph/rescind/mds-client
 %dir /srv/salt/ceph/rescind/mds-nfs
 %dir /srv/salt/ceph/rescind/mds
 %dir /srv/salt/ceph/rescind/mds/keyring
 %dir /srv/salt/ceph/rescind/mon
-%dir /srv/salt/ceph/rescind/rgw-client
 %dir /srv/salt/ceph/rescind/rgw-nfs
 %dir /srv/salt/ceph/rescind/rgw
 %dir /srv/salt/ceph/rescind/rgw/keyring
@@ -220,18 +220,18 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/remove/storage/*.sls
 %config /srv/salt/ceph/rescind/*.sls
 %config /srv/salt/ceph/rescind/admin/*.sls
-%config /srv/salt/ceph/rescind/igw-client/*.sls
+%config /srv/salt/ceph/rescind/client-iscsi/*.sls
+%config /srv/salt/ceph/rescind/client-cephfs/*.sls
+%config /srv/salt/ceph/rescind/client-radosgw/*.sls
 %config /srv/salt/ceph/rescind/igw/*.sls
 %config /srv/salt/ceph/rescind/igw/keyring/*.sls
 %config /srv/salt/ceph/rescind/igw/lrbd/*.sls
 %config /srv/salt/ceph/rescind/igw/sysconfig/*.sls
 %config /srv/salt/ceph/rescind/master/*.sls
-%config /srv/salt/ceph/rescind/mds-client/*.sls
 %config /srv/salt/ceph/rescind/mds-nfs/*.sls
 %config /srv/salt/ceph/rescind/mds/*.sls
 %config /srv/salt/ceph/rescind/mds/keyring/*.sls
 %config /srv/salt/ceph/rescind/mon/*.sls
-%config /srv/salt/ceph/rescind/rgw-client/*.sls
 %config /srv/salt/ceph/rescind/rgw-nfs/*.sls
 %config /srv/salt/ceph/rescind/rgw/*.sls
 %config /srv/salt/ceph/rescind/rgw/keyring/*.sls
