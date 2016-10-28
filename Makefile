@@ -26,6 +26,16 @@ install:
 	install -m 644 srv/modules/runners/*.py $(DESTDIR)/srv/modules/runners/
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark
+	install -m 644 srv/pillar/ceph/benchmark/config.yml $(DESTDIR)/srv/pillar/ceph/benchmark/config.yml
+	install -m 644 srv/pillar/ceph/benchmark/benchmark.cfg $(DESTDIR)/srv/pillar/ceph/benchmark/benchmark.cfg
+	install -m 644 srv/pillar/ceph/benchmark/benchmark.cfg $(DESTDIR)/srv/pillar/ceph/benchmark/benchmark.cfg
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/collections
+	install -m 644 srv/pillar/ceph/benchmark/collections/*.yml $(DESTDIR)/srv/pillar/ceph/benchmark/collections
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/fio
+	install -m 644 srv/pillar/ceph/benchmark/fio/*.yml $(DESTDIR)/srv/pillar/ceph/benchmark/fio/
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/templates
+	install -m 644 srv/pillar/ceph/benchmark/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmark/templates/
 	install -m 644 srv/pillar/ceph/cluster/README $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
@@ -42,6 +52,15 @@ install:
 	install -m 644 srv/salt/ceph/admin/key/*.sls $(DESTDIR)/srv/salt/ceph/admin/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin/files
 	install -m 644 srv/salt/ceph/admin/files/*.j2 $(DESTDIR)/srv/salt/ceph/admin/files/
+	# state files benchmarks
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/benchmarks
+	install -m 644 srv/salt/ceph/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/benchmarks/
+	# state files cephfs
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks
+	install -m 644 srv/salt/ceph/cephfs/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
+	install -m 644 srv/salt/ceph/cephfs/benchmarks/files/fio.service $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration
 	install -m 644 srv/salt/ceph/configuration/*.sls $(DESTDIR)/srv/salt/ceph/configuration/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/check
