@@ -6,7 +6,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def minion_link_ipv4(host = False, **kwargs):
+def minion_link_ipv4(**kwargs):
     """
     Return list of (minion, ipv4) touples
 
@@ -14,7 +14,7 @@ def minion_link_ipv4(host = False, **kwargs):
     that also match the search criteria, but returned touples are never for
     minions with thier own ip addresses.
     """
-    node_list = select.minions(host, **kwargs)
+    node_list = select.minions(**dict(kwargs, host=False))
     local_client = salt.client.LocalClient()
     node_ip_map = {}
     for node in node_list:
@@ -30,8 +30,8 @@ def minion_link_ipv4(host = False, **kwargs):
             ipv4_list.add(addr)
         node_ip_map[node] = ipv4_list
     output = []
-    for node_src in node_list:
-        for node_dest in node_list:
+    for node_src in node_ip_map.keys():
+        for node_dest in node_ip_map.keys():
             if node_dest == node_src:
                 continue
             for ipv4 in node_ip_map[node_dest]:
