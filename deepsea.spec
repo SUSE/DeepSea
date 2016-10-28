@@ -98,13 +98,12 @@ install -d -m 755 %{buildroot}/%{_bench_pillar}/collections
 install -m 644 %{_bench_pillar}/collections/default.yml %{buildroot}/%{_bench_pillar}/collections
 
 install -d -m 755 %{buildroot}/%{_bench_pillar}/fio
-install -m 644 %{_bench_pillar}/fio/multi_rw.yml %{buildroot}/%{_bench_pillar}/fio
-install -m 644 %{_bench_pillar}/fio/seq_reads.yml %{buildroot}/%{_bench_pillar}/fio
-install -m 644 %{_bench_pillar}/fio/seq_writes.yml %{buildroot}/%{_bench_pillar}/fio
+install -m 644 %{_bench_pillar}/fio/rw_many_files.yml %{buildroot}/%{_bench_pillar}/fio
+install -m 644 %{_bench_pillar}/fio/rw_single_file.yml %{buildroot}/%{_bench_pillar}/fio
 
 install -d -m 755 %{buildroot}/%{_bench_pillar}/templates
-install -m 644 %{_bench_pillar}/templates/job.j2 %{buildroot}/%{_bench_pillar}/templates
-install -m 644 %{_bench_pillar}/templates/multi_job.j2 %{buildroot}/%{_bench_pillar}/templates
+install -m 644 %{_bench_pillar}/templates/rw_many_files.j2 %{buildroot}/%{_bench_pillar}/templates
+install -m 644 %{_bench_pillar}/templates/rw_single_file.j2 %{buildroot}/%{_bench_pillar}/templates
 
 install -m 644 %{_pillar}/top.sls %{buildroot}/%{_pillar}
 
