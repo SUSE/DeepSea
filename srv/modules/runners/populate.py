@@ -23,6 +23,7 @@ import uuid
 import ipaddress
 import logging
 
+import sys
 
 """
 WHY THIS RUNNER EXISTS:
@@ -63,27 +64,6 @@ class Settings(object):
                 self.stack = ext['stack']
         self.root_dir = "/srv/pillar/ceph/proposals"
 
-
-#class Utils(object):
-#    """
-#    Class for common methods
-#    """
-#
-#    @staticmethod
-#    def secret():
-#        """
-#        Generate a secret
-#        """
-#        #cmd = [ "/usr/bin/ceph-authtool", "--gen-print-key", "/dev/null" ]
-#        #
-#        #if not os.path.isfile(cmd[0]):
-#        #    raise RuntimeError("Missing {} - install ceph package".format(cmd[0]))
-#        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-#        #for line in proc.stdout:
-#        #    return line.rstrip()
-#        key = os.urandom(16) 
-#        header = struct.pack('<hiih',1,int(time.time()),0,len(key)) 
-#        return base64.b64encode(header + key) 
 
 class SaltWriter(object):
     """
@@ -338,6 +318,21 @@ class DiskConfiguration(object):
                             log.warning("No proposal for {} as journal on {}".format(drive_model, configuration))
         
        
+    def _log_results(self, label, results):
+        """
+        """
+        log.debug("{}:".format(label))
+        for k in results.keys():
+            log.debug(" {}:".format(k))
+            if k == 'data+journals':
+                for entry in results[k]:
+                    for d in entry.keys():
+                        log.debug("  {}:".format(d))
+                        log.debug("   {}".format(entry[d]))
+            else:
+                for d in results[k]:
+                    log.debug("  {}".format(d))
+
         
     def _assignments(self, drives, journal=None):
         """
@@ -349,20 +344,29 @@ class DiskConfiguration(object):
         """
         assignments, data, journals = self._separate_drives(drives, journal)
 
-        log.debug("osds: {}".format(assignments['osds']))
-        log.debug("data: {}".format(data))
-        log.debug("journals: {}".format(journals))
+        log.debug("osds:")
+        for osd in assignments['osds']:
+            log.debug(" {}".format(osd))
+        log.debug("data:")
+        for d in data:
+            log.debug(" {}".format(d))
+        log.debug("journals:")
+        for j in journals:
+            log.debug(" {}".format(j))
+
         # check that data drives can be evenly divided by 6-3
         if journal:
             # How to make this configurable, where to retrieve any 
             # configuration, etc. - placeholder for customization
 
-            results = self._nice_ratio(journal, assignments, data, journals)
+            results = self._nice_ratio(assignments, data, journals)
             if results:
+                self._log_results("nice ratio", results)
                 return results
 
-            results = self._rounding(journal, assignments, data, journals)
+            results = self._rounding(assignments, data, journals)
             if results:
+                self._log_results("rounding", results)
                 return results
 
             # No suggestion
@@ -396,7 +400,7 @@ class DiskConfiguration(object):
                         assignments['osds'].extend(drives[drive_model])
         return assignments, data, journals
 
-    def _nice_ratio(self, journal, assignments, data, journals):
+    def _nice_ratio(self, assignments, data, journals):
         """
         Check if data drives are divisible by 6, 5, 4 or 3 and that we have
         sufficient journal drives.  Add unused journal drives as standalone
@@ -406,15 +410,15 @@ class DiskConfiguration(object):
         for partitions in range(6, 2, -1):
             if (data and len(data) % partitions == 0):
                 if (len(journals) >= len(data)/partitions):
-                    log.debug("Using {} partitions on {}".format(partitions, journal))
+                    log.debug("Using {} partitions on {}".format(partitions, journals))
 
-                    return assignments.update(self._assign(partitions, assignments, data, journals))
+                    return self._assign(partitions, assignments, data, journals)
                 else:
                     log.debug("Not enough journals for {} partitions".format(partitions))
             else:
                 log.debug("Skipping {} partitions".format(partitions))
 
-    def _rounding(self, journal, assignments, data, journals):
+    def _rounding(self, assignments, data, journals):
         """
         Divide the data drives by the journal drives and round up. Use if
         partitions are 3-6 inclusive.
@@ -422,7 +426,7 @@ class DiskConfiguration(object):
         """
         partitions = len(data)/len(journals) + 1
         if (partitions > 2 and partitions < 7):
-            log.debug("Rounding... using {} partitions on {}".format(partitions, journal))
+            log.debug("Rounding... using {} partitions on {}".format(partitions, journals))
             return self._assign(partitions, assignments, data, journals)
 
     def _assign(self, partitions, assignments, data, journals):
@@ -439,6 +443,9 @@ class DiskConfiguration(object):
                 log.debug("next journal")
                 count = 1
                 index += 1
+
+        # Add unused journal drives as OSDs
+        assignments['osds'].extend(journals[index:])
         return assignments
 
 class CephRoles(object):
@@ -762,6 +769,40 @@ def create_dirs(path, root):
             print "ERROR: Cannot create dir {}".format(path)
             print "       Please make sure {} is owned by salt".format(root)
             raise err
+
+def show(**kwargs):
+    """
+    Quick printing of usable disks
+
+    Note: rearrange at some point
+    """
+    settings = Settings()
+
+    salt_writer = SaltWriter(**kwargs)
+
+    ceph_cluster = CephCluster(settings, salt_writer, **kwargs)
+    ceph_cluster.generate()
+
+    # Allow overriding of hardware profile class
+    hardwareprofile = HardwareProfile()
+
+    for name in ceph_cluster.names:
+        # Common cluster configuration
+        ceph_storage = CephStorage(settings, name, salt_writer)
+        dc = DiskConfiguration(settings, ceph_cluster.minions)
+        #pprint.pprint(dc.storage_nodes)
+        fields = [ 'Capacity', 'Device File', 'Model', 'rotational' ]
+        for minion,details in dc.storage_nodes.iteritems():
+            print minion + ":"
+            for drive in details:
+                for k,v in drive.iteritems(): 
+                    if k in fields:
+                        if k == 'rotational':
+                            if drive[k] == '1':
+                                sys.stdout.write(" rotates")
+                        else:
+                            sys.stdout.write(" " + v)
+                print
 
 def proposals(**kwargs):
     """
