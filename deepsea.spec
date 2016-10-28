@@ -70,6 +70,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/check
+%dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/events
 %dir /srv/salt/ceph/igw
 %dir /srv/salt/ceph/igw/config
@@ -80,6 +81,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/keyring
 %dir /srv/salt/ceph/igw/restart
 %dir /srv/salt/ceph/igw/sysconfig
+%dir /srv/salt/ceph/iperf
 %dir /srv/salt/ceph/mds
 %dir /srv/salt/ceph/mds/files
 %dir /srv/salt/ceph/mds/key
@@ -181,6 +183,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
+%config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/events/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
@@ -191,6 +194,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/keyring/*.sls
 %config /srv/salt/ceph/igw/restart/*.sls
 %config /srv/salt/ceph/igw/sysconfig/*.sls
+%config /srv/salt/ceph/iperf/*.sls
+%config /srv/salt/ceph/iperf/*.service
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
 %config /srv/salt/ceph/mds/key/*.sls
