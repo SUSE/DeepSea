@@ -134,6 +134,7 @@ install -m 644 %{_saltceph}/admin/files/keyring.j2 %{buildroot}/%{_saltceph}/adm
 
 install -d -m 755 %{buildroot}/%{_saltceph}/benchmarks
 install -m 644 %{_saltceph}/benchmarks/cephfs.sls %{buildroot}/%{_saltceph}/benchmarks
+install -m 644 %{_saltceph}/benchmarks/baseline.sls %{buildroot}/%{_saltceph}/benchmarks
 
 install -d -m 755 %{buildroot}/%{_saltceph}/cephfs
 install -d -m 755 %{buildroot}/%{_saltceph}/cephfs/benchmarks
@@ -685,7 +686,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /%{_saltceph}/admin/*.sls
 %config /%{_saltceph}/admin/files/*.j2
 %config /%{_saltceph}/admin/key/*.sls
-%config /%{_saltceph}/benchmarks/cephfs.sls
+%config /%{_saltceph}/benchmarks/*.sls
 %config /%{_saltceph}/cephfs/benchmarks/*.sls
 %config /%{_saltceph}/cephfs/benchmarks/files/fio.service
 %config /%{_saltceph}/configuration/*.sls
