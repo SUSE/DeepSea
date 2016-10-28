@@ -1,5 +1,5 @@
 include:
-    - .packages
+    - ceph.iperf.packages
 
 
 iperfd_service_add:
