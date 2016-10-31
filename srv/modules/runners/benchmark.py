@@ -165,7 +165,7 @@ def run(**kwargs):
 
     return True
 
-def baseline(**kwargs):
+def baseline(margin = 10, **kwargs):
     '''
     trigger 'ceph tell osd.$n bench' on all $n OSDs and check the results for
     slow outliers
@@ -179,7 +179,7 @@ def baseline(**kwargs):
     master_minion = local_client.cmd('I@roles:master', 'pillar.get',
             ['master_minion'], expr_form= 'compound').items()[0][1]
 
-    sys.stdout.write('Running osd benchmarks')
+    sys.stdout.write('\nRunning osd benchmarks')
     sys.stdout.flush()
     results = []
     for id in ids:
@@ -192,21 +192,29 @@ def baseline(**kwargs):
     # minion output is a string, so must be parsed; ditch the key
     parsed_results = [ast.literal_eval(r[master_minion]) for r in results]
 
-    avg = reduce(lambda r1, r2: r1 + r2['bytes_per_sec'], parsed_results, 0)/len(parsed_results)
+    perf_abs = [r['bytes_per_sec'] for r in parsed_results]
+
+    avg = reduce(lambda r1, r2: r1 + r2, perf_abs)/len(perf_abs)
 
     print('\n\nAverage OSD performance: {}/s\n'.format(__human_size(avg)))
 
-    dev = [abs(r['bytes_per_sec'] - avg) / (avg*0.01) for r in parsed_results]
+    dev_abs = [p - avg for p in perf_abs]
+    dev_percent = [d / (avg*0.01) for d in dev_abs]
 
     outlier = False
-    for d, id in zip(dev, ids):
-        if(d >= 10):
-            print('{}osd.{} deviates {}{:2.2f}%{}{} from the average{}'.format(bcolors.FAIL, id, bcolors.BOLD,
-                        d, bcolors.ENDC, bcolors.FAIL, bcolors.ENDC))
+    for d, pa, id in zip(dev_percent, perf_abs, ids):
+        if(d <= -margin):
+            print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(bcolors.FAIL,
+                id, bcolors.BOLD, d, bcolors.ENDC, bcolors.FAIL, __human_size(pa), bcolors.ENDC))
+            outlier = True
+        elif(d >= margin):
+            print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(bcolors.OKGREEN,
+                id, bcolors.BOLD, d, bcolors.ENDC, bcolors.OKGREEN, __human_size(pa), bcolors.ENDC))
             outlier = True
 
     if not outlier:
-        print('{}All osds operate within a 10% margin{}'.format(bcolors.OKGREEN, bcolors.ENDC))
+        print('{}All osds operate within a {}% margin{}'.format(bcolors.OKGREEN,
+            margin, bcolors.ENDC))
     print('\n')
 
 
