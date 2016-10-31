@@ -386,22 +386,6 @@ class Validate(object):
             self.passed['master_role'] = "valid"
 
 
-    def mon_role(self):
-        """
-        The monitors also need the admin role
-        """
-        for node in self.data.keys():
-            if 'roles' in self.data[node] and 'mon' in self.data[node]['roles']:
-                if 'admin' not in self.data[node]['roles']:
-                  msg = "host {} is a monitor and missing admin role".format(node)
-                  if 'mon_role' in self.errors:
-                      self.errors['mon_role'].append(msg) 
-                  else:
-                      self.errors['mon_role'] = [ msg ]
-
-        if not 'mon_role' in self.errors:
-            self.passed['mon_role'] = "valid"
-
     def mon_host(self):
         """
         The mon_host must be the same on all nodes and have at least
@@ -620,7 +604,6 @@ def pillar(name = None, printer=None, **kwargs):
     v.monitors()
     v.storage()
     v.master_role()
-    v.mon_role()
     v.mon_host()
     v.mon_initial_members()
     v.osd_creation()

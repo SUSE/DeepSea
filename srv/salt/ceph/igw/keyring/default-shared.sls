@@ -3,7 +3,7 @@
 
 /etc/ceph/{{ keyring_name }}:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/igw/cache/{{ keyring_name }}
     - user: root
     - group: root

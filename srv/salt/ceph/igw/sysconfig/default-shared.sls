@@ -1,7 +1,7 @@
 
 /etc/sysconfig/lrbd:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/igw/files/sysconfig.lrbd.j2
     - template: jinja
     - user: root

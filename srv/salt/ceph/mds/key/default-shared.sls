@@ -3,7 +3,7 @@
 {% set keyring_file = salt['keyring.file']('mds', 'mds')  %}
 {{ keyring_file}}:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/mds/files/keyring.j2
     - template: jinja
     - user: salt

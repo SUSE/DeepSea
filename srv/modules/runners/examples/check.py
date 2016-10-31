@@ -13,12 +13,12 @@ log = logging.getLogger(__name__)
 
 """
 The queue runner in salt does not provide a way to check for an empty queue
-and then fire an event.  
+and then fire an event.
 
 The requirement for this is connecting the completion of the prep stage0 where
 minions are updating/rebooting independently and the remaining stages.
 """
-    
+
 
 def queue(**kwargs):
     """
@@ -30,7 +30,7 @@ def queue(**kwargs):
     time.sleep(2)
 
     # defaults
-    settings = { 
+    settings = {
                  'backend': 'sqlite',
                  'queue': 'prep',
                  'next': 'discovery'
@@ -43,7 +43,7 @@ def queue(**kwargs):
         raise SaltInvocationError('Function "{0}" is not available'.format(cmd))
     ret = queue_funcs[cmd](queue=settings['queue'])
 
-    if (ret == 0): 
+    if (ret == 0):
         event = salt.utils.event.get_event(
                 'master',
                 __opts__['sock_dir'],
@@ -57,8 +57,8 @@ def queue(**kwargs):
         log.info("firing event for stage {}".format(settings['next']))
     else:
         log.info("size of queue {} is {}".format(settings['queue'], ret))
-    
-    
+
+
 
 
     return ret
