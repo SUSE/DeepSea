@@ -205,7 +205,7 @@ def baseline(margin = 10, **kwargs):
     for d, pa, id in zip(dev_percent, perf_abs, ids):
         if(d <= -margin):
             print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(bcolors.FAIL,
-                id, bcolors.BOLD, d, bcolors.ENDC, bcolors.FAIL, __human_size(pa), bcolors.ENDC))
+                id, bcolors.BOLD, abs(d), bcolors.ENDC, bcolors.FAIL, __human_size(pa), bcolors.ENDC))
             outlier = True
         elif(d >= margin):
             print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(bcolors.OKGREEN,
