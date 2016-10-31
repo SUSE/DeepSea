@@ -165,7 +165,7 @@ def run(**kwargs):
 
     return True
 
-def baseline(margin = 10, **kwargs):
+def baseline(margin = 10, verbose = False, **kwargs):
     '''
     trigger 'ceph tell osd.$n bench' on all $n OSDs and check the results for
     slow outliers
@@ -201,15 +201,30 @@ def baseline(margin = 10, **kwargs):
     dev_abs = [p - avg for p in perf_abs]
     dev_percent = [d / (avg*0.01) for d in dev_abs]
 
+    if(verbose):
+        __print_verbose(dev_percent, perf_abs, ids, margin)
+    else:
+        __print_outliers(dev_percent, perf_abs, ids, margin)
+
+    return True
+
+def __print_verbose(dev_percent, perf_abs, ids, margin):
+    for d, pa, id in sorted(zip(dev_percent, perf_abs, ids), reverse=True,
+            key = lambda t: t[1]):
+        if(d <= -margin):
+            __print_osd_deviation(id, d, pa, bcolors.FAIL)
+        else:
+            __print_osd_deviation(id, d, pa)
+    print('\n')
+
+def __print_outliers(dev_percent, perf_abs, ids, margin):
     outlier = False
     for d, pa, id in zip(dev_percent, perf_abs, ids):
         if(d <= -margin):
-            print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(bcolors.FAIL,
-                id, bcolors.BOLD, d, bcolors.ENDC, bcolors.FAIL, __human_size(pa), bcolors.ENDC))
+            __print_osd_deviation(id, d, pa, bcolors.FAIL)
             outlier = True
         elif(d >= margin):
-            print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(bcolors.OKGREEN,
-                id, bcolors.BOLD, d, bcolors.ENDC, bcolors.OKGREEN, __human_size(pa), bcolors.ENDC))
+            __print_osd_deviation(id, d, pa)
             outlier = True
 
     if not outlier:
@@ -217,8 +232,10 @@ def baseline(margin = 10, **kwargs):
             margin, bcolors.ENDC))
     print('\n')
 
-
-    return True
+def __print_osd_deviation(id, dev, perf_abs, color=bcolors.OKGREEN):
+    print('{}osd.{} deviates {}{:2.2f}%{}{} from the average ({}/s){}'.format(color,
+        id, bcolors.BOLD, dev, bcolors.ENDC, color, __human_size(perf_abs),
+        bcolors.ENDC))
 
 def __human_size(num, suffix='B'):
     for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
