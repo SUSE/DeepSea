@@ -77,8 +77,7 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/config
 	install -m 644 srv/salt/ceph/igw/config/*.sls $(DESTDIR)/srv/salt/ceph/igw/config/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/import
-	install -m 644 srv/salt/ceph/igw/import/default.sls $(DESTDIR)/srv/salt/ceph/igw/import/
-	install -m 644 srv/salt/ceph/igw/import/init.sls $(DESTDIR)/srv/salt/ceph/igw/import/
+	install -m 644 srv/salt/ceph/igw/import/*.sls $(DESTDIR)/srv/salt/ceph/igw/import/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/key
 	install -m 644 srv/salt/ceph/igw/key/*.sls $(DESTDIR)/srv/salt/ceph/igw/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/auth
@@ -134,8 +133,7 @@ install:
 	install -m 644 srv/salt/ceph/openattic/oaconfig/*.sls $(DESTDIR)/srv/salt/ceph/openattic/oaconfig/
 	# state files - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd
-	install -m 644 srv/salt/ceph/osd/default.sls $(DESTDIR)/srv/salt/ceph/osd/
-	install -m 644 srv/salt/ceph/osd/init.sls $(DESTDIR)/srv/salt/ceph/osd/
+	install -m 644 srv/salt/ceph/osd/*.sls $(DESTDIR)/srv/salt/ceph/osd/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/key
 	install -m 644 srv/salt/ceph/osd/key/*.sls $(DESTDIR)/srv/salt/ceph/osd/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/auth
@@ -155,8 +153,7 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/packages
 	install -m 644 srv/salt/ceph/packages/*.sls $(DESTDIR)/srv/salt/ceph/packages/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/packages/common
-	install -m 644 srv/salt/ceph/packages/common/default.sls $(DESTDIR)/srv/salt/ceph/packages/common/
-	install -m 644 srv/salt/ceph/packages/common/init.sls $(DESTDIR)/srv/salt/ceph/packages/common/
+	install -m 644 srv/salt/ceph/packages/common/*.sls $(DESTDIR)/srv/salt/ceph/packages/common/
 	# state files - pool
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/pool
 	install -m 644 srv/salt/ceph/pool/*.sls $(DESTDIR)/srv/salt/ceph/pool/
@@ -227,9 +224,7 @@ install:
 	install -m 644 srv/salt/ceph/restart/*.sls $(DESTDIR)/srv/salt/ceph/restart/
 	# state files - rgw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw
-	install -m 644 srv/salt/ceph/rgw/default.sls $(DESTDIR)/srv/salt/ceph/rgw/
-	install -m 644 srv/salt/ceph/rgw/init.sls $(DESTDIR)/srv/salt/ceph/rgw/
-	install -m 644 srv/salt/ceph/rgw/shared.sls $(DESTDIR)/srv/salt/ceph/rgw/
+	install -m 644 srv/salt/ceph/rgw/*.sls $(DESTDIR)/srv/salt/ceph/rgw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/key
 	install -m 644 srv/salt/ceph/rgw/key/*.sls $(DESTDIR)/srv/salt/ceph/rgw/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/auth
@@ -253,8 +248,7 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/deploy
 	install -m 644 srv/salt/ceph/stage/deploy/*.sls $(DESTDIR)/srv/salt/ceph/stage/deploy/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/discovery
-	install -m 644 srv/salt/ceph/stage/discovery/default.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
-	install -m 644 srv/salt/ceph/stage/discovery/init.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
+	install -m 644 srv/salt/ceph/stage/discovery/*.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi
 	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic

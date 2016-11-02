@@ -6,7 +6,7 @@ lrbd install:
 
 /tmp/lrbd.conf:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/igw/files/lrbd.conf
     - user: root
     - group: root

@@ -9,9 +9,16 @@ import logging
 
 log = logging.getLogger(__name__)
        
+"""
+Normally, this would not be needed.  The logic for detecting zypper locks
+is in the zypper.py module.  However, that module has had other issues
+resulting in stack traces.  The workaround is to specify the zypper command
+directly and this module is necessary.
+"""
     
 def ready(**kwargs):
     """
+    Wait until zypper has no locks
     """
     defaults = { 'sleep': 6 }
     defaults.update(kwargs)
