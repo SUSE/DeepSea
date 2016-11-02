@@ -285,6 +285,24 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
+	# state files - update
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
+	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates
+	install -m 644 srv/salt/ceph/updates/*.sls $(DESTDIR)/srv/salt/ceph/updates/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/restart
+	install -m 644 srv/salt/ceph/updates/restart/*.sls $(DESTDIR)/srv/salt/ceph/updates/restart/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/regular
+	install -m 644 srv/salt/ceph/updates/regular/*.sls $(DESTDIR)/srv/salt/ceph/updates/regular/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/kernel
+	install -m 644 srv/salt/ceph/updates/kernel/*.sls $(DESTDIR)/srv/salt/ceph/updates/kernel/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance
+	install -m 644 srv/salt/ceph/maintenance/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/update
+	install -m 644 srv/salt/ceph/maintenance/update/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/update
+
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
+	install -m 644 srv/salt/ceph/maintenance/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
 	# state files - orchestrate stages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/all
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
@@ -323,10 +341,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/time/init.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp
 	install -m 644 srv/salt/ceph/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/time/ntp/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates
-	install -m 644 srv/salt/ceph/updates/*.sls $(DESTDIR)/srv/salt/ceph/updates/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/restart
-	install -m 644 srv/salt/ceph/updates/restart/*.sls $(DESTDIR)/srv/salt/ceph/updates/restart/
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
