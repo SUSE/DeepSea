@@ -6,9 +6,10 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def minion_link_ipv4(**kwargs):
+
+def _get_minion_ipv4_dict(**kwargs):
     """
-    Return list of (minion, ipv4) touples
+    Return dict of minion, ipv4 list
 
     The minion match the search criteria, and the ip addresses are from minions
     that also match the search criteria, but returned touples are never for
@@ -29,6 +30,18 @@ def minion_link_ipv4(**kwargs):
                 continue
             ipv4_list.add(addr)
         node_ip_map[node] = ipv4_list
+    return node_ip_map
+
+
+def minion_link_ipv4(**kwargs):
+    """
+    Return list of (minion, ipv4) touples
+
+    The minion match the search criteria, and the ip addresses are from minions
+    that also match the search criteria, but returned touples are never for
+    minions with thier own ip addresses.
+    """
+    node_ip_map = _get_minion_ipv4_dict(**kwargs)
     output = []
     for node_src in node_ip_map.keys():
         for node_dest in node_ip_map.keys():
@@ -36,4 +49,22 @@ def minion_link_ipv4(**kwargs):
                 continue
             for ipv4 in node_ip_map[node_dest]:
                 output.append((node_src, ipv4))
+    return output
+
+
+def minion_link_ipv4_parallel(**kwargs):
+    """
+    Return list of ([minion], ipv4) touples
+
+    The minion match the search criteria, and the ip addresses are from minions
+    that also match the search criteria, but returned touples are never for
+    minions with thier own ip addresses.
+    """
+    node_ip_map = _get_minion_ipv4_dict(**kwargs)
+    output = []
+    node_set = set(node_ip_map.keys())
+    for node_src in node_ip_map.keys():
+        node_src_set = node_set.difference(set([node_src]))
+        for ipv4 in node_ip_map[node_src]:
+            output.append((','.join(node_src_set), ipv4))
     return output
