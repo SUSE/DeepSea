@@ -1,15 +1,15 @@
 
-* [Intro](intro.md) <br>
+* [Intro](intro) <br>
 Brief summary covering the philosophy, Salt and directory organization. 
 
-* [Management](management.md) <br>
+* [Management](management) <br>
 A description of the normal workflow and different installation methods. 
 
-* [Policy](policy.md) <br>
+* [Policy](policy) <br>
 Explanation of the configuration file that drives the layout of the Ceph cluster. 
 
-* [Override](override.md)  <br>
+* [Override](override)  <br>
 Examples for changing the default settings and steps. 
 
-* [Customize](customize.md)  <br>
+* [Customize](customize)  <br>
 Examples desribing the disabling, replacing and modifying steps. 

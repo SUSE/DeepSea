@@ -50,7 +50,7 @@ To create these directories and files, run
 # salt-run state.orch ceph.stage.1
 ```
 
-This stage takes a few seconds.  Once complete, create a policy.cfg file in /srv/pilar/ceph/proposals.  For detailed information, see the [policy](policy.md) instructions.
+This stage takes a few seconds.  Once complete, create a policy.cfg file in /srv/pilar/ceph/proposals.  For detailed information, see the [policy](policy) instructions.
 
 ### Configure
 
