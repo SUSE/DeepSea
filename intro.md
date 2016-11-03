@@ -40,7 +40,7 @@ Configure the additional features of Ceph such as iSCSI, RadosGW and CephFS.  Ea
 * **Stage 5 Removal**
 When hardware fails or is retired, remove the assigned functions and update the Ceph cluster accordingly.
 
-Consolidate the administrators decisions in a single location.  The decisions revolve around cluster assignment, role assignment and profile assignment.
+Consolidate the administrator's decisions in a single location.  The decisions revolve around cluster assignment, role assignment and profile assignment.
 
 * **Cluster assignment**
 Decide whether all servers in the Salt cluster are available for the Ceph cluster.

@@ -68,25 +68,6 @@ This may take several seconds.  Once complete, view the pillar data for all mini
 # salt '*' pillar.items
 ```
 
-### Overriding the Configuration
-
-Examine the output.  If any data is incorrect for your environment, override it now.  For instance, if the guessed cluster network is `10.0.1.0/24`, but the preferred cluster network is `172.16.22.0/24`, do the following:
-
-* Edit the file /srv/pillar/ceph/cluster.yml
-
-* Add `cluster_network: 172.16.22.0/24`
-
-* Save the file
-
-To verify the change, run
-
-```
-# salt '*' saltutil.pillar_refresh
-# salt '*' pillar.items
-```
-
-This can be repeated with any configuration data.  For examples, examine any of the files under /srv/pillar/ceph/stack/default which contains a duplicate directory tree.
-
 ### Deploy
 
 This stage validates the pillar, create the monitors and osds on the storage nodes.  If the validation fails, correct the issue.  The correction may require rerunning the previous stages.
