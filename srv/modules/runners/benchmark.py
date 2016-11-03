@@ -33,7 +33,7 @@ class Fio(object):
         get a list of the minions ip addresses and pick the one that falls into
         the public_network
         '''
-        search = 'I@roles:mds-client and I@cluster:ceph'
+        search = 'I@roles:client-cephfs and I@cluster:ceph'
         public_network = list(local_client.cmd(search, 'pillar.get',
                 ['public_network'], expr_form='compound').values())[0]
 
@@ -41,7 +41,7 @@ class Fio(object):
                 expr_form = 'compound')
 
         if not minion_ip_lists:
-            raise Exception('No mds-client roles defined')
+            raise Exception('No client-cephfs roles defined')
 
         clients = []
         ip_filter = lambda add: ipaddress.ip_address(add.decode()) in ipaddress.ip_network(public_network.decode())
