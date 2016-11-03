@@ -154,7 +154,7 @@ Verify that the command works on a minion.
 # salt 'admin.ceph' state.apply ceph.logrotate
 ```
 
-The second file is an orchestration file.  Since this should run before all other provisioning steps, the stage to change is *prep* also known as Stage 0.  Do the following:
+The second file is an orchestration file.  Since this should run before all other provisioning steps, add this file to the Prep stage also known as Stage 0.  Do the following:
 
 * Create /srv/salt/ceph/stage/prep/logrotate.sls.  Enter the following:
 
