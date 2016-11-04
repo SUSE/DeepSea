@@ -30,6 +30,7 @@ Source0:        deepsea-%{version}.tar.gz
 
 BuildRequires:  salt-master
 Requires:       salt-master
+Requires:       salt-minion
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
