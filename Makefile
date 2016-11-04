@@ -95,6 +95,7 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/iperf
 	install -m 644 srv/salt/ceph/iperf/*.sls $(DESTDIR)/srv/salt/ceph/iperf/
 	install -m 644 srv/salt/ceph/iperf/systemd-iperf.service $(DESTDIR)/srv/salt/ceph/iperf/
+	install -m 644 srv/salt/ceph/iperf/*.py $(DESTDIR)/srv/salt/ceph/iperf
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
