@@ -55,6 +55,11 @@ def _hwinfo(device):
                 if c:
                     results[m.group(1)] = c.group(1)
                     results['Bytes'] = c.group(2)
+            elif (m.group(1) == 'Device File'):
+                if ' ' in m.group(2):
+                    results[m.group(1)] = re.sub(r'"', '', m.group(2).split(' ')[0])
+                else:
+                    results[m.group(1)] = re.sub(r'"', '', m.group(2))
             else:
                 results[m.group(1)] = re.sub(r'"', '', m.group(2))
     return results

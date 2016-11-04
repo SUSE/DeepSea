@@ -11,6 +11,7 @@ install:
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
 	install -m 644 etc/salt/master.d/modules.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/reactor.conf $(DESTDIR)/etc/salt/master.d/
+	install -m 644 etc/salt/master.d/output.conf $(DESTDIR)/etc/salt/master.d/
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/

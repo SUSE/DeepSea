@@ -606,17 +606,6 @@ class CephRoles(object):
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
-            contents['admin_method'] = "default"
-            contents['configuration_method'] = "default"
-            contents['mds_method'] = "default"
-            contents['mon_method'] = "default"
-            contents['osd_method'] = "default"
-            contents['package_method'] = "default"
-            contents['pool_method'] = "default"
-            contents['repo_method'] = "default"
-            contents['rgw_method'] = "default"
-            contents['update_method'] = "default"
-
             contents['public_network'] = self.public_network
             contents['cluster_network'] = self.cluster_network
             contents['available_roles'] = self.available_roles

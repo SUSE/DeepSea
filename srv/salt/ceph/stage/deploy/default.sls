@@ -82,5 +82,5 @@ storage:
 
 pools:
   salt.state:
-    - tgt: {{ salt.saltutil.runner('select.one_minion', cluster='ceph', roles='mon')}}
+    - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.pool
