@@ -1,4 +1,3 @@
 jobs:
-  # - fio/seq_writes.yml
-  # - fio/seq_reads.yml
-  - fio/multi_rw.yml
+  - fio/rw_single_file.yml
+  - fio/rw_many_files.yml
