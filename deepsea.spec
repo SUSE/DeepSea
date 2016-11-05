@@ -19,7 +19,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.6.7
+Version:        0.6.8
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -179,7 +179,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py
 %config /srv/pillar/top.sls
-/srv/pillar/ceph/README
 %config /srv/pillar/ceph/init.sls
 %config /srv/pillar/ceph/benchmark/config.yml
 %config /srv/pillar/ceph/benchmark/benchmark.cfg
