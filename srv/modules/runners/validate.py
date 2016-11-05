@@ -17,15 +17,9 @@ from collections import OrderedDict
 
 log = logging.getLogger(__name__)
 
-# Next items
-#
-# monitors require admin roles
-# make time_server optional
-# 
-
 """
 For Ceph, the generation of ceph.conf requires additional information.
-Although this information can be determined from Salt itself, the 
+Although this information can be determined from Salt itself, the
 prerequisite is monitor assignment. This step is more of a post configuration
 before deployment.
 
@@ -43,38 +37,38 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-    
+
 class PrettyPrinter:
-    
+
     def add(self, name, passed, errors):
         # Need to make colors optional, but looks better currently
         for attr in passed.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
         for attr in errors.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
-            
+
     def print_result(self):
         pass
-            
+
 class JsonPrinter:
-    
+
     def __init__(self):
         self.result = {}
-    
+
     def add(self, name, passed, errors):
         self.result[name] = {'passed': passed, 'errors': errors}
-            
+
     def print_result(self):
         json.dump(self.result, sys.stdout)
-        
+
 def get_printer(__pub_output=None, **kwargs):
     return JsonPrinter() if __pub_output in ['json', 'quiet'] else PrettyPrinter()
-    
+
 
 
 class SaltOptions(object):
     """
-    Keep the querying of salt options separate 
+    Keep the querying of salt options separate
     """
 
     def __init__(self):
@@ -100,7 +94,7 @@ class ClusterAssignment(object):
         self.names = dict(self._clusters())
         if 'unassigned' in self.names:
             self.names.pop('unassigned')
-        
+
 
     def _clusters(self):
         """
@@ -113,7 +107,7 @@ class ClusterAssignment(object):
                 clusters[cluster] = []
             clusters[cluster].extend([ minion ])
         return clusters
-    
+
 class Validate(object):
     """
     Perform checks on pillar and grain data
@@ -160,7 +154,7 @@ class Validate(object):
         else:
             stack_dir = "/srv/pillar/ceph/stack"
             cluster_yml = "{}/cluster.yml".format(self.name)
-            
+
             msg = ( "fsid is not defined.  "
                     "Check {0}/{1} and {0}/default/{1}".
                     format(stack_dir, cluster_yml))
@@ -197,7 +191,7 @@ class Validate(object):
         """
         """
         for node in self.data.keys():
-            if ('roles' in self.data[node] and 
+            if ('roles' in self.data[node] and
                 'master' in self.data[node]['roles']):
                 continue
             found = False
@@ -226,7 +220,7 @@ class Validate(object):
         """
         monitors = []
         for node in self.data.keys():
-            if ('roles' in self.data[node] and 
+            if ('roles' in self.data[node] and
                 'mon' in self.data[node]['roles']):
                 monitors.append(node)
 
@@ -244,7 +238,7 @@ class Validate(object):
         storage = []
         missing = []
         for node in self.data.keys():
-            if ('roles' in self.data[node] and 
+            if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
                 storage.append(node)
                 if not 'storage' in self.data[node]:
@@ -270,7 +264,7 @@ class Validate(object):
         """
         same_network = {}
         for node in self.data.keys():
-            if ('roles' in self.data[node] and 
+            if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
 
                 cluster_network = self.data[node].get("cluster_network", "")
@@ -297,7 +291,7 @@ class Validate(object):
         """
         """
         for node in self.data.keys():
-            if ('roles' in self.data[node] and 
+            if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
                 found = False
                 cluster_network = self.data[node].get("cluster_network", "")
@@ -329,11 +323,10 @@ class Validate(object):
             if name in self.data[node]:
                 same_hosts[",".join(self.data[node][name])] = ""
                 if self.data[node][name][0].strip() == "":
-                    msg = "host {} is missing values for {}.  ".format(node, name) 
+                    msg = "host {} is missing values for {}.  ".format(node, name)
                     msg += "Verify that role-mon/stack/default/ceph/minions/*.yml or similar is in your policy.cfg"
                     if name in self.errors:
                         continue
-                        #self.errors[name].append(msg)
                     else:
                         self.errors[name] = [ msg ]
             else:
@@ -369,7 +362,7 @@ class Validate(object):
         matched = False
         for node in self.data.keys():
             if 'roles' in self.data[node] and 'master' in self.data[node]['roles']:
-                
+
                 found = True
                 if 'master_minion' in self.data[node] and node == self.data[node]['master_minion']:
                     matched = True
@@ -420,13 +413,13 @@ class Validate(object):
         The value of osd_creation must match a state file
         """
         self._redirection_check('osd')
-    
+
     def pool_creation(self):
         """
         The value of pool_creation must match a state file
         """
         self._redirection_check('pool')
-    
+
     def _popen(self, cmd):
         """
         """
@@ -469,7 +462,7 @@ class Validate(object):
                 # how did we get here?
                 msg = "{} unavailable".format(server)
                 self.errors['time_server'] = [ msg ]
- 
+
 
     def time_server(self):
         """
@@ -503,7 +496,7 @@ class Validate(object):
         if not 'fqdn' in self.errors:
             self.passed['fqdn'] = "valid"
 
-# Note: the master_minion and ceph_version are specific to the Stage 0 
+# Note: the master_minion and ceph_version are specific to the Stage 0
 # validate.  These are also more similar to the ready.py for the firewall
 # check than to all the Stage 3 checks.  The difference is that these need
 # to error and not just issue a warning.  I expect that this runner and ready.py
@@ -531,7 +524,7 @@ class Validate(object):
         JEWEL_VERSION="10.2"
         local = salt.client.LocalClient()
         contents = local.cmd('*' , 'cmd.run', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
-        
+
         for minion in contents.keys():
             m = re.search(r'Version: (\S+)', contents[minion])
             # Skip minions with no ceph repo
@@ -560,16 +553,15 @@ def usage():
 def pillars(**kwargs):
     """
     """
-    #options = SaltOptions()
     local = salt.client.LocalClient()
     cluster = ClusterAssignment(local)
-    
+
     printer = printer = get_printer(**kwargs)
 
 
     for name in cluster.names:
         pillar(name, printer=printer, **kwargs)
-    
+
     printer.print_result()
 
 
@@ -581,12 +573,11 @@ def pillar(name = None, printer=None, **kwargs):
     has_printer = printer is not None
     if not has_printer:
         printer = get_printer(**kwargs)
-        
+
     if not name:
         usage()
         exit(1)
 
-    #options = SaltOptions()
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster
@@ -594,7 +585,7 @@ def pillar(name = None, printer=None, **kwargs):
 
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
-    
+
     v = Validate(name, pillar_data, grains_data, printer)
     v.fsid()
     v.public_network()
@@ -611,7 +602,7 @@ def pillar(name = None, printer=None, **kwargs):
     v.time_server()
     v.fqdn()
     v.report()
-    
+
     if not has_printer:
         printer.print_result()
 
@@ -632,5 +623,5 @@ def setup(**kwargs):
     v.master_minion()
     v.ceph_version()
     v.report()
-    
+
     printer.print_result()

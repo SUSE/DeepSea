@@ -16,7 +16,7 @@ def ready(**kwargs):
     the list of all accepted keys or search criteria of cached pillar
     data.
     """
-    settings = { 
+    settings = {
                  'timeout': None,
                  'search': None,
                  'sleep': 6
@@ -24,7 +24,6 @@ def ready(**kwargs):
     settings.update(kwargs)
 
     ret = {}
-    #client = salt.client.get_local_client(__opts__['conf_file'])
 
     end_time = None
     if settings['timeout']:

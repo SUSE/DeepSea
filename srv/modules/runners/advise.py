@@ -24,7 +24,7 @@ def salt_run():
     message = '''
 ###########################################################
 The salt-run command reports when all minions complete.
-The command may appear to hang.  Interrupting (e.g. Ctrl-C) 
+The command may appear to hang.  Interrupting (e.g. Ctrl-C)
 does not stop the command.
 
 In another terminal, try 'salt-run jobs.active' or

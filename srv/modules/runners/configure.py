@@ -10,7 +10,7 @@ from os.path import dirname
 
 """
 For Ceph, the generation of ceph.conf requires additional information.
-Although this information can be determined from Salt itself, the 
+Although this information can be determined from Salt itself, the
 prerequisite is monitor assignment. This step is more of a post configuration
 before deployment.
 
@@ -20,11 +20,11 @@ of hardware.
 """
 
 # Until I figure out the "right way" for managing common routines between
-# Salt runners, SaltWriter is a duplicate from populate.pillars.  (And yes, I 
+# Salt runners, SaltWriter is a duplicate from populate.pillars.  (And yes, I
 # know I can make a library, but what do you expect as the user?)
 class SaltWriter(object):
     """
-    All salt files are essentially yaml files in the pillar by default.  The 
+    All salt files are essentially yaml files in the pillar by default.  The
     pillar uses sls extensions and stack.py uses yml.
     """
 
@@ -46,7 +46,7 @@ class SaltWriter(object):
 
 class SaltOptions(object):
     """
-    Keep the querying of salt options separate 
+    Keep the querying of salt options separate
     """
 
     def __init__(self):
@@ -76,7 +76,7 @@ class ClusterAssignment(object):
         self.names = dict(self._clusters())
         if 'unassigned' in self.names:
             self.names.pop('unassigned')
-        
+
 
     def _clusters(self):
         """
@@ -89,7 +89,7 @@ class ClusterAssignment(object):
                 clusters[cluster] = []
             clusters[cluster].extend([ minion ])
         return clusters
-    
+
 def cluster(**kwargs):
     """
     Generate the ceph.conf data and populate the pillar.  Use the filename
@@ -109,7 +109,7 @@ def cluster(**kwargs):
 
         mon_host = local.cmd(search , 'pillar.get', [ 'public_address' ], expr_form="compound")
         mon_initial_members = local.cmd(search , 'grains.get', [ 'host' ], expr_form="compound")
-        
+
         search = "I@cluster:{} and I@roles:mon".format(name)
         #igw_hosts = local.cmd(search , 'pillar.get', [ 'public_address' ], expr_form="compound")
         igw_hosts = local.cmd(search , 'grains.get', [ 'host' ], expr_form="compound")
@@ -137,38 +137,4 @@ def cluster(**kwargs):
 
 
     return True
-
-#def _contents(local, minions):
-#    """
-#    This strategy relies on retrieving a network interface for public and
-#    cluster networks.  This can be problematic in some sites.
-#
-#    Another strategy is to take a best guess as to the public and cluster
-#    network based on a combination of private networks and physical connections.
-#    This has not been implemented.
-#    """
-#
-#    contents = {}
-#    contents['mon_initial_members'] = minions.values()
-#
-#    contents['mon_host'] = []
-#    for minion in minions.keys():
-#        # Find interface names for each minion
-#        public_interface_name = local.cmd(minion , 'pillar.get', [ 'public_interface' ])[minion]
-#        cluster_interface_name = local.cmd(minion , 'pillar.get', [ 'cluster_interface' ])[minion]
-#
-#        # Find the address for that interface
-#        public_address = local.cmd(minion , 'network.interface', [ public_interface_name ])[minion][0]
-#        cluster_address = local.cmd(minion , 'network.interface', [ cluster_interface_name ])[minion][0]
-#
-#        # Build list of public addresses
-#        contents['mon_host'].append(public_address['address'])
-#
-#        # Generate the corresponding networks
-#        public = ipaddress.ip_interface(u'{}/{}'.format(public_address['address'], public_address['netmask']))
-#        contents['public_network'] = str(public.network)
-#        cluster = ipaddress.ip_interface(u'{}/{}'.format(cluster_address['address'], cluster_address['netmask']))
-#        contents['cluster_network'] = str(cluster.network)
-#
-#    return contents
 

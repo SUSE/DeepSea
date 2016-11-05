@@ -9,8 +9,6 @@ import fcntl
 
 import salt.loader
 import salt.utils.event
-#from salt.utils.event import tagify
-#from salt.exceptions import SaltInvocationError
 
 log = logging.getLogger(__name__)
 
@@ -18,14 +16,14 @@ log = logging.getLogger(__name__)
 """
 The queue runner in salt uses sqlite.  While not a problem in general, when
 a few events arrive simultaneously, the last attempts fail.  The contention is
-around the connection which raises the exception "OperationalError: database is 
+around the connection which raises the exception "OperationalError: database is
 locked".  Increasing timeouts, moving the database to tmpfs or adding retry
-logic is moving the problem.  
+logic is moving the problem.
 
 This runner will rely on file existence, creation and removal.  If a system
 is loaded, operations will block but eventually complete.
 """
-    
+
 class FileQueue(object):
     """
     Use fileystem operations to keep track of a queue. Rely on modification
@@ -40,7 +38,7 @@ class FileQueue(object):
                           'queue': "default",
                           'event': "salt/filequeue/queue" }
         if 'queue' in kwargs:
-            self.settings['event'] =  "salt/filequeue/" + kwargs['queue'] 
+            self.settings['event'] =  "salt/filequeue/" + kwargs['queue']
 
         # Do not include the operation if the event is overridden
         if 'event' in kwargs:
@@ -77,13 +75,13 @@ class FileQueue(object):
             log.info("creating {}".format(filename))
             entry.write("")
 
-        if (ret and 'duplicate_fail' in self.settings and 
+        if (ret and 'duplicate_fail' in self.settings and
             self.settings['duplicate_fail']):
             self._fire_event(False, [ name, "present" ])
             return False
         self._fire_event(True, [ name, "added" ])
         return True
-        
+
 
     def ls(self):
         """
@@ -99,7 +97,7 @@ class FileQueue(object):
         """
         mtime = {}
         for f in os.listdir(self.queue_dir):
-            mtime[os.stat("{}/{}".format(self.queue_dir, f)).st_mtime] = f 
+            mtime[os.stat("{}/{}".format(self.queue_dir, f)).st_mtime] = f
         files = [ mtime[k] for k in sorted(mtime.keys()) ]
         return files
 
@@ -135,7 +133,7 @@ class FileQueue(object):
         Remove file and check if empty in a single operation
 
         Note: Timing in Salt events creates race conditions if remove and empty
-        are called separately from the same reactor file.  
+        are called separately from the same reactor file.
         """
         files = self.ls()
         log.debug("queue {} contains {}".format(self.queue_dir, files))
@@ -156,7 +154,7 @@ class FileQueue(object):
                 return False
         else:
             log.debug("filename {} does not exist".format(filename))
-        
+
 
 
     def check(self, name):
@@ -187,8 +185,8 @@ class FileQueue(object):
         if self.include_operation:
             tags += operation
         log.info("firing event for {}".format("/".join(tags)))
-        
-        if ('fire_on' not in settings or 
+
+        if ('fire_on' not in settings or
             'fire_on' in settings and settings['fire_on'] == result):
             event = salt.utils.event.SaltEvent('master', __opts__['sock_dir'])
             event.fire_event(settings, "/".join(tags))
@@ -210,15 +208,15 @@ class Lock():
         """
         Symlink makes a cheap semaphore
         """
-        while True: 
+        while True:
             try:
-                os.symlink("/dev/null", self.lockfile)   
+                os.symlink("/dev/null", self.lockfile)
                 break
             except OSError:
                 log.debug("{} locked".format(self.lockfile))
                 pass
-            time.sleep(.2)    
-        return 
+            time.sleep(.2)
+        return
 
     def __exit__(self, type, value, traceback):
         """
@@ -235,7 +233,7 @@ def _skip_dunder(settings):
 
 def help():
     """
-    Usage 
+    Usage
     """
     usage = ('filequeue.queues:\n\n'
              '    List the existing queues\n\n'
@@ -306,7 +304,7 @@ def help():
              '        salt-run filequeue.vacant item=abc queue=prep\n'
     )
     print usage
-    
+
 
 
 
@@ -432,5 +430,5 @@ def vacate(name = None, **kwargs):
             return fq.vacate(kwargs['item'])
         else:
             help()
-            return 
+            return
 
