@@ -32,10 +32,10 @@ def file(component, name=None):
 
     if component == "igw":
         return "/srv/salt/ceph/igw/cache/ceph." +  name + ".keyring"
-    
+
     if component == "mds":
         return "/srv/salt/ceph/mds/cache/" + name + ".keyring"
 
     if component == "rgw":
         return "/srv/salt/ceph/rgw/cache/" + name + ".keyring"
-   
+

@@ -61,7 +61,7 @@ def list():
     Return the array of ids.
     """
     return [ path.split('-')[1] for path in glob.glob("/var/lib/ceph/osd/*") if '-' in path ]
-   
+
 def ids():
     """
     Synonym for list
@@ -78,7 +78,7 @@ class OSDState(object):
         Initialize settings, connect to Ceph cluster
         """
         self.id = id
-        self.settings = { 
+        self.settings = {
             'conf': "/etc/ceph/ceph.conf" ,
             'filename': '/var/run/ceph/osd.{}-weight'.format(id),
             'timeout': 3600,
@@ -92,7 +92,7 @@ class OSDState(object):
         """
         """
         print self.osd_tree()
-        
+
 
     def osd_tree(self):
         """
@@ -117,7 +117,7 @@ class OSDState(object):
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
                     log.info("osd.{} has no PGs".format(self.id))
-                    return 
+                    return
                 else:
                     log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
             else:
@@ -148,7 +148,7 @@ class OSDWeight(object):
         Initialize settings, connect to Ceph cluster
         """
         self.id = id
-        self.settings = { 
+        self.settings = {
             'conf': "/etc/ceph/ceph.conf" ,
             'filename': '/var/run/ceph/osd.{}-weight'.format(id),
             'timeout': 3600,
@@ -162,8 +162,8 @@ class OSDWeight(object):
         """
         Capture the current weight allowing the admin to undo simple mistakes.
 
-        The weight file defaults to the /var/run directory and will not 
-        survive a reboot.  
+        The weight file defaults to the /var/run directory and will not
+        survive a reboot.
         """
         entry = self.osd_df()
         if 'crush_weight' in entry and entry['crush_weight'] != 0:
@@ -222,7 +222,7 @@ class OSDWeight(object):
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
                     log.info("osd.{} has no PGs".format(self.id))
-                    return 
+                    return
                 else:
                     log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
             else:

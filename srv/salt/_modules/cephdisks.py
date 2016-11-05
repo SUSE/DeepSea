@@ -15,7 +15,7 @@ def list():
     for path in glob('/sys/block/*/device'):
         base = os.path.dirname(path)
         device = os.path.basename(base)
-    
+
         # Skip partitioned, non-osd drives
         partitions = glob(base + "/" + device + "*")
         if partitions:
@@ -23,7 +23,7 @@ def list():
                 ids = [ re.sub('\D+', '', p) for p in partitions ]
             if not _osd("/dev/" + device, ids):
                 continue
-    
+
         # Skip removable media
         filename = base + "/removable"
         removable = open(filename).read().rstrip('\n')
@@ -31,15 +31,15 @@ def list():
             continue
         filename = base + "/queue/rotational"
         rotational = open(filename).read().rstrip('\n')
-        
+
         hardware =_hwinfo(device)
         hardware['device'] = device
         hardware['rotational'] = rotational
 
         drives.append(hardware)
     return drives
-       
-    
+
+
 def _hwinfo(device):
     """
     Parse hwinfo output into dictionary
@@ -63,8 +63,6 @@ def _hwinfo(device):
             else:
                 results[m.group(1)] = re.sub(r'"', '', m.group(2))
     return results
-    #for line in proc.stderr:
-    #    print line
 
 def _osd(device, ids):
     """
@@ -81,5 +79,5 @@ def _osd(device, ids):
         for line in proc.stderr:
             print line
     return False
-    
+
 

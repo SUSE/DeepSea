@@ -8,10 +8,11 @@ import logging
 
 
 log = logging.getLogger(__name__)
-       
-    
+
+
 def cmd(**kwargs):
     """
+    Retry commands with a backoff delay
     """
     defaults = { 'retry': 3, 'sleep': 6 }
     defaults.update(kwargs)
@@ -36,7 +37,7 @@ def cmd(**kwargs):
             continue
         else:
             return
-        
+
     log.warn("command {} failed {} retries".format(cmd, retry))
     raise RuntimeError("cmd {} failed {} retries".format(cmd, retry))
 
