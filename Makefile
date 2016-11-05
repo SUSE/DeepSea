@@ -37,7 +37,6 @@ install:
 	install -m 644 srv/pillar/ceph/benchmark/fio/*.yml $(DESTDIR)/srv/pillar/ceph/benchmark/fio/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/templates
 	install -m 644 srv/pillar/ceph/benchmark/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmark/templates/
-	install -m 644 srv/pillar/ceph/cluster/README $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
