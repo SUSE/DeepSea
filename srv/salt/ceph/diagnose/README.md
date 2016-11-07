@@ -8,8 +8,11 @@ This README describes the diagnosis tools:
 
 Notes:
 
-All diagnose tests report as standard salt jobs and so will return no response
-if run with the '--quiet' option.
+As of deepsea version 0.6.8 deepsea sets the salt masters state-output. So all
+diagnose tests will give no output unless ran with the a state output option for
+example:
+
+    --state-output=changes
 
 ## ceph.diagnose.ping
 
@@ -20,7 +23,7 @@ concurrently by all remote targeted minions.
 
 To execute the ping diagnosis test
 
-    salt-run state.orch ceph.diagnose.ping
+    salt-run --state-output=changes state.orch ceph.diagnose.ping
 
 Notes:
 
@@ -44,7 +47,7 @@ clusters.
 
 To execute the iperf3 diagnosis test
 
-    salt-run state.orch ceph.diagnose.iperf3
+    salt-run --state-output=changes state.orch ceph.diagnose.iperf3
 
 Run time:
 
@@ -74,7 +77,7 @@ infrastructure level.
 
 To execute the iperf3-concurrent diagnosis test
 
-    salt-run state.orch   ceph.diagnose.iperf3-concurrent
+    salt-run --state-output=changes state.orch ceph.diagnose.iperf3-concurrent
 
 Run time:
 
