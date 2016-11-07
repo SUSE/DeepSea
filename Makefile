@@ -71,6 +71,7 @@ install:
 	install -m 644 srv/salt/ceph/events/*.sls $(DESTDIR)/srv/salt/ceph/events/
 	# state files - diagnose
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/diagnose
+	install -m 644 srv/salt/ceph/diagnose/*.md $(DESTDIR)/srv/salt/ceph/diagnose
 	install -m 644 srv/salt/ceph/diagnose/*.sls $(DESTDIR)/srv/salt/ceph/diagnose
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
