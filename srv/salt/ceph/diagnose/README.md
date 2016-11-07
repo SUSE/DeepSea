@@ -8,7 +8,7 @@ This README describes the diagnosis tools:
 
 Notes:
 
-As of deepsea version 0.6.8 deepsea sets the salt masters state-output. So all
+As of deepsea version 0.6.7 deepsea sets the salt masters state-output. So all
 diagnose tests will give no output unless ran with the a state output option for
 example:
 
