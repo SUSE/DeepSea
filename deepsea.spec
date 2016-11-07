@@ -199,6 +199,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
+/srv/salt/ceph/diagnose/README.md
 %config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/events/*.sls
 %config /srv/salt/ceph/igw/*.sls
