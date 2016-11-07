@@ -212,6 +212,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/iperf/*.sls
 %config /srv/salt/ceph/iperf/*.service
+%config /srv/salt/ceph/iperf/*.py
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
 %config /srv/salt/ceph/mds/key/*.sls
