@@ -245,6 +245,14 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
+	# state files - rsyslog client
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rsyslog/client
+	install -m 644 srv/salt/ceph/rsyslog/client/*.sls $(DESTDIR)/srv/salt/ceph/rsyslog/client
+	install -m 644 srv/salt/ceph/rsyslog/client/*.conf $(DESTDIR)/srv/salt/ceph/rsyslog/client
+	# state files - rsyslog server
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rsyslog/server
+	install -m 644 srv/salt/ceph/rsyslog/server/*.sls $(DESTDIR)/srv/salt/ceph/rsyslog/server
+	install -m 644 srv/salt/ceph/rsyslog/server/*.conf $(DESTDIR)/srv/salt/ceph/rsyslog/server
 	# state files - orchestrate stages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/all
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
