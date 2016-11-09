@@ -280,6 +280,9 @@ install:
 	install -m 644 srv/salt/ceph/stage/removal/*.sls $(DESTDIR)/srv/salt/ceph/stage/removal/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/radosgw
 	install -m 644 srv/salt/ceph/stage/radosgw/*.sls $(DESTDIR)/srv/salt/ceph/stage/radosgw/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/rsyslog
+	install -m 644 srv/salt/ceph/stage/rsyslog/README.md $(DESTDIR)/srv/salt/ceph/stage/rsyslog
+	install -m 644 srv/salt/ceph/stage/rsyslog/*.sls $(DESTDIR)/srv/salt/ceph/stage/rsyslog
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/services
 	install -m 644 srv/salt/ceph/stage/services/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sync
