@@ -174,6 +174,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/prep/minion
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
+%dir /srv/salt/ceph/stage/rsyslog
 %dir /srv/salt/ceph/stage/services
 %dir /srv/salt/ceph/sync
 %dir /srv/salt/ceph/time
@@ -304,6 +305,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/prep/minion/*.sls
 %config /srv/salt/ceph/stage/radosgw/*.sls
 %config /srv/salt/ceph/stage/removal/*.sls
+%config /srv/salt/ceph/stage/rsyslog/*.md
+%config /srv/salt/ceph/stage/rsyslog/*.sls
 %config /srv/salt/ceph/stage/services/*.sls
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/time/*.sls
