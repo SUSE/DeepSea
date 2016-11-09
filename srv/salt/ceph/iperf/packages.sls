@@ -1,4 +1,4 @@
 include:
 {% if grains['os_family'] == 'Suse' %}
-    - .packages-suse
+    - ceph.iperf.packages-suse
 {% endif %}
