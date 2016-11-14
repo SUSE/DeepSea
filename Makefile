@@ -226,6 +226,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/remove/storage/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/openattic
 	install -m 644 srv/salt/ceph/remove/openattic/*.sls $(DESTDIR)/srv/salt/ceph/remove/openattic/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage/drain
+	install -m 644 srv/salt/ceph/remove/storage/drain/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/drain
 	# state files - rescind
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
@@ -275,6 +277,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring
 	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage/terminate
+	install -m 644 srv/salt/ceph/rescind/storage/terminate/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/terminate/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/

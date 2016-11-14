@@ -3,10 +3,6 @@ reweight nop:
   test.nop
 
 {% for id in salt.saltutil.runner('rescinded.ids', cluster='ceph') %}
-clear osd.{{ id }}:
-  module.run:
-    - name: osd.zero_weight
-    - id: {{ id }}
 
 down id {{ id }}:
   module.run:
@@ -22,10 +18,8 @@ delete osd.{{ id }} key:
     - name: "ceph auth del osd.{{ id }}"
 
 remove id {{ id }}:
-  module.run:
-    - name: retry.cmd
-    - kwargs:
-        cmd: "ceph osd rm {{ id }}"
+  cmd.run:
+    - name: "ceph osd rm {{ id }}"
 
 {% endfor %}
 
