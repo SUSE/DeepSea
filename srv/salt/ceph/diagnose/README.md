@@ -9,7 +9,7 @@ This README describes the diagnosis tools:
 Notes:
 
 As of deepsea version 0.6.7 deepsea sets the salt masters state-output. So all
-diagnose tests will give no output unless ran with the a state output option for
+diagnose tests will give no output unless ran with the state output option for
 example:
 
     --state-output=changes
@@ -70,7 +70,7 @@ Notes:
 This diagnose command runs an iperf3 bandwidth test on every salt managed node
 with pillar role cluster='ceph' to every ipv4 address on each other salt
 managed node with the pillar role cluster='ceph'. Each targeted ipv4 link is
-tested in parallel when posable. Consequently this test will run significantly
+tested in parallel when possible. Consequently this test will run significantly
 faster than the diagnosis command ceph.diagnose.iperf3 but may not give the same
 results and this difference may suggest network saturation issues at the switch
 infrastructure level.
