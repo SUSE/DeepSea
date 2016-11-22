@@ -91,6 +91,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/restart
 %dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/iperf
+%dir /srv/salt/ceph/ganesha
 %dir /srv/salt/ceph/mds
 %dir /srv/salt/ceph/mds/files
 %dir /srv/salt/ceph/mds/key
@@ -165,6 +166,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/deploy
 %dir /srv/salt/ceph/stage/discovery
 %dir /srv/salt/ceph/stage/iscsi
+%dir /srv/salt/ceph/stage/nfs-ganesha
 %dir /srv/salt/ceph/stage/openattic
 %dir /srv/salt/ceph/stage/prep
 %dir /srv/salt/ceph/stage/prep/master
@@ -211,6 +213,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/keyring/*.sls
 %config /srv/salt/ceph/igw/restart/*.sls
 %config /srv/salt/ceph/igw/sysconfig/*.sls
+%config /srv/salt/ceph/ganehsa/*.sls
 %config /srv/salt/ceph/iperf/*.sls
 %config /srv/salt/ceph/iperf/*.service
 %config /srv/salt/ceph/iperf/*.py

@@ -499,7 +499,7 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw' ] + self._rgw_configurations()
+        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw', 'ganesha' ] + self._rgw_configurations()
         self.available_roles.extend(roles)
 
         for role in roles:
@@ -570,11 +570,26 @@ class CephRoles(object):
 
     def igw_members(self):
         """
-        Create a file for igw hosts.
+        Create a file for ganesha hosts.
 
         Note: identical to above
         """
         minion_dir = "{}/role-igw/stack/default/{}/minions".format(self.root_dir, self.cluster)
+        if not os.path.isdir(minion_dir):
+            create_dirs(minion_dir, self.root_dir)
+        for server in self.servers:
+            filename = minion_dir + "/" +  server + ".yml"
+            contents = {}
+            contents['public_address'] = self._public_interface(server)
+            self.writer.write(filename, contents)
+
+    def ganesha_members(self):
+        """
+        Create a file for igw hosts.
+
+        Note: identical to above
+        """
+        minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
         if not os.path.isdir(minion_dir):
             create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
@@ -822,6 +837,6 @@ def proposals(**kwargs):
         ceph_roles.cluster_config()
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
-
+        ceph_roles.ganesha()
     return [ True ]
 

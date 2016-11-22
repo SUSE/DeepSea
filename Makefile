@@ -73,6 +73,9 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/diagnose
 	install -m 644 srv/salt/ceph/diagnose/*.md $(DESTDIR)/srv/salt/ceph/diagnose
 	install -m 644 srv/salt/ceph/diagnose/*.sls $(DESTDIR)/srv/salt/ceph/diagnose
+	# state files - ganesha
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha
+	install -m 644 srv/salt/ceph/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
@@ -260,6 +263,8 @@ install:
 	install -m 644 srv/salt/ceph/stage/discovery/*.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi
 	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/nfs-ganesha
+	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/nfs-ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic
 	install -m 644 srv/salt/ceph/stage/openattic/*.sls $(DESTDIR)/srv/salt/ceph/stage/openattic/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/prep
