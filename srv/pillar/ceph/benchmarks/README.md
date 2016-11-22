@@ -1,6 +1,6 @@
 ## Benchmarks
 DeepSeas benchmarking system consists of [salt
-states](../../../salt/ceph/benchmark/), a
+states](../../../salt/ceph/benchmarks/), a
 [runner](../../../modules/runners/benchmark.py) and this pillar data in this
 directory.
 
