@@ -28,20 +28,19 @@ class bcolors:
 
 class Fio(object):
 
-    def __init__(self, bench_dir, work_dir, log_dir, job_dir):
+    def __init__(self, client_glob, bench_dir, work_dir, log_dir, job_dir):
         '''
         get a list of the minions ip addresses and pick the one that falls into
         the public_network
         '''
-        search = 'I@roles:client-cephfs and I@cluster:ceph'
-        public_network = list(local_client.cmd(search, 'pillar.get',
+        public_network = list(local_client.cmd(client_glob, 'pillar.get',
                 ['public_network'], expr_form='compound').values())[0]
 
-        minion_ip_lists = local_client.cmd(search, 'network.ip_addrs', [],
+        minion_ip_lists = local_client.cmd(client_glob, 'network.ip_addrs', [],
                 expr_form = 'compound')
 
         if not minion_ip_lists:
-            raise Exception('No client-cephfs roles defined')
+            raise Exception('No minions found for glob {}'.format(client_glob))
 
         clients = []
         ip_filter = lambda add: ipaddress.ip_address(add.decode()) in ipaddress.ip_network(public_network.decode())
@@ -50,7 +49,7 @@ class Fio(object):
 
         if not clients:
             raise Exception(
-            '''Mds-clients do not have an ip address in the public
+            '''Clients do not have an ip address in the public
             network of the Ceph Cluster.''')
 
         self.cmd = 'fio'
@@ -112,7 +111,7 @@ class Fio(object):
         return job
 
 
-def run(**kwargs):
+def cephfs(**kwargs):
     """
     Run a job
     """
@@ -158,7 +157,11 @@ def run(**kwargs):
             print(error)
             exit(1)
 
-    fio = Fio(bench_dir, work_dir, log_dir, job_dir)
+    fio = Fio('I@roles:client-cephfs and I@cluster:ceph',
+            bench_dir,
+            work_dir,
+            log_dir,
+            job_dir)
 
     for job_spec in default_collection['jobs']:
         print(fio.run(job_spec))

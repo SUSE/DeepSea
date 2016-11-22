@@ -20,7 +20,7 @@ prep master:
 
 run fio:
   salt.runner:
-    - name: benchmark.run
+    - name: benchmark.cephfs
     - work_dir: {{ salt['pillar.get']('benchmark:work-directory') }}
     - log_dir: {{ salt['pillar.get']('benchmark:log-file-directory') }}
     - job_dir: {{ salt['pillar.get']('benchmark:job-file-directory') }}
