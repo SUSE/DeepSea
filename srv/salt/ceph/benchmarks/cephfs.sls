@@ -25,6 +25,7 @@ run fio:
     - log_dir: {{ salt['pillar.get']('benchmark:log-file-directory') }}
     - job_dir: {{ salt['pillar.get']('benchmark:job-file-directory') }}
     - default_collection: {{ salt['pillar.get']('benchmark:default-collection') }}
+    - client_glob : "I@roles:client-cephfs and I@cluster:ceph"
 
 clean subdir:
   salt.state:
