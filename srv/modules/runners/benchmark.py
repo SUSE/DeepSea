@@ -68,7 +68,8 @@ class Fio(object):
             'templates')))
 
     def run(self, job_spec):
-        jobfile = self._parse_job(job_spec)
+        job_name = splitext(basename(job_spec))[0]
+        jobfile = self._parse_job(job_spec, job_name)
         '''
         create a list that alternates between --client arguments and job files
         e.g. [--client=host1, jobfile, --client=host2, jobfile]
@@ -78,13 +79,13 @@ class Fio(object):
         cmd[::2] = self.client_args
         cmd[1::2] = [jobfile] * len(self.client_args)
         output_args = ['--output={}/{}_{}.json'.format(self.log_dir,
-            splitext(basename(job_spec))[0],
+            job_name,
             datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))]
         output = check_output([self.cmd] + self.cmd_args + output_args + cmd)
 
         return output
 
-    def _parse_job(self, job_spec):
+    def _parse_job(self, job_spec, job_name):
         job = self._get_parameters(job_spec)
         # which template does the job want
 
@@ -93,7 +94,7 @@ class Fio(object):
         return self._populate_and_write(template, job)
 
     def _populate_and_write(self, template, job):
-        jobfile = '{}/jobfile'.format(self.job_dir)
+        jobfile = '{}/{}'.format(self.job_dir, job_name)
 
         # render template and save job file
         template.stream(job).dump(jobfile)
