@@ -118,6 +118,11 @@ def cephfs(**kwargs):
     """
 
     # extract kwargs
+    client_glob = 'I@roles:client-cephfs and I@cluster:ceph'
+    if 'client_glob' in kwargs:
+        client_glob = kwargs['client_glob']
+    print('client glob is {}'.format(client_glob))
+
     work_dir = ''
     if 'work_dir' in kwargs:
         work_dir = kwargs['work_dir']
@@ -158,7 +163,7 @@ def cephfs(**kwargs):
             print(error)
             exit(1)
 
-    fio = Fio('I@roles:client-cephfs and I@cluster:ceph',
+    fio = Fio(client_glob,
             bench_dir,
             work_dir,
             log_dir,
