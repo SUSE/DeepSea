@@ -166,7 +166,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/deploy
 %dir /srv/salt/ceph/stage/discovery
 %dir /srv/salt/ceph/stage/iscsi
-%dir /srv/salt/ceph/stage/nfs-ganesha
+%dir /srv/salt/ceph/stage/ganesha
 %dir /srv/salt/ceph/stage/openattic
 %dir /srv/salt/ceph/stage/prep
 %dir /srv/salt/ceph/stage/prep/master
