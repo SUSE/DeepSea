@@ -570,7 +570,7 @@ class CephRoles(object):
 
     def igw_members(self):
         """
-        Create a file for ganesha hosts.
+        Create a file for igw hosts.
 
         Note: identical to above
         """
@@ -585,9 +585,7 @@ class CephRoles(object):
 
     def ganesha_members(self):
         """
-        Create a file for igw hosts.
-
-        Note: identical to above
+        Create a file for ganesha hosts.
         """
         minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
         if not os.path.isdir(minion_dir):
@@ -837,6 +835,6 @@ def proposals(**kwargs):
         ceph_roles.cluster_config()
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
-        ceph_roles.ganesha()
+        ceph_roles.ganesha_members()
     return [ True ]
 
