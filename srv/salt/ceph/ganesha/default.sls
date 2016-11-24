@@ -1,6 +1,11 @@
 
+rpc:
+  cmd.run:
+    - name: "systemctl start rpcbind "
+    - shell: /bin/bash
 
 ganesha:
   cmd.run:
-    - name: "zypper --non-interactive in nfs-ganesha nfs-ganesha-ceph "
+    - name: "/usr/bin/ganesha.nfsd -f /etc/ganesha/ceph.conf"
     - shell: /bin/bash
+

@@ -24,7 +24,7 @@ refresh_pillar2:
     - require: 
       - salt: post configuration
 
-{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw', 'openattic', 'ganesha' ] %}
+{% for role in [ 'admin', 'mon', 'osd', 'igw', 'mds', 'rgw', 'openattic'] %}
 {{ role }} key:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
