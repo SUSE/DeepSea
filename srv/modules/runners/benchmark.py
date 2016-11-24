@@ -105,9 +105,9 @@ class Fio(object):
             try:
                 job = yaml.load(yml)
             except YAMLError as error:
-                print('Error parsing job spec in file {}/templates/{}'.format(self.bench_dir, job_spec))
-                print(error)
-                exit(1)
+                log.error('Error parsing job spec in file {}/templates/{}'.format(self.bench_dir, job_spec))
+                log.error(error)
+                raise error
         job.update({'dir': self.work_dir})
         return job
 
@@ -124,7 +124,7 @@ def __parse_and_set_dirs(**kwargs):
             if(not os.path.isdir(dir_options[option])):
                 raise FileNotFoundError('{} does not exist or is a file'
                         .format(dir_options[option]))
-            log('{} is {}'.format(option, work_dir))
+            log.info('{} is {}'.format(option, work_dir))
         else:
             raise KeyError('{} not specified'.format(option))
             return 1
@@ -143,14 +143,13 @@ def __parse_and_set_dirs(**kwargs):
 
 def cephfs(**kwargs):
     """
-    Run a job
+    Run cephfs benchmark jobs
     """
 
-    # extract kwargs
     client_glob = 'I@roles:client-cephfs and I@cluster:ceph'
     if 'client_glob' in kwargs:
         client_glob = kwargs['client_glob']
-    print('client glob is {}'.format(client_glob))
+    log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
 
@@ -159,9 +158,9 @@ def cephfs(**kwargs):
         try:
             default_collection = yaml.load(yml)
         except YAMLError as error:
-            print('Error parsing default collection:')
-            print(error)
-            exit(1)
+            log.error('Error parsing default collection:')
+            log.error(error)
+            raise error
 
     fio = Fio(client_glob,
             dir_options['bench_dir'],
