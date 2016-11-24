@@ -8,7 +8,7 @@ import logging
 import datetime
 import ipaddress
 from jinja2 import Environment, FileSystemLoader
-from os.path import dirname, basename, splitext
+from os.path import basename, dirname, isdir, splitext
 from subprocess import check_output
 import sys
 import yaml
@@ -111,6 +111,35 @@ class Fio(object):
         job.update({'dir': self.work_dir})
         return job
 
+def __parse_and_set_dirs(**kwargs):
+    '''
+    check kwargs for passed directory locations and return a dict with the
+    directory locations set and checked for presence aso.
+    '''
+    dir_oprions = {}
+    work_dir = ''
+    for option in ['work_dir', 'log_dir', 'job_dir']:
+        if option in kwargs:
+            dir_options[option] = kwargs[option]
+            if(not os.path.isdir(dir_options[option])):
+                raise FileNotFoundError('{} does not exist or is a file'
+                        .format(dir_options[option]))
+            log('{} is {}'.format(option, work_dir))
+        else:
+            raise KeyError('{} not specified'.format(option))
+            return 1
+
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    bench_dir = ''
+    for ext in __opts__['ext_pillar']:
+        if 'stack' in ext:
+            # TODO only add benchmark.cfg here. Salt returns either a string
+            # (when there is on ext_module) or an array :(
+            # This needs a better solution...works only if benchmark.cfg is 2nd
+            # entry in ext_modules
+            dir_options['bench_dir'] = dirname(ext['stack'][1])
+
+    return dir_options
 
 def cephfs(**kwargs):
     """
@@ -123,39 +152,10 @@ def cephfs(**kwargs):
         client_glob = kwargs['client_glob']
     print('client glob is {}'.format(client_glob))
 
-    work_dir = ''
-    if 'work_dir' in kwargs:
-        work_dir = kwargs['work_dir']
-        print('work dir is {}'.format(work_dir))
-    else:
-        return 1
-
-    log_dir = ''
-    if 'log_dir' in kwargs:
-        log_dir = kwargs['log_dir']
-        print('log dir is {}'.format(log_dir))
-    else:
-        return 1
-
-    job_dir = ''
-    if 'job_dir' in kwargs:
-        job_dir = kwargs['job_dir']
-        print('job dir is {}'.format(job_dir))
-    else:
-        return 1
-
-    __opts__ = salt.config.client_config('/etc/salt/master')
-    bench_dir = ''
-    for ext in __opts__['ext_pillar']:
-        if 'stack' in ext:
-            # TODO only add benchmark.cfg here. Salt returns either a string
-            # (when there is on ext_module) or an array :(
-            # This needs a better solution...works only if benchmark.cfg is 2nd
-            # entry in ext_modules
-            bench_dir = dirname(ext['stack'][1])
+    dir_options = __parse_and_set_dirs(kwargs)
 
     default_collection = {}
-    with open('{}/collections/default.yml'.format(bench_dir), 'r') as yml:
+    with open('{}/collections/default.yml'.format(dir_options['bench_dir']), 'r') as yml:
         try:
             default_collection = yaml.load(yml)
         except YAMLError as error:
@@ -164,10 +164,10 @@ def cephfs(**kwargs):
             exit(1)
 
     fio = Fio(client_glob,
-            bench_dir,
-            work_dir,
-            log_dir,
-            job_dir)
+            dir_options['bench_dir'],
+            dir_options['work_dir'],
+            dir_options['log_dir'],
+            dir_options['job_dir'])
 
     for job_spec in default_collection['jobs']:
         print(fio.run(job_spec))
