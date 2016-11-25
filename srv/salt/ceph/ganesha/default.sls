@@ -8,7 +8,7 @@ rpc:
     - name: "systemctl start rpcbind "
     - shell: /bin/bash
 
-rpc:
+rpc-statd:
   cmd.run:
     - name: "systemctl start rpc-statd "
     - shell: /bin/bash
