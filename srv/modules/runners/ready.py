@@ -76,16 +76,16 @@ class Checks(object):
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, self.warnings[attr], bcolors.ENDC)
 
 
-def check(name, fail_on_warning=True, **kwargs):
+def check(cluster, fail_on_warning=True, **kwargs):
     """
     Check a cluster for runtime configurations that may cause issues for an
     installation.
     """
-    if name == None:
-        name = kwargs['name']
+    if cluster is None:
+        cluster = kwargs['cluster']
 
     # Restrict search to this cluster
-    search = "I@cluster:{}".format(name)
+    search = "I@cluster:{}".format(cluster)
 
     c = Checks(search)
     c.firewall()
