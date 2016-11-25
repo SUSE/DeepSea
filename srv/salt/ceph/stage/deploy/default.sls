@@ -1,7 +1,7 @@
 
 {% set FAIL_ON_WARNING = salt['pillar.get']('FAIL_ON_WARNING', 'True') %}
 
-{% if salt['saltutil.runner']('ready.check', name='ceph', fail_on_warning=FAIL_ON_WARNING)  == False %}
+{% if salt['saltutil.runner']('ready.check', cluster='ceph', fail_on_warning=FAIL_ON_WARNING)  == False %}
 ready check failed:
   salt.state:
     - name: "Fail on Warning is True"
@@ -18,7 +18,7 @@ ready check failed:
 {# Until return codes fail correctly and the above can be uncommented, #}
 {# rely on the side effect of the runner printing its output and failing #}
 {# on a bogus state #}
-{% if salt['saltutil.runner']('validate.pillar', name='ceph') == False %}
+{% if salt['saltutil.runner']('validate.pillar', cluster='ceph') == False %}
 validate failed:
   salt.state:
     - name: just.exit
