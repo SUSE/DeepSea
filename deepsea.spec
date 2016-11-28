@@ -298,6 +298,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/deploy/*.sls
 %config /srv/salt/ceph/stage/discovery/*.sls
 %config /srv/salt/ceph/stage/iscsi/*.sls
+%config /srv/salt/ceph/stage/ganesha/*.sls
 %config /srv/salt/ceph/stage/openattic/*.sls
 %config /srv/salt/ceph/stage/prep/*.sls
 %config /srv/salt/ceph/stage/prep/master/*.sls
