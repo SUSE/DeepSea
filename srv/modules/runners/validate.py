@@ -545,8 +545,8 @@ class Validate(object):
         self.printer.add(self.name, self.passed, self.errors)
 
 def usage():
-    print "salt-run validate.pillar cluster"
-    print "salt-run validate.pillar name=cluster"
+    print "salt-run validate.pillar cluster_name"
+    print "salt-run validate.pillar cluster=cluster_name"
     print "salt-run validate.pillars"
 
 
@@ -565,7 +565,7 @@ def pillars(**kwargs):
     printer.print_result()
 
 
-def pillar(name = None, printer=None, **kwargs):
+def pillar(cluster = None, printer=None, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
@@ -574,19 +574,19 @@ def pillar(name = None, printer=None, **kwargs):
     if not has_printer:
         printer = get_printer(**kwargs)
 
-    if not name:
+    if not cluster:
         usage()
         exit(1)
 
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster
-    search = "I@cluster:{}".format(name)
+    search = "I@cluster:{}".format(cluster)
 
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
 
-    v = Validate(name, pillar_data, grains_data, printer)
+    v = Validate(cluster, pillar_data, grains_data, printer)
     v.fsid()
     v.public_network()
     v.public_interface()
