@@ -92,6 +92,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/iperf
 %dir /srv/salt/ceph/ganesha
+%dir /srv/salt/ceph/ganesha/configure
 %dir /srv/salt/ceph/ganesha/install
 %dir /srv/salt/ceph/mds
 %dir /srv/salt/ceph/mds/files

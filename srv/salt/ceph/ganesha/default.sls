@@ -15,6 +15,6 @@ rpc-statd:
 
 ganesha:
   cmd.run:
-    - name: "/usr/bin/ganesha.nfsd -f /etc/ganesha/ceph.conf -L /var/log/ganesha.log"
+    - name: "systemctl start nfs-ganesha"
     - shell: /bin/bash
 
