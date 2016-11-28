@@ -81,6 +81,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/events
+%dir /srv/salt/ceph/ganesha
+%dir /srv/salt/ceph/ganesha/configure
+%dir /srv/salt/ceph/ganesha/install
 %dir /srv/salt/ceph/igw
 %dir /srv/salt/ceph/igw/config
 %dir /srv/salt/ceph/igw/files
@@ -91,9 +94,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/restart
 %dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/iperf
-%dir /srv/salt/ceph/ganesha
-%dir /srv/salt/ceph/ganesha/configure
-%dir /srv/salt/ceph/ganesha/install
 %dir /srv/salt/ceph/mds
 %dir /srv/salt/ceph/mds/files
 %dir /srv/salt/ceph/mds/key
@@ -206,6 +206,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 /srv/salt/ceph/diagnose/README.md
 %config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/events/*.sls
+%config /srv/salt/ceph/ganehsa/*.sls
+%config /srv/salt/ceph/ganehsa/configure/*.sls
+%config /srv/salt/ceph/ganehsa/install/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
 %config /srv/salt/ceph/igw/config/*.sls
@@ -215,7 +218,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/keyring/*.sls
 %config /srv/salt/ceph/igw/restart/*.sls
 %config /srv/salt/ceph/igw/sysconfig/*.sls
-%config /srv/salt/ceph/ganehsa/*.sls
 %config /srv/salt/ceph/iperf/*.sls
 %config /srv/salt/ceph/iperf/*.service
 %config /srv/salt/ceph/iperf/*.py

@@ -265,10 +265,10 @@ install:
 	install -m 644 srv/salt/ceph/stage/deploy/*.sls $(DESTDIR)/srv/salt/ceph/stage/deploy/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/discovery
 	install -m 644 srv/salt/ceph/stage/discovery/*.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi
-	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/ganesha
 	install -m 644 srv/salt/ceph/stage/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/stage/ganesha/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi
+	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic
 	install -m 644 srv/salt/ceph/stage/openattic/*.sls $(DESTDIR)/srv/salt/ceph/stage/openattic/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/prep
