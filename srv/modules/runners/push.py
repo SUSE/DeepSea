@@ -7,9 +7,10 @@ import pprint
 import logging
 import imp
 import re
+import shutil
 
 """
-This runner is the complement to the populate.proposals.
+This runner is the complement to the populate.proposals runner.
 
 The policy.cfg only includes matching files.  The admin may use globbing
 or specific filenames.  Comments and blank lines are ignored.  The file
@@ -35,7 +36,7 @@ Role assignment:
     any role-* directories contain sls files and stack related yaml files.
     One or more roles can be included for any minion.
 Hardware profile:
-    any directory beginning with a number represents a specific OSD
+    any profile-* directories represent a specific OSD
     assignment for a particular chassis.  All sls and yaml files are
     included for a given hardware profile.
 
@@ -46,7 +47,11 @@ Customization:
     This entry is last and will overwrite any of the contents of the sls or
     yaml files.
 
-All files are currently overwritten in the destination tree.
+    Note that this type of customization is redundant with specifying the
+    desired values in /srv/pillar/ceph/stack directory tree and likely
+    unnecessary.  This will still work and may prove useful for some.
+
+All files are overwritten in the destination tree /srv/pillar/ceph/stack/default.
 
 """
 
@@ -93,6 +98,8 @@ class PillarData(object):
         /srv/pillar/ceph/cluster and /srv/pillar/ceph/stack/default.
         """
 
+        self._clean()
+
         for pathname in common.keys():
             merged = self._merge(pathname, common)
             filename = self.pillar_dir + "/" + pathname
@@ -111,6 +118,16 @@ class PillarData(object):
                 default_path = re.sub(r'stack/default', "stack", pathname)
                 custom = self.pillar_dir + "/" + default_path
                 self._custom(custom)
+
+    def _clean(self):
+        """
+        Remove the stack/default tree to remove any leftover files from a
+        previous removal
+        """
+        stack_default = "{}/stack/default".format(self.pillar_dir)
+        if os.path.isdir(stack_default):
+            shutil.rmtree(stack_default)
+
 
     def _default(self, filename, merged):
         """
@@ -166,13 +183,10 @@ class PillarData(object):
         common = {}
         with open(filename, "r") as policy:
             for line in policy:
-                # Possibly support kwargs as additional parameters
-                # This would allow regex and slicing of the globbed filenames
                 line = line.rstrip()
                 if (line.startswith('#') or not line):
                     log.debug("Ignoring '{}'".format(line))
                     continue
-                #files = glob.glob(self.proposals_dir + "/" + line)
                 files = self._parse(self.proposals_dir + "/" + line)
                 if not files:
                     log.warning("{} matched no files".format(line))

@@ -6,8 +6,9 @@ import pprint
 
 def ids(cluster, **kwargs):
     """
+    List the OSD ids of a minion that is not a storage node
     """
-        
+
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster

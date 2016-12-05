@@ -35,7 +35,7 @@ all the possible configuration files for each server of the existing equipment. 
 
 Second, all the complexity of combining these files is kept in a policy.cfg at
 the root of /srv/pillar/ceph/proposals.  Assigning multiple roles to the same
-server or keeping them separate is controlled by specifying which files to 
+server or keeping them separate is controlled by specifying which files to
 include in the policy.cfg.  Preinstalling a policy.cfg will allow the automatic
 creation of a Ceph cluster.
 
@@ -67,7 +67,7 @@ class Settings(object):
 
 class SaltWriter(object):
     """
-    All salt files are essentially yaml files in the pillar by default.  The 
+    All salt files are essentially yaml files in the pillar by default.  The
     pillar uses sls extensions and stack.py uses yml.
     """
 
@@ -90,7 +90,7 @@ class SaltWriter(object):
         if self.overwrite or not os.path.isfile(filename):
             log.info("Writing {}".format(filename))
             with open(filename, "w") as yml:
-                yml.write(yaml.dump(contents, Dumper=self.dumper, 
+                yml.write(yaml.dump(contents, Dumper=self.dumper,
                                               default_flow_style=False))
 
 class CephStorage(object):
@@ -155,7 +155,7 @@ class HardwareProfile(object):
     """
     Create a hardware profile based on the quantity and order of drives
     """
-    
+
     def __init__(self):
         """
         Track profiles, servers and rotating media
@@ -236,8 +236,8 @@ class HardwareProfile(object):
                 self.profiles[hostname][name][label] = {}
             self.profiles[hostname][name][label] = self.model[label]
 
-        
-        
+
+
     def _name(self):
         """
         Create a consistent name by sorting the drive types
@@ -251,8 +251,8 @@ class HardwareProfile(object):
         """
         Sort by numeric, then alpha
         """
-        x = re.match(r'(\d+)(\D+)', a) 
-        y = re.match(r'(\d+)(\D+)', b) 
+        x = re.match(r'(\d+)(\D+)', a)
+        y = re.match(r'(\d+)(\D+)', b)
         if int(x.group(1)) < int(y.group(1)):
             return -1
         elif int(x.group(1)) > int(y.group(1)):
@@ -269,7 +269,7 @@ class DiskConfiguration(object):
 
     def __init__(self, options, servers=None):
         """
-        Track proposals, default server list to mine data.  
+        Track proposals, default server list to mine data.
         """
         self.proposals = {}
         self.storage_nodes = {}
@@ -284,7 +284,7 @@ class DiskConfiguration(object):
 
 
         self.servers = self.storage_nodes.keys()
-        
+
 
     def generate(self, hardwareprofile):
         """
@@ -316,8 +316,8 @@ class DiskConfiguration(object):
                             self.proposals[server][configuration].append(proposal)
                         else:
                             log.warning("No proposal for {} as journal on {}".format(drive_model, configuration))
-        
-       
+
+
     def _log_results(self, label, results):
         """
         """
@@ -333,7 +333,7 @@ class DiskConfiguration(object):
                 for d in results[k]:
                     log.debug("  {}".format(d))
 
-        
+
     def _assignments(self, drives, journal=None):
         """
         For a set of drives and designated journals (including none), assign
@@ -356,7 +356,7 @@ class DiskConfiguration(object):
 
         # check that data drives can be evenly divided by 6-3
         if journal:
-            # How to make this configurable, where to retrieve any 
+            # How to make this configurable, where to retrieve any
             # configuration, etc. - placeholder for customization
 
             results = self._nice_ratio(assignments, data, journals)
@@ -373,7 +373,7 @@ class DiskConfiguration(object):
             return {}
         else:
             return assignments
-            
+
 
     def _separate_drives(self, drives, journal):
         """
@@ -405,7 +405,7 @@ class DiskConfiguration(object):
         Check if data drives are divisible by 6, 5, 4 or 3 and that we have
         sufficient journal drives.  Add unused journal drives as standalone
         osds.
-        
+
         """
         for partitions in range(6, 2, -1):
             if (data and len(data) % partitions == 0):
@@ -422,7 +422,7 @@ class DiskConfiguration(object):
         """
         Divide the data drives by the journal drives and round up. Use if
         partitions are 3-6 inclusive.
-   
+
         """
         partitions = len(data)/len(journals) + 1
         if (partitions > 2 and partitions < 7):
@@ -463,7 +463,7 @@ class CephRoles(object):
 
         self.root_dir = settings.root_dir
         self.networks = self._networks(self.servers)
-        self.public_network, self.cluster_network = self.public_cluster(self.networks) 
+        self.public_network, self.cluster_network = self.public_cluster(self.networks)
 
         #self.master_contents = {}
         self.available_roles = []
@@ -532,7 +532,7 @@ class CephRoles(object):
 
         role_dir = "{}/role-{}".format(self.root_dir, role)
         self._role_assignment(role_dir, role)
-            
+
     def _role_mapping(self, role):
         """
         The storage role has osd keyrings.
@@ -565,7 +565,7 @@ class CephRoles(object):
         for server in self.servers:
             filename = minion_dir + "/" +  server + ".yml"
             contents = {}
-            contents['public_address'] = self._public_interface(server) 
+            contents['public_address'] = self._public_interface(server)
             self.writer.write(filename, contents)
 
     def igw_members(self):
@@ -580,7 +580,7 @@ class CephRoles(object):
         for server in self.servers:
             filename = minion_dir + "/" +  server + ".yml"
             contents = {}
-            contents['public_address'] = self._public_interface(server) 
+            contents['public_address'] = self._public_interface(server)
             self.writer.write(filename, contents)
 
     def _public_interface(self, server):
@@ -606,27 +606,16 @@ class CephRoles(object):
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
-            contents['admin_method'] = "default"
-            contents['configuration_method'] = "default"
-            contents['mds_method'] = "default"
-            contents['mon_method'] = "default"
-            contents['osd_method'] = "default"
-            contents['package_method'] = "default"
-            contents['pool_method'] = "default"
-            contents['repo_method'] = "default"
-            contents['rgw_method'] = "default"
-            contents['update_method'] = "default"
-
             contents['public_network'] = self.public_network
             contents['cluster_network'] = self.cluster_network
             contents['available_roles'] = self.available_roles
-  
+
             self.writer.write(filename, contents)
 
     def _networks(self, minions):
         """
         Create a dictionary of networks with tuples of minion name, network
-        interface and current address.  (The network interface is not 
+        interface and current address.  (The network interface is not
         currently used.)
         """
 
@@ -655,7 +644,7 @@ class CephRoles(object):
         Return CIDR network
         """
         return ipaddress.ip_interface(u'{}/{}'.format(address, netmask)).network
-        
+
     def public_cluster(self, networks):
         """
         Guess which network is public and which network is cluster. The
@@ -669,7 +658,7 @@ class CephRoles(object):
         priorities = []
         for network in networks:
             quantity = len(networks[network])
-            # Minimum number of nodes, ignore other networks 
+            # Minimum number of nodes, ignore other networks
             if quantity > 3:
                 priorities.append( (len(networks[network]), network) )
                 log.debug("Including network {}".format(network))
@@ -684,10 +673,10 @@ class CephRoles(object):
             return str(priorities[0][1]), str(priorities[0][1])
         else:
             return str(priorities[0][1]), str(priorities[1][1])
-        
+
 def network_sort(a, b):
     """
-    Sort quantity descending and network ascending.  
+    Sort quantity descending and network ascending.
     """
     if a[0] < b[0]:
         return 1
@@ -698,7 +687,7 @@ def network_sort(a, b):
 
 class CephCluster(object):
     """
-    Generate cluster assignment files 
+    Generate cluster assignment files
     """
 
     def __init__(self, settings, writer, **kwargs):
@@ -790,12 +779,11 @@ def show(**kwargs):
         # Common cluster configuration
         ceph_storage = CephStorage(settings, name, salt_writer)
         dc = DiskConfiguration(settings, ceph_cluster.minions)
-        #pprint.pprint(dc.storage_nodes)
         fields = [ 'Capacity', 'Device File', 'Model', 'rotational' ]
         for minion,details in dc.storage_nodes.iteritems():
             print minion + ":"
             for drive in details:
-                for k,v in drive.iteritems(): 
+                for k,v in drive.iteritems():
                     if k in fields:
                         if k == 'rotational':
                             if drive[k] == '1':
@@ -834,6 +822,6 @@ def proposals(**kwargs):
         ceph_roles.cluster_config()
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
-        
+
     return [ True ]
 

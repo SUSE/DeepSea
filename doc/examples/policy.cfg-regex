@@ -2,15 +2,13 @@
 cluster-ceph/cluster/*.sls
 cluster-unassigned/cluster/*.sls re=.*2[0-3]\.subdomainX\.sls$
 # Hardware Profile
-2Disk2GB-1/cluster/*.sls re=.*3[^7]\.subdomainX\.sls$
-2Disk2GB-1/stack/default/ceph/minions/*.yml re=.*3[^7]\.subdomainX\.sls$
+profile-*-1/cluster/*.sls re=.*3[^7]\.subdomainX\.sls$
+profile-*-1/stack/default/ceph/minions/*.yml re=.*3[^7]\.subdomainX\.sls$
 # Common configuration
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
 # Role assignment
 role-master/cluster/admin.subdomainA.sls 
-role-admin/cluster/admin.subdomainA.sls 
-role-admin/cluster/*.sls re=.*1[135]\.subdomainX\.sls$
 role-igw/cluster/*.sls re=.*2[4-6]\.subdomainX\.sls$
 role-mon/cluster/mon*.sls re=.*1[135]\.subdomainX\.sls$
 role-mon/stack/default/ceph/minions/*.yml re=.*1[135]\.subdomainX\.yml$

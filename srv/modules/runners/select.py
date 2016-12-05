@@ -39,7 +39,7 @@ def one_minion(**kwargs):
     if ret:
         return ret[0]
     else:
-        return 
+        return
 
 def attr(host = False, **kwargs):
     """

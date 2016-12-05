@@ -1,0 +1,11 @@
+This is a silly little DeepSea mascot.  It's completely wrong, of
+course, because the picture conveys the impression that ceph is
+managing (or possibly eating) salt, but I couldn't resist...
+
+* mascot-scan.jpg is a slightly touched up version of the original
+  hand drawn image.
+* mascot.svg was traced from the above, and tweaked a bit (the
+  outer tentacles were moved slightly).
+* mascot.png was generated from the SVG.
+
+-- Tim Serong <tserong@suse.com>

@@ -11,6 +11,7 @@ install:
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
 	install -m 644 etc/salt/master.d/modules.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/reactor.conf $(DESTDIR)/etc/salt/master.d/
+	install -m 644 etc/salt/master.d/output.conf $(DESTDIR)/etc/salt/master.d/
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
@@ -36,7 +37,6 @@ install:
 	install -m 644 srv/pillar/ceph/benchmark/fio/*.yml $(DESTDIR)/srv/pillar/ceph/benchmark/fio/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/templates
 	install -m 644 srv/pillar/ceph/benchmark/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmark/templates/
-	install -m 644 srv/pillar/ceph/cluster/README $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
@@ -69,6 +69,10 @@ install:
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf* $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/events
 	install -m 644 srv/salt/ceph/events/*.sls $(DESTDIR)/srv/salt/ceph/events/
+	# state files - diagnose
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/diagnose
+	install -m 644 srv/salt/ceph/diagnose/*.md $(DESTDIR)/srv/salt/ceph/diagnose
+	install -m 644 srv/salt/ceph/diagnose/*.sls $(DESTDIR)/srv/salt/ceph/diagnose
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
@@ -88,6 +92,11 @@ install:
 	install -m 644 srv/salt/ceph/igw/sysconfig/*.sls $(DESTDIR)/srv/salt/ceph/igw/sysconfig/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -m 644 srv/salt/ceph/igw/restart/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart
+	# state files - iperf
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/iperf
+	install -m 644 srv/salt/ceph/iperf/*.sls $(DESTDIR)/srv/salt/ceph/iperf/
+	install -m 644 srv/salt/ceph/iperf/systemd-iperf.service $(DESTDIR)/srv/salt/ceph/iperf/
+	install -m 644 srv/salt/ceph/iperf/*.py $(DESTDIR)/srv/salt/ceph/iperf
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
