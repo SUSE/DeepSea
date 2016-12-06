@@ -587,6 +587,19 @@ class CephRoles(object):
             contents['public_address'] = self._public_interface(server)
             self.writer.write(filename, contents)
 
+    def ganesha_members(self):
+        """
+        Create a file for ganesha hosts.
+        """
+        minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
+        if not os.path.isdir(minion_dir):
+            create_dirs(minion_dir, self.root_dir)
+        for server in self.servers:
+            filename = minion_dir + "/" +  server + ".yml"
+            contents = {}
+            contents['public_address'] = self._public_interface(server)
+            self.writer.write(filename, contents)
+
     def _public_interface(self, server):
         """
         Find the public interface for a server
