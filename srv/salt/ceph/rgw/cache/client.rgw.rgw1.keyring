@@ -1,0 +1,5 @@
+[client.rgw.rgw1]
+        key = AQAO5EZYAAAAABAA2a1k9L33B4YyE1So3ze6rg==
+        caps mon = "allow rwx"
+        caps osd = "allow rwx"
+
