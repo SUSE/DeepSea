@@ -1,0 +1,45 @@
+
+EXPORT
+{
+	Export_ID=1;
+
+	Path = "/";
+
+	Pseudo = "/demo";
+
+	Access_Type = RW;
+
+	NFS_Protocols = 4;
+
+	Transport_Protocols = TCP;
+
+	FSAL {
+		Name = RGW;
+		User_Id = "demo";
+		Access_Key_Id ="<substitute yours>";
+		Secret_Access_Key = "<substitute yours>";
+	}
+}
+
+RGW {
+    ceph_conf = "/etc/ceph/ceph.conf";
+}
+
+EXPORT
+{
+	Export_ID=2;
+
+	Path = /;
+
+	Pseudo = /cephfs/;
+
+	Access_Type = RW;
+
+	NFS_Protocols = 4;
+
+	Transport_Protocols = TCP;
+
+	FSAL {
+		Name = CEPH;
+	}
+}

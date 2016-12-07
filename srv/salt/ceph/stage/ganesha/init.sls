@@ -1,3 +1,3 @@
 
 include:
-  - .{{ salt['pillar.get']('ganesha_service', 'default') }}
+  - .{{ salt['pillar.get']('stage_ganesha', 'default') }}

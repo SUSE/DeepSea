@@ -1,0 +1,5 @@
+[client.ganesha.rgw1]
+	key = AQBbAkdYAAAAABAAluhDeEvKY5Ow8RY718zbug==
+        caps mds = "allow *"
+        caps mon = "allow *"
+        caps osd = "allow *"

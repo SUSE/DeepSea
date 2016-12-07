@@ -206,9 +206,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 /srv/salt/ceph/diagnose/README.md
 %config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/events/*.sls
-%config /srv/salt/ceph/ganehsa/*.sls
-%config /srv/salt/ceph/ganehsa/configure/*.sls
-%config /srv/salt/ceph/ganehsa/install/*.sls
+%config /srv/salt/ceph/ganesha/*.sls
+%config /srv/salt/ceph/ganesha/configure/*.sls
+%config /srv/salt/ceph/ganesha/install/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
 %config /srv/salt/ceph/igw/config/*.sls
