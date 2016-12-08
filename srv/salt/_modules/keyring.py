@@ -20,6 +20,9 @@ def secret(filename):
                     key = line.split(' = ')[1].strip()
                     return key
 
+    return gen_secret()
+
+def gen_secret():
     key = os.urandom(16)
     header = struct.pack('<hiih',1,int(time.time()),0,len(key))
     return base64.b64encode(header + key)
