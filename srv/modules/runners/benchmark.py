@@ -7,9 +7,9 @@ import ast
 import logging
 import datetime
 import ipaddress
-from jinja2 import Environment, FileSystemLoader
-from os.path import basename, dirname, isdir, splitext
-from subprocess import check_output
+import jinja2
+import os
+import subprocess
 import sys
 import yaml
 
@@ -28,7 +28,7 @@ class bcolors:
 
 class Fio(object):
 
-    def __init__(self, client_glob, bench_dir, work_dir, log_dir, job_dir):
+    def __init__(self, client_glob, target, bench_dir, work_dir, log_dir, job_dir):
         '''
         get a list of the minions ip addresses and pick the one that falls into
         the public_network
@@ -52,55 +52,60 @@ class Fio(object):
             '''Clients do not have an ip address in the public
             network of the Ceph Cluster.''')
 
+        self.target = target
+
         self.cmd = 'fio'
 
-        self.cmd_args = ['--output-format=json']
+        self.cmd_global_args = ['--output-format=json']
 
-        self.client_args = []
-        self.client_args.extend(['--client={}'.format(client) for client in clients])
+        # store client addresses preformatted for user with fio
+        self.clients = []
+        self.clients.extend(['--client={}'.format(client) for client in clients])
 
         self.bench_dir = bench_dir
         self.log_dir = log_dir
         self.work_dir = work_dir
         self.job_dir = job_dir
 
-        self.jinja_env = Environment(loader=FileSystemLoader('{}/{}'.format(bench_dir,
+        self.jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader('{}/{}'.format(bench_dir,
             'templates')))
 
     def run(self, job_spec):
-        job_name = splitext(basename(job_spec))[0]
+        job_name = os.path.splitext(os.path.basename(job_spec))[0]
         jobfile = self._parse_job(job_spec, job_name)
         '''
         create a list that alternates between --client arguments and job files
         e.g. [--client=host1, jobfile, --client=host2, jobfile]
         fio expects a job file for every remote agent
         '''
-        cmd = [None] * 2 * len(self.client_args)
-        cmd[::2] = self.client_args
-        cmd[1::2] = [jobfile] * len(self.client_args)
-        output_args = ['--output={}/{}_{}.json'.format(self.log_dir,
-            job_name,
-            datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))]
-        output = check_output([self.cmd] + self.cmd_args + output_args + cmd)
+        client_jobs = [None] * 2 * len(self.clients)
+        client_jobs[::2] = self.clients
+        client_jobs[1::2] = [jobfile] * len(self.clients)
+        log_args = self._setup_log_output(job_name)
+
+        output = subprocess.check_output([self.cmd] + self.cmd_global_args + log_args +
+                client_jobs)
 
         return output
 
     def _parse_job(self, job_spec, job_name):
-        job = self._get_parameters(job_spec)
-        # which template does the job want
+        # parse yaml and get job spec
+        job = self._get_job_parameters(job_spec)
 
+        # which template does the job want
         template = self.jinja_env.get_template(job['template'])
 
-        return self._populate_and_write(template, job)
+        # popluate template and return job file location
+        return self._populate_and_write_job(template, job, job_name)
 
-    def _populate_and_write(self, template, job):
+    def _populate_and_write_job(self, template, job, job_name):
         jobfile = '{}/{}'.format(self.job_dir, job_name)
 
         # render template and save job file
         template.stream(job).dump(jobfile)
         return jobfile
 
-    def _get_parameters(self, job_spec):
+    def _get_job_parameters(self, job_spec):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
                 job = yaml.load(yml)
@@ -111,19 +116,44 @@ class Fio(object):
         job.update({'dir': self.work_dir})
         return job
 
-def __parse_and_set_dirs(**kwargs):
+    def _setup_log_output(self, job_name):
+        '''
+        create log die for a job.
+        general scheme is <passed log dir>/<target>/<tool>/<jobname>_<date>/
+        '''
+        job_log_dir = '{}/{}/{}/{}_{}'.format(self.log_dir,
+                self.target,
+                'fio',
+                job_name,
+                datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
+        # make sure dir tree exists
+        dirs = job_log_dir.split('/')
+        for i in range(1, len(dirs)):
+            cur = '/'.join(dirs[:i + 1])
+            if(not os.path.exists(cur)):
+                os.mkdir(cur)
+            else:
+                if(not os.path.isdir(cur)):
+                    raise FileExistsError('cannot create dir - {} is a file'.format(cur))
+        return ['--output={}/{}.json'.format(job_log_dir, 'output'),
+                '--write_bw_log={}/bw'.format(job_log_dir),
+                '--write_lat_log={}/lat'.format(job_log_dir),
+                '--write_iops_log={}/iops'.format(job_log_dir),
+                ]
+
+def __parse_and_set_dirs(kwargs):
     '''
     check kwargs for passed directory locations and return a dict with the
-    directory locations set and checked for presence aso.
+    directory locations set
+    presence of directories is not checked...they are just expected to be there.
+    work_dir is only present on cephfs instance and can not be check from the
+    salt-master by default. Dirs are created by salt state file.
     '''
-    dir_oprions = {}
+    dir_options = {}
     work_dir = ''
     for option in ['work_dir', 'log_dir', 'job_dir']:
         if option in kwargs:
             dir_options[option] = kwargs[option]
-            if(not os.path.isdir(dir_options[option])):
-                raise FileNotFoundError('{} does not exist or is a file'
-                        .format(dir_options[option]))
             log.info('{} is {}'.format(option, work_dir))
         else:
             raise KeyError('{} not specified'.format(option))
@@ -137,7 +167,7 @@ def __parse_and_set_dirs(**kwargs):
             # (when there is on ext_module) or an array :(
             # This needs a better solution...works only if benchmark.cfg is 2nd
             # entry in ext_modules
-            dir_options['bench_dir'] = dirname(ext['stack'][1])
+            dir_options['bench_dir'] = os.path.dirname(ext['stack'][1])
 
     return dir_options
 
@@ -162,7 +192,7 @@ def cephfs(**kwargs):
             log.error(error)
             raise error
 
-    fio = Fio(client_glob,
+    fio = Fio(client_glob, 'cephfs',
             dir_options['bench_dir'],
             dir_options['work_dir'],
             dir_options['log_dir'],
