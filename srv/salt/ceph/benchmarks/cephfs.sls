@@ -9,7 +9,7 @@ prep clients:
     - tgt: "I@roles:client-cephfs and I@cluster:ceph"
     - tgt_type: compound
     - sls:
-      - ceph.cephfs.benchmarks
+      - ceph.cephfs.benchmarks.prepare_clients
 
 one subdir:
   salt.state:
