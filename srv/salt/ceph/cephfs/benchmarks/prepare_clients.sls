@@ -1,4 +1,4 @@
 include:
-  - .fio_service
+  - ceph.tools.fio.fio_service
   - .keyring
   - .mount
