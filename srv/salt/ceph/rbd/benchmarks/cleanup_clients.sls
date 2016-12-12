@@ -1,0 +1,2 @@
+include:
+  - tools.fio.cleanup
