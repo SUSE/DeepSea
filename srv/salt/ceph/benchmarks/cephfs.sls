@@ -1,3 +1,8 @@
+create and auth key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.cephfs.benchmarks.key_auth
+    - order: 1
 
 prep clients:
   salt.state:
@@ -39,3 +44,8 @@ cleanup fio:
     - tgt_type: compound
     - sls:
       - ceph.cephfs.benchmarks.cleanup
+
+remove auth key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.cephfs.benchmarks.cleanup_key_auth
