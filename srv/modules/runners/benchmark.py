@@ -171,6 +171,15 @@ def __parse_and_set_dirs(kwargs):
 
     return dir_options
 
+def __parse_collection(collection_file):
+    with open(collection_file, 'r') as yml:
+        try:
+            return yaml.load(yml)
+        except YAMLError as error:
+            log.error('Error parsing collection {}:'.format(collection_file))
+            log.error(error)
+            raise error
+
 def cephfs(**kwargs):
     """
     Run cephfs benchmark jobs
@@ -183,14 +192,7 @@ def cephfs(**kwargs):
 
     dir_options = __parse_and_set_dirs(kwargs)
 
-    default_collection = {}
-    with open('{}/collections/default.yml'.format(dir_options['bench_dir']), 'r') as yml:
-        try:
-            default_collection = yaml.load(yml)
-        except YAMLError as error:
-            log.error('Error parsing default collection:')
-            log.error(error)
-            raise error
+    default_collection = __parse_collection('{}/collections/default.yml'.format(dir_options['bench_dir']))
 
     fio = Fio(client_glob, 'cephfs',
             dir_options['bench_dir'],
@@ -198,7 +200,7 @@ def cephfs(**kwargs):
             dir_options['log_dir'],
             dir_options['job_dir'])
 
-    for job_spec in default_collection['jobs']:
+    for job_spec in default_collection['fs']:
         print(fio.run(job_spec))
 
     return True
