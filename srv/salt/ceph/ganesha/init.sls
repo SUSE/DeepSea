@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('ganesha_service', 'default') }}
+  - .{{ salt['pillar.get']('ganesha_init', 'default') }}

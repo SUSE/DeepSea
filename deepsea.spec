@@ -82,8 +82,12 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/events
 %dir /srv/salt/ceph/ganesha
+%dir /srv/salt/ceph/ganesha/auth
 %dir /srv/salt/ceph/ganesha/configure
+%dir /srv/salt/ceph/ganesha/files
+%dir /srv/salt/ceph/ganesha/key
 %dir /srv/salt/ceph/ganesha/install
+%dir /srv/salt/ceph/ganesha/service
 %dir /srv/salt/ceph/igw
 %dir /srv/salt/ceph/igw/config
 %dir /srv/salt/ceph/igw/files
@@ -207,8 +211,12 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/events/*.sls
 %config /srv/salt/ceph/ganesha/*.sls
+%config /srv/salt/ceph/ganesha/auth/*.sls
 %config /srv/salt/ceph/ganesha/configure/*.sls
+%config /srv/salt/ceph/ganesha/files/*.j2
 %config /srv/salt/ceph/ganesha/install/*.sls
+%config /srv/salt/ceph/ganesha/key/*.sls
+%config /srv/salt/ceph/ganesha/service/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
 %config /srv/salt/ceph/igw/config/*.sls

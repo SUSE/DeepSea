@@ -76,10 +76,18 @@ install:
 	# state files - ganesha
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha
 	install -m 644 srv/salt/ceph/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/auth
+	install -m 644 srv/salt/ceph/ganesha/auth/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/files
+	install -m 644 srv/salt/ceph/ganesha/files/*.j2 $(DESTDIR)/srv/salt/ceph/ganesha/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/configure
 	install -m 644 srv/salt/ceph/ganesha/configure/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/configure/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/key
+	install -m 644 srv/salt/ceph/ganesha/key/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/install
 	install -m 644 srv/salt/ceph/ganesha/install/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/install/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/service
+	install -m 644 srv/salt/ceph/ganesha/service/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/service/
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
