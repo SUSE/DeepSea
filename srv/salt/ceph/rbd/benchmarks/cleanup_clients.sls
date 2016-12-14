@@ -1,2 +1,2 @@
 include:
-  - tools.fio.cleanup
+  - ceph.tools.fio.cleanup

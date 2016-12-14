@@ -1,2 +1,2 @@
 include:
-  - tools.fio.fio_service
+  - ceph.tools.fio.fio_service
