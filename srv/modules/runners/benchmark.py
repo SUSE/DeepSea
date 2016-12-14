@@ -180,6 +180,31 @@ def __parse_collection(collection_file):
             log.error(error)
             raise error
 
+def rbd(**kwargs):
+    """
+    Run rbd benchmark job
+    """
+
+    client_glob = 'I@roles:client-rbd and I@cluster:ceph'
+    if 'client_glob' in kwargs:
+        client_glob = kwargs['client_glob']
+    log.info('client glob is {}'.format(client_glob))
+
+    dir_options = __parse_and_set_dirs(kwargs)
+
+    default_collection = __parse_collection('{}/collections/default.yml'.format(dir_options['bench_dir']))
+
+    fio = Fio(client_glob, 'rbd',
+            dir_options['bench_dir'],
+            dir_options['work_dir'],
+            dir_options['log_dir'],
+            dir_options['job_dir'])
+
+    for job_spec in default_collection['rbd']:
+        print(fio.run(job_spec))
+
+    return True
+
 def cephfs(**kwargs):
     """
     Run cephfs benchmark jobs
