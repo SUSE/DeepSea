@@ -263,6 +263,8 @@ install:
 	install -m 644 srv/salt/ceph/rgw/auth/*.sls $(DESTDIR)/srv/salt/ceph/rgw/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/keyring
 	install -m 644 srv/salt/ceph/rgw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rgw/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/users
+	install -m 644 srv/salt/ceph/rgw/users/*.sls $(DESTDIR)/srv/salt/ceph/rgw/users/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/files
 	install -m 644 srv/salt/ceph/rgw/files/*.j2 $(DESTDIR)/srv/salt/ceph/rgw/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart

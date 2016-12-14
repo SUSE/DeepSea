@@ -168,6 +168,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/auth
 %dir /srv/salt/ceph/rgw/keyring
 %dir /srv/salt/ceph/rgw/restart
+%dir /srv/salt/ceph/rgw/users
 %dir /srv/salt/ceph/stage
 %dir /srv/salt/ceph/stage/all
 %dir /srv/salt/ceph/stage/benchmark
@@ -300,6 +301,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rgw/auth/*.sls
 %config /srv/salt/ceph/rgw/keyring/*.sls
 %config /srv/salt/ceph/rgw/restart/*.sls
+%config /srv/salt/ceph/rgw/users/*.sls
 %config /srv/salt/ceph/stage/0
 %config /srv/salt/ceph/stage/1
 %config /srv/salt/ceph/stage/2
