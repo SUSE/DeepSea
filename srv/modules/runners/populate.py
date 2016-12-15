@@ -463,7 +463,7 @@ class CephRoles(object):
 
         self.root_dir = settings.root_dir
         self.networks = self._networks(self.servers)
-        self.public_network, self.cluster_network = self.public_cluster(self.networks)
+        self.public_networks, self.cluster_networks = self.public_cluster(self.networks)
 
         #self.master_contents = {}
         self.available_roles = []
@@ -622,11 +622,12 @@ class CephRoles(object):
         """
         Find the public interface for a server
         """
-        public_net = ipaddress.ip_network(u'{}'.format(self.public_network))
-        for entry in self.networks[public_net]:
-            if entry[0] == server:
-                log.debug("Public interface for {}: {}".format(server, entry[2]))
-                return entry[2]
+        for public_network in self.public_networks:
+            public_net = ipaddress.ip_network(u'{}'.format(public_network))
+            for entry in self.networks[public_net]:
+                if entry[0] == server:
+                    log.debug("Public interface for {}: {}".format(server, entry[2]))
+                    return entry[2]
         return ""
 
 
@@ -641,8 +642,12 @@ class CephRoles(object):
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
-            contents['public_network'] = self.public_network
-            contents['cluster_network'] = self.cluster_network
+
+            public_networks_str = ", ".join([str(n) for n in self.public_networks])
+            cluster_networks_str = ", ".join([str(n) for n in self.cluster_networks])
+
+            contents['public_network'] = public_networks_str
+            contents['cluster_network'] = cluster_networks_str
             contents['available_roles'] = self.available_roles
 
             self.writer.write(filename, contents)
@@ -693,21 +698,27 @@ class CephRoles(object):
         priorities = []
         for network in networks:
             quantity = len(networks[network])
-            # Minimum number of nodes, ignore other networks
-            if quantity > 3:
-                priorities.append( (len(networks[network]), network) )
-                log.debug("Including network {}".format(network))
-            else:
-                log.warn("Ignoring network {}".format(network))
+            priorities.append( (quantity, network) )
 
         if not priorities:
             raise ValueError("No network exists on at least 4 nodes")
 
         priorities = sorted(priorities, cmp=network_sort)
-        if len(priorities) == 1:
-            return str(priorities[0][1]), str(priorities[0][1])
-        else:
-            return str(priorities[0][1]), str(priorities[1][1])
+        public_networks = list()
+        cluster_networks = list()
+
+        for idx, (quantity, network) in enumerate(priorities):
+            if idx == 0 and quantity > 1:
+                public_networks.append(network)
+            elif idx == 1 and quantity > 1:
+                cluster_networks.append(network)
+            elif quantity == 1:
+                public_networks.append(network)
+
+        if not cluster_networks:
+            cluster_networks = public_networks
+
+        return public_networks, cluster_networks
 
 def network_sort(a, b):
     """

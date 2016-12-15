@@ -107,6 +107,28 @@ class ClusterAssignment(object):
             clusters.setdefault(cluster, []).append(minion)
         return clusters
 
+
+class Util(object):
+    """
+    This class contains static helper methods
+    """
+
+    @staticmethod
+    def parse_list_from_string(list_str, delim=','):
+        """
+        Transforms a string containing a list of elements separated
+        by a specific delimiter into a python list of elements
+
+        Args:
+            list_str (string): string with list of elements
+            delim    (string): string delimiter
+
+        Returns:
+            list: list of elements parsed from list_str
+        """
+        return [elem.strip() for elem in list_str.split(delim) if elem.strip()]
+
+
 class Validate(object):
     """
     Perform checks on pillar and grain data
@@ -171,22 +193,19 @@ class Validate(object):
         All nodes must have the same public network.  The public network
         must be valid.
         """
-        same_network = {}
         for node in self.data.keys():
             public_network = self.data[node].get("public_network", "")
-            log.debug("public_network: {} {}".format(node, public_network))
-            same_network[public_network] = ""
-            try:
-                ipaddress.ip_network(u'{}'.format(public_network))
-            except ValueError as err:
-                msg = "{} on {} is not valid".format(public_network, node)
-                self.errors.setdefault('public_network', []).append(msg)
+            net_list = Util.parse_list_from_string(public_network)
 
-        if len(same_network.keys()) > 1:
-            msg = "Different public networks {}".format(same_network.keys())
-            self.errors.setdefault('public_network', []).append(msg)
+            log.debug("public_network: {} {}".format(node, net_list))
+            for network in net_list:
+                try:
+                    ipaddress.ip_network(u'{}'.format(network))
+                except ValueError as err:
+                    msg = "{} on {} is not valid".format(network, node)
+                    self.errors.setdefault('public_network', []).append(msg)
 
-        self._set_pass_status('public_network')
+        self._set_pass_status('public_network');
 
     def public_interface(self):
         """
@@ -197,10 +216,12 @@ class Validate(object):
                 continue
             found = False
             public_network = self.data[node].get("public_network", "")
+	    net_list = Util.parse_list_from_string(public_network)
             for address in self.grains[node]['ipv4']:
                 try:
-                    if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(public_network)):
-                        found = True
+                    for network in net_list:
+                        if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(network)):
+                            found = True
                 except ValueError:
                     # Don't care about reporting a ValueError here if
                     # public_network is malformed, because the
@@ -295,26 +316,19 @@ class Validate(object):
         All storage nodes must have the same cluster network.  The cluster
         network must be valid.
         """
-        same_network = {}
         for node in self.data.keys():
             if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
 
                 cluster_network = self.data[node].get("cluster_network", "")
-                log.debug("cluster_network: {} {}".format(node, cluster_network))
-                same_network[cluster_network] = ""
-                try:
-                    ipaddress.ip_network(u'{}'.format(cluster_network))
-                except ValueError as err:
-                    msg = "{} on {} is not valid".format(cluster_network, node)
-                    self.errors.setdefault('cluster_network', []).append(msg)
-
-        if len(same_network.keys()) > 1:
-            msg = "Different cluster networks {}".format(same_network.keys())
-            if 'cluster_network' in self.errors:
-                self.errors['cluster_network'].append(msg)
-            else:
-                self.errors['cluster_network'] = [ msg ]
+                net_list = Util.parse_list_from_string(cluster_network)
+                log.debug("cluster_network: {} {}".format(node, net_list))
+                for network in net_list:
+                    try:
+                        ipaddress.ip_network(u'{}'.format(network))
+                    except ValueError as err:
+                        msg = "{} on {} is not valid".format(network, node)
+                        self.errors.setdefault('cluster_network', []).append(msg)
 
         self._set_pass_status('cluster_network')
 
@@ -326,10 +340,12 @@ class Validate(object):
                 'storage' in self.data[node]['roles']):
                 found = False
                 cluster_network = self.data[node].get("cluster_network", "")
+	    	net_list = Util.parse_list_from_string(cluster_network)
                 for address in self.grains[node]['ipv4']:
                     try:
-                        if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(cluster_network)):
-                            found = True
+                        for network in net_list:
+                            if ipaddress.ip_address(u'{}'.format(address)) in ipaddress.ip_network(u'{}'.format(network)):
+                                found = True
                     except ValueError:
                         # Don't care about reporting a ValueError here if
                         # cluster_network is malformed, because the
