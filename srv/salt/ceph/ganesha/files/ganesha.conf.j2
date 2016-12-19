@@ -1,3 +1,4 @@
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') != [] %}
 EXPORT
 {
 	Export_ID=1;
@@ -17,14 +18,19 @@ EXPORT
 	}
 }
 
+{% endif %}
+
+{# Won't work for custom names... likely need a runner #}
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') != [] %}
+
 {% for user in [ 'demo' ] %}
 EXPORT
 {
-	Export_ID=2;
+	Export_ID={{ loop.index + 1 }};
 
 	Path = "/";
 
-	Pseudo = "/demo";
+	Pseudo = "/{{ user }}";
 
 	Access_Type = RW;
 
@@ -45,3 +51,4 @@ RGW {
 }
 {% endfor %}
 
+{% endif %}
