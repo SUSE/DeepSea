@@ -1,8 +1,3 @@
-create benchmark image:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.rbd.benchmarks.create_image
-
 prep master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -32,8 +27,8 @@ cleanup clients:
     - sls:
       - ceph.rbd.benchmarks.cleanup_clients
 
-delete benchmark image:
+cleanup master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.rbd.benchmarks.delete_image
+    - sls: ceph.rbd.benchmarks.cleanup_master
 

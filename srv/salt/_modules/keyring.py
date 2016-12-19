@@ -56,3 +56,6 @@ def file(component, name=None):
 
     elif component == "deepsea_cephfs_bench_secret":
         return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.secret"
+
+    elif component == "deepsea_rbd_bench":
+        return "/srv/salt/ceph/rbd/benchmarks/files/cache/deepsea_rbd_bench.keyring"
