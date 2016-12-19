@@ -135,11 +135,7 @@ class Fio(object):
             else:
                 if(not os.path.isdir(cur)):
                     raise FileExistsError('cannot create dir - {} is a file'.format(cur))
-        return ['--output={}/{}.json'.format(job_log_dir, 'output'),
-                '--write_bw_log={}/bw'.format(job_log_dir),
-                '--write_lat_log={}/lat'.format(job_log_dir),
-                '--write_iops_log={}/iops'.format(job_log_dir),
-                ]
+        return ['--output={}/{}.json'.format(job_log_dir, 'output')]
 
 def __parse_and_set_dirs(kwargs):
     '''
