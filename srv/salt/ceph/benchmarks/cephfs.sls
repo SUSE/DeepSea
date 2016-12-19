@@ -1,7 +1,9 @@
-create and auth key:
+
+prep master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.cephfs.benchmarks.key_auth
+    - sls:
+      - ceph.cephfs.benchmarks.prepare_master
 
 prep clients:
   salt.state:
@@ -15,12 +17,6 @@ one subdir:
     - tgt: {{  salt.saltutil.runner('select.one_minion', cluster='ceph', roles='client-cephfs') }}
     - sls:
       - ceph.cephfs.benchmarks.working_subdir
-
-prep master:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls:
-      - ceph.cephfs.benchmarks.prepare_master
 
 run fio:
   salt.runner:
