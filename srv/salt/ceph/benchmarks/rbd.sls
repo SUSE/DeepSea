@@ -3,6 +3,11 @@ create benchmark image:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.rbd.benchmarks.create_image
 
+prep master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.rbd.benchmarks.prepare_master
+
 prep clients:
   salt.state:
     - tgt: "I@roles:client-rbd and I@cluster:ceph"
