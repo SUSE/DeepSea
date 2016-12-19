@@ -2,7 +2,7 @@
 /etc/ganesha/ganesha.conf:
   file.managed:
     - source:
-      - salt://ceph/ganesha/files/ganesha.conf.j2
+      - salt://ceph/ganesha/cache/ganesha.conf
     - template: jinja
     - user: root
     - group: root
