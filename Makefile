@@ -59,8 +59,8 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks
 	install -m 644 srv/salt/ceph/cephfs/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
-	install -m 644 srv/salt/ceph/cephfs/benchmarks/files/fio.service $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tools/fio/files
+	install -m 644 srv/salt/ceph/tools/fio/files/fio.service $(DESTDIR)/srv/salt/ceph/tools/fio/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration
 	install -m 644 srv/salt/ceph/configuration/*.sls $(DESTDIR)/srv/salt/ceph/configuration/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/check
