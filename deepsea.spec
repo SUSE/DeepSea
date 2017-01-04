@@ -75,7 +75,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/benchmarks
 %dir /srv/salt/ceph/cephfs
 %dir /srv/salt/ceph/cephfs/benchmarks
-%dir /srv/salt/ceph/cephfs/benchmarks/files
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/check
@@ -172,6 +171,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
+%dir /srv/salt/ceph/tools/fio
 %dir /srv/salt/ceph/sync
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
@@ -195,7 +195,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/admin/key/*.sls
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
-%config /srv/salt/ceph/cephfs/benchmarks/files/fio.service
+%config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
