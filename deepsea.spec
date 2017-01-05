@@ -247,6 +247,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
+%dir /srv/salt/ceph/tools/benchmarks
 %dir /srv/salt/ceph/tools/fio
 %dir /srv/salt/ceph/tools/fio/files
 %dir /srv/salt/ceph/sync
@@ -301,6 +302,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/cephfs/benchmarks/files/keyring.j2
 %config /srv/salt/ceph/salt-api/*.sls
 %config /srv/salt/ceph/salt-api/files/*.conf*
+%config /srv/salt/ceph/tools/benchmarks/*.sls
 %config /srv/salt/ceph/tools/fio/*.sls
 %config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/configuration/*.sls
