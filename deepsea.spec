@@ -379,6 +379,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/pool/*.sls
 %config /srv/salt/ceph/purge/*.sls
 %config /srv/salt/ceph/rbd/files/*.sls
+%config /srv/salt/ceph/rbd/benchmarks/*.sls
 %config /srv/salt/ceph/rbd/benchmarks/files/keyring.j2
 %config /srv/salt/ceph/reactor/*.sls
 %config /srv/salt/ceph/refresh/*.sls
