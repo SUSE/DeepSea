@@ -542,7 +542,7 @@ class CephRoles(object):
         """
         Allows admins to target non-Ceph minions
         """
-        roles = [ 'client-cephfs', 'client-radosgw', 'client-iscsi', 'client-nfs'  ]
+        roles = [ 'client-cephfs', 'client-rbd' ]
         self.available_roles.extend(roles)
 
         for role in roles:
@@ -582,9 +582,9 @@ class CephRoles(object):
             contents['roles'] = [ role ]
             self.writer.write(filename, contents)
 
-    def monitor_members(self):
+    def public_address(self, role):
         """
-        Create a file for mon_host and mon_initial_members
+        Create a file containing the public address for these hosts
         """
         minion_dir = "{}/role-mon/stack/default/{}/minions".format(self.root_dir, self.cluster)
         self._add_pub_interface(minion_dir)
