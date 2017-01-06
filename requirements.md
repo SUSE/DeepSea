@@ -14,14 +14,18 @@ SE - Sales Engineer
 
 ## Issues
 
-### NFS ganesha for cephfs, rgw
+#### Safeguards
+
+Prevent the unintentional destruction of a cluster.
+
+#### NFS ganesha for cephfs, rgw
 
 Requested by SES users for traditional access.
 
-### Purge functionality
+#### Purge functionality
 
 Allow developers, SEs to reset a DeepSea environment.  Productivity boost.
 
-### Support for other distros
+#### Support for other distros
 
 Three independent requests to support Ubuntu.
