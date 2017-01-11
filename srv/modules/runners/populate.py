@@ -275,12 +275,13 @@ class DiskConfiguration(object):
         self.storage_nodes = {}
         if servers:
             for server in servers:
-                ret = salt.utils.minions.mine_get(server, 'cephdisks.list', 'glob', options.__opts__)
+                ret = salt.utils.minions.mine_get(server, 'cephdisks.list_drives', 'glob', options.__opts__)
+                # what if server of servers returns anything -> no profile, no notification
                 self.storage_nodes.update(ret)
         else:
             # salt-call mine.get '*' freedisks.list
             ret = salt.utils.minions.mine_update('*', '', 'glob', options.__opts__)
-            self.storage_nodes = salt.utils.minions.mine_get('*', 'cephdisks.list', 'glob', options.__opts__)
+            self.storage_nodes = salt.utils.minions.mine_get('*', 'cephdisks.list_drives', 'glob', options.__opts__)
 
 
         self.servers = self.storage_nodes.keys()
@@ -826,7 +827,7 @@ def show(**kwargs):
     for name in ceph_cluster.names:
         # Common cluster configuration
         ceph_storage = CephStorage(settings, name, salt_writer)
-        dc = DiskConfiguration(settings, ceph_cluster.minions)
+        dc = DiskConfiguration(settings, servers=ceph_cluster.minions)
         fields = [ 'Capacity', 'Device File', 'Model', 'rotational' ]
         for minion,details in dc.storage_nodes.iteritems():
             print minion + ":"
@@ -860,7 +861,7 @@ def proposals(**kwargs):
         ceph_storage = CephStorage(settings, name, salt_writer)
 
         ## Determine storage nodes and save proposals
-        disk_configuration = DiskConfiguration(settings, ceph_cluster.minions)
+        disk_configuration = DiskConfiguration(settings, servers=ceph_cluster.minions)
         disk_configuration.generate(hardwareprofile)
         ceph_storage.save(hardwareprofile.servers, disk_configuration.proposals)
 
