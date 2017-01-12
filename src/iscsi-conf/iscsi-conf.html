@@ -1,5 +1,9 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+
+<link rel="import" href="../iscsi-target/iscsi-target.html">
+
 <dom-module id="iscsi-conf">
     <template>
         <style>
@@ -8,14 +12,55 @@
 
              padding: 10px 20px;
          }
+
+         .card {
+             margin: 24px;
+             padding: 16px;
+             color: #757575;
+             border-radius: 5px;
+             background-color: #fff;
+             box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+         }
+
+         .add-target-button {
+             width: 50px;
+             height: 50px;
+         }
         </style>
 
-        <h1> iSCSI Configuration </h1>
+        <h1>iSCSI Targets</h1>
+        <paper-icon-button title="Add a new iSCSI target" class="add-target-button" icon="add" on-tap="newTarget">Add Target</paper-icon-button>
     </template>
 
     <script>
      Polymer({
          is: 'iscsi-conf',
+         properties: {
+             targetList: {
+                 type: Array,
+                 value: [],
+             },
+         },
+
+         ready: function() {
+             this.addEventListener('removeTarget', function(e) {
+                 console.debug("Removing target: " + e.target.name);
+                 /* Remove from view. */
+                 this.removeChild(e.target);
+
+                 /* Remove from targetList array. */
+                 var index = this.targetList.indexOf(e.target);
+                 if (index > -1) {
+                     this.targetList.splice(index, 1);
+                 }
+             });
+         },
+
+         newTarget: function() {
+             var target = document.createElement("iscsi-target");
+             this.push("targetList", target);
+             this.appendChild(target);
+         }
      });
     </script>
 </dom-module>
