@@ -5,17 +5,22 @@ configs.
 
 As it grows, it might tackle bigger fish.
 
-## Install the Polymer-CLI
+## Running the Wolffish app ##
 
-First, make sure you have the [Polymer CLI](https://www.npmjs.com/package/polymer-cli) installed. Then run `polymer serve` to serve your application locally.
+### Viewing Locally ###
 
-## Viewing Your Application
+First, make sure you have `npm4` installed.
 
-```
-$ polymer serve
-```
+Then, install `bower` and the `polymer-cli` globally using `npm`.
 
-## Building Your Application
+Finally:
+
+    $ sudo npm install -g bower
+    $ sudo npm install -g polymer-cli
+    $ bower install
+    $ polymer serve
+
+### Building Wolffish ###
 
 ```
 $ polymer build
@@ -32,10 +37,14 @@ from:
 $ polymer serve build/bundled
 ```
 
-## Running Tests
+### Running Tests ###
+
+Tests are currently __TODO__.
 
 ```
 $ polymer test
 ```
 
-Your application is already set up to be tested via [web-component-tester](https://github.com/Polymer/web-component-tester). Run `polymer test` to run your application's test suite locally.
+Your application is already set up to be tested via
+[web-component-tester](https://github.com/Polymer/web-component-tester).
+Run `polymer test` to run your application's test suite locally.
