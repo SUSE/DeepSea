@@ -1,0 +1,66 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="iscsi-target">
+    <template>
+        <style>
+         :host {
+             display: block;
+
+             padding: 10px 20px;
+         }
+         
+         .card {
+             margin: 24px;
+             padding: 16px;
+             color: #757575;
+             border-radius: 5px;
+             background-color: #fff;
+             box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+         }
+
+         .target-toolbar {
+             --paper-toolbar-background: #85aa94;
+             --paper-toolbar-height: 32px;
+         }
+        </style>
+
+        <div class="card">
+            <paper-toolbar class="target-toolbar">
+                <span class="title">{{name}}</span>
+                <paper-icon-button icon="delete" on-tap="removeTarget"></paper-icon-button>
+            </paper-toolbar>
+            <br>
+            Target: <input is="iron-input" bind-value="{{name}}">
+
+        </div>
+    </template>
+
+    <script>
+     Polymer({
+         is: 'iscsi-target',
+         properties: {
+             name: {
+                 type: String,
+                 value: function() {
+                     /* sample: iqn.2017-0-12-105418265.org.linux-iscsi.igw.x86 */
+                     /* TODO: Should we also auto-gen a ":some-suffix" (ie. :sn-redundant, etc)? */
+                     var d = new Date();
+                     return "iqn." + d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate() + "-" +
+                            d.getHours() + d.getMinutes() + d.getSeconds() + d.getMilliseconds() +
+                            ".org.linux-iscsi.igw.x86";
+                 },
+             },
+         },
+
+         removeTarget: function() {
+             this.fire('removeTarget');
+         }
+
+     });
+    </script>
+</dom-module>
