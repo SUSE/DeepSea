@@ -1,6 +1,6 @@
 template: rw_many_files.j2
 filesize: 1k
-nrfiles: 1000000
+nrfiles: 100
 size: 1g
 blocksizes:
   - 4k
