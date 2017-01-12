@@ -181,9 +181,7 @@ def rbd(**kwargs):
     Run rbd benchmark job
     """
 
-    client_glob = 'I@roles:client-rbd and I@cluster:ceph'
-    if 'client_glob' in kwargs:
-        client_glob = kwargs['client_glob']
+    client_glob = kwargs.get('client_glob', 'I@roles:client-rbd and I@cluster:ceph')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
@@ -206,9 +204,7 @@ def cephfs(**kwargs):
     Run cephfs benchmark jobs
     """
 
-    client_glob = 'I@roles:client-cephfs and I@cluster:ceph'
-    if 'client_glob' in kwargs:
-        client_glob = kwargs['client_glob']
+    client_glob = kwargs.get('client_glob', 'I@roles:client-cephfs and I@cluster:ceph')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
