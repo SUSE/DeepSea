@@ -5,6 +5,7 @@
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 
+<link rel="import" href="iscsi-target-config.html">
 <link rel="import" href="iscsi-target-styles.html">
 
 <dom-module id="iscsi-target">
@@ -24,7 +25,14 @@
             </paper-toolbar>
             <br>
             Target: <input is="iron-input" bind-value="{{name}}">
+            <br>
+            <br>
 
+            <div>
+                <div class="target-add-config">
+                    <paper-button raised on-click="addConfig"><iron-icon icon="add"></iron-icon>Config</paper-button>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -43,12 +51,45 @@
                             ".org.linux-iscsi.igw.x86";
                  },
              },
+             configList: {
+                 type: Array,
+                 value: function() {
+                     /* Must be returned as a function otherwise will be shared across all instances. */
+                     return [];
+                 },
+             },
+         },
+
+         ready: function() {
+             this.addEventListener("removeConfig", function(e) {
+                 console.debug("Removing config: " + e.target);
+                 /* Remove from view. */
+                 /* TODO: Works, but triggers an error message in the debugger:
+                  *   TypeError: Argument 1 of Node.contains does not implement interface Node.
+                  */
+                 var targetConfigDiv = document.getElementById("target-config-div");
+                 Polymer.dom(this.firstElementChild).removeChild(e.target);
+
+                 /* Remove from targetList array.*/
+                 var index = this.configList.indexOf(e.target);
+                 if (index > -1) {
+                     this.configList.splice(index, 1);
+                 }
+             });
          },
 
          removeTarget: function() {
              this.fire('removeTarget');
-         }
+         },
 
+         addConfig: function() {
+             console.debug(this);
+             var targetConfig = document.createElement("iscsi-target-config");
+             this.push("configList", targetConfig);
+             /* var beforeNode = Polymer.dom(this.root).childNodes[-1];*/
+             Polymer.dom(this.firstElementChild).appendChild(targetConfig);
+
+         }         
      });
     </script>
 </dom-module>
