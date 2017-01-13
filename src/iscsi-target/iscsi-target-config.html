@@ -2,8 +2,12 @@
 
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-input/iron-input.html">
-<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
 <link rel="import" href="iscsi-target-styles.html">
 
@@ -22,25 +26,95 @@
                 <span class="title">iSCSI Target Configuration</span>
                 <paper-icon-button icon="delete" on-tap="removeConfig"></paper-icon-button>
             </paper-toolbar>
-        </div>
 
+            <paper-dropdown-menu label="Available Nodes">
+                <div class="dropdown-content">
+                    <template is="dom-repeat" items="{{availableIntfList}}" as="i">
+                        <paper-item><paper-checkbox on-change="nodeCheckboxChanged">{{i.node}} : {{i.addr}}</paper-checkbox></paper-item>
+                    </template>
+                </div>
+            </paper-dropdown-menu>
+            <paper-dropdown-menu label="Available Images">
+                <div class="dropdown-content">
+                    <template is="dom-repeat" items="{{availableImgList}}" as="i">
+                        <paper-item><paper-checkbox on-change="imgCheckboxChanged">{{i.img}} : {{i.pool}}</paper-checkbox></paper-item>
+                    </template>
+                </div>
+            </paper-dropdown-menu>
+            <br>
+            <br>
+            <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedIntfListHidden}}">
+                <span class="title">Selected Nodes</span>
+                <template is="dom-repeat" items="{{selectedIntfList}}" as="i">                
+                    <paper-item>{{i.node}} : {{i.addr}}</paper-item>
+                </template>
+            </paper-listbox>
+            <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedImgListHidden}}">
+                <span class="title">Selected Images</span>
+                <template is="dom-repeat" items="{{selectedImgList}}" as="i">                
+                    <paper-item>{{i.img}} : {{i.pool}}</paper-item>
+                </template>
+            </paper-listbox>
+        </div>
     </template>
 
     <script>
      Polymer({
          is: 'iscsi-target-config',
          properties: {
-             interfaceList: {
+             availableIntfList: {
                  type: Array,
-                 value: [],
+                 value: function() {
+                     /* TODO Should poll salt for interface list (via salt-api/cherrypy */
+                     return [
+                         {"addr": "192.168.1.10", "node": "igw1.foobar.com"},
+                         {"addr": "192.168.1.11", "node": "igw2.foobar.com"},
+                         {"addr": "192.168.1.12", "node": "igw3.foobar.com"},
+                         {"addr": "192.168.1.13", "node": "igw4.foobar.com"},
+                         {"addr": "192.168.1.14", "node": "igw5.foobar.com"}
+                     ];
+                 },
              },
 
-             imageList: {
+             selectedIntfListHidden: {
+                 type: Boolean,
+                 value: true,
+             },
+             
+             selectedIntfList: {
                  type: Array,
-                 value: [],
+                 value: function() {
+                     return [];
+                 },
              },
 
-             authList: {
+             availableImgList: {
+                 type: Array,
+                 value: function() {
+                     /* TODO Should poll salt for img list (via salt-api/cherrypy */
+                     return [
+                         {"img": "img-foo1", "pool": "pool-rbd1"},
+                         {"img": "img-foo2", "pool": "pool-rbd1"},
+                         {"img": "img-foo3", "pool": "pool-rbd2"},
+                         {"img": "img-foo4", "pool": "pool-rbd3"},
+                         {"img": "img-foo5", "pool": "pool-rbd3"}
+                     ];
+                 },
+             },
+
+             selectedImgListHidden: {
+                 type: Boolean,
+                 value: true,
+             },
+             
+             selectedImgList: {
+                 type: Array,
+                 value: function() {
+                     return [];
+                 },
+             },
+
+             availableAuthList: {
                  type: Array,
                  value: [],
              },
@@ -49,8 +123,47 @@
 
          removeConfig: function() {
              this.fire("removeConfig");
-         }
+         },
 
+         nodeCheckboxChanged: function(e) {
+             var intf = e.model.__data__.i;
+             console.log("nodeCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log(intf.node + ":" + intf.addr + " selected - adding to selected list.");
+                 this.push("selectedIntfList", intf);
+             } else {
+                 console.log(intf.node + ":" + intf.addr + " deselected - removing from selected list.");
+                 var index = this.selectedIntfList.indexOf(intf);
+                 this.splice("selectedIntfList", index, 1);
+             }
+
+             /* Check if we should hide the selected list */
+             if (this.selectedIntfList.length > 0) {
+                 this.selectedIntfListHidden = false;
+             } else {
+                 this.selectedIntfListHidden = true;
+             }
+         },
+
+         imgCheckboxChanged: function(e) {
+             var img = e.model.__data__.i;
+             console.log("imgCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log(img.img + ":" + img.pool + " selected - adding to selected list.");
+                 this.push("selectedImgList", img);
+             } else {
+                 console.log(img.img + ":" + img.pool + " deselected - removing from selected list.");
+                 var index = this.selectedImgList.indexOf(img);
+                 this.splice("selectedImgList", index, 1);
+             }
+
+             /* Check if we should hide the selected list */
+             if (this.selectedImgList.length > 0) {
+                 this.selectedImgListHidden = false;
+             } else {
+                 this.selectedImgListHidden = true;
+             }
+         },
      });
     </script>
 </dom-module>
