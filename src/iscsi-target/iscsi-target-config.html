@@ -1,0 +1,56 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="iscsi-target-styles.html">
+
+<dom-module id="iscsi-target-config">
+    <template>
+        <style include="iscsi-target-styles">
+         :host {
+             display: block;
+
+             padding: 10px 20px;
+         }
+        </style>
+
+        <div class="card target-config-card">
+            <paper-toolbar class="target-config-toolbar">
+                <span class="title">iSCSI Target Configuration</span>
+                <paper-icon-button icon="delete" on-tap="removeConfig"></paper-icon-button>
+            </paper-toolbar>
+        </div>
+
+    </template>
+
+    <script>
+     Polymer({
+         is: 'iscsi-target-config',
+         properties: {
+             interfaceList: {
+                 type: Array,
+                 value: [],
+             },
+
+             imageList: {
+                 type: Array,
+                 value: [],
+             },
+
+             authList: {
+                 type: Array,
+                 value: [],
+             },
+
+         },
+
+         removeConfig: function() {
+             this.fire("removeConfig");
+         }
+
+     });
+    </script>
+</dom-module>
