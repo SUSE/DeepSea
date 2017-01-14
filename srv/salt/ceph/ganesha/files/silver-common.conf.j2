@@ -1,38 +1,16 @@
-{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') != [] %}
-EXPORT
-{
-	Export_ID=1;
-
-	Path = /;
-
-	Pseudo = /cephfs/;
-
-	Access_Type = RW;
-
-	NFS_Protocols = 4;
-
-	Transport_Protocols = TCP;
-
-    FSAL {
-            Name = CEPH;
-    }
-
-}
-
-{% endif %}
 
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles=role) != [] %}
 
 {% for user in salt['rgw.users'](role) %}
 EXPORT
 {
-	Export_ID={{ loop.index + 1 }};
+	Export_ID={{ loop.index }};
 
 	Path = "/";
 
 	Pseudo = "/{{ user }}";
 
-	Access_Type = RW;
+	Access_Type = RO;
 
 	NFS_Protocols = 4;
 

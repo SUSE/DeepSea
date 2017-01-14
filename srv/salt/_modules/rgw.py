@@ -27,6 +27,22 @@ def configurations():
     return []
 
 
+def configuration(role):
+    """
+    Return the equivalent rgw role for the ganesha role. For instance,
+    the ganesha roles silver and silver-common will both return silver.
+    """
+    if role == 'ganesha':
+        role = 'rgw'
+    if 'roles' in __pillar__:
+        if 'rgw_configurations' in __pillar__:
+            for rgw_config in  __pillar__['rgw_configurations'].keys():
+                if rgw_config in role:
+                    return rgw_config
+    return 
+
+
+
 def users(role):
     """
     In progress...
@@ -39,7 +55,7 @@ def users(role):
                 log.info("users: {}".format(users))
                 return users
             if role in __pillar__['rgw_configurations']:
-
+                
                 return list(Set(__pillar__['rgw_configurations']) &
                             Set(__pillar__['roles']))
         if 'rgw' in __pillar__['roles']:
@@ -62,12 +78,12 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
                 log.info("stderr: {}".format(line))
 
             proc.wait()
-
-
-
+        
+        
+        
 def _key(user, field, pathname):
     """
-    Read the filename and return the key value.
+    Read the filename and return the key value.  
     """
     data = None
     filename = "{}/user.{}.json".format(pathname, user)
@@ -82,7 +98,7 @@ def _key(user, field, pathname):
 
 def access_key(user, pathname="/srv/salt/ceph/rgw/cache"):
     if not user:
-        raise ValueError("ERROR: no user specified")
+        raise ValueError("ERROR: no user specified") 
     return _key(user, 'access_key', pathname)
 
 def secret_key(user, pathname="/srv/salt/ceph/rgw/cache"):

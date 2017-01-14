@@ -1,18 +1,23 @@
 
 
+#rgw_configurations:
+#  rgw:
+#    users:
+#      - { name: "demo", display: "Demo", email: "demo@demo.nil" }
+#      - { name: "demo1", display: "Demo1", email: "demo1@demo.nil" }
+
 rgw_configurations:
-  rgw:
+  silver:
     users:
       - { name: "demo", display: "Demo", email: "demo@demo.nil" }
       - { name: "demo1", display: "Demo1", email: "demo1@demo.nil" }
+  gold:
+    users:
+      - { name: "demoA", display: "DemoA", email: "demoA@demo.nil" }
+      - { name: "demoB", display: "DemoB", email: "demoB@demo.nil" }
 
-#rgw_configurations:
-#  silver:
-#    users:
-#      - { name: "demo", display: "Demo", email: "demo@demo.nil" }
-#      - { name: "demo1", display: "Demo1", email: "demo@demo.nil" }
-#  gold:
-#    users:
-#      - { name: "demoA", display: "DemoA", email: "demoA@demo.nil" }
-#      - { name: "demoB", display: "DemoB", email: "demoB@demo.nil" }
-#
+
+ganesha_configurations:
+  - silver
+  - silver-common
+  - gold
