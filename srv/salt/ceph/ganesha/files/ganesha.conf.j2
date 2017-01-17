@@ -13,9 +13,17 @@ EXPORT
 
 	Transport_Protocols = TCP;
 
+    {% for role in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
+    {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
+    {% set User_Id =role + "." + host %}
+    {% set Secret_Access_Key = salt['keyring.secret']("client." + User_Id) %}
     FSAL {
             Name = CEPH;
+            User_Id = "{{User_Id}}";
+            Secret_Access_Key = "{{Secret_Access_Key}}";
     }
+    {% endfor %}
+    {% endfor %}
 
 }
 
