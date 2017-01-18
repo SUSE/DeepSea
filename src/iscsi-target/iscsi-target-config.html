@@ -2,6 +2,7 @@
 
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
@@ -72,7 +73,8 @@
             <paper-dialog id='addCommonInitiatorAuthDialog'>
                 <paper-input label='userid' value='{{userid}}'></paper-input>
                 <paper-input label='password' value='{{password}}'></paper-input>
-                <paper-input label='initiators (space separated)' value='{{initiatorList}}'></paper-input>
+                <label>initiators (one per line)</label>
+                <iron-autogrow-textarea class="paper-input-input" max-rows="5" rows="5" value="{{initiatorList}}"></iron-autogrow-textarea>
                 <div class='buttons'>
                     <paper-button dialog-dismiss>Cancel</paper-button>
                     <paper-button on-click='addCommonInitiatorAuth'>Add</paper-button>
@@ -103,7 +105,11 @@
                     <paper-item class="target-config-auth-item">userid: {{auth.userid}}</paper-item>
                     <paper-item class="target-config-auth-item">password: {{auth.password}}</paper-item>
                     <template is="dom-if" if="{{auth.initiatorList}}">
-                        <paper-item class="target-config-auth-item">initiators: {{auth.initiatorList}}</paper-item>
+                        <paper-item class="target-config-auth-item">initiators:</paper-item>
+                        <template is="dom-repeat" items="{{auth.initiatorList}}" as="i">
+                            <!-- Further nest initiator elements under label. -->
+                            <paper-item class="target-config-auth-item" style="margin-left:2em">{{i}}</paper-item>
+                        </template>
                     </template>
                 </template>
             </paper-listbox>
@@ -323,7 +329,7 @@
              console.log("addCommonInitiatorAuth:");
              console.log("Creating new auth with userid: " + this.userid +
                          " and password: " + this.password + " and initiatorList: " + this.initiatorList);
-             this.auth = new CommonInitiatorAuth(this.userid, this.password, this.initiatorList.split(" "));
+             this.auth = new CommonInitiatorAuth(this.userid, this.password, this.initiatorList.split("\n"));
              console.log(this.auth);
              this.clearCommonAuth();
              this.$.addCommonInitiatorAuthDialog.close();
