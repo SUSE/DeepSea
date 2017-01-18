@@ -301,10 +301,11 @@ install:
 rpm: tarball
 	rpmbuild -bb deepsea.spec
 
-tarball: tests
+tarball: test
 	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
 	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.gz HEAD
 
-tests:
-	@echo "Need to write tests :)"
+test:
+	tox
+
 
