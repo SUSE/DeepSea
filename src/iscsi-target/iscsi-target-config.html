@@ -3,8 +3,10 @@
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-input/iron-input.html">
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
@@ -34,6 +36,7 @@
                     </template>
                 </div>
             </paper-dropdown-menu>
+
             <paper-dropdown-menu label="Available Images">
                 <div class="dropdown-content">
                     <template is="dom-repeat" items="{{availableImgList}}" as="i">
@@ -41,24 +44,100 @@
                     </template>
                 </div>
             </paper-dropdown-menu>
+
+            <paper-dropdown-menu label="Authentication Protocol" >
+                <paper-listbox class="dropdown-content" selected="0">
+                    <template is="dom-repeat" items="{{authTypes}}" as="a">
+                        <!-- Actual authentication classes have a 'desc' class property. -->
+                        <template is="dom-if" if="{{a.desc}}">
+                            <paper-item on-click="configureAuth">{{a.desc}}</paper-item>
+                        </template>
+                        <!-- The 'no auth' option. -->
+                        <template is="dom-if" if="{{!a.desc}}">
+                            <paper-item on-click="configureAuth">{{a}}</paper-item>
+                        </template>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+
+            <paper-dialog id='addCommonAuthDialog'>
+                <paper-input label='userid' value='{{userid}}'></paper-input>
+                <paper-input label='password' value='{{password}}'></paper-input>
+                <div class='buttons'>
+                    <paper-button dialog-dismiss>Cancel</paper-button>
+                    <paper-button on-click='addCommonAuth'>Add</paper-button>
+                </div>
+            </paper-dialog>
+
+            <paper-dialog id='addCommonInitiatorAuthDialog'>
+                <paper-input label='userid' value='{{userid}}'></paper-input>
+                <paper-input label='password' value='{{password}}'></paper-input>
+                <paper-input label='initiators (space separated)' value='{{initiatorList}}'></paper-input>
+                <div class='buttons'>
+                    <paper-button dialog-dismiss>Cancel</paper-button>
+                    <paper-button on-click='addCommonInitiatorAuth'>Add</paper-button>
+                </div>
+            </paper-dialog>
+
             <br>
             <br>
+
             <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedIntfListHidden}}">
                 <span class="title">Selected Nodes</span>
                 <template is="dom-repeat" items="{{selectedIntfList}}" as="i">                
                     <paper-item>{{i.node}} : {{i.addr}}</paper-item>
                 </template>
             </paper-listbox>
+
             <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedImgListHidden}}">
                 <span class="title">Selected Images</span>
                 <template is="dom-repeat" items="{{selectedImgList}}" as="i">                
                     <paper-item>{{i.img}} : {{i.pool}}</paper-item>
                 </template>
             </paper-listbox>
+
+            <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{authHidden}}">
+                <span class="title">Configured Authentication Protocol</span>
+                <template is="dom-if" if="{{auth}}">
+                    <paper-item>{{auth}}</paper-item>
+                    <paper-item class="target-config-auth-item">userid: {{auth.userid}}</paper-item>
+                    <paper-item class="target-config-auth-item">password: {{auth.password}}</paper-item>
+                    <template is="dom-if" if="{{auth.initiatorList}}">
+                        <paper-item class="target-config-auth-item">initiators: {{auth.initiatorList}}</paper-item>
+                    </template>
+                </template>
+            </paper-listbox>
         </div>
     </template>
 
     <script>
+
+     class CommonAuth {
+         constructor(userid, password) {
+             this.userid = userid;
+             this.password = password;
+         }
+
+         toString() {
+             return "Common authentication";
+         }
+     }
+     /* Class properties and prototype data properties need be created outside the declaration. */
+     CommonAuth.desc = "Common authentication";
+
+     class CommonInitiatorAuth extends CommonAuth {
+         constructor(userid, password, initiatorList = []) {
+             super(userid, password);
+             this.initiatorList = initiatorList;
+         }
+
+         toString() {
+             return "Common authentication with initiator list";
+         }
+     }
+     /* Class properties and prototype data properties need be created outside the declaration. */
+     CommonInitiatorAuth.desc = "Common authentication with initiator list";
+
      Polymer({
          is: 'iscsi-target-config',
          properties: {
@@ -114,11 +193,49 @@
                  },
              },
 
-             availableAuthList: {
+             authTypes: {
                  type: Array,
-                 value: [],
+                 /* Could also be [null,CommonAuth..], but this way I can more uniformly display in the template. */
+                 value: [ {"type": null, "desc": "No authentication"},
+                          {"type": CommonAuth, "desc": CommonAuth.desc},
+                          {"type": CommonInitiatorAuth, "desc": CommonInitiatorAuth.desc}
+                 ]
              },
 
+             auth: {
+                 type: Object,
+                 value: function() {
+                     /* Default is no auth (ie. an empty object). */
+                     return null;
+                 }
+             },
+
+             /* Only display auth if not null. */
+             authHidden: {
+                 type: Boolean,
+                 value: true,
+             },
+
+             userid: {
+                 type: String,
+                 value: "",
+             },
+
+             password: {
+                 type: String,
+                 value: "",
+             },
+
+             initiatorList: {
+                 type: Array,
+                 value: function() {
+                     return [];
+                 },
+             },
+         },
+
+         ready: function() {
+             /* TBD */
          },
 
          removeConfig: function() {
@@ -164,6 +281,55 @@
                  this.selectedImgListHidden = true;
              }
          },
+
+         configureAuth: function(e) {
+             var authType = e.model.__data__.a;
+             console.log("configureAuth(): " + authType.desc + " selected.");
+             /* console.log(e.currentTarget);*/
+
+             /* TODO: If common auth dialog will be used, no need for type
+              * detection beyond 'if !null'
+              */
+             if (authType.type === null) {
+                 this.auth = null;
+                 this.authHidden = true;
+             } else if (authType.type === CommonAuth) {
+                 this.$.addCommonAuthDialog.open();
+             } else if (authType.type === CommonInitiatorAuth) {
+                 this.$.addCommonInitiatorAuthDialog.open();
+             } else {
+                 alert("Invalid authentication type selected.");
+             }
+         },
+
+         /* To be used by anyone touching userid, password, and initiatorList. */
+         clearCommonAuth: function() {
+             this.userid = "";
+             this.password = "";
+             this.initiatorList = [];
+         },
+
+         addCommonAuth: function() {
+             console.log("addCommonAuth:");
+             console.log("Creating new auth with userid: " + this.userid + " and password: " + this.password);
+             this.auth = new CommonAuth(this.userid, this.password);
+             console.log(this.auth);
+             this.clearCommonAuth();
+             this.$.addCommonAuthDialog.close();
+             this.authHidden = false;
+         },
+
+         addCommonInitiatorAuth: function() {
+             console.log("addCommonInitiatorAuth:");
+             console.log("Creating new auth with userid: " + this.userid +
+                         " and password: " + this.password + " and initiatorList: " + this.initiatorList);
+             this.auth = new CommonInitiatorAuth(this.userid, this.password, this.initiatorList.split(" "));
+             console.log(this.auth);
+             this.clearCommonAuth();
+             this.$.addCommonInitiatorAuthDialog.close();
+             this.authHidden = false;
+         },
+
      });
     </script>
 </dom-module>
