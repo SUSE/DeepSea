@@ -329,7 +329,16 @@
              console.log("addCommonInitiatorAuth:");
              console.log("Creating new auth with userid: " + this.userid +
                          " and password: " + this.password + " and initiatorList: " + this.initiatorList);
-             this.auth = new CommonInitiatorAuth(this.userid, this.password, this.initiatorList.split("\n"));
+
+             /* Remove blank entries from initiatorList, which is currently just a long string. */
+             var iList = this.initiatorList.split("\n");
+             for (var i = 0; i < iList.length; i++) {
+                 if (iList[i].length === 0) {
+                     iList.splice(i, 1);
+                 }
+             }
+
+             this.auth = new CommonInitiatorAuth(this.userid, this.password, iList);
              console.log(this.auth);
              this.clearCommonAuth();
              this.$.addCommonInitiatorAuthDialog.close();
