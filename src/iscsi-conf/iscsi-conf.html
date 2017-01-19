@@ -36,7 +36,7 @@
         <paper-icon-button title="Add a new iSCSI target" class="add-target-button" icon="add" on-tap="newTarget">Add Target</paper-icon-button>
         <br>
         <paper-button raised on-click="generateConfigFile" id="generate-config-file-button"
-                      class="generate-config-file-button" icon="add">
+                      class="generate-config-file-button" icon="add" hidden$="{{generateConfigFileButtonHidden}}">
             Generate LRBD Config
         </paper-button>
     </template>
@@ -48,6 +48,11 @@
              targetList: {
                  type: Array,
                  value: [],
+             },
+
+             generateConfigFileButtonHidden: {
+                 type: Boolean,
+                 value: true,
              },
          },
 
@@ -62,7 +67,16 @@
                  if (index > -1) {
                      this.targetList.splice(index, 1);
                  }
+                 this.displayGenerateConfigFileButton();
              });
+         },
+
+         displayGenerateConfigFileButton: function() {
+             /* Button is only active/displayed if targets exist. */
+             if (this.targetList.length)
+                 this.generateConfigFileButtonHidden = false;
+             else
+                 this.generateConfigFileButtonHidden = true;
          },
 
          newTarget: function() {
@@ -75,6 +89,7 @@
               * being this.$['...']
               */
              Polymer.dom(this.root).insertBefore(target, this.$["generate-config-file-button"]);
+             this.displayGenerateConfigFileButton();
          },
 
          generateConfigFile: function() {
