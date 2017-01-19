@@ -308,19 +308,11 @@
              }
          },
 
-         /* To be used by anyone touching userid, password, and initiatorList. */
-         clearCommonAuth: function() {
-             this.userid = "";
-             this.password = "";
-             this.initiatorList = [];
-         },
-
          addCommonAuth: function() {
              console.log("addCommonAuth:");
              console.log("Creating new auth with userid: " + this.userid + " and password: " + this.password);
              this.auth = new CommonAuth(this.userid, this.password);
              console.log(this.auth);
-             this.clearCommonAuth();
              this.$.addCommonAuthDialog.close();
              this.authHidden = false;
          },
@@ -340,7 +332,6 @@
 
              this.auth = new CommonInitiatorAuth(this.userid, this.password, iList);
              console.log(this.auth);
-             this.clearCommonAuth();
              this.$.addCommonInitiatorAuthDialog.close();
              this.authHidden = false;
          },
