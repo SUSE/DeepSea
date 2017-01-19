@@ -64,20 +64,15 @@
             <paper-dialog id='addCommonAuthDialog'>
                 <paper-input label='userid' value='{{userid}}'></paper-input>
                 <paper-input label='password' value='{{password}}'></paper-input>
+                <paper-checkbox on-change="initiatorInputCheckboxChanged">Add initiators (optional)</paper-checkbox>
+                <div hidden$="{{initiatorInputHidden}}">
+                    <label>Initiators (one per line)</label>
+                    <br>
+                    <iron-autogrow-textarea class="paper-input-input" max-rows="5" rows="5" value="{{initiatorList}}"></iron-autogrow-textarea>
+                </div>
                 <div class='buttons'>
                     <paper-button dialog-dismiss>Cancel</paper-button>
                     <paper-button on-click='addCommonAuth'>Add</paper-button>
-                </div>
-            </paper-dialog>
-
-            <paper-dialog id='addCommonInitiatorAuthDialog'>
-                <paper-input label='userid' value='{{userid}}'></paper-input>
-                <paper-input label='password' value='{{password}}'></paper-input>
-                <label>initiators (one per line)</label>
-                <iron-autogrow-textarea class="paper-input-input" max-rows="5" rows="5" value="{{initiatorList}}"></iron-autogrow-textarea>
-                <div class='buttons'>
-                    <paper-button dialog-dismiss>Cancel</paper-button>
-                    <paper-button on-click='addCommonInitiatorAuth'>Add</paper-button>
                 </div>
             </paper-dialog>
 
@@ -104,7 +99,7 @@
                     <paper-item>{{auth}}</paper-item>
                     <paper-item class="target-config-auth-item">userid: {{auth.userid}}</paper-item>
                     <paper-item class="target-config-auth-item">password: {{auth.password}}</paper-item>
-                    <template is="dom-if" if="{{auth.initiatorList}}">
+                    <template is="dom-if" if="{{auth.initiatorList.length}}">
                         <paper-item class="target-config-auth-item">initiators:</paper-item>
                         <template is="dom-repeat" items="{{auth.initiatorList}}" as="i">
                             <!-- Further nest initiator elements under label. -->
@@ -118,10 +113,28 @@
 
     <script>
 
-     class CommonAuth {
+     /* All auths mechanisms stem from here. */
+     class BaseAuth {
          constructor(userid, password) {
              this.userid = userid;
              this.password = password;
+         }
+     }
+
+     /* Used within CommonAuth and CommonInitiatorAuth. */
+     class MutualAuthFrag extends BaseAuth {
+         constructor(userid, password, enabled = true) {
+             super(userid, password);
+             this.enabled = enabled;
+         }
+     }
+
+     /* The simplest auth available to be configured by the user. */
+     class CommonAuth extends BaseAuth {
+         constructor(userid, password, initiatorList, mutualAuth) {
+             super(userid, password);
+             this.initiatorList = initiatorList;
+             this.mutualAuth = mutualAuth;
          }
 
          toString() {
@@ -130,19 +143,6 @@
      }
      /* Class properties and prototype data properties need be created outside the declaration. */
      CommonAuth.desc = "Common authentication";
-
-     class CommonInitiatorAuth extends CommonAuth {
-         constructor(userid, password, initiatorList = []) {
-             super(userid, password);
-             this.initiatorList = initiatorList;
-         }
-
-         toString() {
-             return "Common authentication with initiator list";
-         }
-     }
-     /* Class properties and prototype data properties need be created outside the declaration. */
-     CommonInitiatorAuth.desc = "Common authentication with initiator list";
 
      Polymer({
          is: 'iscsi-target-config',
@@ -204,7 +204,6 @@
                  /* Could also be [null,CommonAuth..], but this way I can more uniformly display in the template. */
                  value: [ {"type": null, "desc": "No authentication"},
                           {"type": CommonAuth, "desc": CommonAuth.desc},
-                          {"type": CommonInitiatorAuth, "desc": CommonInitiatorAuth.desc}
                  ]
              },
 
@@ -237,6 +236,11 @@
                  value: function() {
                      return [];
                  },
+             },
+
+             initiatorInputHidden: {
+                 type: Boolean,
+                 value: true,
              },
          },
 
@@ -288,6 +292,17 @@
              }
          },
 
+         initiatorInputCheckboxChanged: function(e) {
+             console.log("initiatorInputCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Initiator input activated.");
+                 this.initiatorInputHidden = false;
+             } else {
+                 console.log("Initiator input de-activated.");
+                 this.initiatorInputHidden = true;
+             }
+         },
+
          configureAuth: function(e) {
              var authType = e.model.__data__.a;
              console.log("configureAuth(): " + authType.desc + " selected.");
@@ -310,29 +325,26 @@
 
          addCommonAuth: function() {
              console.log("addCommonAuth:");
-             console.log("Creating new auth with userid: " + this.userid + " and password: " + this.password);
-             this.auth = new CommonAuth(this.userid, this.password);
-             console.log(this.auth);
-             this.$.addCommonAuthDialog.close();
-             this.authHidden = false;
-         },
+             console.log("Creating new auth with userid: " + this.userid + " password: "
+                       + this.password + " initiatorList: " + this.initiatorList);
 
-         addCommonInitiatorAuth: function() {
-             console.log("addCommonInitiatorAuth:");
-             console.log("Creating new auth with userid: " + this.userid +
-                         " and password: " + this.password + " and initiatorList: " + this.initiatorList);
+             /* By default, our initiator list will be empty. */
+             var iList = [];
 
-             /* Remove blank entries from initiatorList, which is currently just a long string. */
-             var iList = this.initiatorList.split("\n");
-             for (var i = 0; i < iList.length; i++) {
-                 if (iList[i].length === 0) {
-                     iList.splice(i, 1);
+             /* If the user has entered a list of initiators, process them. */
+             if (this.initiatorList.length) {
+                 /* Remove blank entries from initiatorList, which is currently just a long string. */
+                 iList = this.initiatorList.split("\n");
+                 for (var i = 0; i < iList.length; i++) {
+                     if (iList[i].length === 0) {
+                         iList.splice(i, 1);
+                     }
                  }
              }
 
-             this.auth = new CommonInitiatorAuth(this.userid, this.password, iList);
+             this.auth = new CommonAuth(this.userid, this.password, iList, null); /* null for mutualAuth for now. */
              console.log(this.auth);
-             this.$.addCommonInitiatorAuthDialog.close();
+             this.$.addCommonAuthDialog.close();
              this.authHidden = false;
          },
 
