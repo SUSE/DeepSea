@@ -97,10 +97,9 @@
              console.log("generateConfigFile():");
              for (var i = 0; i < this.targetList.length; i++) {
                  console.log("target: " + this.targetList[i].name);
-                 console.log("----------------------------------------------------------------");
                  for (var j = 0; j < this.targetList[i].configList.length; j++) {
-                     console.log("config " + j + ": " + this.targetList[i].configList[j]);
                      console.log("----------------------------------------------------------------");
+                     console.log("config " + j + ": " + this.targetList[i].configList[j]);
                      console.log("selected interfaces:")
                      for (var k = 0; k < this.targetList[i].configList[j].selectedIntfList.length; k++) {
                          console.log(this.targetList[i].configList[j].selectedIntfList[k]);
@@ -115,9 +114,15 @@
                          console.log("password: " + this.targetList[i].configList[j].auth.password);
                      }
                      if (this.targetList[i].configList[j].auth && this.targetList[i].configList[j].auth.initiatorList) {
-                         console.log("initiatros: " + this.targetList[i].configList[j].auth.initiatorList);
+                         console.log("initiators: " + this.targetList[i].configList[j].auth.initiatorList);
+                     }
+                     if (this.targetList[i].configList[j].auth && this.targetList[i].configList[j].auth.mutualAuth) {
+                         console.log("Mutual auth userid: " + this.targetList[i].configList[j].auth.mutualAuth.userid);
+                         console.log("Mutual auth password: " + this.targetList[i].configList[j].auth.mutualAuth.password);
+                         console.log("Mutual auth enabled: " + this.targetList[i].configList[j].auth.mutualAuth.enabled);
                      }
                  }
+                 console.log("----------------------------------------------------------------");
              }
              console.log("================================================================");
          }
