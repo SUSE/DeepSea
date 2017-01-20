@@ -15,7 +15,6 @@
 <!-- <link rel="import" href="/src/iscsi-conf/iscsi-conf.html">
      <link rel="import" href="/src/view-404/view-404.html"> -->
 
-
 <dom-module id="wolffish-app">
     <template>
         <style>
@@ -33,6 +32,12 @@
          }
          app-header paper-icon-button {
              --paper-icon-button-ink-color: white;
+         }
+
+         .drawer-menu {
+             --app-drawer-width: 256px;
+             overflow: auto;
+             height: 100%;
          }
 
          .drawer-list {
@@ -65,9 +70,13 @@
             data="{{routeData}}"
             tail="{{subroute}}"></app-route>
 
-        <app-drawer-layout fullbleed>
+        <!--
+             force-narrow will always collapse the side nav panel.  I think it's a cleaner layout in our
+             case, especially for smaller screens that don't register as 'narrow'.
+           -->
+        <app-drawer-layout fullbleed force-narrow>
             <!-- Drawer content -->
-            <app-drawer id="drawer">
+            <app-drawer id="drawer" class="drawer-menu">
                 <app-toolbar>Menu</app-toolbar>
                 <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
                     <a name="iscsi-conf" href="/iscsi-conf">iSCSI Configuration</a>
