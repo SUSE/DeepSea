@@ -121,6 +121,16 @@
                          console.log("Mutual auth password: " + this.targetList[i].configList[j].auth.mutualAuth.password);
                          console.log("Mutual auth enabled: " + this.targetList[i].configList[j].auth.mutualAuth.enabled);
                      }
+                     if (this.targetList[i].configList[j].auth && this.targetList[i].configList[j].auth.discoveryAuth) {
+                         console.log("Discovery auth userid: " + this.targetList[i].configList[j].auth.discoveryAuth.userid);
+                         console.log("Discovery auth password: " + this.targetList[i].configList[j].auth.discoveryAuth.password);
+                         console.log("Discovery auth enabled: " + this.targetList[i].configList[j].auth.discoveryAuth.enabled);
+                         if (this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth) {
+                             console.log("Discovery mutual auth userid: " + this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth.userid);
+                             console.log("Discovery mutual auth password: " + this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth.password);
+                             console.log("Discovery mutual auth enabled: " + this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth.enabled);
+                         }
+                     }
                  }
                  console.log("----------------------------------------------------------------");
              }
