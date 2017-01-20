@@ -70,6 +70,12 @@
                     <br>
                     <iron-autogrow-textarea class="paper-input-input" max-rows="5" rows="5" value="{{initiatorList}}"></iron-autogrow-textarea>
                 </div>
+                <paper-checkbox on-change="mutInputCheckboxChanged">Add mutual authentication (optional)</paper-checkbox>
+                <div hidden$="{{mutInputHidden}}">
+                    <paper-input label='Mutual userid' value='{{mutUserId}}'></paper-input>
+                    <paper-input label='Mutual password' value='{{mutPassword}}'></paper-input>
+                    <paper-checkbox on-change="mutEnabledCheckboxChanged" checked="{{mutEnabled}}">Mutual authentication enabled (defaul)</paper-checkbox>
+                </div>
                 <div class='buttons'>
                     <paper-button dialog-dismiss>Cancel</paper-button>
                     <paper-button on-click='addCommonAuth'>Add</paper-button>
@@ -106,6 +112,12 @@
                             <paper-item class="target-config-auth-item" style="margin-left:2em">{{i}}</paper-item>
                         </template>
                     </template>
+                    <template is="dom-if" if="{{auth.mutualAuth}}">
+                        <paper-item class="target-config-auth-item">Mutual authentication:</paper-item>
+                        <paper-item class="target-config-auth-item" style="margin-left:2em">userid: {{auth.mutualAuth.userid}}</paper-item>
+                        <paper-item class="target-config-auth-item" style="margin-left:2em">password: {{auth.mutualAuth.password}}</paper-item>
+                        <paper-item class="target-config-auth-item" style="margin-left:2em">enabled: {{auth.mutualAuth.enabled}}</paper-item>
+                    </template>
                 </template>
             </paper-listbox>
         </div>
@@ -123,7 +135,7 @@
 
      /* Used within CommonAuth and CommonInitiatorAuth. */
      class MutualAuthFrag extends BaseAuth {
-         constructor(userid, password, enabled = true) {
+         constructor(userid, password, enabled) {
              super(userid, password);
              this.enabled = enabled;
          }
@@ -242,6 +254,26 @@
                  type: Boolean,
                  value: true,
              },
+
+             /* Mutual auth related elements.  Mutual auth is contained within the context of
+              * an auth instance.
+              */
+             mutUserId: {
+                 type: String,
+                 value: "",
+             },
+             mutPassword: {
+                 type: String,
+                 value: "",
+             },
+             mutEnabled: {
+                 type: Boolean,
+                 value: false,
+             },
+             mutInputHidden: {
+                 type: Boolean,
+                 value: true,
+             },
          },
 
          ready: function() {
@@ -303,6 +335,32 @@
              }
          },
 
+         mutInputCheckboxChanged: function(e) {
+             console.log("mutInputCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Mutual input activated.");
+                 this.mutInputHidden = false;
+                 /* Enabling mutual auth input auto-enables mutual auth. */
+                 this.mutEnabled = true;
+             } else {
+                 console.log("Mutual input de-activated.");
+                 this.mutInputHidden = true;
+                 /* Disabling mutual auth input auto-disables mutual auth. */
+                 this.mutEnabled = false;
+             }
+         },
+
+         mutEnabledCheckboxChanged: function(e) {
+             console.log("mutEnabledCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Mutual enabled.");
+                 this.mutEnabled = true;
+             } else {
+                 console.log("Mutual disabled.");
+                 this.mutEnabled = false;
+             }
+         },
+
          configureAuth: function(e) {
              var authType = e.model.__data__.a;
              console.log("configureAuth(): " + authType.desc + " selected.");
@@ -316,8 +374,6 @@
                  this.authHidden = true;
              } else if (authType.type === CommonAuth) {
                  this.$.addCommonAuthDialog.open();
-             } else if (authType.type === CommonInitiatorAuth) {
-                 this.$.addCommonInitiatorAuthDialog.open();
              } else {
                  alert("Invalid authentication type selected.");
              }
@@ -342,7 +398,14 @@
                  }
              }
 
-             this.auth = new CommonAuth(this.userid, this.password, iList, null); /* null for mutualAuth for now. */
+             /* Check mutual auth. */
+             /* TODO: better error detection needed. */
+             var mutAuth = null;
+             if (this.mutUserId.length && this.mutPassword.length) {
+                 mutAuth = new MutualAuthFrag(this.mutUserId, this.mutPassword, this.mutEnabled);
+             }
+
+             this.auth = new CommonAuth(this.userid, this.password, iList, mutAuth);
              console.log(this.auth);
              this.$.addCommonAuthDialog.close();
              this.authHidden = false;
