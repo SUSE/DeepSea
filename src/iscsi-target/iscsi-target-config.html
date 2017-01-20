@@ -61,20 +61,38 @@
                 </paper-listbox>
             </paper-dropdown-menu>
 
-            <paper-dialog id='addCommonAuthDialog'>
+            <paper-dialog id='addCommonAuthDialog' class="target-config-auth-dialog">
                 <paper-input label='userid' value='{{userid}}'></paper-input>
                 <paper-input label='password' value='{{password}}'></paper-input>
+
                 <paper-checkbox on-change="initiatorInputCheckboxChanged">Add initiators (optional)</paper-checkbox>
                 <div hidden$="{{initiatorInputHidden}}">
                     <label>Initiators (one per line)</label>
                     <br>
                     <iron-autogrow-textarea class="paper-input-input" max-rows="5" rows="5" value="{{initiatorList}}"></iron-autogrow-textarea>
                 </div>
+                <br>
+                <hr>
                 <paper-checkbox on-change="mutInputCheckboxChanged">Add mutual authentication (optional)</paper-checkbox>
                 <div hidden$="{{mutInputHidden}}">
                     <paper-input label='Mutual userid' value='{{mutUserId}}'></paper-input>
                     <paper-input label='Mutual password' value='{{mutPassword}}'></paper-input>
                     <paper-checkbox on-change="mutEnabledCheckboxChanged" checked="{{mutEnabled}}">Mutual authentication enabled (defaul)</paper-checkbox>
+                </div>
+                <br>
+                <hr>
+                <paper-checkbox on-change="discInputCheckboxChanged">Add discovery authentication (optional)</paper-checkbox>
+                <div hidden$="{{discInputHidden}}">
+                    <paper-input label='Discovery userid' value='{{discUserId}}'></paper-input>
+                    <paper-input label='Discovery password' value='{{discPassword}}'></paper-input>
+                    <paper-checkbox on-change="discEnabledCheckboxChanged" checked="{{discEnabled}}">Discovery authentication enabled (default)</paper-checkbox>
+                    <br>
+                    <paper-checkbox on-change="discMutInputCheckboxChanged">Add discovery mutual authentication (optional)</paper-checkbox>
+                    <div hidden$="{{discMutInputHidden}}">
+                        <paper-input label='Discovery mutual userid' value='{{discMutUserId}}'></paper-input>
+                        <paper-input label='Discovery mutual password' value='{{discMutPassword}}'></paper-input>
+                        <paper-checkbox on-change="discMutEnabledCheckboxChanged" checked="{{discMutEnabled}}">Mutual authentication enabled (default)</paper-checkbox>
+                    </div>
                 </div>
                 <div class='buttons'>
                     <paper-button dialog-dismiss>Cancel</paper-button>
@@ -118,6 +136,18 @@
                         <paper-item class="target-config-auth-item" style="margin-left:2em">password: {{auth.mutualAuth.password}}</paper-item>
                         <paper-item class="target-config-auth-item" style="margin-left:2em">enabled: {{auth.mutualAuth.enabled}}</paper-item>
                     </template>
+                    <template is="dom-if" if="{{auth.discoveryAuth}}">
+                        <paper-item class="target-config-auth-item">Discovery authentication:</paper-item>
+                        <paper-item class="target-config-auth-item" style="margin-left:2em">userid: {{auth.discoveryAuth.userid}}</paper-item>
+                        <paper-item class="target-config-auth-item" style="margin-left:2em">password: {{auth.discoveryAuth.password}}</paper-item>
+                        <paper-item class="target-config-auth-item" style="margin-left:2em">enabled: {{auth.discoveryAuth.enabled}}</paper-item>
+                        <template is="dom-if" if="{{auth.discoveryAuth.mutualAuth}}">
+                            <paper-item class="target-config-auth-item" style="margin-left:2em">Discovery mutual authentication:</paper-item>
+                            <paper-item class="target-config-auth-item" style="margin-left:3em">userid: {{auth.discoveryAuth.mutualAuth.userid}}</paper-item>
+                            <paper-item class="target-config-auth-item" style="margin-left:3em">password: {{auth.discoveryAuth.mutualAuth.password}}</paper-item>
+                            <paper-item class="target-config-auth-item" style="margin-left:3em">enabled: {{auth.discoveryAuth.mutualAuth.enabled}}</paper-item>
+                        </template>
+                    </template>
                 </template>
             </paper-listbox>
         </div>
@@ -133,7 +163,7 @@
          }
      }
 
-     /* Used within CommonAuth and CommonInitiatorAuth. */
+     /* Used within CommonAuth and DiscoveryAuth*/
      class MutualAuthFrag extends BaseAuth {
          constructor(userid, password, enabled) {
              super(userid, password);
@@ -141,12 +171,20 @@
          }
      }
 
+     class DiscoveryAuthFrag extends MutualAuthFrag {
+         constructor(userid, password, enabled, mutualAuth) {
+             super(userid, password, enabled);
+             this.mutualAuth = mutualAuth;
+         }
+     }
+
      /* The simplest auth available to be configured by the user. */
      class CommonAuth extends BaseAuth {
-         constructor(userid, password, initiatorList, mutualAuth) {
+         constructor(userid, password, initiatorList, mutualAuth, discoveryAuth) {
              super(userid, password);
              this.initiatorList = initiatorList;
              this.mutualAuth = mutualAuth;
+             this.discoveryAuth = discoveryAuth;
          }
 
          toString() {
@@ -274,6 +312,42 @@
                  type: Boolean,
                  value: true,
              },
+
+             /* Discovery auth related elements.  Discovery auth is contained within the context of
+              * an auth instance.
+              */
+             discUserId: {
+                 type: String,
+                 value: "",
+             },
+             discPassword: {
+                 type: String,
+                 value: "",
+             },
+             discEnabled: {
+                 type: Boolean,
+                 value: false,
+             },
+             discInputHidden: {
+                 type: Boolean,
+                 value: true,
+             },
+             discMutUserId: {
+                 type: String,
+                 value: "",
+             },
+             discMutPassword: {
+                 type: String,
+                 value: "",
+             },
+             discMutEnabled: {
+                 type: Boolean,
+                 value: false,
+             },
+             discMutInputHidden: {
+                 type: Boolean,
+                 value: true,
+             },
          },
 
          ready: function() {
@@ -329,9 +403,13 @@
              if (e.target.checked) {
                  console.log("Initiator input activated.");
                  this.initiatorInputHidden = false;
+                 this.$.addCommonAuthDialog.center();
              } else {
                  console.log("Initiator input de-activated.");
                  this.initiatorInputHidden = true;
+                 this.$.addCommonAuthDialog.center();
+                 /* Clear bound vars. */
+                 this.initiatorList = [];
              }
          },
 
@@ -340,13 +418,18 @@
              if (e.target.checked) {
                  console.log("Mutual input activated.");
                  this.mutInputHidden = false;
+                 this.$.addCommonAuthDialog.center();
                  /* Enabling mutual auth input auto-enables mutual auth. */
                  this.mutEnabled = true;
              } else {
                  console.log("Mutual input de-activated.");
                  this.mutInputHidden = true;
+                 this.$.addCommonAuthDialog.center();
                  /* Disabling mutual auth input auto-disables mutual auth. */
                  this.mutEnabled = false;
+                 /* Clear bound vars. */
+                 this.mutUserId = "";
+                 this.mutPassword = "";
              }
          },
 
@@ -358,6 +441,70 @@
              } else {
                  console.log("Mutual disabled.");
                  this.mutEnabled = false;
+             }
+         },
+
+         discInputCheckboxChanged: function(e) {
+             console.log("discInputCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Discovery input activated.");
+                 this.discInputHidden = false;
+                 this.$.addCommonAuthDialog.center();
+                 /* Enabling mutual auth input auto-enables mutual auth. */
+                 this.discEnabled = true;
+             } else {
+                 console.log("Discovery input de-activated.");
+                 this.discInputHidden = true;
+                 this.$.addCommonAuthDialog.center();
+                 /* Disabling mutual auth input auto-disables mutual auth. */
+                 this.discEnabled = false;
+                 /* Clear bound vars. */
+                 this.discUserId = "";
+                 this.discPassword = "";
+                 this.discMutUserId = "";
+                 this.discMutPassword = "";
+             }
+         },
+
+         discEnabledCheckboxChanged: function(e) {
+             console.log("discEnabledCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Discovery enabled.");
+                 this.discEnabled = true;
+             } else {
+                 console.log("Discovery disabled.");
+                 this.discEnabled = false;
+             }
+         },
+
+         discMutInputCheckboxChanged: function(e) {
+             console.log("discMutInputCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Discovery mutual input activated.");
+                 this.discMutInputHidden = false;
+                 this.$.addCommonAuthDialog.center();
+                 /* Enabling mutual auth input auto-enables mutual auth. */
+                 this.discMutEnabled = true;
+             } else {
+                 console.log("Discovery mutual input de-activated.");
+                 this.discMutInputHidden = true;
+                 this.$.addCommonAuthDialog.center();
+                 /* Disabling mutual auth input auto-disables mutual auth. */
+                 this.discMutEnabled = false;
+                 /* Clear bound vars. */
+                 this.discMutUserId = "";
+                 this.discMutPassword = "";
+             }
+         },
+
+         discMutEnabledCheckboxChanged: function(e) {
+             console.log("discMutEnabledCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log("Discovery mutual enabled.");
+                 this.discMutEnabled = true;
+             } else {
+                 console.log("Discovery mutual disabled.");
+                 this.discMutEnabled = false;
              }
          },
 
@@ -405,7 +552,19 @@
                  mutAuth = new MutualAuthFrag(this.mutUserId, this.mutPassword, this.mutEnabled);
              }
 
-             this.auth = new CommonAuth(this.userid, this.password, iList, mutAuth);
+             /* Check discovery auth. */
+             /* TODO: better error detection needed. */
+             var discAuth = null;
+             if (this.discUserId.length && this.discPassword.length) {
+                 /* Check discovery mutual auth. */
+                 var discMutAuth = null
+                 if (this.discMutUserId.length && this.discMutPassword.length) {
+                     discMutAuth = new MutualAuthFrag(this.discMutUserId, this.discMutPassword, this.discMutEnabled);
+                 }
+                 discAuth = new DiscoveryAuthFrag(this.discUserId, this.discPassword, this.discEnabled, discMutAuth);
+             }
+
+             this.auth = new CommonAuth(this.userid, this.password, iList, mutAuth, discAuth);
              console.log(this.auth);
              this.$.addCommonAuthDialog.close();
              this.authHidden = false;
