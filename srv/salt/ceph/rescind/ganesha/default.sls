@@ -1,0 +1,3 @@
+
+ganesha nop:
+  test.nop
