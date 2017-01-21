@@ -18,7 +18,7 @@ feedback, please join us there! We look forward to your contribution.
 
 If you think you've found a bug or would like to suggest an enhancement, please submit it via the [bug tracker](https://github.com/SUSE/DeepSea/issues/new) on GitHub.
 
-For contributing to the DeepSea, refer to the [contribution gudelines](https://github.com/suse/deepsea/blob/contributing.md)
+For contributing to DeepSea, refer to the [contribution guidelines](https://github.com/suse/deepsea/blob/master/contributing.md)
 
 ## Usage
 ### Prepare Salt
