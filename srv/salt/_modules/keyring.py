@@ -17,6 +17,9 @@ def secret(filename):
                     key = line.split(' = ')[1].strip()
                     return key
 
+    return gen_secret()
+
+def gen_secret():
     key = os.urandom(16)
     header = struct.pack('<hiih',1,int(time.time()),0,len(key))
     return base64.b64encode(header + key)
@@ -30,12 +33,20 @@ def file(component, name=None):
     if component == "osd":
         return "/srv/salt/ceph/osd/cache/bootstrap.keyring"
 
-    if component == "igw":
+    elif component == "igw":
         return "/srv/salt/ceph/igw/cache/ceph." +  name + ".keyring"
 
-    if component == "mds":
+    elif component == "mds":
         return "/srv/salt/ceph/mds/cache/" + name + ".keyring"
 
-    if component == "rgw":
+    elif component == "rgw":
         return "/srv/salt/ceph/rgw/cache/" + name + ".keyring"
 
+    elif component == "deepsea_cephfs_bench":
+        return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.keyring"
+
+    elif component == "deepsea_cephfs_bench_secret":
+        return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.secret"
+
+    elif component == "deepsea_rbd_bench":
+        return "/srv/salt/ceph/rbd/benchmarks/files/cache/deepsea_rbd_bench.keyring"

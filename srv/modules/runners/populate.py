@@ -515,7 +515,7 @@ class CephRoles(object):
         """
         Allows admins to target non-Ceph minions
         """
-        roles = [ 'client-cephfs', 'client-radosgw', 'client-iscsi', 'mds-nfs', 'rgw-nfs' ]
+        roles = [ 'client-cephfs', 'client-rbd' ]
         self.available_roles.extend(roles)
 
         for role in roles:
@@ -555,11 +555,11 @@ class CephRoles(object):
             contents['roles'] = [ role ]
             self.writer.write(filename, contents)
 
-    def monitor_members(self):
+    def public_address(self, role):
         """
-        Create a file for mon_host and mon_initial_members
+        Create a file containing the public address for these hosts
         """
-        minion_dir = "{}/role-mon/stack/default/{}/minions".format(self.root_dir, self.cluster)
+        minion_dir = "{}/role-{}/stack/default/{}/minions".format(self.root_dir, role, self.cluster)
         if not os.path.isdir(minion_dir):
             create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
@@ -568,20 +568,6 @@ class CephRoles(object):
             contents['public_address'] = self._public_interface(server)
             self.writer.write(filename, contents)
 
-    def igw_members(self):
-        """
-        Create a file for igw hosts.
-
-        Note: identical to above
-        """
-        minion_dir = "{}/role-igw/stack/default/{}/minions".format(self.root_dir, self.cluster)
-        if not os.path.isdir(minion_dir):
-            create_dirs(minion_dir, self.root_dir)
-        for server in self.servers:
-            filename = minion_dir + "/" +  server + ".yml"
-            contents = {}
-            contents['public_address'] = self._public_interface(server)
-            self.writer.write(filename, contents)
 
     def _public_interface(self, server):
         """
@@ -820,8 +806,10 @@ def proposals(**kwargs):
         ceph_roles = CephRoles(settings, name, ceph_cluster.minions, salt_writer)
         ceph_roles.generate()
         ceph_roles.cluster_config()
-        ceph_roles.monitor_members()
-        ceph_roles.igw_members()
+        ceph_roles.public_address('mon')
+        ceph_roles.public_address('igw')
+        ceph_roles.public_address('client-rbd')
+        ceph_roles.public_address('client-cephfs')
 
     return [ True ]
 

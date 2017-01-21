@@ -5,7 +5,7 @@ include:
 fio service file:
   file.managed:
     - name: /etc/systemd/system/fio.service
-    - source: salt://ceph/cephfs/benchmarks/files/fio.service
+    - source: salt://ceph/tools/fio/files/fio.service
     - user: root
     - group: root
     - mode: 664

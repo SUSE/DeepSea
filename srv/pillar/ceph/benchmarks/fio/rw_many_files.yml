@@ -1,12 +1,11 @@
 template: rw_many_files.j2
-filesize: 1k
-nrfiles: 1000000
+filesize: 4m
+nrfiles: 100
 size: 1g
 blocksizes:
   - 4k
   - 1m
   - 4m
-  - 8m
 number_of_workers: 1
 operations:
   - rw

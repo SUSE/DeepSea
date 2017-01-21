@@ -1,4 +1,0 @@
-jobs:
-  # - fio/seq_writes.yml
-  # - fio/seq_reads.yml
-  - fio/multi_rw.yml
