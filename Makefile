@@ -80,6 +80,8 @@ install:
 	install -m 644 srv/salt/ceph/ganesha/auth/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/auth
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/files
 	install -m 644 srv/salt/ceph/ganesha/files/*.j2 $(DESTDIR)/srv/salt/ceph/ganesha/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/config
+	install -m 644 srv/salt/ceph/ganesha/config/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/config/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/configure
 	install -m 644 srv/salt/ceph/ganesha/configure/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/configure/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/key

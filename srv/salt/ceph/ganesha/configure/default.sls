@@ -1,4 +1,3 @@
-
 /etc/ganesha/ganesha.conf:
   file.managed:
     - source:
@@ -6,5 +5,5 @@
     - template: jinja
     - user: root
     - group: root
-    - mode: 644 
+    - mode: 644
 
