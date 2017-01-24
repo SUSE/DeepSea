@@ -12,8 +12,7 @@ ganesha config:
     - failhard: True
 
 {% for config in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
-
-ganesha service:
+{{ config }}:
   salt.state:
     - tgt: "I@roles:{{ config }} and I@cluster:ceph"
     - tgt_type: compound

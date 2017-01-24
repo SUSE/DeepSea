@@ -484,6 +484,22 @@ class CephRoles(object):
             else:
                 return [ 'rgw' ]
 
+    def _ganesha_configurations(self):
+        """
+        Use the custom names for ganesha configurations specified.  Otherwise,
+        default to 'ganesha'.
+        """
+        local = salt.client.LocalClient()
+
+        # Should we add a master_minion lookup and have two calls instead?
+        _ganeshas = local.cmd('*' , 'pillar.get', [ 'ganesha_configurations' ])
+        for node in _ganeshas.keys():
+            # Check the first one
+            if _ganeshas[node]:
+                return _ganeshas[node]
+            else:
+                return [ 'ganesha' ]
+
     def generate(self):
         """
         Create role named directories and create corresponding yaml files
@@ -499,7 +515,9 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw', 'ganesha' ] + self._rgw_configurations()
+        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw', 'ganesha' ]
+        roles += self._rgw_configurations()
+        roles += self._ganesha_configurations()
         self.available_roles.extend(roles)
 
         for role in roles:
