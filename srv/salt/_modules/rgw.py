@@ -68,7 +68,29 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
     """
     for role in __pillar__['rgw_configurations']:
         for user in __pillar__['rgw_configurations'][role]['users']:
-            command = "radosgw-admin user create --uid={} --display-name={} --email={}".format(user['name'], user['display'], user['email'])
+            if 'uid' not in user or 'name' not in user:
+                raise ValueError('ERROR: please specify both uid and name')
+
+            base_cmd = "radosgw-admin user create --uid={uid} --display-name={name}".format(
+                uid=user['uid'],
+                name=user['name'],
+            )
+
+            args = ''
+            if 'email' in user:
+                args += " --email=%s" % user['email']
+
+            if 'system' in user and user['system'] is True:
+                args += " --system"
+
+            if 'access_key' in user:
+                args += " --access-key=%s" % user['access_key']
+
+            if 'secret' in user:
+                args += " --secret=%s" % user['secret']
+
+            command = base_cmd + args
+
             proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
             filename = "{}/user.{}.json".format(pathname, user['name'])
             with open(filename, "w") as json:

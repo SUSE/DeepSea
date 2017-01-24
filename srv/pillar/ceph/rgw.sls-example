@@ -3,18 +3,18 @@
 #rgw_configurations:
 #  rgw:
 #    users:
-#      - { name: "demo", display: "Demo", email: "demo@demo.nil" }
-#      - { name: "demo1", display: "Demo1", email: "demo1@demo.nil" }
+#      - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
+#      - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
 
 rgw_configurations:
   silver:
     users:
-      - { name: "demo", display: "Demo", email: "demo@demo.nil" }
-      - { name: "demo1", display: "Demo1", email: "demo1@demo.nil" }
+      - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
+      - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
   gold:
     users:
-      - { name: "demoA", display: "DemoA", email: "demoA@demo.nil" }
-      - { name: "demoB", display: "DemoB", email: "demoB@demo.nil" }
+      - { uid: "demoA", name: "DemoA", email: "demoA@demo.nil" }
+      - { uid: "demoB", name: "DemoB", email: "demoB@demo.nil" }
 
 
 ganesha_configurations:
