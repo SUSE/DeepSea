@@ -16,7 +16,7 @@ check {{ role }}:
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
 {% set user_id = role + "." + host %}
 {% set client = "client." + user_id %}
-{% set keyring_file = salt['keyring.secret']('ganesha', client)  %}
+{% set keyring_file = salt['keyring.file']('ganesha', client)  %}
 
 /srv/salt/ceph/ganesha/cache/{{ role }}.conf:
   file.managed:
