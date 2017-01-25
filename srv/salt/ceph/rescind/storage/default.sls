@@ -4,20 +4,12 @@ storage nop:
 
 {% if 'storage' not in salt['pillar.get']('roles') %}
 
+
 terminate osds:
-  cmd.run:
-    - name: "pkill ceph-osd"
-    - onlyif: "pgrep ceph-osd"
-
-sleep 3 seconds:
   module.run:
-    - name: test.sleep
-    - length: 3
-
-kill osds:
-  cmd.run:
-    - name: "pkill -9 ceph-osd"
-    - onlyif: "pgrep ceph-osd"
+  - name: retry.pkill
+  - kwargs:
+      pattern: "ceph-osd"
 
 {% for id in salt['osd.list']() %}
 
@@ -26,6 +18,15 @@ kill osds:
 #  service.dead:
 #    - name: ceph-osd@{{ id }}
 #    - enable: False
+#
+# Does not work
+#systemctl terminate osds:
+#  cmd.run:
+#    - name: "systemctl kill ceph-osd*"
+#
+#systemctl kill osds:
+#  cmd.run:
+#    - name: "systemctl kill --signal=9 ceph-osd*"
 
 {% endfor %}
 
