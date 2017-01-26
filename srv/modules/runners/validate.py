@@ -488,14 +488,16 @@ class Validate(object):
         """
         Verify that fqdn matches minion id
         """
-        for node in self.grains.keys():
-            if self.grains[node]['fqdn'] != node:
-                msg = "fqdn {} does not match minion id {}".format(self.grains[node]['fqdn'], node)
-                if 'fqdn' in self.errors:
-                    self.errors['fqdn'].append(msg)
+        for minion_id in self.grains.keys():
+            fqdn = self.grains[minion_id]['fqdn']
+            if fqdn != minion_id:
+                msg = "fqdn {} does not match minion id {}".format(fqdn, minion_id)
+                if fqdn != "localhost":
+                    self.errors.setdefault('fqdn', []).append(msg)
                 else:
-                    self.errors['fqdn'] = [ msg ]
-        if not 'fqdn' in self.errors:
+                    self.warnings.setdefault('fqdn', []).append(msg)
+
+        if not 'fqdn' in self.errors and not 'fqdn' in self.warnings:
             self.passed['fqdn'] = "valid"
 
 # Note: the master_minion and ceph_version are specific to the Stage 0
