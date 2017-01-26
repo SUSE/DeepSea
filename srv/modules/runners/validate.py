@@ -40,12 +40,14 @@ class bcolors:
 
 class PrettyPrinter:
 
-    def add(self, name, passed, errors):
+    def add(self, name, passed, errors, warnings):
         # Need to make colors optional, but looks better currently
         for attr in passed.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
         for attr in errors.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
+        for attr in warnings.keys():
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, warnings[attr], bcolors.ENDC)
 
     def print_result(self):
         pass
@@ -55,8 +57,8 @@ class JsonPrinter:
     def __init__(self):
         self.result = {}
 
-    def add(self, name, passed, errors):
-        self.result[name] = {'passed': passed, 'errors': errors}
+    def add(self, name, passed, errors, warnings):
+        self.result[name] = {'passed': passed, 'errors': errors, 'warnings': warnings}
 
     def print_result(self):
         json.dump(self.result, sys.stdout)
@@ -123,7 +125,7 @@ class Validate(object):
         self.printer = printer
         self.passed = OrderedDict()
         self.errors = OrderedDict()
-
+        self.warnings = OrderedDict()
         self._minion_check()
 
     def _minion_check(self):
@@ -486,14 +488,16 @@ class Validate(object):
         """
         Verify that fqdn matches minion id
         """
-        for node in self.grains.keys():
-            if self.grains[node]['fqdn'] != node:
-                msg = "fqdn {} does not match minion id {}".format(self.grains[node]['fqdn'], node)
-                if 'fqdn' in self.errors:
-                    self.errors['fqdn'].append(msg)
+        for minion_id in self.grains.keys():
+            fqdn = self.grains[minion_id]['fqdn']
+            if fqdn != minion_id:
+                msg = "fqdn {} does not match minion id {}".format(fqdn, minion_id)
+                if fqdn != "localhost":
+                    self.errors.setdefault('fqdn', []).append(msg)
                 else:
-                    self.errors['fqdn'] = [ msg ]
-        if not 'fqdn' in self.errors:
+                    self.warnings.setdefault('fqdn', []).append(msg)
+
+        if not 'fqdn' in self.errors and not 'fqdn' in self.warnings:
             self.passed['fqdn'] = "valid"
 
 # Note: the master_minion and ceph_version are specific to the Stage 0
@@ -542,7 +546,7 @@ class Validate(object):
             self.passed['ceph_version'] = "valid"
 
     def report(self):
-        self.printer.add(self.name, self.passed, self.errors)
+        self.printer.add(self.name, self.passed, self.errors, self.warnings)
 
 def usage():
     print "salt-run validate.pillar cluster_name"
