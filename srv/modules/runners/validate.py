@@ -176,16 +176,12 @@ class Validate(object):
                 ipaddress.ip_network(u'{}'.format(public_network))
             except ValueError as err:
                 msg = "{} on {} is not valid".format(public_network, node)
-                if 'public_network' in self.errors:
-                    self.errors['public_network'].append(msg)
-                else:
-                    self.errors['public_network'] = [ msg ]
+                self.errors.setdefault('public_network', []).append(msg)
+
         if len(same_network.keys()) > 1:
             msg = "Different public networks {}".format(same_network.keys())
-            if 'public_network' in self.errors:
-                self.errors['public_network'].append(msg)
-            else:
-                self.errors['public_network'] = [ msg ]
+            self.errors.setdefault('public_network', []).append(msg)
+
         if not 'public_network' in self.errors:
             self.passed['public_network'] = "valid"
 
@@ -209,10 +205,8 @@ class Validate(object):
                     pass
             if not found:
                 msg = "minion {} missing address on public network {}".format(node, public_network)
-                if 'public_interface' in self.errors:
-                    self.errors['public_interface'].append(msg)
-                else:
-                    self.errors['public_interface'] = [ msg ]
+                self.errors.setdefault('public_interface',[]).append(msg)
+
         if not 'public_interface' in self.errors:
             self.passed['public_interface'] = "valid"
 
@@ -276,10 +270,8 @@ class Validate(object):
                     ipaddress.ip_network(u'{}'.format(cluster_network))
                 except ValueError as err:
                     msg = "{} on {} is not valid".format(cluster_network, node)
-                    if 'cluster_network' in self.errors:
-                        self.errors['cluster_network'].append(msg)
-                    else:
-                        self.errors['cluster_network'] = [ msg ]
+                    self.errors.setdefault('cluster_network', []).append(msg)
+
         if len(same_network.keys()) > 1:
             msg = "Different cluster networks {}".format(same_network.keys())
             if 'cluster_network' in self.errors:
@@ -308,10 +300,8 @@ class Validate(object):
                         pass
                 if not found:
                     msg = "minion {} missing address on cluster network {}".format(node, cluster_network)
-                    if 'cluster_interface' in self.errors:
-                        self.errors['cluster_interface'].append(msg)
-                    else:
-                        self.errors['cluster_interface'] = [ msg ]
+                    self.errors.setdefault('cluster_interface',[]).append(msg)
+
         if not 'cluster_interface' in self.errors:
             self.passed['cluster_interface'] = "valid"
 
@@ -333,17 +323,11 @@ class Validate(object):
                         self.errors[name] = [ msg ]
             else:
                 msg = "host {} is missing {}".format(node, name)
-                if name in self.errors:
-                    self.errors[name].append(msg)
-                else:
-                    self.errors[name] = [ msg ]
+                self.errors.setdefault(name, []).append(msg)
 
         if len(same_hosts.keys()) > 1:
             msg = "Different entries {}".format(same_hosts.keys())
-            if name in self.errors:
-                self.errors[name].append(msg)
-            else:
-                self.errors[name] = [ msg ]
+            self.errors.setdefault(name, []).append(msg)
         elif same_hosts:
             count = len(same_hosts.keys()[0].split(","))
             if count < 3:
@@ -538,10 +522,8 @@ class Validate(object):
                 # String comparison works for now
                 if version < JEWEL_VERSION:
                     msg = "ceph version {} on minion {}".format(version, minion)
-                    if 'ceph_version' in self.errors:
-                        self.errors['ceph_version'].append(msg)
-                    else:
-                        self.errors['ceph_version'] = [ msg ]
+                    self.errors.setdefault('ceph_version', []).append(msg)
+
         if 'ceph_version' not in self.errors:
             self.passed['ceph_version'] = "valid"
 
