@@ -7,7 +7,7 @@ The [diagram](deepsea.png) should explain the intended flow for the orchestratio
 
 ## Status
 Automatic discovery, configuration and deployment of Ceph clusters works. RGW
-deployment is currently broken. MDS deployment and CephFS creation works.
+deployment works for single site deployements. MDS deployment and CephFS creation works.
 
 ## Get Involved
 To learn more about DeepSea, take a look at the [Wiki](https://github.com/SUSE/DeepSea/wiki).
