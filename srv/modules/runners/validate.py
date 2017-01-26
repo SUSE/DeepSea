@@ -40,12 +40,14 @@ class bcolors:
 
 class PrettyPrinter:
 
-    def add(self, name, passed, errors):
+    def add(self, name, passed, errors, warnings):
         # Need to make colors optional, but looks better currently
         for attr in passed.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
         for attr in errors.keys():
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
+        for attr in warnings.keys():
+            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, warnings[attr], bcolors.ENDC)
 
     def print_result(self):
         pass
@@ -55,8 +57,8 @@ class JsonPrinter:
     def __init__(self):
         self.result = {}
 
-    def add(self, name, passed, errors):
-        self.result[name] = {'passed': passed, 'errors': errors}
+    def add(self, name, passed, errors, warnings):
+        self.result[name] = {'passed': passed, 'errors': errors, 'warnings': warnings}
 
     def print_result(self):
         json.dump(self.result, sys.stdout)
@@ -123,7 +125,7 @@ class Validate(object):
         self.printer = printer
         self.passed = OrderedDict()
         self.errors = OrderedDict()
-
+        self.warnings = OrderedDict()
         self._minion_check()
 
     def _minion_check(self):
@@ -542,7 +544,7 @@ class Validate(object):
             self.passed['ceph_version'] = "valid"
 
     def report(self):
-        self.printer.add(self.name, self.passed, self.errors)
+        self.printer.add(self.name, self.passed, self.errors, self.warnings)
 
 def usage():
     print "salt-run validate.pillar cluster_name"
