@@ -617,7 +617,7 @@ def setup(**kwargs):
     """
     local = salt.client.LocalClient()
     pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
-    printer = printer = get_printer(**kwargs)
+    printer = get_printer(**kwargs)
 
     v = Validate("setup", pillar_data, [], printer)
     v.master_minion()
