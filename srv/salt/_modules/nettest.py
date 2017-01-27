@@ -23,7 +23,6 @@ def _get_all_minions():
     pki_dir = pki_dir.replace('minion', 'master')
     minion_path = os.path.join(pki_dir, salt_key.Key.ACC)
     minion_list = []
-    #minion_list[os.path.basename(minion_path)] = []
     try:
         for keys in salt_utils.isorted(os.listdir(minion_path)):
             if not keys.startswith('.'):
@@ -59,7 +58,6 @@ def _ping_log_fail( ping_log ):
 
 def _ping_log_avg( ping_log ):
     if _ping_log_success(ping_log):
-        # rtt min/avg/max/mdev = 0.702/0.790/0.885/0.089 ms
         m = re.match(r'.*rtt min/avg/max/mdev = \d+\.?\d+/(\d+\.?\d+)/', ping_log, re.DOTALL)
         if m:
             return m.group(1) +' ms'
@@ -98,7 +96,7 @@ def ping( node, filter_type='full'):
         node = socket.gethostname()
     ping_out = __salt__['cmd.run']('/usr/bin/ping -c 4 ' + node , output_loglevel='debug')
     if( ping_log_filter(ping_out, filter_type) ):
-        return node + ':' + str(ping_log_filter(ping_out, filter_type))
+        return node + ': ' + str(ping_log_filter(ping_out, filter_type))
     else:
         return False
 
@@ -154,7 +152,6 @@ def multi_ping( ping_from, *nodes, **kwargs):
     for line in temp_log:
         ping_log.append(re.sub(r'(' + ping_from + ':\n\s)' , '', line))
     return ping_log
-    #return ping_log.insert(0,ping_from + ':\n')
 
 def ping_all_minions(filter_type='full'):
     '''
@@ -185,11 +182,11 @@ def ping_all_minions(filter_type='full'):
             not_fail = re.match(r'.*False', m_log, re.DOTALL)
             if not not_fail:
                 temp_log.append(m_log)
-                # ping_log.append(re.sub(r'(' + master_host + ':\n\s)' , '', line))
         else:
             temp_log.append("Not done " + log['jid'])
     if len(temp_log) == 0 and filter_type == 'fail':
         return 'Nothing fail!\n'
-    return temp_log
-    # return ping_log
+    for i, log in enumerate(temp_log):
+        ping_log.append(re.sub(r'(' + master_host + ':\n)' , ping_jid[i]['ping_from'] + ':\n' , log))
+    return ping_log
 
