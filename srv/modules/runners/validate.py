@@ -479,8 +479,7 @@ class Validate(object):
                 else:
                     self.warnings.setdefault('fqdn', []).append(msg)
 
-        if not 'fqdn' in self.errors and not 'fqdn' in self.warnings:
-            self.passed['fqdn'] = "valid"
+        self._set_pass_status('fqdn')
 
 # Note: the master_minion and ceph_version are specific to the Stage 0
 # validate.  These are also more similar to the ready.py for the firewall
