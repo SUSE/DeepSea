@@ -31,6 +31,7 @@ check {{ role }}:
       role: {{ salt['rgw.configuration'](role) }}
       user_id: {{ user_id }}
       secret_access_key: {{ salt['keyring.secret'](keyring_file) }}
+      ganesha_role: {{role}}
     - fire_event: True
 
 {% endfor %}

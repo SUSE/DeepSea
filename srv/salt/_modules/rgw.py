@@ -55,9 +55,9 @@ def users(role):
                 log.info("users: {}".format(users))
                 return users
             if role in __pillar__['rgw_configurations']:
-                
-                return list(Set(__pillar__['rgw_configurations']) &
-                            Set(__pillar__['roles']))
+                users = [ u['name'] for u in __pillar__['rgw_configurations'][role]['users'] ]
+                log.info("users: {}".format(users))
+                return users
         if 'rgw' in __pillar__['roles']:
             return []
     return []
