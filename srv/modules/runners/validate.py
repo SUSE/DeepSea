@@ -139,7 +139,7 @@ class Validate(object):
         """
         Helper function to set status as passed when no entries are seen in errors
         """
-        if key not in self.errors:
+        if key not in self.errors and key not in self.warnings:
             self.passed[key] = "valid"
 
     def fsid(self):
