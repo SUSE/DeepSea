@@ -11,10 +11,10 @@ ganesha config:
     - sls: ceph.ganesha.config
     - failhard: True
 
-{% for config in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
-{{ config }}:
+{% for role in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
+start {{ role }}::
   salt.state:
-    - tgt: "I@roles:{{ config }} and I@cluster:ceph"
+    - tgt: "I@roles:{{ role }} and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.ganesha
 

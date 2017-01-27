@@ -86,6 +86,8 @@ install:
 	install -m 644 srv/salt/ceph/ganesha/configure/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/configure/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/key
 	install -m 644 srv/salt/ceph/ganesha/key/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/key/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/keyring
+	install -m 644 srv/salt/ceph/ganesha/keyring/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/install
 	install -m 644 srv/salt/ceph/ganesha/install/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/install/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/service
