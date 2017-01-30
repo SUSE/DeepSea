@@ -317,15 +317,15 @@ def queues(**kwargs):
     with Lock(fq.settings):
         return "\n".join(fq.dirs())
 
-def enqueue(name = None, **kwargs):
+def enqueue(queue = None, **kwargs):
     """
     Add item
     """
-    log.debug("enqueue: name = {}, kwargs = {}".format(name, _skip_dunder(kwargs)))
+    log.debug("enqueue: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
-        if name:
-            ret = fq.touch(name)
+        if queue:
+            ret = fq.touch(queue)
         elif 'item' in kwargs:
             ret = fq.touch(kwargs['item'])
         else:
@@ -385,47 +385,47 @@ def empty(**kwargs):
     with Lock(fq.settings):
         return fq.empty()
 
-def check(name = None, **kwargs):
+def check(queue = None, **kwargs):
     """
     Check if item exists
     """
-    log.debug("check: name = {}, kwargs = {}".format(name, _skip_dunder(kwargs)))
+    log.debug("check: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
-        if name:
-            return fq.check(name)
+        if queue:
+            return fq.check(queue)
         elif 'item' in kwargs:
             return fq.check(kwargs['item'])
         else:
             help()
             return
 
-def remove(name = None, **kwargs):
+def remove(queue = None, **kwargs):
     """
     Remove specific item
     """
-    log.debug("remove: name = {}, kwargs = {}".format(name, _skip_dunder(kwargs)))
+    log.debug("remove: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
 
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
-        if name:
-            return fq.remove(name)
+        if queue:
+            return fq.remove(queue)
         elif 'item' in kwargs:
             return fq.remove(kwargs['item'])
         else:
             help()
             return
 
-def vacate(name = None, **kwargs):
+def vacate(queue = None, **kwargs):
     """
     Remove specific item and check if queue is empty
     """
-    log.debug("vacate: name = {}, kwargs = {}".format(name, _skip_dunder(kwargs)))
+    log.debug("vacate: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
 
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
-        if name:
-            return fq.vacate(name)
+        if queue:
+            return fq.vacate(queue)
         elif 'item' in kwargs:
             return fq.vacate(kwargs['item'])
         else:
