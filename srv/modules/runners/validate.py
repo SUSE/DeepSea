@@ -135,6 +135,13 @@ class Validate(object):
             log.error("No minions responded")
             os._exit(1)
 
+    def _set_pass_status(self, key):
+        """
+        Helper function to set status as passed when no entries are seen in errors
+        """
+        if key not in self.errors and key not in self.warnings:
+            self.passed[key] = "valid"
+
     def fsid(self):
         """
         Validate fsid from first entry
@@ -176,18 +183,13 @@ class Validate(object):
                 ipaddress.ip_network(u'{}'.format(public_network))
             except ValueError as err:
                 msg = "{} on {} is not valid".format(public_network, node)
-                if 'public_network' in self.errors:
-                    self.errors['public_network'].append(msg)
-                else:
-                    self.errors['public_network'] = [ msg ]
+                self.errors.setdefault('public_network', []).append(msg)
+
         if len(same_network.keys()) > 1:
             msg = "Different public networks {}".format(same_network.keys())
-            if 'public_network' in self.errors:
-                self.errors['public_network'].append(msg)
-            else:
-                self.errors['public_network'] = [ msg ]
-        if not 'public_network' in self.errors:
-            self.passed['public_network'] = "valid"
+            self.errors.setdefault('public_network', []).append(msg)
+
+        self._set_pass_status('public_network')
 
     def public_interface(self):
         """
@@ -209,12 +211,9 @@ class Validate(object):
                     pass
             if not found:
                 msg = "minion {} missing address on public network {}".format(node, public_network)
-                if 'public_interface' in self.errors:
-                    self.errors['public_interface'].append(msg)
-                else:
-                    self.errors['public_interface'] = [ msg ]
-        if not 'public_interface' in self.errors:
-            self.passed['public_interface'] = "valid"
+                self.errors.setdefault('public_interface',[]).append(msg)
+
+        self._set_pass_status('public_network')
 
     def monitors(self):
         """
@@ -276,18 +275,16 @@ class Validate(object):
                     ipaddress.ip_network(u'{}'.format(cluster_network))
                 except ValueError as err:
                     msg = "{} on {} is not valid".format(cluster_network, node)
-                    if 'cluster_network' in self.errors:
-                        self.errors['cluster_network'].append(msg)
-                    else:
-                        self.errors['cluster_network'] = [ msg ]
+                    self.errors.setdefault('cluster_network', []).append(msg)
+
         if len(same_network.keys()) > 1:
             msg = "Different cluster networks {}".format(same_network.keys())
             if 'cluster_network' in self.errors:
                 self.errors['cluster_network'].append(msg)
             else:
                 self.errors['cluster_network'] = [ msg ]
-        if not 'cluster_network' in self.errors:
-            self.passed['cluster_network'] = "valid"
+
+        self._set_pass_status('cluster_network')
 
     def cluster_interface(self):
         """
@@ -308,14 +305,9 @@ class Validate(object):
                         pass
                 if not found:
                     msg = "minion {} missing address on cluster network {}".format(node, cluster_network)
-                    if 'cluster_interface' in self.errors:
-                        self.errors['cluster_interface'].append(msg)
-                    else:
-                        self.errors['cluster_interface'] = [ msg ]
-        if not 'cluster_interface' in self.errors:
-            self.passed['cluster_interface'] = "valid"
+                    self.errors.setdefault('cluster_interface',[]).append(msg)
 
-
+        self._set_pass_status('cluster_interface')
 
     def _monitor_check(self, name):
         """
@@ -333,17 +325,11 @@ class Validate(object):
                         self.errors[name] = [ msg ]
             else:
                 msg = "host {} is missing {}".format(node, name)
-                if name in self.errors:
-                    self.errors[name].append(msg)
-                else:
-                    self.errors[name] = [ msg ]
+                self.errors.setdefault(name, []).append(msg)
 
         if len(same_hosts.keys()) > 1:
             msg = "Different entries {}".format(same_hosts.keys())
-            if name in self.errors:
-                self.errors[name].append(msg)
-            else:
-                self.errors[name] = [ msg ]
+            self.errors.setdefault(name, []).append(msg)
         elif same_hosts:
             count = len(same_hosts.keys()[0].split(","))
             if count < 3:
@@ -353,8 +339,7 @@ class Validate(object):
             msg = "Missing {}".format(name)
             self.errors[name] = [ msg ]
 
-        if not name in self.errors:
-            self.passed[name] = "valid"
+        self._set_pass_status(name)
 
     def master_role(self):
         """
@@ -377,9 +362,7 @@ class Validate(object):
             msg = "The master_minion does not match any minion assigned the master role"
             self.errors['master_role'] = [ msg ]
 
-        if not 'master_role' in self.errors:
-            self.passed['master_role'] = "valid"
-
+        self._set_pass_status('master_role')
 
     def mon_host(self):
         """
@@ -481,8 +464,7 @@ class Validate(object):
         else:
             self._ping_check(time_server)
 
-        if not 'time_server' in self.errors:
-            self.passed['time_server'] = "valid"
+        self._set_pass_status('time_server')
 
     def fqdn(self):
         """
@@ -497,8 +479,7 @@ class Validate(object):
                 else:
                     self.warnings.setdefault('fqdn', []).append(msg)
 
-        if not 'fqdn' in self.errors and not 'fqdn' in self.warnings:
-            self.passed['fqdn'] = "valid"
+        self._set_pass_status('fqdn')
 
 # Note: the master_minion and ceph_version are specific to the Stage 0
 # validate.  These are also more similar to the ready.py for the firewall
@@ -538,12 +519,9 @@ class Validate(object):
                 # String comparison works for now
                 if version < JEWEL_VERSION:
                     msg = "ceph version {} on minion {}".format(version, minion)
-                    if 'ceph_version' in self.errors:
-                        self.errors['ceph_version'].append(msg)
-                    else:
-                        self.errors['ceph_version'] = [ msg ]
-        if 'ceph_version' not in self.errors:
-            self.passed['ceph_version'] = "valid"
+                    self.errors.setdefault('ceph_version', []).append(msg)
+
+        self._set_pass_status('ceph_version')
 
     def report(self):
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
