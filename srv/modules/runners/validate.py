@@ -103,11 +103,8 @@ class ClusterAssignment(object):
         Create a dictionary of cluster to minions
         """
         clusters = {}
-        for minion in self.minions.keys():
-            cluster = self.minions[minion]
-            if not cluster in clusters:
-                clusters[cluster] = []
-            clusters[cluster].extend([ minion ])
+        for minion, cluster in self.minions.items():
+            clusters.setdefault(cluster, []).append(minion)
         return clusters
 
 class Validate(object):
