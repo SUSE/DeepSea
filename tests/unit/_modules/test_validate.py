@@ -1,4 +1,7 @@
 import pytest
+import salt.client
+
+from mock import patch, MagicMock
 from srv.modules.runners import validate
 
 # Trivial tests to validate the unittest itself is working
@@ -7,5 +10,43 @@ def test_get_printer():
     assert(isinstance(validate.get_printer('json'), validate.JsonPrinter))
     assert(isinstance(validate.get_printer('quiet'), validate.JsonPrinter))
 
-class TestValidate():
-    pass
+
+class TestClusterAssignment():
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_single_cluster(self, localclient):
+        cluster_dict = {"minionA":"ceph", "minionB": "ceph", "minionC": "ceph"}
+
+        local = localclient.return_value
+        local.cmd.return_value = cluster_dict
+
+        cluster = validate.ClusterAssignment(salt.client.LocalClient())
+        assert len(cluster.names) == 1
+        assert set(cluster.names['ceph']) == set(["minionA","minionB","minionC"])
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_single_cluster_unassigned(self, localclient):
+        cluster_dict = {"minionA":"ceph", "minionB": "ceph",
+                        "minionC": "unassigned", "minionD": "ceph",
+                        "minionE": "unassigned"}
+
+        local = localclient.return_value
+        local.cmd.return_value = cluster_dict
+
+        cluster = validate.ClusterAssignment(salt.client.LocalClient())
+        assert len(cluster.names) == 1
+        assert set(cluster.names['ceph']) == set(["minionA","minionB","minionD"])
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_multi_cluster_unassigned(self, localclient):
+        cluster_dict = {"minionA":"ceph", "minionB": "kraken",
+                        "minionC": "unassigned", "minionD": "ceph",
+                        "minionE": "kraken"}
+
+        local = localclient.return_value
+        local.cmd.return_value = cluster_dict
+
+        cluster = validate.ClusterAssignment(salt.client.LocalClient())
+        assert len(cluster.names) == 2
+        assert set(cluster.names['ceph']) == set(["minionA","minionD"])
+        assert set(cluster.names['kraken']) == set(["minionB","minionE"])
