@@ -50,7 +50,7 @@ EXPORT
 
 {% endfor %}
 
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=ganesha_role,, host=True) %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=ganesha_role, host=True) %}
 {% set name = "client." + ganesha_role + "." + host %}
 RGW {
     ceph_conf = "/etc/ceph/ceph.conf";

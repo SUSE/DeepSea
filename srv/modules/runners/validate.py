@@ -255,6 +255,38 @@ class Validate(object):
             else:
                 self.passed['storage'] = "valid"
 
+
+    def ganesha(self):
+        role_ganesha = False
+        role_mds = False
+        role_rgw = False
+
+        for node in self.data.keys():
+            ganesha_role = list(set(self.data[node].get("roles")) &
+                                set(self.data[node].get("ganesha_configurations")))
+            if ganesha_role:
+                if len(ganesha_role) > 1:
+                    msg = "Only one ganesha server per node"
+                    self.errors['ganesha'] = [ msg ]
+                    role_ganesha = False
+                    break
+                else:
+                    role_ganesha = True
+
+            if not (role_mds or role_rgw):
+                if('mds' in self.data[node]['roles']):
+                    role_mds = True
+                if(list(set(self.data[node].get("roles")) &
+                       set(self.data[node].get("rgw_configurations")))):
+                    role_rgw = True
+
+        if role_ganesha:
+            if(role_rgw or role_mds):
+                self.passed['ganesha'] = "valid"
+            else:
+                msg = "Ganesha requires either mds or rgw node in cluster."
+                self.errors['ganesha'] = msg
+       
     def cluster_network(self):
         """
         All storage nodes must have the same cluster network.  The cluster
@@ -573,6 +605,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.cluster_interface()
     v.monitors()
     v.storage()
+    v.ganesha()
     v.master_role()
     v.mon_host()
     v.mon_initial_members()
