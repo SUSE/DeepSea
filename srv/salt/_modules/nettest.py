@@ -7,6 +7,7 @@ import salt.utils as salt_utils
 
 import copy
 import logging
+import netifaces
 import os
 import re
 import socket
@@ -137,6 +138,21 @@ def _ping_log_success( ping_log ):
         return True
     else:
         return False
+
+def get_all_ipv4():
+    '''
+    Return all available ipv4 address with local interface. 
+    '''
+    ip_list = []
+    for interface in netifaces.interfaces():
+        log.debug('get_all_ipv4: interface {}'.format(interface))
+        if interface != 'lo':
+            try:
+                for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:
+                    ip_list.append(link['addr'])
+            except KeyError:
+                log.debug( 'interface {} has no link'.format(interface))
+    return ip_list
 
 def iperf_client( server, run_time=100, cpu_num=1, port_num=5201 ):
     '''
