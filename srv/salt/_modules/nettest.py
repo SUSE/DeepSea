@@ -138,6 +138,21 @@ def _ping_log_success( ping_log ):
     else:
         return False
 
+def iperf_client( server, run_time=100, cpu_num=1, port_num=5201 ):
+    '''
+    Use iperf to test minion to server
+        
+    CLI Example:
+    .. code-block:: bash
+    salt 'node' ceph_sles.iperf cpu_number port_number server
+    '''
+    if not server:
+        return False
+    iperf_cmd = '/usr/bin/iperf3 -f M -t {} -A {} -c {} -p {}'.format(run_time, cpu_num, server, port_num)
+    log.debug('iperf: cmd {}'.format(iperf_cmd))
+    iperf_log = __salt__['cmd.run'](iperf_cmd, output_loglevel='debug')
+    return iperf_log
+
 def multi_ping( ping_from, *nodes, **kwargs):
     '''
     *This function mean for master only. *
