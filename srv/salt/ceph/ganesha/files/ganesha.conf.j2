@@ -9,10 +9,6 @@ EXPORT
 
 	Access_Type = RW;
 
-	NFS_Protocols = 4;
-
-	Transport_Protocols = TCP;
-
     FSAL {
             Name = CEPH;
             User_Id = "{{user_id}}";
@@ -35,10 +31,6 @@ EXPORT
 	Pseudo = "/{{ user }}";
 
 	Access_Type = RW;
-
-	NFS_Protocols = 4;
-
-	Transport_Protocols = TCP;
 
 	FSAL {
 		Name = RGW;
