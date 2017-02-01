@@ -10,6 +10,8 @@
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
     "app-layout": "PolymerElements/app-layout#^0.10.0",
     "app-route": "PolymerElements/app-route#^0.9.0",
+    "app-storage": "PolymerElements/app-storage#^0.9.8",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.4.3",
     "iron-autogrow-textarea": "PolymerElements/iron-autogrow-textarea",
     "iron-pages": "PolymerElements/iron-pages#^1.0.0",
     "iron-selector": "PolymerElements/iron-selector#^1.0.0",
