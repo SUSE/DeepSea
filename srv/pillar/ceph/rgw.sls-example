@@ -1,6 +1,6 @@
 
-
-#rgw_configurations:
+# default
+# rgw_configurations:
 #  rgw:
 #    users:
 #      - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
@@ -15,6 +15,18 @@ rgw_configurations:
     users:
       - { uid: "demoA", name: "DemoA", email: "demoA@demo.nil" }
       - { uid: "demoB", name: "DemoB", email: "demoB@demo.nil" }
+
+rgw_realm: gold
+rgw_zonegroup: us
+rgw_zone: us-east-1
+rgw_is_master: true
+rgw_configurations:
+  rgw.us-east-1:
+    users:
+      - uid: "system.user"
+        name: "System User for Zone us-east-1"
+        system: True
+        email: "admin@demo.nil"
 
 
 ganesha_configurations:
