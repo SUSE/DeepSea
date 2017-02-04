@@ -12,6 +12,8 @@
 <link rel="import" href="../../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 
+<link rel="import" href="../wf-auth/wf-auth.html">
+
 <!-- <link rel="import" href="/src/iscsi-conf/iscsi-conf.html">
      <link rel="import" href="/src/view-404/view-404.html"> -->
 
@@ -93,9 +95,10 @@
                         <a href="http://suse.com" title="SUSE">
                             <iron-icon class="header-icon" src="../../images/suse-logo.svg"></iron-icon>
                         </a>
+                        <!-- Authentication element. -->
+                        <wf-auth></wf-auth>
                     </app-toolbar>
                 </app-header>
-
                 <iron-pages
                     selected="[[page]]"
                     attr-for-selected="name"
