@@ -1,0 +1,22 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<!-- Shared styles for Wolffish authentcation. -->
+<dom-module id="wf-auth-style">
+    <template>
+        <style>
+         paper-icon-button.authenticated {
+             color: var(--paper-green-500);
+             --paper-icon-button-ink-color: var(--paper-indigo-500);
+         }
+         paper-icon-button.notauthenticated {
+             color: var(--paper-red-500);
+             --paper-icon-button-ink-color: var(--paper-indigo-500);
+         }
+         paper-dialog.authdialog {
+             position: fixed;
+             top: 15px;
+             right: 15px;
+         }
+        </style>
+    </template>
+</dom-module>

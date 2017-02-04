@@ -1,0 +1,205 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+
+<link rel="import" href="../salt-api/salt-api.html">
+
+<link rel="import" href="wf-auth-style.html">
+
+<dom-module id="wf-auth">
+    <template>
+        <style include="wf-auth-style">
+         :host {
+             display: block;
+
+             padding: 10px;
+         }
+        </style>
+
+        <paper-icon-button icon="communication:vpn-key" title="Authentication" class$="{{authButtonClass}}" on-click="authButtonHandler"></paper-icon-button>
+
+        <app-localstorage-document key="wfauth" data={{wfAuth}} session-only="true"></app-localstorage-document>
+
+        <paper-dialog id='authDialog' class="authdialog">
+            <paper-input id="saltApiNodeInput" label="salt-api Hostname" value="{{saltApiNode}}" required auto-validate></paper-input>
+            <paper-input id="saltApiPortInput" label="salt-api Port"     value="{{saltApiPort}}" required auto-validate pattern="[0-9]*"></paper-input>
+            <paper-input id="userIdInput"      label="userid"            value="{{userid}}"      required auto-validate></paper-input>
+            <paper-input id="passwordInput"    label="password"          value="{{password}}"    required auto-validate type="password"></paper-input>
+            <div class="buttons">
+                <paper-button raised on-click="login">Log In</paper-button>
+                <paper-button raised on-click="logout" disabled$="{{disableLogoutButton}}">Log Out</paper-button>
+            </div>
+        </paper-dialog>
+
+        <!-- Our salt-api auth element. -->
+        <salt-api
+            id="saltapiauth"
+            node="{{saltApiNode}}"
+            port="{{saltApiPort}}"
+            cmd="run"
+            target="{{saltApiNode}}"
+            func="test.nop"
+            userid="{{userid}}"
+            password="{{password}}"
+            authtype="{{authType}}">
+        </salt-api>
+    </template>
+</dom-module>
+
+<script>
+ Polymer({
+     is: 'wf-auth',
+     properties: {
+         /* Setting all property variables from ready(). */
+         authButtonClass: {
+             type: String,
+         },
+
+         userid: {
+             type: String,
+         },
+
+         password: {
+             type: String,
+         },
+
+         saltApiNode: {
+             type: String,
+         },
+
+         saltApiPort: {
+             type: Number,
+         },
+
+         /* TODO: can make this an option in the future (ldap, auto, pam, etc). */
+         authType: {
+             type: String,
+         },
+
+         /* Bound with sessionStorage.wfauth. */
+         wfAuth: {
+             type: Object,
+         },
+
+         disableLogoutButton: {
+             type: Boolean,
+         }
+     },
+
+     listeners: {
+         "salt-api-response": "handleAuth200",
+         "salt-api-error": "handleAuthErr"
+     },
+
+     ready: function() {
+         if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
+             var wfauth = JSON.parse(sessionStorage.wfauth);
+             this.authButtonClass = "authenticated";
+             this.userid = wfauth.userid;
+             this.password = wfauth.password;
+             this.saltApiNode = wfauth.node;
+             this.saltApiPort = wfauth.port;
+             this.authType = wfauth.authtype;
+             /* this.wfAuth does not need to be set as it will
+              * be populated from sessionStorage by <app-localstorage-document>.
+              */
+             this.disableLogoutButton = false;
+         } else {
+             this.setDefaultProperties();
+         }
+     },
+
+     authButtonHandler: function() {
+         this.$.authDialog.open();
+     },
+
+     /* We allow at-will re-auth (login button not greyed out on auth success).
+      * This is a conscious choice.  Should any failure on the salt-api backend
+      * occur, the user has all credentials in place unless specifically cleared
+      * via logout (or when re-loading the page in an unauthenticated state).
+      */
+     login: function(e) {
+         var validated = true;
+
+         /* Done in this way to validate all input at once.  Stringing together
+          * in an if (... && ... && ...) {} will catch one failure at a time.
+          */
+         if (!this.$.saltApiNodeInput.validate())
+             validated = false;
+         if (!this.$.saltApiPortInput.validate())
+             validated = false;
+         if (!this.$.userIdInput.validate())
+             validated = false;
+         if (!this.$.passwordInput.validate())
+             validated = false;
+
+         if (validated) {
+             console.log("wf-auth:login(): Credentials entered.  Attempting to authenticate with " + this.saltApiNode);
+             /* Since we're trying to authenticate or re-authenticate, clear out
+              * wfAuth (and sebsequently sessionStorage.wfauth) and paint auth button
+              * red _before_ trying an auth/re-auth.
+              */
+             this.clearWFAuth();
+             console.log(this.wfAuth);
+             console.log(sessionStorage);
+
+             /* Attempt to authenticate. */
+             this.$.saltapiauth.run();
+         }
+     },
+
+     logout: function() {
+         console.log("wf-auth:logout(): De-authenticating.");
+         this.setDefaultProperties();
+     },
+
+     handleAuth200: function(e) {
+         /* curl -sS wolffish-1.lan:8000/run -d client='local' -d tgt='*' -d fun='test.ping' -d username='admin' -d password='restadmin' -d eauth='auto'*/
+         console.log("wf-auth:handleAuth200(): caught 'salt-api-response' event.  Authenticated.");
+         this.$.authDialog.close();
+         this.authButtonClass = "authenticated";
+         this.set("wfAuth.node", this.saltApiNode);
+         this.set("wfAuth.port", this.saltApiPort);
+         this.set("wfAuth.userid", this.userid);
+         this.set("wfAuth.password", this.password);
+         this.set("wfAuth.authtype", this.authType);
+         this.disableLogoutButton = false;
+     },
+
+     handleAuthErr: function(e) {
+         console.log("wf-auth:handleAuthErr(): caught 'salt-api-error' event.  Authencation failed.");
+         alert("Failed to authenticate.  Try again.");
+     },
+
+     /* Sets initial property values.  Also used to clear auth dialog when logging out. */
+     setDefaultProperties: function() {
+         console.log("wf-auth:setDefaultProperties(): Setting default auth credentials.");
+         this.authButtonClass = "notauthenticated";
+         this.userid = "";
+         this.password = "";
+         this.saltApiNode = "";
+         this.saltApiPort = 8000;
+         this.authType = "auto";
+         this.wfAuth = {};
+         this.disableLogoutButton = true;
+     },
+
+     /* Clears wfAuth along with sessionStorage.wfauth.  Also disables logout button
+      * and paints auth key button red.  However, leaves auth dialog input in-tact for
+      * re-authentication.
+      */
+     clearWFAuth: function() {
+         console.log("wf-auth:clearWFAuth(): De-authenticating.");
+         this.wfAuth = {};
+         this.authButtonClass = "notauthenticated";
+         this.disableLogoutButton = true;
+     }
+
+ });
+</script>
