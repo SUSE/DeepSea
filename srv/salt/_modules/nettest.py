@@ -59,7 +59,17 @@ def _get_all_minions():
 
 def _get_master():
     '''
-    internal function to get salt master 
+    internal function to get salt master
+    '''
+    master_host = __salt__['config.get']('master')
+    log.debug('internal function _get_master: {}'.format(master_host))
+    if not master_host:
+        master_host = False
+    return master_host
+
+def _get_master_from_pillar():
+    '''
+    internal function to get salt master from pillar
     '''
     master_host = __salt__['pillar.get']('master_minion')
     log.debug('internal function _get_master: {}'.format(master_host))
@@ -141,7 +151,7 @@ def _ping_log_success( ping_log ):
 
 def get_all_ipv4():
     '''
-    Return all available ipv4 address with local interface. 
+    Return all available ipv4 address without local interface. 
     '''
     ip_list = []
     for interface in netifaces.interfaces():
@@ -152,7 +162,22 @@ def get_all_ipv4():
                     ip_list.append(link['addr'])
             except KeyError:
                 log.debug( 'interface {} has no link'.format(interface))
-    return ip_list
+    return list(set(ip_list))
+
+def get_all_ipv6():
+    '''
+    Return all available ipv6 address without local interface. 
+    '''
+    ip_list = []
+    for interface in netifaces.interfaces():
+        log.debug('get_all_ipv6: interface {}'.format(interface))
+        if interface != 'lo':
+            try:
+                for link in netifaces.ifaddresses(interface)[netifaces.AF_INET6]:
+                    ip_list.append(link['addr'])
+            except KeyError:
+                log.debug( 'interface {} has no link'.format(interface))
+    return list(set(ip_list))
 
 def iperf_client( server, run_time=100, cpu_num=1, port_num=5201 ):
     '''
