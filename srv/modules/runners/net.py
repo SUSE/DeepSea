@@ -76,7 +76,9 @@ def _summarize(total, results):
         if 'errored' in results[host]:
             errored.append("{} from {}".format(results[host]['errored'], host)) 
 
-    print "Succeeded: {} addresses from {} minions".format(total, len(success))
+    avg = sum( results[host].get('avg') for host in results) / len(results)
+
+    print "Succeeded: {} addresses from {} minions average rtt {} ms".format(total, len(success), avg)
     if failed:
         print "Failed: \n    {}".format("\n    ".join(failed))
     if errored:
