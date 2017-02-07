@@ -56,6 +56,7 @@ def _summarize(results):
     success = []
     failed = []
     errored = []
+    slow = []
     avg = []
     for result in results:
         host, rc, out, err = result
@@ -73,6 +74,9 @@ def _summarize(results):
 
     if avg:
         avg_sum = sum(i.get('avg') for i in avg) / len(avg)
+        for i in avg:
+            if (avg_sum * len(avg) / 2) < i.get('avg') :
+                slow.append(i.get('host'))
     else:
         avg_sum = 0 
     
@@ -82,6 +86,8 @@ def _summarize(results):
         msg['failed'] = " ".join(failed)
     if errored:
         msg['errored'] = " ".join(errored)
+    if slow:
+        msg['slow'] = " ".join(slow)
     msg['avg'] = avg_sum
     return msg
 

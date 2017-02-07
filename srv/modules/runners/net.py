@@ -155,6 +155,7 @@ def _summarize(total, results):
     success = []
     failed = []
     errored = []
+    slow = []
     log.debug( "_summarize: results {}".format(results))
     for host in sorted(results.iterkeys()):
         if results[host]['succeeded'] == total:
@@ -163,6 +164,9 @@ def _summarize(total, results):
             failed.append("{} from {}".format(results[host]['failed'], host)) 
         if 'errored' in results[host]:
             errored.append("{} from {}".format(results[host]['errored'], host)) 
+        if 'slow' in results[host]:
+            slow.append("{} from {}".format(results[host]['slow'], host)) 
+
 
     if success:
         avg = sum( results[host].get('avg') for host in results) / len(results)
@@ -170,6 +174,8 @@ def _summarize(total, results):
         avg = 0
 
     print "Succeeded: {} addresses from {} minions average rtt {} ms".format(total, len(success), avg)
+    if slow:
+       print "Warning slow host: \n    {}".format("\n    ".join(errored))
     if failed:
         print "Failed: \n    {}".format("\n    ".join(failed))
     if errored:
