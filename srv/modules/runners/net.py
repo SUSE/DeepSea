@@ -1,9 +1,14 @@
 #!/usr/bin/python
 
+import logging
+import re
 import salt.client
+
 from netaddr import IPNetwork, IPAddress
 
-def ping(cluster = None):
+log = logging.getLogger(__name__)
+
+def ping(cluster = None, excluded=None):
     """
     Ping all addresses from all addresses on all minions.  If cluster is passed,
     restrict addresses to public and cluster networks.
@@ -15,7 +20,26 @@ def ping(cluster = None):
     focus there.
 
     TODO: Convert commented out print statements to log.debug
+
+    CLI Example: (Before DeepSea with a cluster configuration)
+    .. code-block:: bash
+        sudo salt-run net.ping 
+
+    or you can run it with exclude
+    .. code-block:: bash
+        sudo salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1" 
+
+    (After DeepSea with a cluster configuration)
+    .. code-block:: bash
+        sudo salt-run net.ping cluster=ceph 
+        sudo salt-run net.ping ceph 
+
     """
+    ex_string = iplist = None
+    if excluded:
+        ex_string, iplist = _exclude_filter(excluded)
+    
+
     local = salt.client.LocalClient()
     if cluster:
         search = "I@cluster:{}".format(cluster)
@@ -30,12 +54,23 @@ def ping(cluster = None):
             if 'public_network' in networks[host]:
                 addresses.extend(_address(total[host], networks[host]['public_network'])) 
     else:
-        search = "*"
+        if ex_string:
+             search = "* and not ( " + ex_string + " )"
+        else:
+             search = "*"
         addresses = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
     
         addresses = _flatten(addresses.values())
         # Lazy loopback removal - use ipaddress when adding IPv6
-        addresses.remove('127.0.0.1')
+        try:
+            if addresses:
+                addresses.remove('127.0.0.1')
+            if iplist:
+                for ex_ip in iplist:
+                    log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
+                    addresses.remove(ex_ip)
+        except ValueError:
+            pass
     #print addresses
     results = local.cmd(search, 'multi.ping', addresses, expr_form="compound")
     #print results
@@ -53,13 +88,65 @@ def _address(addresses, network):
             matched.append(address)
     return matched
 
+def _exclude_filter(excluded):
+    """ 
+    Internal exclude_filter return string in compound format
+ 
+    Compound format = {'G': 'grain', 'P': 'grain_pcre', 'I': 'pillar', 
+                       'J': 'pillar_pcre', 'L': 'list', 'N': None, 
+                       'S': 'ipcidr', 'E': 'pcre'}
+    IPV4 address = "255.255.255.255"
+    hostname = "myhostname"
+    """
+    log.debug( "_exclude_filter: excluding {}".format(excluded))
+    excluded = excluded.split(",")
+    log.debug( "_exclude_filter: split ',' {}".format(excluded))
+
+    pattern_compound = re.compile("^.*([GPIJLNSE]\@).*$")
+    pattern_iplist = re.compile( "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$" )
+    pattern_ipcidr = re.compile( "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$")
+    pattern_hostlist = re.compile( "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]).)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
+    compound = []
+    ipcidr = []
+    iplist = []
+    hostlist = []
+    regex_list = []
+    for para in excluded:
+        if pattern_compound.match(para):
+            log.debug( "_exclude_filter: Compound {}".format(para))
+            compound.append(para)
+        elif pattern_iplist.match(para):
+            log.debug( "_exclude_filter: ip {}".format(para))
+            iplist.append(para)    
+        elif pattern_ipcidr.match(para):
+            log.debug( "_exclude_filter: ipcidr {}".format(para))
+            ipcidr.append("S@"+para)    
+        elif pattern_hostlist.match(para):
+            hostlist.append("L@"+para)
+            log.debug( "_exclude_filter: hostname {}".format(para))
+        else:
+            regex_list.append("E@"+para)
+            log.debug( "_exclude_filter: not sure but likely Regex host {}".format(para))
+
+    if ipcidr:
+        log.debug("_exclude_filter ip subnet is not working yet ... = {}".format(ipcidr))
+    new_compound_excluded = " or ".join(compound + hostlist + regex_list) 
+    log.debug("_exclude_filter new formed compound excluded list = {}".format(new_compound_excluded))
+    if new_compound_excluded and iplist:
+         return new_compound_excluded, iplist
+    elif new_compound_excluded:
+         return new_compound_excluded, None
+    elif iplist:
+         return None, iplist
+    else:
+         return None, None
 
 def _flatten(l):
     """
     Flatten a array of arrays
     """
+    log.debug( "_flatten: {}".format(l))
     return list(set(item for sublist in l for item in sublist))
-
 
 def _summarize(total, results):
     """
@@ -68,6 +155,7 @@ def _summarize(total, results):
     success = []
     failed = []
     errored = []
+    log.debug( "_summarize: results {}".format(results))
     for host in sorted(results.iterkeys()):
         if results[host]['succeeded'] == total:
             success.append(host)
@@ -76,7 +164,10 @@ def _summarize(total, results):
         if 'errored' in results[host]:
             errored.append("{} from {}".format(results[host]['errored'], host)) 
 
-    avg = sum( results[host].get('avg') for host in results) / len(results)
+    if success:
+        avg = sum( results[host].get('avg') for host in results) / len(results)
+    else:
+        avg = 0
 
     print "Succeeded: {} addresses from {} minions average rtt {} ms".format(total, len(success), avg)
     if failed:
