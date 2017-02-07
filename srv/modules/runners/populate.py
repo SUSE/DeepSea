@@ -560,13 +560,7 @@ class CephRoles(object):
         Create a file for mon_host and mon_initial_members
         """
         minion_dir = "{}/role-mon/stack/default/{}/minions".format(self.root_dir, self.cluster)
-        if not os.path.isdir(minion_dir):
-            create_dirs(minion_dir, self.root_dir)
-        for server in self.servers:
-            filename = minion_dir + "/" +  server + ".yml"
-            contents = {}
-            contents['public_address'] = self._public_interface(server)
-            self.writer.write(filename, contents)
+        add_pub_interface(minion_dir)
 
     def igw_members(self):
         """
@@ -575,19 +569,16 @@ class CephRoles(object):
         Note: identical to above
         """
         minion_dir = "{}/role-igw/stack/default/{}/minions".format(self.root_dir, self.cluster)
-        if not os.path.isdir(minion_dir):
-            create_dirs(minion_dir, self.root_dir)
-        for server in self.servers:
-            filename = minion_dir + "/" +  server + ".yml"
-            contents = {}
-            contents['public_address'] = self._public_interface(server)
-            self.writer.write(filename, contents)
+        add_pub_interface(minion_dir)
 
     def ganesha_members(self):
         """
         Create a file for ganesha hosts.
         """
         minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
+        add_pub_interface(minion_dir)
+
+    def add_pub_interface(self, minion_dir):
         if not os.path.isdir(minion_dir):
             create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
