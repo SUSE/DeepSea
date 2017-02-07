@@ -161,6 +161,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/auth
 %dir /srv/salt/ceph/rgw/keyring
 %dir /srv/salt/ceph/rgw/restart
+%dir /srv/salt/ceph/rsyslog
+%dir /srv/salt/ceph/rsyslog/client
+%dir /srv/salt/ceph/rsyslog/server
 %dir /srv/salt/ceph/stage
 %dir /srv/salt/ceph/stage/all
 %dir /srv/salt/ceph/stage/benchmark
@@ -175,6 +178,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/prep/minion
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
+%dir /srv/salt/ceph/stage/rsyslog
 %dir /srv/salt/ceph/stage/services
 %dir /srv/salt/ceph/sync
 %dir /srv/salt/ceph/time
@@ -285,6 +289,10 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rgw/auth/*.sls
 %config /srv/salt/ceph/rgw/keyring/*.sls
 %config /srv/salt/ceph/rgw/restart/*.sls
+%config /srv/salt/ceph/rsyslog/client/*.conf
+%config /srv/salt/ceph/rsyslog/client/*.sls
+%config /srv/salt/ceph/rsyslog/server/*.conf
+%config /srv/salt/ceph/rsyslog/server/*.sls
 %config /srv/salt/ceph/stage/0
 %config /srv/salt/ceph/stage/1
 %config /srv/salt/ceph/stage/2
@@ -304,6 +312,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/prep/minion/*.sls
 %config /srv/salt/ceph/stage/radosgw/*.sls
 %config /srv/salt/ceph/stage/removal/*.sls
+%config /srv/salt/ceph/stage/rsyslog/*.md
+%config /srv/salt/ceph/stage/rsyslog/*.sls
 %config /srv/salt/ceph/stage/services/*.sls
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/time/*.sls

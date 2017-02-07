@@ -8,6 +8,9 @@ auth_client_required = cephx
 filestore_xattr_use_omap = true
 public_network = {{ salt['pillar.get']('public_network') }}
 cluster_network = {{ salt['pillar.get']('cluster_network') }}
+{% if salt['pillar.get']('rsyslog_ipv4') %}
+log_to_syslog = true
+{% endif %}
 
 {% if 'rgw' in salt['pillar.get']('roles', []) %}
 {% set default_rgw = [ 'rgw' ] %}
