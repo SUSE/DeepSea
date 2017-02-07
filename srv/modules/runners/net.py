@@ -175,7 +175,7 @@ def _summarize(total, results):
 
     print "Succeeded: {} addresses from {} minions average rtt {} ms".format(total, len(success), avg)
     if slow:
-       print "Warning slow host: \n    {}".format("\n    ".join(errored))
+       print "Warning slow host: \n    {}".format("\n    ".join(slow))
     if failed:
         print "Failed: \n    {}".format("\n    ".join(failed))
     if errored:
