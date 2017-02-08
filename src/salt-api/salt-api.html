@@ -8,7 +8,7 @@
             id="saltapi"
             url="http://{{node}}:{{port}}/{{cmd}}/"
             content-type="application/json"
-            method="POST"
+            method="{{method}}"
             body='{"client":"local", "tgt":"{{target}}", "fun":"{{func}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}"}'
             handle-as="json"
             on-response="handle200"
@@ -21,7 +21,20 @@
     Polymer({
         is: 'salt-api',
 
-        run: function() {
+        properties: {
+            method: {
+                type: String,
+                value: ""
+            }
+        },
+
+        runGet: function() {
+            this.method = "GET";
+            this.$.saltapi.generateRequest();
+        },
+
+        runPost: function() {
+            this.method = "POST";
             this.$.saltapi.generateRequest();
         },
 
