@@ -2,7 +2,7 @@
 /etc/ganesha/ganesha.conf:
   file.managed:
     - source:
-      - salt://ceph/ganesha/cache/{{role}}.conf
+      - salt://ceph/ganesha/cache/{{ role }}.{{ salt['grains.get']('host') }}.conf
     - template: jinja
     - user: root
     - group: root
