@@ -18,7 +18,7 @@ check {{ role }}:
 {% set client = "client." + user_id %}
 {% set keyring_file = salt['keyring.file']('ganesha', client)  %}
 
-/srv/salt/ceph/ganesha/cache/{{ role }}.conf:
+/srv/salt/ceph/ganesha/cache/{{ role }}.{{ host }}.conf:
   file.managed:
     - source:
       - salt://ceph/ganesha/files/{{ role }}.conf.j2
@@ -30,6 +30,7 @@ check {{ role }}:
     - context:
       role: {{ salt['rgw.configuration'](role) }}
       user_id: {{ user_id }}
+      host: {{ host }}
       secret_access_key: {{ salt['keyring.secret'](keyring_file) }}
       ganesha_role: {{role}}
     - fire_event: True
