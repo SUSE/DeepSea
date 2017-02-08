@@ -50,3 +50,15 @@ class TestClusterAssignment():
         assert len(cluster.names) == 2
         assert set(cluster.names['ceph']) == set(["minionA","minionD"])
         assert set(cluster.names['kraken']) == set(["minionB","minionE"])
+
+
+class TestUtilMethods():
+    def test_parse_empty_string_list(self):
+        assert validate.Util.parse_list_from_string("", ",") == []
+
+    def test_parse_single_element_string_list(self):
+        assert validate.Util.parse_list_from_string("1", ",") == ['1']
+
+    def test_parse_string_list(self):
+        list_str = "1, 4     ,   5, , 7"
+        assert validate.Util.parse_list_from_string(list_str, ",") == ['1', '4', '5', '7']
