@@ -8,7 +8,7 @@ from netaddr import IPNetwork, IPAddress
 
 log = logging.getLogger(__name__)
 
-def ping(cluster = None, excluded=None):
+def ping(cluster = None, exclude = None, **kwargs):
     """
     Ping all addresses from all addresses on all minions.  If cluster is passed,
     restrict addresses to public and cluster networks.
@@ -35,14 +35,35 @@ def ping(cluster = None, excluded=None):
         sudo salt-run net.ping ceph 
 
     """
-    ex_string = iplist = None
-    if excluded:
-        ex_string, iplist = _exclude_filter(excluded)
+    #ex_string = iplist = None
+     
+    extra_kwargs = _skip_dunder(kwargs)
+    if _skip_dunder(kwargs):
+        print "Unsupported parameters: {}".format(" ,".join(extra_kwargs.keys()))
+        text = re.sub(re.compile("^ {12}", re.MULTILINE), "", '''
+            salt-run net.ping [cluster] [exclude]
+
+            Ping all addresses from all addresses on all minions.
+            If cluster is specified, restrict addresses to cluster and public networks.
+            If exclude is specified, remove matching addresses.  See Salt compound matchers.
+
+            Examples:
+                salt-run net.ping
+                salt-run net.ping ceph
+                salt-run net.ping ceph L@mon1.ceph
+                salt-run net.ping cluster=ceph exclude=L@mon1.ceph
+                salt-run net.ping exclude=S@192.168.21.254
+                salt-run net.ping exclude=S@192.168.21.0/29
+        ''')
+        print text
+        return
     
 
     local = salt.client.LocalClient()
     if cluster:
         search = "I@cluster:{}".format(cluster)
+        if exclude:
+             search += " and not ( " + exclude + " )"
         networks = local.cmd(search , 'pillar.item', [ 'cluster_network', 'public_network' ], expr_form="compound")
         #print networks
         total = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
@@ -54,10 +75,9 @@ def ping(cluster = None, excluded=None):
             if 'public_network' in networks[host]:
                 addresses.extend(_address(total[host], networks[host]['public_network'])) 
     else:
-        if ex_string:
-             search = "* and not ( " + ex_string + " )"
-        else:
-             search = "*"
+        search = "*"
+        if exclude:
+             search += " and not ( " + exclude + " )"
         addresses = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
     
         addresses = _flatten(addresses.values())
@@ -65,10 +85,10 @@ def ping(cluster = None, excluded=None):
         try:
             if addresses:
                 addresses.remove('127.0.0.1')
-            if iplist:
-                for ex_ip in iplist:
-                    log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
-                    addresses.remove(ex_ip)
+            #if iplist:
+            #    for ex_ip in iplist:
+            #        log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
+            #        addresses.remove(ex_ip)
         except ValueError:
             pass
     #print addresses
@@ -165,7 +185,7 @@ def _summarize(total, results):
         if 'errored' in results[host]:
             errored.append("{} from {}".format(results[host]['errored'], host)) 
         if 'slow' in results[host]:
-            slow.append("{} from {}".format(results[host]['slow'], host)) 
+            slow.append("{} from {} average rtt {}".format(results[host]['slow'], host, "{0:.2f}".format(results[host]['avg']))) 
 
 
     if success:
@@ -173,10 +193,17 @@ def _summarize(total, results):
     else:
         avg = 0
 
-    print "Succeeded: {} addresses from {} minions average rtt {} ms".format(total, len(success), avg)
+    print "Succeeded: {} addresses from {} minions average rtt {} ms".format(total, len(success), "{0:.2f}".format(avg))
     if slow:
-       print "Warning slow host: \n    {}".format("\n    ".join(slow))
+       print "Warning: \n    {}".format("\n    ".join(slow))
     if failed:
         print "Failed: \n    {}".format("\n    ".join(failed))
     if errored:
        print "Errored: \n    {}".format("\n    ".join(errored))
+
+def _skip_dunder(settings):
+    """
+    Skip double underscore keys
+    """
+    return {k:v for k,v in settings.iteritems() if not k.startswith('__')}
+
