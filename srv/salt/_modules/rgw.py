@@ -45,17 +45,18 @@ def configuration(role):
 
 def users(role):
     """
-    In progress...
+    Return the list of users.  Consider the default rgw and ganesha roles
+    equivalent.
     """
     if 'roles' in __pillar__:
         if 'rgw_configurations' in __pillar__:
             if role == 'ganesha' or role == 'rgw':
                 # Special case for default names
-                users = [ u['name'] for u in __pillar__['rgw_configurations']['rgw']['users'] ]
+                users = [ u['uid'] for u in __pillar__['rgw_configurations']['rgw']['users'] ]
                 log.info("users: {}".format(users))
                 return users
             if role in __pillar__['rgw_configurations']:
-                users = [ u['name'] for u in __pillar__['rgw_configurations'][role]['users'] ]
+                users = [ u['uid'] for u in __pillar__['rgw_configurations'][role]['users'] ]
                 log.info("users: {}".format(users))
                 return users
         if 'rgw' in __pillar__['roles']:
@@ -92,7 +93,7 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
             command = base_cmd + args
 
             proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-            filename = "{}/user.{}.json".format(pathname, user['name'])
+            filename = "{}/user.{}.json".format(pathname, user['uid'])
             with open(filename, "w") as json:
                 for line in proc.stdout:
                     json.write(line)
