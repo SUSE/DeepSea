@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('rescind_igw_keyring', 'default') }}
+  - .{{ salt['pillar.get']('rescind_rgw_keyring', 'default') }}
