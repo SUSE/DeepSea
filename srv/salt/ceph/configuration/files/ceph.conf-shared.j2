@@ -8,6 +8,7 @@ auth_client_required = cephx
 filestore_xattr_use_omap = true
 public_network = {{ salt['pillar.get']('public_network') }}
 cluster_network = {{ salt['pillar.get']('cluster_network') }}
+rbd default features = 3
 
 {% if 'rgw' in salt['pillar.get']('roles', []) %}
 {% set default_rgw = [ 'rgw' ] %}
