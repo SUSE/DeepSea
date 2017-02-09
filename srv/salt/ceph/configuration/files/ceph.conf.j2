@@ -8,6 +8,7 @@ auth_client_required = cephx
 filestore_xattr_use_omap = true
 public_network = {{ salt['pillar.get']('public_network') }}
 cluster_network = {{ salt['pillar.get']('cluster_network') }}
+rbd default features = 3
 
 {% for config in salt['rgw.configurations']() %}
 {% set client = config + "." + grains['host'] %}
