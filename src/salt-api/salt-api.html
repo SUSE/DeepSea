@@ -7,12 +7,13 @@
         <iron-ajax
             id="saltapi"
             url="http://{{node}}:{{port}}/{{cmd}}/"
-            content-type="application/json"
-            method="POST"
+            content-type="{{contentType}}"
+            method="{{method}}"
             body='{"client":"local", "tgt":"{{target}}", "fun":"{{func}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}"}'
             handle-as="json"
             on-response="handle200"
-            on-error="handleErr">
+            on-error="handleErr"
+            with-credentials="true">
         </iron-ajax>
     </template>
 </dom-module>
@@ -21,7 +22,36 @@
     Polymer({
         is: 'salt-api',
 
-        run: function() {
+        properties: {
+            method: {
+                type: String,
+                value: ""
+            },
+            contentType: {
+                type: String,
+            }
+        },
+
+        _setContentType: function() {
+            /* The only fully authenticated call we expect is for /login.
+             *   If cmd===login, set content-type to allow POST preflight (ie. OPTIONS).
+             *   If not, leave content-type blank to disable POST preflight and rely on cookie auth.
+             */
+            if (this.cmd === "login")
+                this.contentType="application/json";
+            else
+                this.contentType="";
+        },
+
+        runGet: function() {
+            this._setContentType();
+            this.method = "GET";
+            this.$.saltapi.generateRequest();
+        },
+
+        runPost: function() {
+            this._setContentType();
+            this.method = "POST";
             this.$.saltapi.generateRequest();
         },
 

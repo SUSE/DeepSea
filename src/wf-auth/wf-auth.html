@@ -43,9 +43,9 @@
             id="saltapiauth"
             node="{{saltApiNode}}"
             port="{{saltApiPort}}"
-            cmd="run"
-            target="{{saltApiNode}}"
-            func="test.nop"
+            cmd="{{cmd}}"
+            target=""
+            func=""
             userid="{{userid}}"
             password="{{password}}"
             authtype="{{authType}}">
@@ -57,8 +57,11 @@
  Polymer({
      is: 'wf-auth',
      properties: {
-         /* Setting all property variables from ready(). */
          authButtonClass: {
+             type: String,
+         },
+
+         cmd: {
              type: String,
          },
 
@@ -99,20 +102,28 @@
      },
 
      ready: function() {
+         /* If we've found some state in sessionStorage.wfauth, try to authenticate
+          * on element load.  Now it's possible we have a valid cookie, but have
+          * closed the browser tab, thus clearing sessionStorage.wfauth.  This case
+          * will currently force the user to re-auth, as we don't know the location of
+          * of the salt-api daemon anymore :(
+          * FIXME: fix the above via something like an 'onbeforeunload' signal to trigger
+          * a formal logout and remove the cookie.
+          */
          if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
              var wfauth = JSON.parse(sessionStorage.wfauth);
-             this.authButtonClass = "authenticated";
              this.userid = wfauth.userid;
-             this.password = wfauth.password;
              this.saltApiNode = wfauth.node;
              this.saltApiPort = wfauth.port;
              this.authType = wfauth.authtype;
-             /* this.wfAuth does not need to be set as it will
-              * be populated from sessionStorage by <app-localstorage-document>.
+
+             /* Check whether we're already authenticated.  On failure, wfAuth and
+              * sessionStorage.wfauth will be cleared.  On success, they will get re-populated.
               */
-             this.disableLogoutButton = false;
+             this.checkLogin();
          } else {
              this.setDefaultProperties();
+             this.setWFUnauthenticated();
          }
      },
 
@@ -120,12 +131,18 @@
          this.$.authDialog.open();
      },
 
+     checkLogin: function() {
+         console.log("wf-auth:checkLogin()");
+         this.cmd = "login";
+         this.$.saltapiauth.runGet();
+     },
+
      /* We allow at-will re-auth (login button not greyed out on auth success).
       * This is a conscious choice.  Should any failure on the salt-api backend
       * occur, the user has all credentials in place unless specifically cleared
       * via logout (or when re-loading the page in an unauthenticated state).
       */
-     login: function(e) {
+     login: function() {
          var validated = true;
 
          /* Done in this way to validate all input at once.  Stringing together
@@ -146,57 +163,104 @@
               * wfAuth (and sebsequently sessionStorage.wfauth) and paint auth button
               * red _before_ trying an auth/re-auth.
               */
-             this.clearWFAuth();
-             console.log(this.wfAuth);
-             console.log(sessionStorage);
+             this.setWFUnauthenticated();
 
              /* Attempt to authenticate. */
-             this.$.saltapiauth.run();
+             this.authType = "auto";  /* salt-api eauth type we use */
+             /* Redirects to /login against the salt-api url.  Also used in handleAuth200/Err(). */
+             this.cmd = "login";
+             this.$.saltapiauth.runPost();
          }
      },
 
      logout: function() {
          console.log("wf-auth:logout(): De-authenticating.");
-         this.setDefaultProperties();
+         this.cmd = "logout";
+         /* Set node and port directly from previously authenticated versions.
+          * If user changed the values in the auth dialog, we may fail to logout.
+          */
+         this.saltApiNode = this.wfAuth.node;
+         this.saltApiPort = this.wfAuth.port;
+         this.$.saltapiauth.runPost();
      },
 
      handleAuth200: function(e) {
          /* curl -sS wolffish-1.lan:8000/run -d client='local' -d tgt='*' -d fun='test.ping' -d username='admin' -d password='restadmin' -d eauth='auto'*/
-         console.log("wf-auth:handleAuth200(): caught 'salt-api-response' event.  Authenticated.");
-         this.$.authDialog.close();
-         this.authButtonClass = "authenticated";
-         this.set("wfAuth.node", this.saltApiNode);
-         this.set("wfAuth.port", this.saltApiPort);
-         this.set("wfAuth.userid", this.userid);
-         this.set("wfAuth.password", this.password);
-         this.set("wfAuth.authtype", this.authType);
-         this.disableLogoutButton = false;
+
+         /* Clear password from dialog. */
+         this.password = "";
+
+         console.log("wf-auth:handleAuth200(): caught 'salt-api-response' event.");
+         if (this.cmd == "login") {
+             this.$.authDialog.close();
+             this.setWFAuthenticated();
+         } else if (this.cmd == "logout") {
+             this.setWFUnauthenticated();
+             this.setDefaultProperties();
+         } else {
+             console.error("wf-auth:handleAuth200(): invalid cmd (" + this.cmd + ")");
+         }
      },
 
      handleAuthErr: function(e) {
-         console.log("wf-auth:handleAuthErr(): caught 'salt-api-error' event.  Authencation failed.");
-         alert("Failed to authenticate.  Try again.");
+         console.log("wf-auth:handleAuthErr(): caught 'salt-api-error' event.");
+
+         /* Clear password from dialog. */
+         this.password = "";
+
+         if (this.cmd == "login") {
+             alert("Failed to authenticate.  Try again.");
+         } else if (this.cmd == "logout") {
+             /* TODO: Would be great to clear the cookie on the client side.  But
+              * document.cookie is empty.  Marking for future investigation.  Also,
+              * see the FIXME comment in ready().
+              */
+             alert("Failed to logout.  Credentials will be cleared locally.");
+             this.setDefaultProperties();
+         } else {
+             console.error("wf-auth:handleAuthErr(): invalid cmd (" + this.cmd + ")");
+         }
+
+         this.setWFUnauthenticated();
      },
 
      /* Sets initial property values.  Also used to clear auth dialog when logging out. */
      setDefaultProperties: function() {
          console.log("wf-auth:setDefaultProperties(): Setting default auth credentials.");
-         this.authButtonClass = "notauthenticated";
          this.userid = "";
          this.password = "";
          this.saltApiNode = "";
          this.saltApiPort = 8000;
          this.authType = "auto";
-         this.wfAuth = {};
-         this.disableLogoutButton = true;
+     },
+
+     setWFAuth: function(node, port, userid, authType) {
+         this.set("wfAuth.node", node);
+         this.set("wfAuth.port", port);
+         this.set("wfAuth.userid", userid);
+         this.set("wfAuth.authtype", authType);
+     },
+
+     /* On auth success, store information we care about in sessionStorage.wfauth. */
+     setWFAuthenticated: function() {
+         console.log("wf-auth:setWFAuthenticated(): Authenticated.");
+         this.setWFAuth(this.saltApiNode, this.saltApiPort, this.userid, this.authType);
+         this.authButtonClass = "authenticated";
+         this.disableLogoutButton = false;
      },
 
      /* Clears wfAuth along with sessionStorage.wfauth.  Also disables logout button
       * and paints auth key button red.  However, leaves auth dialog input in-tact for
       * re-authentication.
       */
-     clearWFAuth: function() {
-         console.log("wf-auth:clearWFAuth(): De-authenticating.");
+     setWFUnauthenticated: function() {
+         console.log("wf-auth:setWFUnauthenticated(): Unauthenticated.");
+         /* FIXME: on page reload: ready() -> login() -> setWFUnauthenticated()  However,
+          * sessionStorage.wfauth is not cleared by virtue of setting this.wfAuth={}.
+          * It will be cleared when handleAuthErr() -> setWFUnauthenticated().
+          * Appears to be a timing issue with when app-localstorage-document populates
+          * sessionStorage from a local variable.
+          */
          this.wfAuth = {};
          this.authButtonClass = "notauthenticated";
          this.disableLogoutButton = true;
