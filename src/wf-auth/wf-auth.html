@@ -113,7 +113,6 @@
          if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
              var wfauth = JSON.parse(sessionStorage.wfauth);
              this.userid = wfauth.userid;
-             this.password = wfauth.password;
              this.saltApiNode = wfauth.node;
              this.saltApiPort = wfauth.port;
              this.authType = wfauth.authtype;
@@ -187,6 +186,10 @@
 
      handleAuth200: function(e) {
          /* curl -sS wolffish-1.lan:8000/run -d client='local' -d tgt='*' -d fun='test.ping' -d username='admin' -d password='restadmin' -d eauth='auto'*/
+
+         /* Clear password from dialog. */
+         this.password = "";
+
          console.log("wf-auth:handleAuth200(): caught 'salt-api-response' event.");
          if (this.cmd == "login") {
              this.$.authDialog.close();
@@ -201,6 +204,10 @@
 
      handleAuthErr: function(e) {
          console.log("wf-auth:handleAuthErr(): caught 'salt-api-error' event.");
+
+         /* Clear password from dialog. */
+         this.password = "";
+
          if (this.cmd == "login") {
              alert("Failed to authenticate.  Try again.");
          } else if (this.cmd == "logout") {
@@ -227,20 +234,17 @@
          this.authType = "auto";
      },
 
-     setWFAuth: function(node, port, userid, password, authType) {
+     setWFAuth: function(node, port, userid, authType) {
          this.set("wfAuth.node", node);
          this.set("wfAuth.port", port);
          this.set("wfAuth.userid", userid);
-         this.set("wfAuth.password", password);
          this.set("wfAuth.authtype", authType);
      },
 
      /* On auth success, store information we care about in sessionStorage.wfauth. */
      setWFAuthenticated: function() {
          console.log("wf-auth:setWFAuthenticated(): Authenticated.");
-         this.setWFAuth(this.saltApiNode, this.saltApiPort, this.userid,
-                         this.password, this.authType);
-
+         this.setWFAuth(this.saltApiNode, this.saltApiPort, this.userid, this.authType);
          this.authButtonClass = "authenticated";
          this.disableLogoutButton = false;
      },
