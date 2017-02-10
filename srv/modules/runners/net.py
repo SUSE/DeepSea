@@ -13,9 +13,9 @@ def ping(cluster = None, exclude = None, **kwargs):
     Ping all addresses from all addresses on all minions.  If cluster is passed,
     restrict addresses to public and cluster networks.
 
-    Note: Some optimizations could be done here in the multi module (such as 
+    Note: Some optimizations could be done here in the multi module (such as
     skipping the source and destination when they are the same).  However, the
-    unoptimized version is taking ~2.5 seconds on 18 minions with 72 addresses 
+    unoptimized version is taking ~2.5 seconds on 18 minions with 72 addresses
     for success.  Failures take between 6 to 12 seconds.  Optimizations should
     focus there.
 
@@ -23,22 +23,22 @@ def ping(cluster = None, exclude = None, **kwargs):
 
     CLI Example: (Before DeepSea with a cluster configuration)
     .. code-block:: bash
-        sudo salt-run net.ping 
+        sudo salt-run net.ping
 
     or you can run it with exclude
     .. code-block:: bash
-        sudo salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1" 
+        sudo salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1"
 
     (After DeepSea with a cluster configuration)
     .. code-block:: bash
-        sudo salt-run net.ping cluster=ceph 
-        sudo salt-run net.ping ceph 
+        sudo salt-run net.ping cluster=ceph
+        sudo salt-run net.ping ceph
 
     """
     exclude_string = exclude_iplist = None
     if exclude:
         exclude_string, exclude_iplist = _exclude_filter(exclude)
-     
+
     extra_kwargs = _skip_dunder(kwargs)
     if _skip_dunder(kwargs):
         print "Unsupported parameters: {}".format(" ,".join(extra_kwargs.keys()))
@@ -49,8 +49,8 @@ def ping(cluster = None, exclude = None, **kwargs):
             If cluster is specified, restrict addresses to cluster and public networks.
             If exclude is specified, remove matching addresses.  See Salt compound matchers.
             within exclude individual ip address will be remove a specific target interface
-            instead of ping from, the ping to interface will be removed 
-            
+            instead of ping from, the ping to interface will be removed
+
 
             Examples:
                 salt-run net.ping
@@ -59,11 +59,11 @@ def ping(cluster = None, exclude = None, **kwargs):
                 salt-run net.ping cluster=ceph exclude=L@mon1.ceph
                 salt-run net.ping exclude=S@192.168.21.254
                 salt-run net.ping exclude=S@192.168.21.0/29
-                salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1" 
+                salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1"
         ''')
         print text
         return
-    
+
 
     local = salt.client.LocalClient()
     if cluster:
@@ -78,16 +78,16 @@ def ping(cluster = None, exclude = None, **kwargs):
         addresses = []
         for host in sorted(total.iterkeys()):
             if 'cluster_network' in networks[host]:
-                addresses.extend(_address(total[host], networks[host]['cluster_network'])) 
+                addresses.extend(_address(total[host], networks[host]['cluster_network']))
             if 'public_network' in networks[host]:
-                addresses.extend(_address(total[host], networks[host]['public_network'])) 
+                addresses.extend(_address(total[host], networks[host]['public_network']))
     else:
         search = "*"
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug( "ping: search {} ".format(search))
         addresses = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
-    
+
         addresses = _flatten(addresses.values())
         # Lazy loopback removal - use ipaddress when adding IPv6
         try:
@@ -108,7 +108,7 @@ def ping(cluster = None, exclude = None, **kwargs):
 def _address(addresses, network):
     """
     Return all addresses in the given network
-    
+
     Note: list comprehension vs. netaddr vs. simple
     """
     matched = []
@@ -118,16 +118,16 @@ def _address(addresses, network):
     return matched
 
 def _exclude_filter(excluded):
-    """ 
+    """
     Internal exclude_filter return string in compound format
- 
-    Compound format = {'G': 'grain', 'P': 'grain_pcre', 'I': 'pillar', 
-                       'J': 'pillar_pcre', 'L': 'list', 'N': None, 
+
+    Compound format = {'G': 'grain', 'P': 'grain_pcre', 'I': 'pillar',
+                       'J': 'pillar_pcre', 'L': 'list', 'N': None,
                        'S': 'ipcidr', 'E': 'pcre'}
     IPV4 address = "255.255.255.255"
     hostname = "myhostname"
     """
-    
+
     log.debug( "_exclude_filter: excluding {}".format(excluded))
     excluded = excluded.split(",")
     log.debug( "_exclude_filter: split ',' {}".format(excluded))
@@ -147,10 +147,10 @@ def _exclude_filter(excluded):
             compound.append(para)
         elif pattern_iplist.match(para):
             log.debug( "_exclude_filter: ip {}".format(para))
-            iplist.append(para)    
+            iplist.append(para)
         elif pattern_ipcidr.match(para):
             log.debug( "_exclude_filter: ipcidr {}".format(para))
-            ipcidr.append("S@"+para)    
+            ipcidr.append("S@"+para)
         elif pattern_hostlist.match(para):
             hostlist.append("L@"+para)
             log.debug( "_exclude_filter: hostname {}".format(para))
@@ -160,7 +160,7 @@ def _exclude_filter(excluded):
 
     #if ipcidr:
     #    log.debug("_exclude_filter ip subnet is not working yet ... = {}".format(ipcidr))
-    new_compound_excluded = " or ".join(compound + hostlist + regex_list + ipcidr) 
+    new_compound_excluded = " or ".join(compound + hostlist + regex_list + ipcidr)
     log.debug("_exclude_filter new formed compound excluded list = {}".format(new_compound_excluded))
     if new_compound_excluded and iplist:
          return new_compound_excluded, iplist
@@ -191,11 +191,11 @@ def _summarize(total, results):
         if results[host]['succeeded'] == total:
             success.append(host)
         if 'failed' in results[host]:
-            failed.append("{} from {}".format(results[host]['failed'], host)) 
+            failed.append("{} from {}".format(results[host]['failed'], host))
         if 'errored' in results[host]:
-            errored.append("{} from {}".format(results[host]['errored'], host)) 
+            errored.append("{} from {}".format(results[host]['errored'], host))
         if 'slow' in results[host]:
-            slow.append("{} from {} average rtt {}".format(results[host]['slow'], host, "{0:.2f}".format(results[host]['avg']))) 
+            slow.append("{} from {} average rtt {}".format(results[host]['slow'], host, "{0:.2f}".format(results[host]['avg'])))
 
 
     if success:

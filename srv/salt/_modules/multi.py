@@ -37,7 +37,7 @@ def _all(func, hosts):
 
 def ping_cmd(host):
     '''
-    Ping a host with 1 package and return the result
+    Ping a host with 1 packet and return the result
 
     CLI Example:
     .. code-block:: bash
@@ -96,8 +96,7 @@ def _summarize(results):
 
 def ping(*hosts):
     '''
-    Ping a list of host with 1 package and return the result
-    will be summarize by an internal function
+    Ping a list of hosts and summarize the results
 
     CLI Example:
     .. code-block:: bash
