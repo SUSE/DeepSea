@@ -2,7 +2,8 @@
 /etc/salt/master.d/cherrypy.conf:
   file.managed:
     - source: 
-      - salt://ceph/cherrypy/files/cherrypy.conf
+      - salt://ceph/cherrypy/files/cherrypy.conf.j2
+    - template: jinja
     - user: salt
     - group: salt
     - mode: 600

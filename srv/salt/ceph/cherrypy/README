@@ -1,0 +1,4 @@
+
+Do not add this to any orchestration until we can offer a secure default for
+authentication.  The eauth setting is currently auto which means any password
+will work.
