@@ -15,7 +15,8 @@ Ping is a simple test to check if point to point nodes are connected
 
 CLI Example:
 .. code-block:: bash
-sudo salt 'node' multi.ping_cmd <hostname>|<ip>
+    sudo salt 'node' multi.ping_cmd <hostname>|<ip>
+    sudo salt 'node' multi.ping <hostname>|<ip> <hostname>|<ip>....
 '''
 
 def _all(func, hosts):
@@ -40,7 +41,7 @@ def ping_cmd(host):
 
     CLI Example:
     .. code-block:: bash
-    sudo salt 'node' multi.ping_cmd <hostname>|<ip>
+        sudo salt 'node' multi.ping_cmd <hostname>|<ip>
     '''
     cmd = [ "/usr/bin/ping", "-c1", "-q", "-W1", host ]
     log.debug('ping_cmd hostname={}'.format(host))
@@ -48,7 +49,7 @@ def ping_cmd(host):
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
     proc.wait()
     return host, proc.returncode, proc.stdout.read(), proc.stderr.read()
-    
+
 def _summarize(results):
     '''
     Scan the results and summarize
@@ -74,9 +75,11 @@ def _summarize(results):
 
     if avg:
         avg_sum = sum(i.get('avg') for i in avg) / len(avg)
-        for i in avg:
-            if (avg_sum * len(avg) / 2) < i.get('avg') :
-                slow.append(i.get('host'))
+        if len(avg) > 2:
+            for i in avg:
+                if (avg_sum * len(avg) / 2) < i.get('avg') :
+                    log.debug('_summarize: slow host running = {} avg = {}, s'.format( i.get('avg'), avg_sum ))
+                    slow.append(i.get('host'))
     else:
         avg_sum = 0 
     
@@ -98,7 +101,7 @@ def ping(*hosts):
 
     CLI Example:
     .. code-block:: bash
-    sudo salt 'node' multi.ping <hostname>|<ip> <hostname>|<ip>....
+        sudo salt 'node' multi.ping <hostname>|<ip> <hostname>|<ip>....
     '''
     log.debug('ping hostlist={}'.format(list(hosts)))
     results = _all(ping_cmd, list(hosts))

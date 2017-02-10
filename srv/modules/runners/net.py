@@ -35,7 +35,9 @@ def ping(cluster = None, exclude = None, **kwargs):
         sudo salt-run net.ping ceph 
 
     """
-    #ex_string = iplist = None
+    exclude_string = exclude_iplist = None
+    if exclude:
+        exclude_string, exclude_iplist = _exclude_filter(exclude)
      
     extra_kwargs = _skip_dunder(kwargs)
     if _skip_dunder(kwargs):
@@ -46,6 +48,9 @@ def ping(cluster = None, exclude = None, **kwargs):
             Ping all addresses from all addresses on all minions.
             If cluster is specified, restrict addresses to cluster and public networks.
             If exclude is specified, remove matching addresses.  See Salt compound matchers.
+            within exclude individual ip address will be remove a specific target interface
+            instead of ping from, the ping to interface will be removed 
+            
 
             Examples:
                 salt-run net.ping
@@ -54,6 +59,7 @@ def ping(cluster = None, exclude = None, **kwargs):
                 salt-run net.ping cluster=ceph exclude=L@mon1.ceph
                 salt-run net.ping exclude=S@192.168.21.254
                 salt-run net.ping exclude=S@192.168.21.0/29
+                salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1" 
         ''')
         print text
         return
@@ -62,8 +68,9 @@ def ping(cluster = None, exclude = None, **kwargs):
     local = salt.client.LocalClient()
     if cluster:
         search = "I@cluster:{}".format(cluster)
-        if exclude:
-             search += " and not ( " + exclude + " )"
+        if exclude_string:
+            search += " and not ( " + exclude_string + " )"
+            log.debug( "ping: search {} ".format(search))
         networks = local.cmd(search , 'pillar.item', [ 'cluster_network', 'public_network' ], expr_form="compound")
         #print networks
         total = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
@@ -76,8 +83,9 @@ def ping(cluster = None, exclude = None, **kwargs):
                 addresses.extend(_address(total[host], networks[host]['public_network'])) 
     else:
         search = "*"
-        if exclude:
-             search += " and not ( " + exclude + " )"
+        if exclude_string:
+            search += " and not ( " + exclude_string + " )"
+            log.debug( "ping: search {} ".format(search))
         addresses = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
     
         addresses = _flatten(addresses.values())
@@ -85,11 +93,12 @@ def ping(cluster = None, exclude = None, **kwargs):
         try:
             if addresses:
                 addresses.remove('127.0.0.1')
-            #if iplist:
-            #    for ex_ip in iplist:
-            #        log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
-            #        addresses.remove(ex_ip)
+            if exclude_iplist:
+                for ex_ip in exclude_iplist:
+                    log.debug( "ping: removing {} ip ".format(ex_ip))
+                    addresses.remove(ex_ip)
         except ValueError:
+            log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
             pass
     #print addresses
     results = local.cmd(search, 'multi.ping', addresses, expr_form="compound")
@@ -118,6 +127,7 @@ def _exclude_filter(excluded):
     IPV4 address = "255.255.255.255"
     hostname = "myhostname"
     """
+    
     log.debug( "_exclude_filter: excluding {}".format(excluded))
     excluded = excluded.split(",")
     log.debug( "_exclude_filter: split ',' {}".format(excluded))
@@ -148,9 +158,9 @@ def _exclude_filter(excluded):
             regex_list.append("E@"+para)
             log.debug( "_exclude_filter: not sure but likely Regex host {}".format(para))
 
-    if ipcidr:
-        log.debug("_exclude_filter ip subnet is not working yet ... = {}".format(ipcidr))
-    new_compound_excluded = " or ".join(compound + hostlist + regex_list) 
+    #if ipcidr:
+    #    log.debug("_exclude_filter ip subnet is not working yet ... = {}".format(ipcidr))
+    new_compound_excluded = " or ".join(compound + hostlist + regex_list + ipcidr) 
     log.debug("_exclude_filter new formed compound excluded list = {}".format(new_compound_excluded))
     if new_compound_excluded and iplist:
          return new_compound_excluded, iplist
