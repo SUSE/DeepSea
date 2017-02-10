@@ -131,7 +131,7 @@ class CephStorage(object):
         """
         model_dir = "{}/{}/stack/default/{}/minions".format(self.root_dir, name, self.cluster)
         if not os.path.isdir(model_dir):
-            create_dirs(model_dir, self.root_dir)
+            __create_dirs(model_dir, self.root_dir)
         filename = model_dir + "/" +  server + ".yml"
         contents = { 'storage': storage }
         self.writer.write(filename, contents)
@@ -142,7 +142,7 @@ class CephStorage(object):
         """
         cluster_dir = "{}/{}/cluster".format(self.root_dir, name)
         if not os.path.isdir(cluster_dir):
-            create_dirs(cluster_dir, self.root_dir)
+            __create_dirs(cluster_dir, self.root_dir)
         #filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
         filename = cluster_dir + "/" +  server + ".sls"
         contents = {}
@@ -505,7 +505,7 @@ class CephRoles(object):
         for role in roles:
             role_dir = "{}/role-{}".format(self.root_dir, role)
             if not os.path.isdir(role_dir):
-                create_dirs(role_dir, self.root_dir)
+                __create_dirs(role_dir, self.root_dir)
 
             # All minions are not necessarily storage - see CephStorage
             if role != 'storage':
@@ -548,7 +548,7 @@ class CephRoles(object):
         """
         cluster_dir = role_dir + "/cluster"
         if not os.path.isdir(cluster_dir):
-            create_dirs(cluster_dir, self.root_dir)
+            __create_dirs(cluster_dir, self.root_dir)
         for server in self.servers:
             filename = cluster_dir + "/" +  server + ".sls"
             contents = {}
@@ -580,7 +580,7 @@ class CephRoles(object):
 
     def add_pub_interface(self, minion_dir):
         if not os.path.isdir(minion_dir):
-            create_dirs(minion_dir, self.root_dir)
+            __create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
             filename = minion_dir + "/" +  server + ".yml"
             contents = {}
@@ -606,7 +606,7 @@ class CephRoles(object):
         if self.cluster:
             cluster_dir = "{}/config/stack/default/{}".format(self.root_dir, self.cluster)
             if not os.path.isdir(cluster_dir):
-                 create_dirs(cluster_dir, self.root_dir)
+                 __create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
@@ -733,7 +733,7 @@ class CephCluster(object):
             for minion in self.minions:
                 cluster_dir = "{}/cluster-{}/cluster".format(self.root_dir, cluster)
                 if not os.path.isdir(cluster_dir):
-                     create_dirs(cluster_dir, self.root_dir)
+                     __create_dirs(cluster_dir, self.root_dir)
                 filename = "{}/{}.sls".format(cluster_dir, minion)
                 contents = {}
                 contents['cluster'] = cluster
@@ -746,7 +746,7 @@ class CephCluster(object):
         """
         stack_dir = "{}/config/stack/default".format(self.root_dir)
         if not os.path.isdir(stack_dir):
-             create_dirs(stack_dir, self.root_dir)
+             __create_dirs(stack_dir, self.root_dir)
         filename = "{}/global.yml".format(stack_dir)
         contents = {}
         contents['time_server'] = '{{ pillar.get("master_minion") }}'
@@ -754,13 +754,15 @@ class CephCluster(object):
 
         self.writer.write(filename, contents)
 
-def create_dirs(path, root):
+def __create_dirs(path, root):
     try:
         os.makedirs(path)
     except OSError as err:
         if err.errno == errno.EACCES:
-            print "ERROR: Cannot create dir {}".format(path)
-            print "       Please make sure {} is owned by salt".format(root)
+            log.exception('''
+            ERROR: Cannot create dir {}
+            Please make sure {} is owned by salt
+            '''.format(path, root))
             raise err
 
 def show(**kwargs):
