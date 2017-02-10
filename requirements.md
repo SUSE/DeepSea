@@ -14,6 +14,14 @@ SE - Sales Engineer
 
 ## Issues
 
+#### Diagnose Salt or Ceph cluster
+
+Trivially ping all addresses and summarize results
+
+#### Salt api REST interface (cherrypy)
+
+Intended to allow Graphical Interfaces to control DeepSea
+
 #### Safeguards
 
 Prevent the unintentional destruction of a cluster.
