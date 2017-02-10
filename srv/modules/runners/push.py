@@ -72,7 +72,7 @@ def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg", dryrun = False)
     pillar_data.output(common)
     return True
 
-def __create_dirs(path, root):
+def _create_dirs(path, root):
     try:
         os.makedirs(path)
     except OSError as err:
@@ -145,7 +145,7 @@ class PillarData(object):
         """
         path_dir = os.path.dirname(filename)
         if not os.path.isdir(path_dir):
-            __create_dirs(path_dir, self.pillar_dir)
+            _create_dirs(path_dir, self.pillar_dir)
         log.info("Writing {}".format(filename))
         if not self.dryrun:
             with open(filename, "w") as yml:
@@ -159,7 +159,7 @@ class PillarData(object):
         """
         path_dir = os.path.dirname(custom)
         if not os.path.isdir(path_dir):
-            __create_dirs(path_dir, self.pillar_dir)
+            _create_dirs(path_dir, self.pillar_dir)
         if not self.dryrun:
             if not os.path.isfile(custom):
                 log.info("Writing {}".format(custom))
