@@ -13,9 +13,9 @@ class TestHardwareDetections():
         """
         Patching hw_detection_method in the __init__ function
         of HardwareDetections to allow sudoless test execution
-        Patched method is separately.
+        Patched method are tested separately.
 
-        scope: module
+        scope: class
         return: instance of 
                 <class srv.salt._modules.cephdisks.HardwareDetections>
         """
@@ -94,15 +94,19 @@ class TestHardwareDetections():
             out = hwd.is_removable('disk/in/question')
             assert expect == out
 
+    @mock.patch('srv.salt._modules.cephdisks.HardwareDetections.which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
-    def test_return_device_bus_id_fail(self, po, hwd, output_helper):
+    def test_return_device_bus_id_fail(self, po, wm, hwd, output_helper):
+        wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lsscsi_with_raid_fail['stdout']
         expect = output_helper.lsscsi_with_raid_fail['expected_return']
         out = hwd.return_device_bus_id(output_helper.lsscsi_with_raid_fail['device'])
         assert expect == out
 
+    @mock.patch('srv.salt._modules.cephdisks.HardwareDetections.which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
-    def test_return_device_bus_id_success(self, po, hwd, output_helper):
+    def test_return_device_bus_id_success(self, po, wm, hwd, output_helper):
+        wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lsscsi_with_raid_success['stdout']
         expect = output_helper.lsscsi_with_raid_success['expected_return']
         out = hwd.return_device_bus_id(output_helper.lsscsi_with_raid_success['device'])
@@ -225,11 +229,11 @@ class TestHardwareDetections():
         expect = {'raidtype': 'hardware', 'controller_name': '3ware'}
         assert out == expect
 
-    
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections.hw_raid_ctrl_detection')
     def test_hw_raid_ctrl_detection(self, hw_raid_detection):
         """ No hw_raid_name, no raidtype """
         hwd = cephdisks.HardwareDetections()
+        # TRAVIS SAYS THIS IS NOT CALLED
         out = hwd.detect_raidctrl()
         assert hw_raid_detection.called is True 
 
@@ -358,7 +362,6 @@ class TestHardwareDetections_2():
         self.hw_detection_method = patch('srv.salt._modules.cephdisks.HardwareDetections.which')
         self.hw_dtctr = self.hw_detection_method.start()
         self.hw_dtctr.return_value = '/a/valid/path'
-        self.output_helper = OutputHelper()
         self.hwd = cephdisks.HardwareDetections()
         yield cephdisks.HardwareDetections()
         self.hw_dtctr = self.hw_detection_method.stop()

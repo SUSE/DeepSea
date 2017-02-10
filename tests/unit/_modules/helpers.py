@@ -272,14 +272,14 @@ class OutputHelper(object):
                   {'/dev/sdb': 
                     {'Model': 'Samsung SSD 850', 
                      'Device File': 'mocked_udevadm_out',
-                     'Capacity': 256, 
+                     'Capacity': '256', 
                      'Serial ID': 
                      'S251NXAH235352J'}, 
 
                    '/dev/sda': 
                     {'Model': 'ST500DM002-1BD14', 
                      'Device File': 'mocked_udevadm_out', 
-                     'Capacity': 500,
+                     'Capacity': '500',
                      'Serial ID': 'Z6E0K57T'},
                   }
                 }

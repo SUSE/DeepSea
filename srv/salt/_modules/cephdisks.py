@@ -24,7 +24,6 @@ class HardwareDetections(object):
             hw_raid_name(str): Manually set the hw_raid_ctrls name
             software_raid(bool): Manually set if you have sw raid and the class
                                             fails to detect it.
-
         REQUIREMENTS FOR THE PROGRAMM TO WORK:
         gptfdisk, pciutils, smartmontools
         """
@@ -377,14 +376,36 @@ class HardwareDetections(object):
                     if node.find(key) is not None:
                         if key == 'size':
                             # Is the MB/GB/TB suffix important enough to add checking for it?
-                            disk_description[attr] = int(node.find(key).text) / 1000000000
+                            disk_description[attr] = str(int(node.find(key).text) / 1000000000)
                         else:
                             disk_description[attr] = node.find(key).text
                 disk_description['Device File'] = self._udevadm(ident)
+                disk_description['Driver'] = self.find_driver(ident)
                 results[ident].update(disk_description)
             else:
                 log.info('No logicalname found. Cannot identiy that disk.')
         return results
+
+    def find_driver(self):
+        """
+        lshw can't detect the driver used. proposal.py relies on
+        this information to determine the journal distribution.
+        #TODO#
+        """
+        return 'None'
+
+    def preflight_check(self, hardware_dict):
+        """
+        Check if lshw or hwinfo actually returned the 
+        needed fields of 'Capacity', 'Model', 'Device File'
+        If they don't exist and get passed to populate.py
+        it will fail silently and cause havoc.
+        """
+        required_fields = ['Driver', 'Model', 'Device File', 'Capacity', 'device', 'rotational']
+        for rf in required_fields:
+            if not hardware_dict[rf]:
+                raise ValueError("{} is not included in the hardware dict".format(rf))
+
 
     def assemble_device_list(self):
         """
@@ -430,10 +451,18 @@ class HardwareDetections(object):
                 hardware['rotational'] = self.is_rotational(base)
 
             hardware['device'] = device
+            self.preflight_check(hardware)
             drives.append(hardware)
         return drives
 
 
 def list_drives(**kwargs):
     hwd = HardwareDetections(**kwargs)
+    print hwd.assemble_device_list()
     return hwd.assemble_device_list()
+
+def list(**kwargs):
+    list_drives(**kwargs)
+
+def ls(**kwargs):
+    list_drives(**kwargs)

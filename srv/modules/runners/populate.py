@@ -180,6 +180,7 @@ class HardwareProfile(object):
             if not label in self.rotates:
                 self.rotates[label] = drive['rotational']
             if not label in self.nvme:
+                # lshw can't detect the driver
                 self.nvme[label] = (drive['Driver'] == "nvme")
 
 
