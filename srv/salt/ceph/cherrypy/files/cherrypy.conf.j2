@@ -1,0 +1,5 @@
+
+rest_cherrypy:
+  host: {{ salt['pillar.get']('master_minion') }}
+  port: 8000
+  disable_ssl: True
