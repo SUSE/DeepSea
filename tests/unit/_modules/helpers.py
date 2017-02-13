@@ -273,6 +273,7 @@ class OutputHelper(object):
                     {'Model': 'Samsung SSD 850', 
                      'Device File': 'mocked_udevadm_out',
                      'Capacity': '256', 
+                     'Driver': 'None',
                      'Serial ID': 
                      'S251NXAH235352J'}, 
 
@@ -280,6 +281,7 @@ class OutputHelper(object):
                     {'Model': 'ST500DM002-1BD14', 
                      'Device File': 'mocked_udevadm_out', 
                      'Capacity': '500',
+                     'Driver': 'None',
                      'Serial ID': 'Z6E0K57T'},
                   }
                 }

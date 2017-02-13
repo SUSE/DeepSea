@@ -9,6 +9,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+VERSION=0.2
 
 class HardwareDetections(object):
     """
@@ -149,13 +150,6 @@ class HardwareDetections(object):
         elif self.software_raid:
             log.info('Found a software raid setup')
             info['raidtype'] = 'software'
-            return info
-        elif os.path.exists('/proc/mdstat'):
-            info['raidtype'] = 'software'
-            # That needs to be handled differently
-            # the presence of mdstat is no proper indication
-            # of an active software raid
-            # TODO
             return info
         else:
             return self.hw_raid_ctrl_detection()
@@ -397,13 +391,14 @@ class HardwareDetections(object):
     def preflight_check(self, hardware_dict):
         """
         Check if lshw or hwinfo actually returned the 
-        needed fields of 'Capacity', 'Model', 'Device File'
-        If they don't exist and get passed to populate.py
+        needed fields of 'Capacity', 'Model', 'Device File',
+        'device', 'rotational' and 'Driver'.
+        If they don't exist and hwdict gets passed to populate.py
         it will fail silently and cause havoc.
         """
         required_fields = ['Driver', 'Model', 'Device File', 'Capacity', 'device', 'rotational']
         for rf in required_fields:
-            if rf not in hardware_dict:
+            if rf not in hardware_dict or not hardware_dict[rf]:
                 raise ValueError("{} is not included in the hardware dict.".format(rf))
 
     def assemble_device_list(self):
@@ -457,7 +452,6 @@ class HardwareDetections(object):
 
 def list_drives(**kwargs):
     hwd = HardwareDetections(**kwargs)
-    print hwd.assemble_device_list()
     return hwd.assemble_device_list()
 
 def list(**kwargs):
@@ -465,3 +459,6 @@ def list(**kwargs):
 
 def ls(**kwargs):
     list_drives(**kwargs)
+
+def version():
+    print VERSION

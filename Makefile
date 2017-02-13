@@ -5,6 +5,7 @@ usage:
 	@echo "Usage:"
 	@echo -e "\tmake install\tInstall DeepSea on this host"
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
+	@echo -e "\tmake test\tRun unittests"
 
 install:
 	# salt-master config files
@@ -339,7 +340,7 @@ install:
 	ln -sf removal		$(DESTDIR)/srv/salt/ceph/stage/5
 
 
-rpm: tarball
+rpm: tarball test
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
@@ -349,5 +350,3 @@ tarball:
 
 test:
 	tox
-
-

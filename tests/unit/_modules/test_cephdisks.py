@@ -245,15 +245,6 @@ class TestHardwareDetections():
         out = hwd.detect_raidctrl()
         assert out == expect
 
-    @mock.patch('srv.salt._modules.cephdisks.os.path.exists')
-    def test_hw_raid_ctrl_detection_sw_raid_by_path(self, path):
-        """ sw_raid is set """
-        path.return_value = True
-        hwd = cephdisks.HardwareDetections()
-        expect = {'raidtype': 'software'}
-        out = hwd.detect_raidctrl()
-        assert out == expect
-
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections.which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
     def test_hw_raid_ctrl_detection_megaraid(self, po, wm, output_helper, hwd): 
