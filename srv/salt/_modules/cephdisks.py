@@ -386,7 +386,7 @@ class HardwareDetections(object):
                 log.info('No logicalname found. Cannot identiy that disk.')
         return results
 
-    def find_driver(self):
+    def find_driver(self, ident):
         """
         lshw can't detect the driver used. proposal.py relies on
         this information to determine the journal distribution.
@@ -403,9 +403,8 @@ class HardwareDetections(object):
         """
         required_fields = ['Driver', 'Model', 'Device File', 'Capacity', 'device', 'rotational']
         for rf in required_fields:
-            if not hardware_dict[rf]:
-                raise ValueError("{} is not included in the hardware dict".format(rf))
-
+            if rf not in hardware_dict:
+                raise ValueError("{} is not included in the hardware dict.".format(rf))
 
     def assemble_device_list(self):
         """
