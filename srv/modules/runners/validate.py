@@ -271,15 +271,18 @@ class Validate(object):
                 if('ganesha_configurations' in self.data[node]):
                     ganesha_roles = list(set(self.data[node].get("roles")) &
                                         set(self.data[node].get("ganesha_configurations")))
-
-                if('ganesha' not in 'ganesha_roles'):
+                    if(ganesha_roles and
+                       'ganesha' not in self.data[node].get("ganesha_configurations")):
+                        msg = "Warning:Ganesha role not defined in ganesha_configurations"
+                        self.errors['ganesha'] = [msg]
+                else:
                     role = 'ganesha'
                     for role in self.data[node]['roles']:
                         ganesha_roles.append('ganesha')
 
                 if ganesha_roles:
                     if len(ganesha_roles) > 1:
-                        msg = "Only one ganesha server per node. Please check your policy.cfg for multiple ganesha definition on same node"
+                        msg = "Only one ganesha server per node. Check policy.cfg"
                         self.errors['ganesha'] = [ msg ]
                         return
                     else:
