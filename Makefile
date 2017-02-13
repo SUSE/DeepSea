@@ -215,8 +215,6 @@ install:
 	install -m 644 srv/salt/ceph/rescind/client-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/ganesha
 	install -m 644 srv/salt/ceph/rescind/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/rescind/ganesha/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/ganesha/keyring
-	install -m 644 srv/salt/ceph/rescind/ganesha/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/ganesha/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw
 	install -m 644 srv/salt/ceph/rescind/igw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/keyring
