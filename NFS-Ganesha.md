@@ -11,7 +11,7 @@ It's possible to create your own [custom roles](#custom-roles) for more flexibil
 
 ### Configuration file ###
 NFS-Ganesha requires a 
-[configuration file](https://github.com/nfs-ganesha/nfs-ganesha/wiki/Configurationfile/).
+[configuration file](https://github.com/nfs-ganesha/nfs-ganesha/wiki/ConDeploying figurationfile/).
 Deepsea provides a default ganesha configuration file, /srv/salt/ceph/ganesha/files/ganesha.conf.j2. 
 This supports both Ceph and RGW FSAL. The conf file is populated with proper ganesha keyrings at deployment time. 
 Users can either modify the given ganesha.conf.j2 file or add {{[custom_role](#custom-roles)}}.conf.j2 file. 
@@ -52,7 +52,7 @@ To create a custom ganesha role (e.g. silver)
 
 ### Examples ###
 * Ganesha role with both Ceph and RGW on same node.
-  - Assign roles: ganesha,rgw and mds to nodes in cluster. 
+  - Assign roles: ganesha, rgw and mds to nodes in cluster. 
   - Define [rgw users](#custom-roles)
   - Run the stages upto 4. 
   You should see ganesha server running on single node with both FSALs.
@@ -69,10 +69,36 @@ To create a custom ganesha role (e.g. silver)
 
 * Custom RGW and Ganesha roles 
   In case you want to run ganesha server for different users on different nodes,
-  you can define custom ganesha roles and respective rgw roles 
-  
+  you can define custom ganesha roles and respective rgw roles. Rgw configurations
+  can contain different set of users
+   ``` 
+     rgw_configurations:
+
+      - silver 
+
+        users:
+
+         - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
+
+
+      - gold
+
+        users:
+
+         - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
+
+     ```
+   
+     ``` 
+     ganesha_configurations:
+
+      - silver
+ 
+      - gold 
+     ```
+
 ### Debugging ###
-NFS-Ganesha service is started with log file, /etc/sysconfig/ganesha
-The log files are written at /var/log/ganesha.log 
+NFS-Ganesha service is started with log file, /etc/sysconfig/ganesha.
+The log files are written at /var/log/ganesha.log. 
 By default the log level is set to "NIV_CRIT". 
 In case more verbosity is required, NIV_DEBUG and NIV_FULL_DEBUG can be used.
