@@ -272,6 +272,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/reactor/*.sls
 %config /srv/salt/ceph/refresh/*.sls
 %config /srv/salt/ceph/repo/*.sls
+%config /srv/salt/ceph/remove/ganesha/*.sls
 %config /srv/salt/ceph/remove/igw/auth/*.sls
 %config /srv/salt/ceph/remove/mon/*.sls
 %config /srv/salt/ceph/remove/mds/*.sls
@@ -283,6 +284,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/client-cephfs/*.sls
 %config /srv/salt/ceph/rescind/client-nfs/*.sls
 %config /srv/salt/ceph/rescind/client-radosgw/*.sls
+%config /srv/salt/ceph/rescind/ganesha/*.sls
 %config /srv/salt/ceph/rescind/igw/*.sls
 %config /srv/salt/ceph/rescind/igw/keyring/*.sls
 %config /srv/salt/ceph/rescind/igw/lrbd/*.sls
