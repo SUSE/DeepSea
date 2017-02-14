@@ -24,10 +24,19 @@ common packages:
     - tgt: '*'
     - sls: ceph.packages.common
 
+{% set kernel_not_installed = salt['saltutil.runner'](
+                'kernel.verify_kernel_installed',
+                kernel_package='kernel-default',
+                target_id='*')|length > 0
+%}
+{% set change_kernel = salt['environ.get']('CHANGE_KERNEL') %}
 updates:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates
+{% if kernel_not_installed %}
+    - pillar: { "change_kernel": "{{ change_kernel }}", "kernel_package": "kernel-default" }
+{% endif %}
 
 restart:
   salt.state:
