@@ -5,7 +5,7 @@
         - tgt: {{ salt['pillar.get']('master_minion') }}
         - sls: ceph.wait
 
-    updating kernel for role:mon on {{ host }}:
+    updating {{ host }}:
       salt.state:
         - tgt: {{ host }}
         - tgt_type: compound
