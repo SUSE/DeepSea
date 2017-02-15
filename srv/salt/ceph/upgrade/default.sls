@@ -1,6 +1,6 @@
 zypper dup:
   module.run:
-    - name: zypper.dup
+    - name: packagemanager.dup
     - kwargs:
         'debug': True
         'kernel': True
