@@ -1,5 +1,5 @@
 
 
 include:
-  - .{{ salt['pillar.get']('maintenance_method', 'default') }}
+  - .{{ salt['pillar.get']('maintenance_update_init', 'default') }}
 

@@ -10,7 +10,7 @@ switch kernel:
 
 zypper update only kernel:
   module.run:
-    - name: zypper.up
+    - name: packagemanager.up
     - kwargs:
         'debug': True
         'kernel': True
