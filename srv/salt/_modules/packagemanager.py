@@ -1,4 +1,5 @@
 from subprocess import Popen, PIPE
+import platform
 import logging
 
 log = logging.getLogger(__name__)
@@ -6,22 +7,37 @@ VERSION = 0.1
 RETCODES = {102: 'ZYPPER_EXIT_INF_REBOOT_NEEDED'}
 
 
-class Apt(object):
-    def __init__(self):
-        pass
-    def up(self):
-        pass
+class PackageManager(object):
 
-class Utils(object):
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        platform = platform.linux_distribution().lower()
+        if "suse" in platform:
+            self.pm = Zypper(**kwargs)
+        elif 'fedora' or 'centos' in platform:
+            self.pm = Apt(**kwargs)
 
     @staticmethod
     def reboot(self):
         cmd = "shutdown -r now"
         proc = Popen(cmd, stdout=PIPE)
 
-class Zypper(object):
+class Apt(PackageManager):
+
+    def __init__(self):
+        self.debug = kwargs.get('debug', False)
+        self.kernel = kwargs.get('kernel', False)
+        pass
+
+    def handle(self):
+        # If an update is required can be read from /var/run/update-required
+        pass
+
+class Utils(object):
+    def __init__(self):
+        pass
+
+
+class Zypper(PackageManager):
 
     def __init__(self, **kwargs):
         """
@@ -67,7 +83,7 @@ class Zypper(object):
             if proc.returncode == 102:
                 log.info(RETCODES[proc.returncode])
                 log.info('Reboot required')
-                Utils.reboot
+                self.reboot
             if proc.returncode <= 100:
                 log.info('Error occured')
                 raise StandardError('Zypper failed. Look in the logs')
@@ -75,9 +91,11 @@ class Zypper(object):
             log.info('System up to date')
 
 def up(**kwargs):
-    zu = Zypper(**kwargs)
-    zu._handle(strat='up')
+    strat = 'up'
+    pm = PackageManager(**kwargs)
+    pm.handle(strat=strat)
 
 def dup(**kwargs):
-    zu = Zypper(**kwargs)
-    zu._handle(strat='dup')
+    strat = 'up'
+    pm = PackageManager(**kwargs)
+    pm.handle(strat=strat)
