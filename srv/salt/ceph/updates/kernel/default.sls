@@ -10,10 +10,9 @@ switch kernel:
 
 zypper update only kernel:
   module.run:
-    - name: update.zypper_up
+    - name: zypper.up
     - kwargs:
         'debug': True
         'kernel': True
-        'upgrade': False
     - fire_event: True
 

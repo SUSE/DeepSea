@@ -1,8 +1,7 @@
 zypper dup:
   module.run:
-    - name: update.zypper_up
+    - name: zypper.dup
     - kwargs:
         'debug': True
         'kernel': True
-        'upgrade': True
     - fire_event: True
