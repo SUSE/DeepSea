@@ -32,11 +32,6 @@ class Apt(PackageManager):
         # If an update is required can be read from /var/run/update-required
         pass
 
-class Utils(object):
-    def __init__(self):
-        pass
-
-
 class Zypper(PackageManager):
 
     def __init__(self, **kwargs):
