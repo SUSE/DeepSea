@@ -35,21 +35,6 @@ def _all(func, hosts):
     return all_instances
 
 
-def ping_cmd(host):
-    '''
-    Ping a host with 1 packet and return the result
-
-    CLI Example:
-    .. code-block:: bash
-        sudo salt 'node' multi.ping_cmd <hostname>|<ip>
-    '''
-    cmd = [ "/usr/bin/ping", "-c1", "-q", "-W1", host ]
-    log.debug('ping_cmd hostname={}'.format(host))
-
-    proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    proc.wait()
-    return host, proc.returncode, proc.stdout.read(), proc.stderr.read()
-
 def _summarize(results):
     '''
     Scan the results and summarize
@@ -102,7 +87,23 @@ def ping(*hosts):
     .. code-block:: bash
         sudo salt 'node' multi.ping <hostname>|<ip> <hostname>|<ip>....
     '''
+    # I should be filter all the localhost here? 
     log.debug('ping hostlist={}'.format(list(hosts)))
     results = _all(ping_cmd, list(hosts))
     return _summarize(results)
+
+def ping_cmd(host):
+    '''
+    Ping a host with 1 packet and return the result
+
+    CLI Example:
+    .. code-block:: bash
+        sudo salt 'node' multi.ping_cmd <hostname>|<ip>
+    '''
+    cmd = [ "/usr/bin/ping", "-c1", "-q", "-W1", host ]
+    log.debug('ping_cmd hostname={}'.format(host))
+
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    proc.wait()
+    return host, proc.returncode, proc.stdout.read(), proc.stderr.read()
 
