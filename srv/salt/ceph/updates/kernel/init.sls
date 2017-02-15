@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('updates_init', 'default') }}
+  - .{{ salt['pillar.get']('kernel_init', 'default') }}
