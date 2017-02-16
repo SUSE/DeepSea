@@ -10,20 +10,21 @@ RETCODES = {102: 'ZYPPER_EXIT_INF_REBOOT_NEEDED'}
 class PackageManager(object):
 
     def __init__(self, **kwargs):
-        platform = platform.linux_distribution().lower()
-        if "suse" in platform:
+        self.platform = platform.linux_distribution().lower()
+        if "suse" in self.platform:
             self.pm = Zypper(**kwargs)
-        elif 'fedora' or 'centos' in platform:
+        elif 'fedora' or 'centos' in self.platform:
             self.pm = Apt(**kwargs)
 
     @staticmethod
     def reboot(self):
         cmd = "shutdown -r now"
-        proc = Popen(cmd, stdout=PIPE)
+        Popen(cmd, stdout=PIPE)
+
 
 class Apt(PackageManager):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.debug = kwargs.get('debug', False)
         self.kernel = kwargs.get('kernel', False)
         pass
@@ -32,13 +33,14 @@ class Apt(PackageManager):
         # If an update is required can be read from /var/run/update-required
         pass
 
+
 class Zypper(PackageManager):
 
     def __init__(self, **kwargs):
         """
         Although salt already has a zypper module
-        the upgrading workflow is much cleaner if 
-        deepsea handles reboots based on the returncode 
+        the upgrading workflow is much cleaner if
+        deepsea handles reboots based on the returncode
         from zypper. In order to react on those
         Zypper has to be invoked in a separate module.
 
@@ -59,7 +61,6 @@ class Zypper(PackageManager):
             log.info('Update Needed')
         else:
             log.info('No Update Needed')
-
 
     def _handle(self, strat='up'):
         log.debug("zypper module v{} was executed".format(VERSION))
@@ -85,10 +86,12 @@ class Zypper(PackageManager):
         else:
             log.info('System up to date')
 
+
 def up(**kwargs):
     strat = 'up'
     pm = PackageManager(**kwargs)
     pm.handle(strat=strat)
+
 
 def dup(**kwargs):
     strat = 'up'
