@@ -204,6 +204,8 @@ install:
 	install -m 644 srv/salt/ceph/remove/mon/*.sls $(DESTDIR)/srv/salt/ceph/remove/mon/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/rgw
 	install -m 644 srv/salt/ceph/remove/rgw/*.sls $(DESTDIR)/srv/salt/ceph/remove/rgw/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/ganesha
+	install -m 644 srv/salt/ceph/remove/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/remove/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage
 	install -m 644 srv/salt/ceph/remove/storage/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/
 	# state files - rescind
