@@ -255,14 +255,12 @@ class Validate(object):
             else:
                 self.passed['storage'] = "valid"
 
-    """
-    Ensure:
-    - Only one ganesha servre running per minion
-    - Ganesha role defined only if there is a mds/rgw role defined in cluster.
-    """
     def ganesha(self):
+        """
+        Nodes may only be assigned one ganesha role.  Ganesha depends on 
+        cephfs or radosgw.
+        """
         ganesha_roles = []
-        role_ganesha = False
         role_mds = False
         role_rgw = False
 
@@ -271,40 +269,27 @@ class Validate(object):
                 if('ganesha_configurations' in self.data[node]):
                     ganesha_roles = list(set(self.data[node].get("roles")) &
                                         set(self.data[node].get("ganesha_configurations")))
-                    if(ganesha_roles and
-                       'ganesha' not in self.data[node].get("ganesha_configurations")):
-                        msg = "Warning:Ganesha role not defined in ganesha_configurations"
-                        self.errors['ganesha'] = [msg]
-                else:
-                    role = 'ganesha'
-                    for role in self.data[node]['roles']:
-                        ganesha_roles.append('ganesha')
-
-                if ganesha_roles:
                     if len(ganesha_roles) > 1:
-                        msg = "Only one ganesha server per node. Check policy.cfg"
-                        self.errors['ganesha'] = [ msg ]
-                        return
-                    else:
-                        role_ganesha = True
+                        msg = "minion {} has {} roles. Only one permitted".format(node, ganesha_roles)
+                        self.errors.setdefault('ganesha',[]).append(msg)
+
 
                 if not (role_mds or role_rgw):
                     if('mds' in self.data[node]['roles']):
                         role_mds = True
+                    if('rgw' in self.data[node]['roles']):
+                        role_rgw=True
                     if('rgw_configurations' in self.data[node]):
                         if(list(set(self.data[node].get("roles")) &
                                 set(self.data[node].get("rgw_configurations")))):
                             role_rgw=True
-                    elif('rgw' in self.data[node]['roles']):
-                        role_rgw=True
 
-        if role_ganesha:
-            if(role_rgw or role_mds):
-                self.passed['ganesha'] = "valid"
-            else:
-                msg = "Ganesha requires either mds or rgw node in cluster."
-                self.errors['ganesha'] = msg
+        if not (role_mds or role_rgw):
+            msg = "Ganesha requires either mds or rgw node in cluster."
+            self.errors['ganesha'] = msg
        
+        self._set_pass_status('ganesha')
+
     def cluster_network(self):
         """
         All storage nodes must have the same cluster network.  The cluster

@@ -30,7 +30,7 @@ enable-rpc-statd:
 
 start-ganesha:
   cmd.run:
-    - name: "systemctl start nfs-ganesha"
+    - name: "systemctl restart nfs-ganesha"
     - shell: /bin/bash
 
 enable-ganesha:
