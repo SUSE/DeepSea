@@ -10,15 +10,22 @@ RETCODES = {102: 'ZYPPER_EXIT_INF_REBOOT_NEEDED'}
 class PackageManager(object):
 
     def __init__(self, **kwargs):
-        self.platform = platform.linux_distribution().lower()
-        if "suse" in self.platform:
+        self.platform = platform.linux_distribution()[0].lower()
+        if "suse" in self.platform or "opensuse" in self.platform:
             self.pm = Zypper(**kwargs)
-        elif 'fedora' or 'centos' in self.platform:
+        elif 'fedora' in self.platform or 'centos' in self.platform:
             self.pm = Apt(**kwargs)
+        else:
+            raise StandardError("Failed to detect PackageManager for OS."
+                                "Open an issue on github.com/SUSE/DeepSea")
 
     @staticmethod
-    def reboot(self):
-        cmd = "shutdown -r now"
+    def reboot():
+        """
+        Assuming `shutdown -r now` works on all platforms
+        """
+        # DUMMY FOR DEBUG
+        cmd = "echo shutdown -r now"
         Popen(cmd, stdout=PIPE)
 
 
@@ -29,7 +36,7 @@ class Apt(PackageManager):
         self.kernel = kwargs.get('kernel', False)
         pass
 
-    def handle(self):
+    def _handle(self):
         # If an update is required can be read from /var/run/update-required
         pass
 
@@ -79,7 +86,7 @@ class Zypper(PackageManager):
             if proc.returncode == 102:
                 log.info(RETCODES[proc.returncode])
                 log.info('Reboot required')
-                self.reboot
+                self.reboot()
             if proc.returncode <= 100:
                 log.info('Error occured')
                 raise StandardError('Zypper failed. Look in the logs')
@@ -88,12 +95,12 @@ class Zypper(PackageManager):
 
 
 def up(**kwargs):
-    strat = 'up'
-    pm = PackageManager(**kwargs)
-    pm.handle(strat=strat)
+    strat = up.__name__
+    obj = PackageManager(**kwargs)
+    obj.pm._handle(strat=strat)
 
 
 def dup(**kwargs):
-    strat = 'up'
-    pm = PackageManager(**kwargs)
-    pm.handle(strat=strat)
+    strat = dup.__name__
+    obj = PackageManager(**kwargs)
+    obj.pm._handle(strat=strat)
