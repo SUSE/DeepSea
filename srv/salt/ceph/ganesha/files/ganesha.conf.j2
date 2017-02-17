@@ -1,0 +1,53 @@
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') != [] %}
+EXPORT
+{
+	Export_ID=1;
+
+	Path = /;
+
+	Pseudo = /cephfs/;
+
+	Access_Type = RW;
+
+    FSAL {
+            Name = CEPH;
+            User_Id = "{{user_id}}";
+            Secret_Access_Key = "{{secret_access_key}}";
+    }
+
+}
+
+{% endif %}
+
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles=role) != [] %}
+
+{% for user in salt['rgw.users'](role) %}
+EXPORT
+{
+	Export_ID={{ loop.index + 1 }};
+
+	Path = "/";
+
+	Pseudo = "/{{ user }}";
+
+	Access_Type = RW;
+
+	FSAL {
+		Name = RGW;
+		User_Id = "{{ user }}";
+		Access_Key_Id ="{{ salt['rgw.access_key'](user) }}";
+		Secret_Access_Key = "{{ salt['rgw.secret_key'](user) }}";
+	}
+}
+
+{% endfor %}
+
+{% set name = "client." + ganesha_role + "." + host %}
+RGW {
+    ceph_conf = "/etc/ceph/ceph.conf";
+    name = "{{name}}";
+    cluster = "ceph";
+}
+
+
+{% endif %}

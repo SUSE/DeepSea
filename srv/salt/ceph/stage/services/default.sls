@@ -3,5 +3,5 @@ include:
   - ..iscsi
   - ..cephfs
   - ..radosgw
-  - ..openattic
+  - ..ganesha
 

@@ -73,6 +73,26 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/diagnose
 	install -m 644 srv/salt/ceph/diagnose/*.md $(DESTDIR)/srv/salt/ceph/diagnose
 	install -m 644 srv/salt/ceph/diagnose/*.sls $(DESTDIR)/srv/salt/ceph/diagnose
+	# state files - ganesha
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha
+	install -m 644 srv/salt/ceph/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/auth
+	install -m 644 srv/salt/ceph/ganesha/auth/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/files
+	install -m 644 srv/salt/ceph/ganesha/files/*.j2 $(DESTDIR)/srv/salt/ceph/ganesha/files
+	install -m 644 srv/salt/ceph/ganesha/files/ganesha.service $(DESTDIR)/srv/salt/ceph/ganesha/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/config
+	install -m 644 srv/salt/ceph/ganesha/config/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/config/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/configure
+	install -m 644 srv/salt/ceph/ganesha/configure/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/configure/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/key
+	install -m 644 srv/salt/ceph/ganesha/key/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/key/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/keyring
+	install -m 644 srv/salt/ceph/ganesha/keyring/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/install
+	install -m 644 srv/salt/ceph/ganesha/install/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/install/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/service
+	install -m 644 srv/salt/ceph/ganesha/service/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/service/
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
@@ -185,6 +205,8 @@ install:
 	install -m 644 srv/salt/ceph/remove/mon/*.sls $(DESTDIR)/srv/salt/ceph/remove/mon/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/rgw
 	install -m 644 srv/salt/ceph/remove/rgw/*.sls $(DESTDIR)/srv/salt/ceph/remove/rgw/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/ganesha
+	install -m 644 srv/salt/ceph/remove/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/remove/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage
 	install -m 644 srv/salt/ceph/remove/storage/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/
 	# state files - rescind
@@ -194,6 +216,8 @@ install:
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi
 	install -m 644 srv/salt/ceph/rescind/client-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/ganesha
+	install -m 644 srv/salt/ceph/rescind/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/rescind/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw
 	install -m 644 srv/salt/ceph/rescind/igw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/keyring
@@ -248,6 +272,8 @@ install:
 	install -m 644 srv/salt/ceph/rgw/auth/*.sls $(DESTDIR)/srv/salt/ceph/rgw/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/keyring
 	install -m 644 srv/salt/ceph/rgw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rgw/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/users
+	install -m 644 srv/salt/ceph/rgw/users/*.sls $(DESTDIR)/srv/salt/ceph/rgw/users/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/files
 	install -m 644 srv/salt/ceph/rgw/files/*.j2 $(DESTDIR)/srv/salt/ceph/rgw/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
@@ -266,6 +292,8 @@ install:
 	install -m 644 srv/salt/ceph/stage/deploy/*.sls $(DESTDIR)/srv/salt/ceph/stage/deploy/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/discovery
 	install -m 644 srv/salt/ceph/stage/discovery/*.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/ganesha
+	install -m 644 srv/salt/ceph/stage/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/stage/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi
 	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic

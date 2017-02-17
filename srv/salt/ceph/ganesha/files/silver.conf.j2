@@ -1,0 +1,33 @@
+
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles=role) != [] %}
+
+{% for user in salt['rgw.users'](role) %}
+EXPORT
+{
+	Export_ID={{ loop.index }};
+
+	Path = "/";
+
+	Pseudo = "/{{ user }}";
+
+	Access_Type = RW;
+
+	NFS_Protocols = 4;
+
+	Transport_Protocols = TCP;
+
+	FSAL {
+		Name = RGW;
+		User_Id = "{{ user }}";
+		Access_Key_Id ="{{ salt['rgw.access_key'](user) }}";
+		Secret_Access_Key = "{{ salt['rgw.secret_key'](user) }}";
+	}
+}
+
+{% endfor %}
+
+RGW {
+    ceph_conf = "/etc/ceph/ceph.conf";
+}
+
+{% endif %}

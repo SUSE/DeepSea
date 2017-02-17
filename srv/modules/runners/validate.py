@@ -255,6 +255,41 @@ class Validate(object):
             else:
                 self.passed['storage'] = "valid"
 
+    def ganesha(self):
+        """
+        Nodes may only be assigned one ganesha role.  Ganesha depends on 
+        cephfs or radosgw.
+        """
+        ganesha_roles = []
+        role_mds = False
+        role_rgw = False
+
+        for node in self.data.keys():
+            if ('roles' in self.data[node]):
+                if('ganesha_configurations' in self.data[node]):
+                    ganesha_roles = list(set(self.data[node].get("roles")) &
+                                        set(self.data[node].get("ganesha_configurations")))
+                    if len(ganesha_roles) > 1:
+                        msg = "minion {} has {} roles. Only one permitted".format(node, ganesha_roles)
+                        self.errors.setdefault('ganesha',[]).append(msg)
+
+
+                if not (role_mds or role_rgw):
+                    if('mds' in self.data[node]['roles']):
+                        role_mds = True
+                    if('rgw' in self.data[node]['roles']):
+                        role_rgw=True
+                    if('rgw_configurations' in self.data[node]):
+                        if(list(set(self.data[node].get("roles")) &
+                                set(self.data[node].get("rgw_configurations")))):
+                            role_rgw=True
+
+        if not (role_mds or role_rgw):
+            msg = "Ganesha requires either mds or rgw node in cluster."
+            self.errors['ganesha'] = msg
+       
+        self._set_pass_status('ganesha')
+
     def cluster_network(self):
         """
         All storage nodes must have the same cluster network.  The cluster
@@ -573,6 +608,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.cluster_interface()
     v.monitors()
     v.storage()
+    v.ganesha()
     v.master_role()
     v.mon_host()
     v.mon_initial_members()

@@ -82,6 +82,15 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/events
+%dir /srv/salt/ceph/ganesha
+%dir /srv/salt/ceph/ganesha/auth
+%dir /srv/salt/ceph/ganesha/config
+%dir /srv/salt/ceph/ganesha/configure
+%dir /srv/salt/ceph/ganesha/files
+%dir /srv/salt/ceph/ganesha/key
+%dir /srv/salt/ceph/ganesha/keyring
+%dir /srv/salt/ceph/ganesha/install
+%dir /srv/salt/ceph/ganesha/service
 %dir /srv/salt/ceph/igw
 %dir /srv/salt/ceph/igw/config
 %dir /srv/salt/ceph/igw/files
@@ -161,6 +170,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/auth
 %dir /srv/salt/ceph/rgw/keyring
 %dir /srv/salt/ceph/rgw/restart
+%dir /srv/salt/ceph/rgw/users
 %dir /srv/salt/ceph/stage
 %dir /srv/salt/ceph/stage/all
 %dir /srv/salt/ceph/stage/benchmark
@@ -169,6 +179,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/deploy
 %dir /srv/salt/ceph/stage/discovery
 %dir /srv/salt/ceph/stage/iscsi
+%dir /srv/salt/ceph/stage/ganesha
 %dir /srv/salt/ceph/stage/openattic
 %dir /srv/salt/ceph/stage/prep
 %dir /srv/salt/ceph/stage/prep/master
@@ -206,6 +217,16 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 /srv/salt/ceph/diagnose/README.md
 %config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/events/*.sls
+%config /srv/salt/ceph/ganesha/*.sls
+%config /srv/salt/ceph/ganesha/auth/*.sls
+%config /srv/salt/ceph/ganesha/config/*.sls
+%config /srv/salt/ceph/ganesha/configure/*.sls
+%config /srv/salt/ceph/ganesha/files/*.j2
+%config /srv/salt/ceph/ganesha/files/ganesha.service
+%config /srv/salt/ceph/ganesha/install/*.sls
+%config /srv/salt/ceph/ganesha/key/*.sls
+%config /srv/salt/ceph/ganesha/keyring/*.sls
+%config /srv/salt/ceph/ganesha/service/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
 %config /srv/salt/ceph/igw/config/*.sls
@@ -252,6 +273,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/reactor/*.sls
 %config /srv/salt/ceph/refresh/*.sls
 %config /srv/salt/ceph/repo/*.sls
+%config /srv/salt/ceph/remove/ganesha/*.sls
 %config /srv/salt/ceph/remove/igw/auth/*.sls
 %config /srv/salt/ceph/remove/mon/*.sls
 %config /srv/salt/ceph/remove/mds/*.sls
@@ -263,6 +285,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/client-cephfs/*.sls
 %config /srv/salt/ceph/rescind/client-nfs/*.sls
 %config /srv/salt/ceph/rescind/client-radosgw/*.sls
+%config /srv/salt/ceph/rescind/ganesha/*.sls
 %config /srv/salt/ceph/rescind/igw/*.sls
 %config /srv/salt/ceph/rescind/igw/keyring/*.sls
 %config /srv/salt/ceph/rescind/igw/lrbd/*.sls
@@ -285,6 +308,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rgw/auth/*.sls
 %config /srv/salt/ceph/rgw/keyring/*.sls
 %config /srv/salt/ceph/rgw/restart/*.sls
+%config /srv/salt/ceph/rgw/users/*.sls
 %config /srv/salt/ceph/stage/0
 %config /srv/salt/ceph/stage/1
 %config /srv/salt/ceph/stage/2
@@ -298,6 +322,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/deploy/*.sls
 %config /srv/salt/ceph/stage/discovery/*.sls
 %config /srv/salt/ceph/stage/iscsi/*.sls
+%config /srv/salt/ceph/stage/ganesha/*.sls
 %config /srv/salt/ceph/stage/openattic/*.sls
 %config /srv/salt/ceph/stage/prep/*.sls
 %config /srv/salt/ceph/stage/prep/master/*.sls

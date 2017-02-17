@@ -484,6 +484,22 @@ class CephRoles(object):
             else:
                 return [ 'rgw' ]
 
+    def _ganesha_configurations(self):
+        """
+        Use the custom names for ganesha configurations specified.  Otherwise,
+        default to 'ganesha'.
+        """
+        local = salt.client.LocalClient()
+
+        # Should we add a master_minion lookup and have two calls instead?
+        _ganeshas = local.cmd('*' , 'pillar.get', [ 'ganesha_configurations' ])
+        for node in _ganeshas.keys():
+            # Check the first one
+            if _ganeshas[node]:
+                return _ganeshas[node]
+            else:
+                return [ 'ganesha' ]
+
     def generate(self):
         """
         Create role named directories and create corresponding yaml files
@@ -499,7 +515,9 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw', 'ganesha' ] + self._rgw_configurations()
+        roles = [ 'admin', 'mon', 'storage', 'mds', 'igw' ]
+        roles += self._rgw_configurations()
+        roles += self._ganesha_configurations()
         self.available_roles.extend(roles)
 
         for role in roles:
@@ -581,6 +599,19 @@ class CephRoles(object):
     def _add_pub_interface(self, minion_dir):
         if not os.path.isdir(minion_dir):
             _create_dirs(minion_dir, self.root_dir)
+        for server in self.servers:
+            filename = minion_dir + "/" +  server + ".yml"
+            contents = {}
+            contents['public_address'] = self._public_interface(server)
+            self.writer.write(filename, contents)
+
+    def ganesha_members(self):
+        """
+        Create a file for ganesha hosts.
+        """
+        minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
+        if not os.path.isdir(minion_dir):
+            create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
             filename = minion_dir + "/" +  server + ".yml"
             contents = {}

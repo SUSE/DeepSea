@@ -171,6 +171,23 @@ class PillarData(object):
                             custom_split[1])
                     yml.write("# {}\n".format(custom))
                     yml.write("# Overwrites configuration in {}\n".format(custom_for))
+                    self._examples(custom, yml)
+
+
+    def _examples(self, custom, yml):
+        """
+        Provide commented examples for admin convenience
+        """
+        if 'cluster.yml' in custom:
+            text = '''
+              #rgw_configurations:
+              #  rgw:
+              #    users:
+              #      - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
+              #      - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
+              '''
+            text = re.sub(re.compile("^ {14}", re.MULTILINE), "", text)
+            yml.write(text)
 
 
     def _merge(self, pathname, common):
