@@ -8,7 +8,17 @@ log = logging.getLogger(__name__)
 
 class PackageManager(object):
 
+    """
+    That is not the nativ salt module and is not ment to
+    replace it.
+    This module was created to react on packagemanagers
+    reboot advice.
+    """
+
     def __init__(self, **kwargs):
+        self.debug = kwargs.get('debug', False)
+        self.kernel = kwargs.get('kernel', False)
+
         self.platform = platform.linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
@@ -16,19 +26,21 @@ class PackageManager(object):
             self.pm = Zypper(**kwargs)
         elif "fedora" in self.platform or "centos" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
+            # Ceck if PM is installed?
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
                              "Open an issue on github.com/SUSE/DeepSea")
 
-    @staticmethod
-    def reboot():
+    def reboot(self):
         """
-        Assuming `shutdown -r now` works on all platforms
+        Assuming `shutdown -r` works on all platforms
         """
-        # ECHO DUMMY FOR DEBUG
         log.info("The PackageManager asked for a systemreboot. Rebooting")
-        cmd = "echo shutdown -r now"
+        if self.debug:
+            log.debug("INITIALIZING REBOOT")
+            return None
+        cmd = "shutdown -r"
         Popen(cmd, stdout=PIPE)
 
 
@@ -37,8 +49,6 @@ class Apt(PackageManager):
     VERSION = 0.1
 
     def __init__(self, **kwargs):
-        self.debug = kwargs.get('debug', False)
-        self.kernel = kwargs.get('kernel', False)
         pass
 
     def _updates_needed():
@@ -83,30 +93,30 @@ class Apt(PackageManager):
 
 class Zypper(PackageManager):
 
+    """
+    Although salt already has a zypper module
+    the upgrading workflow is much cleaner if
+    deepsea handles reboots based on the returncode
+    from zypper. In order to react on those
+    Zypper has to be invoked in a separate module.
+
+    notes on :kernel:
+    if you pass the --non-interactive flag
+    zypper won't pull in kernel updates.
+    To also upgrade the kernel I created this
+    flag.
+    """
+
     RETCODES = {102: 'ZYPPER_EXIT_INF_REBOOT_NEEDED',
                 100: 'ZYPPER_EXIT_INF_UPDATE_NEEDED'}
 
     VERSION = 0.1
 
     def __init__(self, **kwargs):
-        """
-        Although salt already has a zypper module
-        the upgrading workflow is much cleaner if
-        deepsea handles reboots based on the returncode
-        from zypper. In order to react on those
-        Zypper has to be invoked in a separate module.
+        pass
 
-        notes on :kernel:
-        if you pass the --non-interactive flag
-        zypper won't pull in kernel updates.
-        To also upgrade the kernel I created this
-        flag.
-        """
-        self.debug = kwargs.get('debug', False)
-        self.kernel = kwargs.get('kernel', False)
-        log.debug("Zypper module v{} was executed".format(self.VERSION))
-
-    def refresh():
+    def _refresh():
+        log.info("Refreshing Repositories..")
         cmd = "zypper --non-interactive refresh"
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
@@ -114,6 +124,7 @@ class Zypper(PackageManager):
         """
         Updates that are sourced from all Repos
         """
+        self._refresh()
         cmd = "zypper lu | grep -sq 'No updates found'"
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
@@ -164,8 +175,8 @@ class Zypper(PackageManager):
                 log.info('Reboot required')
                 self.reboot()
             if proc.returncode <= 100:
-                log.info('Error occured')
-                raise StandardError('Zypper failed. Look in the logs')
+                log.info('Zyppers returncode < 100 indicates a failure')
+                raise StandardError('Zypper failed. Look at the logs')
         else:
             log.info('System up to date')
 

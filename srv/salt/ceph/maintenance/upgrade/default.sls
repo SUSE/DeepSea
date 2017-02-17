@@ -1,5 +1,4 @@
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph') %}
-
+{% for host in salt.saltutil.runner('getnodes.sorted_unique_nodes', cluster='ceph') %}
    
     wait for {{ host }} to unblock the cluster:
       salt.state:
