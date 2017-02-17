@@ -51,7 +51,7 @@ class Apt(PackageManager):
     def __init__(self, **kwargs):
         pass
 
-    def _updates_needed():
+    def _updates_needed(self):
         cmd = 'apt-get -u upgrade'
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
@@ -63,7 +63,7 @@ class Apt(PackageManager):
             log.info('No Update Needed')
             return False
 
-    def refresh():
+    def refresh(self):
         cmd = 'apt-get -y update'
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
@@ -115,7 +115,7 @@ class Zypper(PackageManager):
     def __init__(self, **kwargs):
         pass
 
-    def _refresh():
+    def _refresh(self):
         log.info("Refreshing Repositories..")
         cmd = "zypper --non-interactive refresh"
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
