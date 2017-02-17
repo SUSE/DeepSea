@@ -177,7 +177,7 @@ class Zypper(PackageManager):
                 log.info('Reboot required')
                 self.reboot()
             if proc.returncode > 0 and proc.returncode < 100:
-                log.info('Zyppers returncode < 100 indicates a failure. Check the man zypper')
+                log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
                 raise StandardError('Zypper failed. Look at the logs')
         else:
             log.info('System up to date')
