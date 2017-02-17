@@ -19,19 +19,36 @@ common packages:
     - tgt: '*'
     - sls: ceph.packages.common
 
-{% if salt.saltutil.runner('select.minions', cluster='ceph') != [] %}
+{% if salt.saltutil.runner('select.minions', cluster='ceph') == [] %}
 
 updates:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates
 
-{% elif salt.saltutil.runner('select.minions', cluster='ceph') != [] %}
+{% elif salt.saltutil.runner('select.minions', cluster='ceph') != [] and salt['pillar.get']('fsid') != None %}
+
+{% for host in salt.saltutil.runner('getnodes.sorted_unique_nodes', cluster='ceph') %}
+
+wait until the cluster is not in a bad state anymore to process {{ host }}:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.wait
 
 updating {{ host }}:
   salt.state:
-    - sls: ceph.maintenance.update
+    - tgt: {{ host }}
+    - tgt_type: compound
+    - sls: ceph.updates
     - failhard: True
+
+{% endfor %}
+
+{% else %}
+
+prevent empty rendering:
+  test.nop:
+    - name: skip
 
 {% endif %}
 
