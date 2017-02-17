@@ -173,6 +173,8 @@ class Zypper(PackageManager):
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
                 strategy_flags.append("--dry-run")
+            if self.kernel:
+                strategy_flags.append("--with-interactive")
             base_command.extend(self.zypper_flags)
             base_command.extend(strat.split())
             base_command.extend(strategy_flags)
