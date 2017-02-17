@@ -1,6 +1,6 @@
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph') %}
+{% for host in salt.saltutil.runner('getnodes.sorted_unique_nodes', cluster='ceph') %}
 
-    wait until {{ host }} with role mon can be restarted:
+    wait until the cluster is not in a bad state anymore to process {{ host }}:
       salt.state:
         - tgt: {{ salt['pillar.get']('master_minion') }}
         - sls: ceph.wait

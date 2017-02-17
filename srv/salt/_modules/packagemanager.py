@@ -18,6 +18,7 @@ class PackageManager(object):
     def __init__(self, **kwargs):
         self.debug = kwargs.get('debug', False)
         self.kernel = kwargs.get('kernel', False)
+        self.reboot = kwargs.get('reboot', True)
 
         self.platform = platform.linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
@@ -51,6 +52,7 @@ class Apt(PackageManager):
     def __init__(self, **kwargs):
         self.kernel = kwargs.get('kernel', False)
         self.debug = kwargs.get('debug', False)
+        self.reboot = kwargs.get('reboot', True)
         self.base_flags = ['--yes']
 
     def _updates_needed(self):
@@ -126,6 +128,7 @@ class Zypper(PackageManager):
     def __init__(self, **kwargs):
         self.zypper_flags = ['--non-interactive']
         self.kernel = kwargs.get('kernel', False)
+        self.reboot = kwargs.get('reboot', True)
         self.debug = kwargs.get('debug', False)
 
     def _refresh(self):
