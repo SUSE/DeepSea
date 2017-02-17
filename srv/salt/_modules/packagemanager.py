@@ -38,7 +38,7 @@ class PackageManager(object):
         Assuming `shutdown -r` works on all platforms
         """
         log.info("The PackageManager asked for a systemreboot. Rebooting")
-        if self.debug:
+        if self.debug or not self.reboot:
             log.debug("INITIALIZING REBOOT")
             return None
         cmd = "shutdown -r"
@@ -84,10 +84,10 @@ class Apt(PackageManager):
             base_command.extend(strat.split())
             base_command.extend(strategy_flags)
             proc = Popen(base_command, stdout=PIPE, stderr=PIPE)
-            proc.wait()
-            for line in proc.stdout:
+            stdout, stderr = proc.communicate()
+            for line in stdout:
                 log.info(line)
-            for line in proc.stderr:
+            for line in stderr:
                 log.info(line)
             log.info("returncode: {}".format(proc.returncode))
             if os.path.isfile('/var/run/reboot-required'):
@@ -147,9 +147,8 @@ class Zypper(PackageManager):
         if proc.returncode != 0:
             log.info('Update Needed')
             return True
-        else:
-            log.info('No Update Needed')
-            return False
+        log.info('No Update Needed')
+        return False
 
     def _patches_needed(self):
         """
@@ -163,9 +162,8 @@ class Zypper(PackageManager):
             log.info(self.RETCODES[proc.returncode])
             log.info('Patches Needed')
             return True
-        else:
-            log.info('No Patches Needed')
-            return False
+        log.info('No Patches Needed')
+        return False
 
     def _handle(self, strat='up'):
         """
@@ -176,16 +174,16 @@ class Zypper(PackageManager):
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
                 strategy_flags.append("--dry-run")
-            if self.kernel:
+            if self.kernel and strat != 'dup':
                 strategy_flags.append("--with-interactive")
             base_command.extend(self.zypper_flags)
             base_command.extend(strat.split())
             base_command.extend(strategy_flags)
             proc = Popen(base_command, stdout=PIPE, stderr=PIPE)
-            proc.wait()
-            for line in proc.stdout:
+            stdout, stderr = proc.communicate()
+            for line in stdout:
                 log.info(line)
-            for line in proc.stderr:
+            for line in stderr:
                 log.info(line)
             log.info("returncode: {}".format(proc.returncode))
 
@@ -210,3 +208,4 @@ def dup(**kwargs):
     strat = dup.__name__
     obj = PackageManager(**kwargs)
     obj.pm._handle(strat=strat)
+up(debug=True)
