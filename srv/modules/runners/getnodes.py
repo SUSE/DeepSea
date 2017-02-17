@@ -27,6 +27,6 @@ def sorted_unique_nodes(cluster=None):
     cluster_pool = client.cmd(search, 'pillar.items', [], expr_form="compound")
     roles = ['mon', 'storage', 'mds', 'rgw', 'igw', 'ganesha']
     for role in roles:
-	    all_clients += client.cmd("I@roles:{}".format(role), 'pillar.items', expr_form="compound").keys()
+         all_clients += client.cmd("I@roles:{}".format(role), 'pillar.items', expr_form="compound").keys()
     return __preserve_order_sorted(all_clients)
     # Eliminate all items that are not in cluster_pool ? A second filter in client.cmd would be better
