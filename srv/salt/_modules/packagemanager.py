@@ -189,10 +189,10 @@ class Zypper(PackageManager):
             if proc.returncode == 102:
                 self.reboot()
             if proc.returncode > 0 and proc.returncode < 100:
-               if proc.returncode in self.RETCODES:
-                   log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))
-               log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
-               raise StandardError('Zypper failed. Look at the logs')
+                if proc.returncode in self.RETCODES:
+                    log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))
+                log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
+                raise StandardError('Zypper failed. Look at the logs')
         else:
             log.info('System up to date')
 
