@@ -113,11 +113,12 @@ class Zypper(PackageManager):
     VERSION = 0.1
 
     def __init__(self, **kwargs):
+        self.zypper_flags = ['--non-interactive']
         pass
 
     def _refresh(self):
         log.info("Refreshing Repositories..")
-        cmd = "zypper --non-interactive refresh"
+        cmd = "zypper {} refresh".format(self.zypper_flags)
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
     def _updates_needed(self):
@@ -140,7 +141,7 @@ class Zypper(PackageManager):
         Updates that are sourced from an official Update
         Repository
         """
-        cmd = "zypper --non-interactive patch-check"
+        cmd = "zypper {} patch-check".format(self.zypper_flags)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
         if proc.returncode == 100:
@@ -156,11 +157,12 @@ class Zypper(PackageManager):
         Conbines up and dup and executes the constructed zypper command.
         """
         if self._updates_needed():
-            zypper_flags = ['--non-interactive']
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
+            if self.debug:
+                strategy_flags.append("--dry-run")
             cmd = "zypper {zypper_flags} {strategy} {strategy_flags}".\
-                   format(zypper_flags=zypper_flags,
-                          strategy=strat, 
+                   format(zypper_flags=self.zypper_flags,
+                          strategy=strat,
                           strategy_flags=strategy_flags)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             proc.wait()
@@ -174,8 +176,8 @@ class Zypper(PackageManager):
                 log.info(self.RETCODES[proc.returncode])
                 log.info('Reboot required')
                 self.reboot()
-            if proc.returncode <= 100:
-                log.info('Zyppers returncode < 100 indicates a failure')
+            if proc.returncode > 0 and proc.returncode < 100:
+                log.info('Zyppers returncode < 100 indicates a failure. Check the man zypper')
                 raise StandardError('Zypper failed. Look at the logs')
         else:
             log.info('System up to date')
