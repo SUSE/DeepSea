@@ -19,10 +19,21 @@ common packages:
     - tgt: '*'
     - sls: ceph.packages.common
 
-updates:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.updates
+{% if  salt.saltutil.runner('select.minions', cluster='ceph') != [] %}
+
+    updates:
+      salt.state:
+        - tgt: '*'
+        - sls: ceph.updates
+
+{% elif  salt.saltutil.runner('select.minions', cluster='ceph') != []
+
+    updating {{ host }}:
+      salt.state:
+        - sls: ceph.maintenance.update
+        - failhard: True
+
+{% endif %}
 
 mines:
   salt.state:
