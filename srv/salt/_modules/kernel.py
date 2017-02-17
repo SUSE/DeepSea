@@ -46,8 +46,10 @@ def replace(**kwargs):
             for candidate in candidates:
                 log.debug("candidate: {}".format(candidate))
                 if re.match(candidate, package):
-                    log.info("Installing: {}".format(kernel))
                     caller = salt.client.Caller()
+                    log.info("Removing: {}".format(candidate))
+                    ret = caller.cmd('pkg.remove', candidate)
+                    log.info("Installing: {}".format(kernel))
                     ret = caller.cmd('pkg.install', kernel)
                     log.debug("ret: {}".format(ret))
                     return ret
@@ -66,14 +68,7 @@ def _kernel_pkg():
     kernel = open('/proc/cmdline').read()
     log.debug("/proc/cmdline: {}".format(kernel))
 
-    boot_image = None
-    try:
-        boot_image = re.split(r'[= ]', kernel)[1]
-        log.info("running image: {}".format(boot_image))
-    except IndexError:
-        log.error("BOOT_IMAGE missing")
-
-    query = _query_command(boot_image)
+    query = _query_command(_boot_image(kernel))
     if query:
         log.debug("query: {}".format(query))
         proc = Popen(query, stdout=PIPE, stderr=PIPE)
@@ -81,6 +76,18 @@ def _kernel_pkg():
         log.info("package: {}".format(package))
         return package
     return
+
+def _boot_image(contents):
+    """
+    Return the kernel pathname parsed from the supplied string
+    """
+    boot_image = None
+    try:
+        boot_image = re.split(r'[= ]', contents)[1]
+        log.info("running image: {}".format(boot_image))
+    except IndexError:
+        log.error("BOOT_IMAGE missing")
+    return boot_image
 
 def _query_command(filename):
     """
