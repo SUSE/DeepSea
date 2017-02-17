@@ -49,10 +49,12 @@ class Apt(PackageManager):
     VERSION = 0.1
 
     def __init__(self, **kwargs):
-        pass
+        self.kernel = kwargs.get('kernel', False)
+        self.debug = kwargs.get('debug', False)
+        self.base_flags = ['--yes']
 
     def _updates_needed(self):
-        cmd = 'apt-get -u upgrade'
+        cmd = 'apt-get {} -u upgrade'.format(self.base_flags)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
         # UNTESTED
@@ -64,21 +66,22 @@ class Apt(PackageManager):
             return False
 
     def refresh(self):
-        cmd = 'apt-get -y update'
+        cmd = 'apt-get {} update'.format(self.base_flags)
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
     def _handle(self, strat='up'):
         if strat == 'up':
             strat = 'upgrade'
         if self._updates_needed():
-            base_flags = ['--yes']
+            base_command = ['apt-get']
             strategy_flags = ["-o Dpkg::Options::=", "--force-confnew",
                               "--force-yes", "-fuy"]
-            cmd = "apt-get {base_flags} {strategy} {strategy_flags}".\
-                   format(base_flags=base_flags,
-                          strategy=strat, 
-                          strategy_flags=strategy_flags)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            if self.debug:
+                strategy_flags.append("--dry-run")
+            base_command.extend(self.base_flags)
+            base_command.extend(strat.split())
+            base_command.extend(strategy_flags)
+            proc = Popen(base_command, stdout=PIPE, stderr=PIPE)
             proc.wait()
             for line in proc.stdout:
                 log.info(line)
@@ -108,13 +111,22 @@ class Zypper(PackageManager):
     """
 
     RETCODES = {102: 'ZYPPER_EXIT_INF_REBOOT_NEEDED',
-                100: 'ZYPPER_EXIT_INF_UPDATE_NEEDED'}
+                100: 'ZYPPER_EXIT_INF_UPDATE_NEEDED',
+                1: 'ZYPPER_EXIT_ERR_BUG',
+                2: 'ZYPPER_EXIT_ERR_SYNTAX',
+                3: 'ZYPPER_EXIT_ERR_INVALID_ARGS',
+                4: 'ZYPPER_EXIT_ERR_ZYPP',
+                5: 'ZYPPER_EXIT_ERR_PRIVILEGES',
+                6: 'ZYPPER_EXIT_NO_REPOS',
+                7: 'ZYPPER_EXIT_ZYPP_LOCKED',
+                8: 'ZYPPER_EXIT_ERR_COMMIT'}
 
     VERSION = 0.1
 
     def __init__(self, **kwargs):
         self.zypper_flags = ['--non-interactive']
-        pass
+        self.kernel = kwargs.get('kernel', False)
+        self.debug = kwargs.get('debug', False)
 
     def _refresh(self):
         log.info("Refreshing Repositories..")
@@ -157,14 +169,14 @@ class Zypper(PackageManager):
         Conbines up and dup and executes the constructed zypper command.
         """
         if self._updates_needed():
+            base_command = ['zypper']
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
                 strategy_flags.append("--dry-run")
-            cmd = "zypper {zypper_flags} {strategy} {strategy_flags}".\
-                   format(zypper_flags=self.zypper_flags,
-                          strategy=strat,
-                          strategy_flags=strategy_flags)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            base_command.extend(self.zypper_flags)
+            base_command.extend(strat.split())
+            base_command.extend(strategy_flags)
+            proc = Popen(base_command, stdout=PIPE, stderr=PIPE)
             proc.wait()
             for line in proc.stdout:
                 log.info(line)
@@ -173,12 +185,12 @@ class Zypper(PackageManager):
             log.info("returncode: {}".format(proc.returncode))
 
             if proc.returncode == 102:
-                log.info(self.RETCODES[proc.returncode])
-                log.info('Reboot required')
                 self.reboot()
             if proc.returncode > 0 and proc.returncode < 100:
-                log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
-                raise StandardError('Zypper failed. Look at the logs')
+               if proc.returncode in self.RETCODES:
+                   log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))
+               log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
+               raise StandardError('Zypper failed. Look at the logs')
         else:
             log.info('System up to date')
 
