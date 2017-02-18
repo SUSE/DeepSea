@@ -4,13 +4,40 @@
 <dom-module id="wf-auth-style">
     <template>
         <style>
+         @-webkit-keyframes glowing {
+             0% { color: #B20000; }
+             50% { color: #FF0000; }
+             100% { color: #B20000; }
+         }
+
+         @-moz-keyframes glowing {
+             0% { color: #B20000; }
+             50% { color: #FF0000; }
+             100% { color: #B20000; }
+         }
+
+         @-o-keyframes glowing {
+             0% { color: #B20000; }
+             50% { color: #FF0000; }
+             100% { color: #B20000; }
+         }
+
+         @keyframes glowing {
+             0% { color: #B20000; }
+             50% { color: #FF0000; }
+             100% { color: #B20000; }
+         }
+
          paper-icon-button.authenticated {
              color: var(--paper-green-500);
              --paper-icon-button-ink-color: var(--paper-indigo-500);
+             font-size: 15px;
          }
          paper-icon-button.notauthenticated {
              color: var(--paper-red-500);
              --paper-icon-button-ink-color: var(--paper-indigo-500);
+             font-size: 15px;
+	     animation: glowing 1500ms infinite;
          }
          paper-dialog.authdialog {
              position: fixed;
