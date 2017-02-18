@@ -28,10 +28,10 @@
         <app-localstorage-document key="wfauth" data={{wfAuth}} session-only="true"></app-localstorage-document>
 
         <paper-dialog id='authDialog' class="authdialog">
-            <paper-input id="saltApiNodeInput" label="salt-api Hostname" value="{{saltApiNode}}" required auto-validate></paper-input>
-            <paper-input id="saltApiPortInput" label="salt-api Port"     value="{{saltApiPort}}" required auto-validate pattern="[0-9]*"></paper-input>
-            <paper-input id="userIdInput"      label="userid"            value="{{userid}}"      required auto-validate></paper-input>
-            <paper-input id="passwordInput"    label="password"          value="{{password}}"    required auto-validate type="password"></paper-input>
+            <paper-input id="saltApiNodeInput" label="salt-api Hostname" value="{{saltApiNode}}" required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
+            <paper-input id="saltApiPortInput" label="salt-api Port"     value="{{saltApiPort}}" required auto-validate pattern="[0-9]*" disabled$="{{disableAuthDialogInput}}"></paper-input>
+            <paper-input id="userIdInput"      label="userid"            value="{{userid}}"      required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
+            <paper-input id="passwordInput"    label="password"          value="{{password}}"    required auto-validate type="password" disabled$="{{disableAuthDialogInput}}"></paper-input>
             <div class="buttons">
                 <paper-button raised on-click="login">Log In</paper-button>
                 <paper-button raised on-click="logout" disabled$="{{disableLogoutButton}}">Log Out</paper-button>
@@ -93,6 +93,10 @@
 
          disableLogoutButton: {
              type: Boolean,
+         },
+
+         disableAuthDialogInput: {
+             type: Boolean,
          }
      },
 
@@ -110,6 +114,7 @@
           * FIXME: fix the above via something like an 'onbeforeunload' signal to trigger
           * a formal logout and remove the cookie.
           */
+         this.$.authDialog.open(); /* Start with dialog open to allow unauthenticated user to see login dialog. */
          if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
              var wfauth = JSON.parse(sessionStorage.wfauth);
              this.userid = wfauth.userid;
@@ -120,7 +125,7 @@
              /* Check whether we're already authenticated.  On failure, wfAuth and
               * sessionStorage.wfauth will be cleared.  On success, they will get re-populated.
               */
-             this.checkLogin();
+             this._checkLogin();
          } else {
              this.setDefaultProperties();
              this.setWFUnauthenticated();
@@ -131,10 +136,26 @@
          this.$.authDialog.open();
      },
 
-     checkLogin: function() {
-         console.log("wf-auth:checkLogin()");
+     _checkLogin: function() {
+         console.log("wf-auth:_checkLogin()");
          this.cmd = "login";
          this.$.saltapiauth.runGet();
+     },
+
+     /* Used to determine if we have some authentication state saved.  If yes, we
+      * check to see if we are authenticated.
+      * Returns false if no state, otherwise true (however, _checkLogin() can still
+      * determine the user is unauthenticated).
+      */
+     checkAuthState: function() {
+         if (!sessionStorage.wfauth || sessionStorage.wfauth === "{}") {
+             console.log("wf-auth:checkAuthState(): no state found.");
+             return false
+         } else {
+             console.log("wf-auth:checkAuthState(): state found.");
+             this._checkLogin();
+         }
+         return true;
      },
 
      /* We allow at-will re-auth (login button not greyed out on auth success).
@@ -197,6 +218,8 @@
          } else if (this.cmd == "logout") {
              this.setWFUnauthenticated();
              this.setDefaultProperties();
+             console.log("wf-auth:handleAuth200(): firing 'wf-auth-logout' event.");
+             this.fire("wf-auth-logout");
          } else {
              console.error("wf-auth:handleAuth200(): invalid cmd (" + this.cmd + ")");
          }
@@ -209,7 +232,7 @@
          this.password = "";
 
          if (this.cmd == "login") {
-             alert("Failed to authenticate.  Try again.");
+             alert("Failed to authenticate.  Please try logging in again.  If failure persists, check the status of " + this.saltApiNode);
          } else if (this.cmd == "logout") {
              /* TODO: Would be great to clear the cookie on the client side.  But
               * document.cookie is empty.  Marking for future investigation.  Also,
@@ -222,6 +245,8 @@
          }
 
          this.setWFUnauthenticated();
+         console.log("wf-auth:handleAuthErr(): firing 'wf-auth-logout' event.");
+         this.fire("wf-auth-logout");
      },
 
      /* Sets initial property values.  Also used to clear auth dialog when logging out. */
@@ -247,6 +272,7 @@
          this.setWFAuth(this.saltApiNode, this.saltApiPort, this.userid, this.authType);
          this.authButtonClass = "authenticated";
          this.disableLogoutButton = false;
+         this.disableAuthDialogInput = true;
      },
 
      /* Clears wfAuth along with sessionStorage.wfauth.  Also disables logout button
@@ -264,6 +290,7 @@
          this.wfAuth = {};
          this.authButtonClass = "notauthenticated";
          this.disableLogoutButton = true;
+         this.disableAuthDialogInput = false;
      }
 
  });

@@ -14,9 +14,6 @@
 
 <link rel="import" href="../wf-auth/wf-auth.html">
 
-<!-- <link rel="import" href="/src/iscsi-conf/iscsi-conf.html">
-     <link rel="import" href="/src/view-404/view-404.html"> -->
-
 <dom-module id="wolffish-app">
     <template>
         <style>
@@ -81,6 +78,7 @@
             <app-drawer id="drawer" class="drawer-menu">
                 <app-toolbar>Menu</app-toolbar>
                 <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
+		    <a name="wf-welcome" href="#/wf-welcome">Welcome</a>
                     <a name="iscsi-conf" href="#/iscsi-conf">iSCSI Configuration</a>
                 </iron-selector>
             </app-drawer>
@@ -104,6 +102,7 @@
                     attr-for-selected="name"
                     fallback-selection="view-404"
                     role="main">
+		    <wf-welcome name="wf-welcome"></wf-welcome>
                     <iscsi-conf name="iscsi-conf"></iscsi-conf>
                     <view-404 name="view-404"></view-404>
                 </iron-pages>
@@ -128,12 +127,29 @@
              },
          },
 
+         listeners: {
+             "wf-auth-logout": "handleLogout",
+         },
+
          observers: [
              '_routePageChanged(routeData.page)',
          ],
 
+         handleLogout: function(e) {
+             console.log("wolffish-app:handleLogout(): caught 'wf-auth-logout' event.");
+             console.log("wolffish-app:handleLogout(): User logged out.  Redirecting to welcome page.");
+             this.set('route.path', '/wf-welcome/');
+         },
+
          _routePageChanged: function(page) {
-             this.page = page || 'iscsi-conf';
+	     /* Check if we're authenticated. */
+             var wfAuth = document.querySelector("wf-auth");
+             if (wfAuth.checkAuthState()) {
+		 this.page = page || 'wf-welcome';
+	     } else {
+		 this.page = 'wf-welcome';
+                 this.set('route.path', '/wf-welcome/');
+             }
 
              if (!this.$.drawer.persistent) {
                  this.$.drawer.close();
