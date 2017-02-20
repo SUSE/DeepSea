@@ -108,8 +108,9 @@ class Apt(PackageManager):
             for line in stderr:
                 log.info(line)
             log.info("returncode: {}".format(proc.returncode))
-            if os.path.isfile('/var/run/reboot-required'):
-                self.reboot_in()
+            if proc.returncode == 0:
+                if os.path.isfile('/var/run/reboot-required'):
+                    self.reboot_in()
         else:
             log.info('System up to date')
 
