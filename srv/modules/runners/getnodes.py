@@ -1,7 +1,7 @@
 import salt.client
 
 
-def __preserve_order_sorted(seq):
+def _preserve_order_sorted(seq):
     """
     Getting rid of duplicates in python could be solved by
     casting a list() to a set() and back to a list()
@@ -23,10 +23,9 @@ def sorted_unique_nodes(cluster=None):
 
     client = salt.client.LocalClient(__opts__['conf_file'])
 
-    search = "I@cluster:{}".format(cluster)
-    cluster_pool = client.cmd(search, 'pillar.items', [], expr_form="compound")
+    cluster_assignment = "I@cluster:{}".format(cluster)
     roles = ['mon', 'storage', 'mds', 'rgw', 'igw', 'ganesha']
     for role in roles:
-         all_clients += client.cmd("I@roles:{}".format(role), 'pillar.items', expr_form="compound").keys()
-    return __preserve_order_sorted(all_clients)
-    # Eliminate all items that are not in cluster_pool ? A second filter in client.cmd would be better
+         dct = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
+         all_clients += dct.keys()
+    return _preserve_order_sorted(all_clients)
