@@ -1,10 +1,23 @@
 from subprocess import Popen, PIPE
-import platform
+from platform import linux_distribution
 import logging
 import os
 
 log = logging.getLogger(__name__)
 
+
+class Log(object):
+
+    def info(self, context):
+        print(context)
+
+    def debug(self, context):
+        print(context)
+
+    def warning(self, context):
+        print(context)
+
+log = Log()
 
 class PackageManager(object):
 
@@ -20,7 +33,7 @@ class PackageManager(object):
         self.kernel = kwargs.get('kernel', False)
         self.reboot = kwargs.get('reboot', True)
 
-        self.platform = platform.linux_distribution()[0].lower()
+        self.platform = linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
             self.pm = Zypper(**kwargs)
@@ -60,6 +73,7 @@ class Apt(PackageManager):
         self.base_flags = ['--yes']
 
     def _updates_needed(self):
+        self._refresh()
         cmd = 'apt-get {} -u upgrade'.format(self.base_flags)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
@@ -71,7 +85,7 @@ class Apt(PackageManager):
             log.info('No Update Needed')
             return False
 
-    def refresh(self):
+    def _refresh(self):
         cmd = 'apt-get {} update'.format(self.base_flags)
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
