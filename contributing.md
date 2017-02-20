@@ -34,9 +34,11 @@ Sending Patches
 We accept patches via Github Pull Requests. Here is a quick guide to get you
 going:
 
-- [Fork the repo](https://help.github.com/articles/fork-a-repo/), create a topic
-  branch for the feature/fix. For a quick guide to git
-  itself, [start here](http://rogerdudler.github.io/git-guide/)
+- [Fork the DeepSea repository](https://github.com/SUSE/DeepSea/fork), create a
+  topic branch for the feature/fix. See the
+  [Fork A Repo](https://help.github.com/articles/fork-a-repo/) documentation on
+  github for more details. For a quick guide to git itself, [start
+  here](http://rogerdudler.github.io/git-guide/).
 - Avoid making changes directly to your master branch as it would make it harder
   to make changes or rebase later.
 - Create logical changes into a single commit. Make multiple commits when it
