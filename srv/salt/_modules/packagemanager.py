@@ -23,26 +23,25 @@ class PackageManager(object):
         self.platform = platform.linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
-            # Ceck if PM is installed?
             self.pm = Zypper(**kwargs)
         elif "fedora" in self.platform or "centos" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
-            # Ceck if PM is installed?
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
                              "Open an issue on github.com/SUSE/DeepSea")
 
-    def reboot(self):
+    def reboot_in(self):
         """
         Assuming `shutdown -r` works on all platforms
         """
         log.info("The PackageManager asked for a systemreboot. Rebooting")
         if self.debug or not self.reboot:
-            log.debug("INITIALIZING REBOOT")
+            log.debug("Faking Reboot")
             return None
+        log.debug("Initializing Reboot.")
         cmd = "shutdown -r"
-        Popen(cmd, stdout=PIPE)
+        Popen(cmd, stdout=PIPE, shell=True)
 
 
 class Apt(PackageManager):
@@ -50,6 +49,11 @@ class Apt(PackageManager):
     VERSION = 0.1
 
     def __init__(self, **kwargs):
+        """
+        Instead of reinitializing __init__ from super,
+        the child get kwargs passed as arguments to
+        have the possibility to handle those differently.
+        """
         self.kernel = kwargs.get('kernel', False)
         self.debug = kwargs.get('debug', False)
         self.reboot = kwargs.get('reboot', True)
@@ -91,7 +95,7 @@ class Apt(PackageManager):
                 log.info(line)
             log.info("returncode: {}".format(proc.returncode))
             if os.path.isfile('/var/run/reboot-required'):
-                self.reboot()
+                self.reboot_in()
         else:
             log.info('System up to date')
 
@@ -126,12 +130,20 @@ class Zypper(PackageManager):
     VERSION = 0.1
 
     def __init__(self, **kwargs):
+        """
+        Instead of reinitializing __init__ from super,
+        the child get kwargs passed as arguments to
+        have the possibility to handle those differently.
+        """
         self.zypper_flags = ['--non-interactive']
         self.kernel = kwargs.get('kernel', False)
         self.reboot = kwargs.get('reboot', True)
         self.debug = kwargs.get('debug', False)
 
     def _refresh(self):
+        """
+        Refresh Zypper before updating
+        """
         log.info("Refreshing Repositories..")
         cmd = "zypper {} refresh".format(self.zypper_flags)
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -188,7 +200,7 @@ class Zypper(PackageManager):
             log.info("returncode: {}".format(proc.returncode))
 
             if proc.returncode == 102:
-                self.reboot()
+                self.reboot_in()
             if proc.returncode > 0 and proc.returncode < 100:
                 if proc.returncode in self.RETCODES:
                     log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))
@@ -208,4 +220,3 @@ def dup(**kwargs):
     strat = dup.__name__
     obj = PackageManager(**kwargs)
     obj.pm._handle(strat=strat)
-up(debug=True)
