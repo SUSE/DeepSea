@@ -1,7 +1,6 @@
 import pytest
 from srv.salt._modules.packagemanager import PackageManager, Zypper, Apt
 from mock import MagicMock, patch, mock_open, mock
-from helpers import OutputHelper
 
 
 class TestPackageManager():
