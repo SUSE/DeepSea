@@ -144,8 +144,8 @@ class TestZypper():
         po.return_value.returncode = 102
         po.return_value.communicate.return_value = ("packages out", "error")
         zypp._handle()
-        po.called is True
-        reboot_in.called is True
+        assert po.called is True
+        assert reboot_in.called is True
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -160,8 +160,8 @@ class TestZypper():
         po.return_value.returncode = 102
         po.return_value.communicate.return_value = ("packages out", "error")
         zypp._handle()
-        po.called is False
-        reboot_in.called is False
+        assert po.called is False
+        assert reboot_in.called is False
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -175,10 +175,10 @@ class TestZypper():
         updates_needed.return_value = True
         po.return_value.returncode = 99
         po.return_value.communicate.return_value = ("packages out", "error")
-        po.called is True
-        reboot_in.called is False
         with pytest.raises(StandardError) as excinfo:
             zypp._handle()
+            assert po.called is True
+            assert reboot_in.called is False
         excinfo.match('Zypper failed. Look at the logs*')
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
@@ -193,10 +193,10 @@ class TestZypper():
         updates_needed.return_value = True
         po.return_value.returncode = 1
         po.return_value.communicate.return_value = ("packages out", "error")
-        po.called is True
-        reboot_in.called is False
         with pytest.raises(StandardError) as excinfo:
             zypp._handle()
+            assert po.called is True
+            assert reboot_in.called is False
         excinfo.match('Zypper failed. Look at the logs*')
 
 class TestApt():
@@ -295,7 +295,7 @@ class TestApt():
         with patch("srv.salt._modules.packagemanager.os.path.isfile") as mock_file:
             mock_file.return_value = False
             apt._handle()
-            po.called is True
+            assert po.called is True
             assert reboot_in.called is False
           
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
@@ -311,8 +311,9 @@ class TestApt():
         updates_needed.return_value = True
         po.return_value.returncode = 99
         po.return_value.communicate.return_value = ("packages out", "error")
-        po.called is True
-        reboot_in.called is False
+        apt._handle()
+        assert po.called is True
+        assert reboot_in.called is False
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -327,8 +328,9 @@ class TestApt():
         updates_needed.return_value = True
         po.return_value.returncode = 1
         po.return_value.communicate.return_value = ("packages out", "error")
-        po.called is True
-        reboot_in.called is False
+        apt._handle()
+        assert po.called is True
+        assert reboot_in.called is False
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -343,5 +345,5 @@ class TestApt():
         updates_needed.return_value = False
         po.return_value.returncode = 1
         po.return_value.communicate.return_value = ("packages out", "error")
-        po.called is False
+        assert po.called is False
         reboot_in.called is False
