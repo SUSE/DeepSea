@@ -5,12 +5,14 @@
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 
+<link rel="import" href="../wf-styles/wf-styles.html">
+
 <link rel="import" href="iscsi-target-config.html">
 <link rel="import" href="iscsi-target-styles.html">
 
 <dom-module id="iscsi-target">
     <template>
-        <style include="iscsi-target-styles">
+	<style include="wf-styles iscsi-target-styles">
          :host {
              display: block;
 
@@ -18,8 +20,8 @@
          }
         </style>
 
-        <div class="card">
-            <paper-toolbar class="target-toolbar">
+	<div class="wf-card">
+	    <paper-toolbar class="wf-card-toolbar">
                 <span class="title">{{name}}</span>
                 <paper-icon-button icon="delete" on-tap="removeTarget"></paper-icon-button>
             </paper-toolbar>

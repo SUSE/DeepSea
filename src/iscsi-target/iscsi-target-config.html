@@ -12,11 +12,13 @@
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
+<link rel="import" href="../wf-styles/wf-styles.html">
+
 <link rel="import" href="iscsi-target-styles.html">
 
 <dom-module id="iscsi-target-config">
     <template>
-        <style include="iscsi-target-styles">
+	<style include="wf-styles iscsi-target-styles">
          :host {
              display: block;
 
@@ -24,7 +26,7 @@
          }
         </style>
 
-        <div class="card target-config-card">
+	<div class="wf-card target-config-card">
             <paper-toolbar class="target-config-toolbar">
                 <span class="title">iSCSI Target Configuration</span>
                 <paper-icon-button icon="delete" on-tap="removeConfig"></paper-icon-button>
