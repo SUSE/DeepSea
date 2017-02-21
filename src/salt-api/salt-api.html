@@ -55,14 +55,14 @@
             this.$.saltapi.generateRequest();
         },
 
-        handle200: function(e) {
+        handle200: function(e, detail) {
             console.log("salt-api:handle200(): firing 'salt-api-response' event.");
-            this.fire("salt-api-response");
+            this.fire("salt-api-response", e.detail);
         },
 
-        handleErr: function(e) {
-            console.log("salt-api:handleErr(): firing 'salt-api-error' event");
-            this.fire("salt-api-error");
+        handleErr: function(e, detail) {
+            console.log("salt-api:handleErr(): firing 'salt-api-error' event.");
+            this.fire("salt-api-error", e.detail);
         },
     });
 </script>
