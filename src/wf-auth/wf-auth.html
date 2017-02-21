@@ -50,6 +50,18 @@
             password="{{password}}"
             authtype="{{authType}}">
         </salt-api>
+
+        <salt-api
+            id="saltapicheckauth"
+            node="{{saltApiNode}}"
+            port="{{saltApiPort}}"
+            cmd=""
+            target="{{saltApiNode}}"
+            func="test.ping"
+            userid=""
+            password=""
+            authtype="">
+        </salt-api>
     </template>
 </dom-module>
 
@@ -136,10 +148,12 @@
          this.$.authDialog.open();
      },
 
+     /* Not the best solution to use test.ping against the salt-api node, but
+      * GET /login _always_ returns 200/OK (whether you have a valid cookie or not).
+      */
      _checkLogin: function() {
          console.log("wf-auth:_checkLogin()");
-         this.cmd = "login";
-         this.$.saltapiauth.runGet();
+         this.$.saltapicheckauth.runPost();
      },
 
      /* Used to determine if we have some authentication state saved.  If yes, we
@@ -212,7 +226,7 @@
          this.password = "";
 
          console.log("wf-auth:handleAuth200(): caught 'salt-api-response' event.");
-         if (this.cmd == "login") {
+         if (this.cmd == "login" || this.cmd == undefined) {
              this.$.authDialog.close();
              this.setWFAuthenticated();
          } else if (this.cmd == "logout") {
@@ -231,7 +245,7 @@
          /* Clear password from dialog. */
          this.password = "";
 
-         if (this.cmd == "login") {
+         if (this.cmd == "login" || this.cmd == undefined) {
              alert("Failed to authenticate.  Please try logging in again.  If failure persists, check the status of " + this.saltApiNode);
          } else if (this.cmd == "logout") {
              /* TODO: Would be great to clear the cookie on the client side.  But
