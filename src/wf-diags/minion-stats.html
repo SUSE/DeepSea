@@ -1,0 +1,113 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+
+<link rel="import" href="../salt-api/salt-api.html">
+
+<link rel="import" href="../wf-styles/wf-styles.html">
+
+<dom-module id="minion-stats">
+    <template>
+	<style include="wf-styles">
+	 :host {
+	     display: block;
+
+	     padding: 10px;
+	 }
+	</style>
+
+	<div class="wf-card">
+	    <paper-toolbar class="wf-card-toolbar">
+		<span class="title">Minion Stats</span>
+		<paper-icon-button icon="delete" on-tap="remove"></paper-icon-button>
+	    </paper-toolbar>
+
+            <paper-input label="Minion ID (blank to list all)" value="{{minion}}"></paper-input>
+            <paper-button raised on-click="queryMinions">Query</paper-button>
+
+            <!-- <iron-autogrow-textarea style="width: 800" value="{{minions}}"></iron-autogrow-textarea> -->
+            <pre>{{minionsOutput}}</pre>
+	</div>
+
+	<!-- Our salt-api auth element. -->
+	<salt-api
+	    id="minionstats"
+	    node="{{saltApiNode}}"
+	    port="{{saltApiPort}}"
+	    cmd="{{cmd}}"
+	    target=""
+	    func=""
+	    userid=""
+	    password=""
+	    authtype="">
+	</salt-api>
+    </template>
+
+    <script>
+     Polymer({
+	 is: "minion-stats",
+
+	 properties: {
+	     saltApiNode: {
+		 type: String
+	     },
+	     saltApiPort: {
+		 type: Number
+	     },
+	     cmd: {
+		 type: String
+	     },
+             minionsOutput: {
+                 type: Object
+             },
+             minion: {
+                 type: String,
+                 value: ""
+             }
+	 },
+
+	 listeners: {
+	     "salt-api-response": "handleMinions200",
+	     "salt-api-error": "handleMinionsErr"
+	 },
+
+	 ready: function() {
+	     /* Assuming sessionStorage.wfauth has needed information. */
+	     var wfauth = JSON.parse(sessionStorage.wfauth);
+	     this.saltApiNode = wfauth.node;
+	     this.saltApiPort = wfauth.port;
+	     this.cmd = "/minions";
+	 },
+
+         queryMinions: function() {
+             this.cmd = "/minions/" + this.minion;
+             this.$.minionstats.runGet();
+         },
+
+	 handleMinions200: function(e) {
+	     console.log(this.is + ":handleMinions200() caught 'salt-api-response'");
+	     /* console.log(e.detail.response);
+	        console.log(e.detail.status);*/
+             this.minionsOutput = JSON.stringify(e.detail.response.return[0], null, 2);
+             console.log(this.minionsOutput);
+	 },
+
+	 handleMinionsErr: function(e) {
+	     console.log(this.is + ":handleMinionsErr() caught 'salt-api-error'");
+	     /* console.log(e.detail.error);
+	        console.log(e.detail.request.status);
+	        console.log(e.detail.request.statusText);*/
+
+	 },
+
+	 remove: function() {
+	     console.log(this.is + ":remove(): firing 'remove-" + this.is + "' event.");
+	     this.fire("remove-" + this.is);
+	 }
+     });
+    </script>
+</dom-module>

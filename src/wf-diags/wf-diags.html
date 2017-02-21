@@ -1,5 +1,9 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+
+<link rel="import" href="../wf-diags/minion-stats.html">
+
 <link rel="import" href="../wf-styles/wf-styles.html">
 
 <dom-module id="wf-diags">
@@ -11,12 +15,47 @@
 	     padding: 10px 20px;
 	 }
 	</style>
+
 	<h1>Diagnostics</h1>
+
+	<paper-button raised id="minion-stats-button" on-click="addMinionStatsWidget" disabled$="{{minionStatsWidgetAdded}}">Minion Stats</paper-button>
+
     </template>
 
     <script>
      Polymer({
 	 is: 'wf-diags',
+
+	 properties: {
+	     minionStatsWidgetAdded: {
+		 type: Boolean,
+		 value: false
+	     }
+	 },
+
+	 listeners: {
+	     "remove-minion-stats": "handleRemove"
+	 },
+
+	 handleRemove: function(e) {
+	     console.log("wf-diags:handleRemove(): caught '" + e.type + "'");
+
+	     this.removeChild(e.target);
+
+	     switch (e.type) {
+		 case "remove-minion-stats":
+		     this.minionStatsWidgetAdded = false
+		     break;
+		 default:
+		     break;
+	     }
+	 },
+
+	 addMinionStatsWidget: function() {
+	     var widget = document.createElement("minion-stats");
+	     Polymer.dom(this.root).appendChild(widget);
+	     this.minionStatsWidgetAdded = true;
+	 }
      });
     </script>
 </dom-module>
