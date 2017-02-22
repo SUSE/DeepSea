@@ -25,6 +25,7 @@
     "paper-input": "PolymerElements/paper-input",
     "paper-item": "PolymerElements/paper-item",
     "paper-listbox": "PolymerElements/paper-listbox",
+    "paper-menu": "PolymerElements/paper-menu#^1.2.2",
     "paper-toolbar": "PolymerElements/paper-toolbar"
   },
   "devDependencies": {},
