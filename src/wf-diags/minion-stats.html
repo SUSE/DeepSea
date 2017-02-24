@@ -83,7 +83,16 @@
 	     this.cmd = "/minions";
 	 },
 
+         _clearMinionStatsDiv: function() {
+             this.$.minionstatsdiv.innerHTML = "";
+         },
+
+         _setMinionStatsDiv: function(htmlStr) {
+             this.$.minionstatsdiv.innerHTML = htmlStr;
+         },
+
          queryMinions: function() {
+             this._clearMinionStatsDiv();
              this.cmd = "/minions/" + this.minionToQuery;
              this.$.minionstats.runGet();
          },
@@ -123,16 +132,31 @@
              var htmlObj = {'html': "<paper-menu>"}
              this.recParseObj(minionsObj, htmlObj);
              htmlObj.html += "</paper-menu>";
-             this.$.minionstatsdiv.innerHTML = htmlObj.html;
+             this._setMinionStatsDiv(htmlObj.html);
          },
 
 	 handleMinions200: function(e) {
 	     console.log(this.is + ":handleMinions200() caught 'salt-api-response'");
-             this.parseMinions(e.detail.response.return[0]);
+             var resp = e.detail.response.return[0];
+
+             /* TODO Is there no better way (ie. from request structure) to get minion id queried? */
+             if (Object.keys(resp).length == 0) {
+                 /* No minions found, or minionToQuery not found. */
+                 if (this.minionToQuery) {
+                     this._setMinionStatsDiv("<br>Reqested minion ID (" + this.minionToQuery + ") not found.");
+                 } else {
+                     this._setMinionStatsDiv("<br>No minions found.");
+                 }
+             } else {
+                 /* Returned minion object has keys, parse! */
+                 this.parseMinions(resp);
+             }
+                 
 	 },
 
 	 handleMinionsErr: function(e) {
 	     console.log(this.is + ":handleMinionsErr() caught 'salt-api-error'");
+             alert("Failed to obtain minion information from server");
 	 },
 
 	 remove: function() {
