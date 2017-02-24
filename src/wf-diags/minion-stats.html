@@ -42,6 +42,7 @@
 	    node="{{saltApiNode}}"
 	    port="{{saltApiPort}}"
 	    cmd="{{cmd}}"
+            arg="{{arg}}"
 	    target=""
 	    func=""
 	    userid=""
@@ -93,7 +94,8 @@
 
          queryMinions: function() {
              this._clearMinionStatsDiv();
-             this.cmd = "/minions/" + this.minionToQuery;
+             this.cmd = "minions";
+             this.arg = this.minionToQuery;
              this.$.minionstats.runGet();
          },
 
