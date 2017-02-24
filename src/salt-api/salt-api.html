@@ -2,11 +2,11 @@
 
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 
-<dom-module id="salt-api" attributes="node port cmd target func userid password authtype">
+<dom-module id="salt-api" attributes="node port cmd arg target func userid password authtype">
     <template>
         <iron-ajax
             id="saltapi"
-            url="http://{{node}}:{{port}}/{{cmd}}/"
+            url="http://{{node}}:{{port}}/{{cmd}}/{{arg}}"
             content-type="{{contentType}}"
             method="{{method}}"
             body='{"client":"local", "tgt":"{{target}}", "fun":"{{func}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}"}'
