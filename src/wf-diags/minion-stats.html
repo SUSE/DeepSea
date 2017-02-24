@@ -4,6 +4,9 @@
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-submenu.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
 <link rel="import" href="../salt-api/salt-api.html">
@@ -26,11 +29,11 @@
 		<paper-icon-button icon="delete" on-tap="remove"></paper-icon-button>
 	    </paper-toolbar>
 
-            <paper-input label="Minion ID (blank to list all)" value="{{minion}}"></paper-input>
+            <paper-input label="Minion ID (blank to list all)" value="{{minionToQuery}}"></paper-input>
             <paper-button raised on-click="queryMinions">Query</paper-button>
 
-            <!-- <iron-autogrow-textarea style="width: 800" value="{{minions}}"></iron-autogrow-textarea> -->
-            <pre>{{minionsOutput}}</pre>
+            <!-- Place holder for our computed view of minion stats. -->
+            <div id="minionstatsdiv"></div>
 	</div>
 
 	<!-- Our salt-api auth element. -->
@@ -61,10 +64,7 @@
 	     cmd: {
 		 type: String
 	     },
-             minionsOutput: {
-                 type: Object
-             },
-             minion: {
+             minionToQuery: {
                  type: String,
                  value: ""
              }
@@ -84,28 +84,59 @@
 	 },
 
          queryMinions: function() {
-             this.cmd = "/minions/" + this.minion;
+             this.cmd = "/minions/" + this.minionToQuery;
              this.$.minionstats.runGet();
+         },
+
+         _isArr: function(variable) {
+             return variable.constructor === Array;
+         },
+
+         _isObj: function(variable) {
+             return variable.constructor === Object;
+         },
+
+         /* Recursively parses the minion stats JSON object and produces HTML.
+          * salt-api returns trusted information (not worried about rogue <script>
+          * tags... but may want to do this more safely later (ie. by setting
+          * textContent on a created element - TODO).
+          * htmlObj is used so that we are passing a pointer.
+          */
+         recParseObj: function(obj, htmlObj) {
+             for (var k in obj) {
+                 if (this._isObj(obj[k]) || this._isArr(obj[k])) {
+                     htmlObj.html += "<paper-submenu>";
+                     htmlObj.html += "<paper-item class='menu-trigger'>" + k + " &rtri;</paper-item>";
+                     htmlObj.html += "<paper-menu class='menu-content'>"
+                     this.recParseObj(obj[k], htmlObj);
+                     htmlObj.html += "</paper-submenu>";
+                 } else {
+                     htmlObj.html += "<paper-item>" + k + ": " + obj[k] + "</paper-item>";
+                 }
+             }
+             htmlObj.html += "<hr>";
+             htmlObj.html += "</paper-menu>";
+         },
+
+         parseMinions: function(minionsObj) {
+             console.log(this.is + ":parseMinions() parsing minion data");
+             var htmlObj = {'html': "<paper-menu>"}
+             this.recParseObj(minionsObj, htmlObj);
+             htmlObj.html += "</paper-menu>";
+             this.$.minionstatsdiv.innerHTML = htmlObj.html;
          },
 
 	 handleMinions200: function(e) {
 	     console.log(this.is + ":handleMinions200() caught 'salt-api-response'");
-	     /* console.log(e.detail.response);
-	        console.log(e.detail.status);*/
-             this.minionsOutput = JSON.stringify(e.detail.response.return[0], null, 2);
-             console.log(this.minionsOutput);
+             this.parseMinions(e.detail.response.return[0]);
 	 },
 
 	 handleMinionsErr: function(e) {
 	     console.log(this.is + ":handleMinionsErr() caught 'salt-api-error'");
-	     /* console.log(e.detail.error);
-	        console.log(e.detail.request.status);
-	        console.log(e.detail.request.statusText);*/
-
 	 },
 
 	 remove: function() {
-	     console.log(this.is + ":remove(): firing 'remove-" + this.is + "' event.");
+	     console.log(this.is + ":remove(): firing 'remove-" + this.is + "' event");
 	     this.fire("remove-" + this.is);
 	 }
      });
