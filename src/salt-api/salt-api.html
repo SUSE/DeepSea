@@ -63,10 +63,6 @@
         handleErr: function(e, detail) {
             console.log("salt-api:handleErr(): firing 'salt-api-error' event.");
             this.fire("salt-api-error", e.detail);
-            /* This is returned if we failed to reach the salt-api node. */
-            if (e.detail.request.status == 0) {
-                alert("Failed to reach " + this.node + ":" + this.port);
-            }
         },
     });
 </script>
