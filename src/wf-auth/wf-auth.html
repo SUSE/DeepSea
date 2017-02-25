@@ -33,7 +33,7 @@
             <paper-input id="userIdInput"      label="userid"            value="{{userid}}"      required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
             <paper-input id="passwordInput"    label="password"          value="{{password}}"    required auto-validate type="password" disabled$="{{disableAuthDialogInput}}"></paper-input>
             <div class="buttons">
-                <paper-button raised on-click="login">Log In</paper-button>
+                <paper-button raised on-click="login" disabled$="{{disableLoginButton}}">Log In</paper-button>
                 <paper-button raised on-click="logout" disabled$="{{disableLogoutButton}}">Log Out</paper-button>
             </div>
         </paper-dialog>
@@ -105,6 +105,10 @@
              type: Object,
          },
 
+         disableLoginButton: {
+             type: Boolean,
+         },
+
          disableLogoutButton: {
              type: Boolean,
          },
@@ -128,7 +132,6 @@
           * FIXME: fix the above via something like an 'onbeforeunload' signal to trigger
           * a formal logout and remove the cookie.
           */
-         this.$.authDialog.open(); /* Start with dialog open to allow unauthenticated user to see login dialog. */
          if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
              var wfauth = JSON.parse(sessionStorage.wfauth);
              this.userid = wfauth.userid;
@@ -141,6 +144,8 @@
               */
              this._checkLogin();
          } else {
+             /* Start with dialog open to allow unauthenticated user to see login dialog. */
+             this.$.authDialog.open();
              this.setDefaultProperties();
              this.setWFUnauthenticated();
          }
@@ -155,6 +160,8 @@
       */
      _checkLogin: function() {
          console.log("wf-auth:_checkLogin()");
+         /* Disable login button here as well. */
+         this.disableLoginButton = true;
          this.$.saltapicheckauth.runPost();
      },
 
@@ -196,11 +203,18 @@
 
          if (validated) {
              console.log("wf-auth:login(): Credentials entered.  Attempting to authenticate with " + this.saltApiNode);
+
              /* Since we're trying to authenticate or re-authenticate, clear out
               * wfAuth (and sebsequently sessionStorage.wfauth) and paint auth button
               * red _before_ trying an auth/re-auth.
               */
              this.setWFUnauthenticated();
+
+             /* Disable the login button to prevent issuing multiple requests. 
+              * Since setWFUnathenticated() re-enables the button, we do this
+              * just after that call.
+              */
+             this.disableLoginButton = true;
 
              /* Attempt to authenticate. */
              this.authType = "auto";  /* salt-api eauth type we use */
@@ -247,7 +261,7 @@
          /* Clear password from dialog. */
          this.password = "";
 
-         if (this.cmd == "login" || this.cmd == undefined) {
+         if (this.cmd == "login") {
              alert("Failed to authenticate.  Please try logging in again.  If failure persists, check the status of " + this.saltApiNode);
          } else if (this.cmd == "logout") {
              /* TODO: Would be great to clear the cookie on the client side.  But
@@ -256,6 +270,8 @@
               */
              alert("Failed to logout.  Credentials will be cleared locally.");
              this.setDefaultProperties();
+         } else if (this.cmd == undefined) {
+             /* This is a _checkLogin attempt.  Don't spam the user with messages. */
          } else {
              console.error("wf-auth:handleAuthErr(): invalid cmd (" + this.cmd + ")");
          }
@@ -287,6 +303,7 @@
          console.log("wf-auth:setWFAuthenticated(): Authenticated.");
          this.setWFAuth(this.saltApiNode, this.saltApiPort, this.userid, this.authType);
          this.authButtonClass = "authenticated";
+         this.disableLoginButton = true;
          this.disableLogoutButton = false;
          this.disableAuthDialogInput = true;
      },
@@ -305,8 +322,10 @@
           */
          this.wfAuth = {};
          this.authButtonClass = "notauthenticated";
+         this.disableLoginButton = false;
          this.disableLogoutButton = true;
          this.disableAuthDialogInput = false;
+         this.$.authDialog.open();
      }
 
  });
