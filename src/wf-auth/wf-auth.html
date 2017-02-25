@@ -291,8 +291,6 @@
              console.log("wf-auth:handleAuthErr(): firing 'wf-auth-logout' event.");
              this.fire("wf-auth-logout");
              alert("Failed to logout.  Credentials will be cleared locally.");
-         } else {
-             console.error("wf-auth:handleAuthErr(): invalid cmd (" + this.cmd + ")");
          }
 
          /* Clear out the cmd after handling. */
