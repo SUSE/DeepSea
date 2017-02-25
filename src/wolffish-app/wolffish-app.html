@@ -140,18 +140,12 @@
          handleLogout: function(e) {
              console.log("wolffish-app:handleLogout(): caught 'wf-auth-logout' event.");
              console.log("wolffish-app:handleLogout(): User logged out.  Redirecting to welcome page.");
+             this.page = 'wf-welcome';
              this.set('route.path', '/wf-welcome/');
          },
 
          _routePageChanged: function(page) {
-	     /* Check if we're authenticated. */
-             var wfAuth = document.querySelector("wf-auth");
-             if (wfAuth.checkAuthState()) {
-		 this.page = page || 'wf-welcome';
-	     } else {
-		 this.page = 'wf-welcome';
-                 this.set('route.path', '/wf-welcome/');
-             }
+             this.page = page || 'wf-welcome';     
 
              if (!this.$.drawer.persistent) {
                  this.$.drawer.close();
