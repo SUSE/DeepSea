@@ -9,7 +9,7 @@
 <link rel="import" href="../../bower_components/paper-menu/paper-submenu.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
-<link rel="import" href="../salt-api/salt-api.html">
+<link rel="import" href="../salt-api/wf-salt-api.html">
 
 <link rel="import" href="../wf-styles/wf-styles.html">
 
@@ -37,18 +37,13 @@
 	</div>
 
 	<!-- Our salt-api auth element. -->
-	<salt-api
+	<wf-salt-api
 	    id="minionstats"
-	    node="{{saltApiNode}}"
-	    port="{{saltApiPort}}"
 	    cmd="{{cmd}}"
             arg="{{arg}}"
 	    target=""
-	    func=""
-	    userid=""
-	    password=""
-	    authtype="">
-	</salt-api>
+	    func="">
+	</wf-salt-api>
     </template>
 
     <script>
@@ -56,12 +51,6 @@
 	 is: "minion-stats",
 
 	 properties: {
-	     saltApiNode: {
-		 type: String
-	     },
-	     saltApiPort: {
-		 type: Number
-	     },
 	     cmd: {
 		 type: String
 	     },
@@ -72,15 +61,11 @@
 	 },
 
 	 listeners: {
-	     "salt-api-response": "handleMinions200",
-	     "salt-api-error": "handleMinionsErr"
+	     "wf-salt-api-response": "handleMinions200",
+	     "wf-salt-api-error": "handleMinionsErr"
 	 },
 
 	 ready: function() {
-	     /* Assuming sessionStorage.wfauth has needed information. */
-	     var wfauth = JSON.parse(sessionStorage.wfauth);
-	     this.saltApiNode = wfauth.node;
-	     this.saltApiPort = wfauth.port;
 	     this.cmd = "/minions";
 	 },
 
@@ -130,7 +115,7 @@
          },
 
          parseMinions: function(minionsObj) {
-             console.log(this.is + ":parseMinions() parsing minion data");
+             console.log(this.is + ":" + arguments.callee.name + ": parsing minion data");
              var htmlObj = {'html': "<paper-menu>"}
              this.recParseObj(minionsObj, htmlObj);
              htmlObj.html += "</paper-menu>";
@@ -138,7 +123,7 @@
          },
 
 	 handleMinions200: function(e) {
-	     console.log(this.is + ":handleMinions200() caught 'salt-api-response'");
+	     console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
              var resp = e.detail.response.return[0];
 
              /* TODO Is there no better way (ie. from request structure) to get minion id queried? */
@@ -157,12 +142,12 @@
 	 },
 
 	 handleMinionsErr: function(e) {
-	     console.log(this.is + ":handleMinionsErr() caught 'salt-api-error'");
+             console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
              this._setMinionStatsDiv("<br>Failed to obtain minion information from server.");
 	 },
 
 	 remove: function() {
-	     console.log(this.is + ":remove(): firing 'remove-" + this.is + "' event");
+	     console.log(this.is + ":" + arguments.callee.name + ": firing 'remove-" + this.is + "' event");
 	     this.fire("remove-" + this.is);
 	 }
      });
