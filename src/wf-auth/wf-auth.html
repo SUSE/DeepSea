@@ -27,11 +27,12 @@
 
         <app-localstorage-document key="wfauth" data={{wfAuth}} session-only="true"></app-localstorage-document>
 
-        <paper-dialog id='authDialog' class="authdialog">
+        <paper-dialog id='authDialog' class="authdialog" modal="true" on-iron-overlay-opened="patchOverlay">
             <paper-input id="saltApiNodeInput" label="salt-api Hostname" value="{{saltApiNode}}" required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
             <paper-input id="saltApiPortInput" label="salt-api Port"     value="{{saltApiPort}}" required auto-validate pattern="[0-9]*" disabled$="{{disableAuthDialogInput}}"></paper-input>
             <paper-input id="userIdInput"      label="userid"            value="{{userid}}"      required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
             <paper-input id="passwordInput"    label="password"          value="{{password}}"    required auto-validate type="password" disabled$="{{disableAuthDialogInput}}"></paper-input>
+
             <div class="buttons">
                 <paper-button raised on-click="login" disabled$="{{disableLoginButton}}">Log In</paper-button>
                 <paper-button raised on-click="logout" disabled$="{{disableLogoutButton}}">Log Out</paper-button>
@@ -120,7 +121,8 @@
 
      listeners: {
          "salt-api-response": "handleAuth200",
-         "salt-api-error": "handleAuthErr"
+         "salt-api-error": "handleAuthErr",
+         "wf-salt-api-error-401": "handleAuthErr",
      },
 
      ready: function() {
@@ -148,6 +150,13 @@
              this.$.authDialog.open();
              this.setDefaultProperties();
              this.setWFUnauthenticated();
+         }
+     },
+
+     
+     patchOverlay: function (e) {
+         if (e.target.withBackdrop) {
+             e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
          }
      },
 
@@ -232,6 +241,7 @@
           */
          this.saltApiNode = this.wfAuth.node;
          this.saltApiPort = this.wfAuth.port;
+         
          this.$.saltapiauth.runPost();
      },
 
@@ -241,7 +251,7 @@
          /* Clear password from dialog. */
          this.password = "";
 
-         console.log("wf-auth:handleAuth200(): caught 'salt-api-response' event.");
+         console.log("wf-auth:handleAuth200(): caught " + e.type);
          if (this.cmd == "login" || this.cmd == undefined) {
              this.$.authDialog.close();
              this.setWFAuthenticated();
@@ -256,13 +266,13 @@
      },
 
      handleAuthErr: function(e) {
-         console.log("wf-auth:handleAuthErr(): caught 'salt-api-error' event.");
+         console.log("wf-auth:handleAuthErr(): caught " + e.type);
 
          /* Clear password from dialog. */
          this.password = "";
 
          if (this.cmd == "login") {
-             alert("Failed to authenticate.  Please try logging in again.  If failure persists, check the status of " + this.saltApiNode);
+             /* alert("Failed to authenticate.  Please try logging in again.  If failure persists, check the status of " + this.saltApiNode);*/
          } else if (this.cmd == "logout") {
              /* TODO: Would be great to clear the cookie on the client side.  But
               * document.cookie is empty.  Marking for future investigation.  Also,
@@ -270,6 +280,8 @@
               */
              alert("Failed to logout.  Credentials will be cleared locally.");
              this.setDefaultProperties();
+             console.log("wf-auth:handleAuthErr(): firing 'wf-auth-logout' event.");
+             this.fire("wf-auth-logout");
          } else if (this.cmd == undefined) {
              /* This is a _checkLogin attempt.  Don't spam the user with messages. */
          } else {
@@ -277,8 +289,6 @@
          }
 
          this.setWFUnauthenticated();
-         console.log("wf-auth:handleAuthErr(): firing 'wf-auth-logout' event.");
-         this.fire("wf-auth-logout");
      },
 
      /* Sets initial property values.  Also used to clear auth dialog when logging out. */
@@ -306,6 +316,10 @@
          this.disableLoginButton = true;
          this.disableLogoutButton = false;
          this.disableAuthDialogInput = true;
+         /* Disable modal attribute so a logged in user can click the auth button without
+          * being locked out of the application :D
+          */
+         this.$.authDialog.modal = false;
      },
 
      /* Clears wfAuth along with sessionStorage.wfauth.  Also disables logout button
@@ -325,6 +339,15 @@
          this.disableLoginButton = false;
          this.disableLogoutButton = true;
          this.disableAuthDialogInput = false;
+
+         /* Temporarily close the authDialog and set it's modal value to true.
+          * When entering the logout success/fail handler, we will re-open the
+          * dialog, causing the modal effect to be properly rendered.
+          */
+         if (this.$.authDialog.opened)
+             this.$.authDialog.close();
+         this.$.authDialog.modal = true;
+
          this.$.authDialog.open();
      }
 
