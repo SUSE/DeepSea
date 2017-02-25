@@ -158,7 +158,7 @@
 
 	 handleMinionsErr: function(e) {
 	     console.log(this.is + ":handleMinionsErr() caught 'salt-api-error'");
-             alert("Failed to obtain minion information from server");
+             this._setMinionStatsDiv("<br>Failed to obtain minion information from server.");
 	 },
 
 	 remove: function() {
