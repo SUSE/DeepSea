@@ -85,11 +85,17 @@
 
         handleErr: function(e, detail) {
             console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
-            /* If the returned status is 401 _or_ 0 (ie. the stal-api server is down
-             * the user will need to re-authenticate to get a valid cookie in both cases.
-             * Thus, it makes sense to treat both errors as a 401.
+            /* In case of an unauthorized request, fire a 401 event to wf-auth to trigger
+             * the auth-dialog and lock the current page.  Another code of interest is 0,
+             * which can be returned when an ajax request failed to contact the server.  If
+             * the 0 is a result of a down salt-api server, the next request that successfully
+             * reaches the server _after_ it restarts will also return a 401 as our cookie would
+             * have been invalidated, prompting a re-auth.  A network problem can also cause a
+             * 0 status code, but no re-auth in this case would be needed.  The user would simply
+             * need to re-issue the request.  Thus, the only time a 401 should be fired up to
+             * wf-auth, is when a 401 is received from salt-api.  Make no assumptions about 0.
              */
-            if (e.detail.request.status == 401 || e.detail.request.status == 0) {
+            if (e.detail.request.status == 401) {
                 this._fire401ToWfAuth();
             }
             console.log(this.is + ":" + arguments.callee.name + ": firing 'wf-salt-api-error' event");
