@@ -611,7 +611,7 @@ class CephRoles(object):
         """
         minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
         if not os.path.isdir(minion_dir):
-            create_dirs(minion_dir, self.root_dir)
+            _create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
             filename = minion_dir + "/" +  server + ".yml"
             contents = {}
