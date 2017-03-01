@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
 import logging
+import sys
 import os
 import json
+import salt.client
 
 log = logging.getLogger(__name__)
 
@@ -29,9 +31,9 @@ class Iscsi(object):
     def __init__(self, **kwargs):
 	"""
 	"""
-	self.data = []
+	self.data = {}
 
-    def populate(**kwargs):
+    def populate(self):
 	"""
 	Parse grains for all network interfaces on igw roles.  Possibly
 	select public interface.
@@ -39,29 +41,49 @@ class Iscsi(object):
 	and their pools.
 	Read the existing lrbd.conf
 	"""
-	content = self._config()
-	self.data.append({ 'name': 'config', 'data': content })
+	self.data['config'] = self.config()
+	self.data['interfaces'] = self.interfaces()
 
-	#self.data.append({ 'name': 'interfaces', 'data': content })
 	#self.data.append({ 'name': 'images', 'data': content })
+	return self.data
 
-    def _igw_interfaces():
+    def interfaces(self, wrapped=True):
 	"""
 	"""
+	_stdout = sys.stdout
+	sys.stdout = open(os.devnull, 'w')
+
+	local = salt.client.LocalClient()
+	igws = local.cmd("I@roles:igw", 'grains.get', [ 'ipv4'], expr_form="compound")
+	sys.stdout = _stdout
+	if wrapped:
+	    config = []
+	    for igw in igws.keys():
+		for addr in igws[igw]:
+		    if addr == '127.0.0.1':
+			continue
+		    config.append({ 'node': igw, 'addr': addr })
+	    return config
+	else:
+	    for igw in igws.keys():
+		igws[igw].remove('127.0.0.1')
+
+	    return igws
+
+    def images(self):
+	"""
+	"""
+
 	pass
 
-    def _images():
-	"""
-	"""
-	pass
 
-    def _config(filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
+    def config(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
 	"""
 	"""
 	if os.path.exists(filename):
 	    return json.loads(open(filename).read())
 
-    def save(**kwargs):
+    def save(self, **kwargs):
 	"""
 	Convert data to lrbd sections if necessary.
 	Ensure ceph.igw.config is disabled (or better create sls file
@@ -71,17 +93,25 @@ class Iscsi(object):
 	pass
 
 
-def populate_iscsi():
+
+def populate_iscsi(**kwargs):
     """
     Populate the iSCSI view
     """
-    i = Iscsi()
-    return i.populate
-
+    i = Iscsi(**kwargs)
+    return i.populate()
 
 def save_iscsi(**kwargs):
     """
     Save the iSCSI configuration
     """
     i = Iscsi()
-    return i.save(**kwargs)
+    return i.save()
+
+def iscsi_config(**kwargs):
+    i = Iscsi(**kwargs)
+    return i.config()
+
+def iscsi_interfaces(**kwargs):
+    i = Iscsi(**kwargs)
+    return i.interfaces(wrapped=False)
