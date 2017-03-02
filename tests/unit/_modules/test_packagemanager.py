@@ -1,6 +1,6 @@
 import pytest
 from srv.salt._modules.packagemanager import PackageManager, Zypper, Apt
-from mock import MagicMock, patch, mock_open, mock
+from mock import MagicMock, patch, mock
 
 
 class TestPackageManager():
@@ -25,7 +25,7 @@ class TestPackageManager():
         dist_return.return_value = ('SUSE', '12.2', 'x86_64')
         ret = PackageManager()
         assert isinstance(ret.pm, Zypper) is True
-        
+
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
     def test_PackageManager_centos(self, dist_return):
         """
@@ -34,7 +34,7 @@ class TestPackageManager():
         dist_return.return_value = ('centos', '8', 'x86_64')
         ret = PackageManager()
         assert isinstance(ret.pm, Apt) is True
-        
+
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
     def test_PackageManager_fedora(self, dist_return):
         """
@@ -43,7 +43,7 @@ class TestPackageManager():
         dist_return.return_value = ('fedora', '23', 'x86_64')
         ret = PackageManager()
         assert isinstance(ret.pm, Apt) is True
-    
+
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     def test_reboot(self, po, dist_return):
@@ -131,7 +131,7 @@ class TestZypper():
         ret = zypp._patches_needed()
         assert po.called is True
         assert ret is False
-        
+
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._updates_needed')
@@ -207,8 +207,9 @@ class TestApt():
         Fixture to always get Apt.
         """
         self.linux_dist = patch('srv.salt._modules.packagemanager.linux_distribution')
-        self.lnx_dist_object  = self.linux_dist.start()
+        self.lnx_dist_object = self.linux_dist.start()
         self.lnx_dist_object.return_value = ('fedora', '42.2', 'x86_64')
+        # Test all permutations of :debug :kernel and :reboot
         args = {'debug': False, 'kernel': False, 'reboot': False}
         yield PackageManager(**args).pm
         self.linux_dist.stop()
@@ -226,7 +227,10 @@ class TestApt():
         """
         No updates pending
         """
-        po.return_value.returncode = 0
+        process_mock = mock.Mock()
+        attrs = {'communicate.return_value': ("", "0;0")}
+        process_mock.configure_mock(**attrs)
+        po.return_value = process_mock
         ret = apt._updates_needed()
         assert po.called is True
         assert ret is False
@@ -236,7 +240,10 @@ class TestApt():
         """
         Updates pending
         """
-        po.return_value.returncode = 1
+        process_mock = mock.Mock()
+        attrs = {'communicate.return_value': ("", "1;1")}
+        process_mock.configure_mock(**attrs)
+        po.return_value = process_mock
         ret = apt._updates_needed()
         assert po.called is True
         assert ret is True
@@ -263,21 +270,24 @@ class TestApt():
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_present_reboot_file_present(self, updates_needed, po, reboot_in, apt):
+    def test__handle_updates_present_reboot_file_present_raise(self, updates_needed, po, reboot_in, apt):
         """
         Given there are pending updates.
         And Apt returns with non-0
         And Apt touches the /var/run/reboot-required file
-        No reboot will be triggered
+        Then no reboot should be triggered
+        And an Error will be raised
         """
         updates_needed.return_value = True
         po.return_value.communicate.return_value = ("packages out", "error")
         po.return_value.returncode = 1
         with patch("srv.salt._modules.packagemanager.os.path.isfile") as mock_file:
             mock_file.return_value = True
-            apt._handle()
-            assert po.called is True
-            assert reboot_in.called is False
+            with pytest.raises(StandardError) as excinfo:
+                apt._handle()
+                excinfo.match('Apt exited with non-0 return*')
+                assert po.called is True
+                assert reboot_in.called is False
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -287,7 +297,7 @@ class TestApt():
         Given there are pending updates.
         And Apt returns with 0
         And Apt does not touch the /var/run/reboot-required file
-        reboot won't be triggered
+        Then no reboot should be  triggered
         """
         updates_needed.return_value = True
         po.return_value.communicate.return_value = ("packages out", "error")
@@ -297,7 +307,7 @@ class TestApt():
             apt._handle()
             assert po.called is True
             assert reboot_in.called is False
-          
+
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
@@ -307,30 +317,16 @@ class TestApt():
         And Apt returns non-0 returncodes
         And There is no /var/run/reboot-required file
         Then no reboot should be triggered
+        And an Error will be raised
         """
         updates_needed.return_value = True
         po.return_value.returncode = 99
         po.return_value.communicate.return_value = ("packages out", "error")
-        apt._handle()
-        assert po.called is True
-        assert reboot_in.called is False
-
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
-    @mock.patch('srv.salt._modules.packagemanager.Popen')
-    @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_present_failed_1(self, updates_needed, po, reboot_in, apt):
-        """
-        Given there are pending updates.
-        And Apt returns non-0 returncodes
-        And There is no /var/run/reboot-required file
-        Then no reboot should be triggered
-        """
-        updates_needed.return_value = True
-        po.return_value.returncode = 1
-        po.return_value.communicate.return_value = ("packages out", "error")
-        apt._handle()
-        assert po.called is True
-        assert reboot_in.called is False
+        with pytest.raises(StandardError) as excinfo:
+            apt._handle()
+            excinfo.match('Apt exited with non-0 return*')
+            assert po.called is True
+            assert reboot_in.called is False
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
