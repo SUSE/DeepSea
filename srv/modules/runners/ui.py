@@ -93,14 +93,19 @@ class Iscsi(object):
 	if os.path.exists(filename):
 	    return json.loads(open(filename).read())
 
-    def save(self, **kwargs):
+    def save(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf", **kwargs):
 	"""
 	Convert data to lrbd sections if necessary.
 	Ensure ceph.igw.config is disabled (or better create sls file
 	that says configured by gui)
 	Overwrite /srv/salt/ceph/igw/cache/lrbd.conf
 	"""
-	pass
+	if 'data' in kwargs:
+	    contents = kwargs['data']
+	    with open(filename, 'w') as conf:
+		conf.write(json.dumps(contents, indent=4) + '\n')
+	else:
+	    log.error("No JSON data passed")
 
 
 
@@ -116,7 +121,7 @@ def save_iscsi(**kwargs):
     Save the iSCSI configuration
     """
     i = Iscsi()
-    return i.save()
+    return i.save(**kwargs)
 
 def iscsi_config(**kwargs):
     i = Iscsi(**kwargs)
