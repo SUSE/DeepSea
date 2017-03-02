@@ -6,19 +6,6 @@ import os
 log = logging.getLogger(__name__)
 
 
-class Log(object):
-
-    def info(self, context):
-        print(context)
-
-    def debug(self, context):
-        print(context)
-
-    def warning(self, context):
-        print(context)
-
-log = Log()
-
 class PackageManager(object):
 
     """
@@ -48,7 +35,7 @@ class PackageManager(object):
         """
         Assuming `shutdown -r` works on all platforms
         """
-        log.info("The PackageManager asked for a systemreboot. Rebooting")
+        log.info("The PackageManager asked for a systemreboot. Rebooting in 1 Minute")
         if self.debug or not self.reboot:
             log.debug("Faking Reboot")
             return None
@@ -73,29 +60,40 @@ class Apt(PackageManager):
         self.base_flags = ['--yes']
 
     def _updates_needed(self):
+        """
+        Checking the output of apt-check for
+        (1) Regular updates
+        (2) Security updates
+        Content is written to stderr
+        """
         self._refresh()
-        cmd = 'apt-get {} -u upgrade'.format(self.base_flags)
+        cmd = "/usr/lib/update-notifier/apt-check"
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        proc.wait()
-        # UNTESTED
-        if proc.returncode != 0:
-            log.info('Update Needed')
-            return True
-        else:
+        stdout, stderr = proc.communicate()
+        for cn in stderr.split(";"):
+            if int(cn) > 0:
+                log.info('Update Needed')
+                return True
             log.info('No Update Needed')
-            return False
+        return False
 
     def _refresh(self):
+        """
+        Resynchronize the package index files from their sources
+        """
         cmd = 'apt-get {} update'.format(self.base_flags)
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
     def _handle(self, strat='up'):
+        """
+        Conbines up and dup and executes the constructed zypper command.
+        """
         if strat == 'up':
             strat = 'upgrade'
         if self._updates_needed():
             base_command = ['apt-get']
-            strategy_flags = ["-o Dpkg::Options::=", "--force-confnew",
-                              "--force-yes", "-fuy"]
+            strategy_flags = ["-o Dpkg::Options::=",
+                              "--allow-change-held-packages", "-fuy"]
             if self.debug:
                 strategy_flags.append("--dry-run")
             base_command.extend(self.base_flags)
@@ -111,6 +109,8 @@ class Apt(PackageManager):
             if proc.returncode == 0:
                 if os.path.isfile('/var/run/reboot-required'):
                     self.reboot_in()
+            elif proc.returncode != 0:
+                raise StandardError("Apt exited with non-0 returncode")
         else:
             log.info('System up to date')
 
