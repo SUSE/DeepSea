@@ -189,7 +189,7 @@ def populate_iscsi(**kwargs):
     """
     i = Iscsi(**kwargs)
     if 'canned' in kwargs:
-	return i.canned_populate(kwargs['canned'])
+	return i.canned_populate(int(kwargs['canned']))
     return i.populate()
 
 def save_iscsi(**kwargs):
@@ -206,11 +206,13 @@ def iscsi_config(**kwargs):
 def iscsi_interfaces(**kwargs):
     i = Iscsi(**kwargs)
     if 'canned' in kwargs:
-	return i.canned_interfaces(kwargs['canned'], wrapped=False)
+	return i.canned_interfaces(int(kwargs['canned']), wrapped=False)
     return i.interfaces(wrapped=False)
 
 def iscsi_images(**kwargs):
     i = Iscsi(**kwargs)
     if 'canned' in kwargs:
-	return i.canned_images(kwargs['canned'], wrapped=False)
+	return i.canned_images(int(kwargs['canned']), wrapped=False)
     return i.images(wrapped=False)
+
+
