@@ -199,18 +199,10 @@
      Polymer({
          is: 'iscsi-target-config',
          properties: {
+	     /* Follows iscsi-target:availableImgList.  Do not modify here. */
              availableIntfList: {
                  type: Array,
-                 value: function() {
-                     /* TODO Should poll salt for interface list (via salt-api/cherrypy */
-                     return [
-                         {"addr": "192.168.1.10", "node": "igw1.foobar.com"},
-                         {"addr": "192.168.1.11", "node": "igw2.foobar.com"},
-                         {"addr": "192.168.1.12", "node": "igw3.foobar.com"},
-                         {"addr": "192.168.1.13", "node": "igw4.foobar.com"},
-                         {"addr": "192.168.1.14", "node": "igw5.foobar.com"}
-                     ];
-                 },
+		 notify: true
              },
 
              selectedIntfListHidden: {
@@ -225,18 +217,10 @@
                  },
              },
 
+	     /* Follows iscsi-target:availableImgList.  Do not modify here. */
              availableImgList: {
                  type: Array,
-                 value: function() {
-                     /* TODO Should poll salt for img list (via salt-api/cherrypy */
-                     return [
-                         {"img": "img-foo1", "pool": "pool-rbd1"},
-                         {"img": "img-foo2", "pool": "pool-rbd1"},
-                         {"img": "img-foo3", "pool": "pool-rbd2"},
-                         {"img": "img-foo4", "pool": "pool-rbd3"},
-                         {"img": "img-foo5", "pool": "pool-rbd3"}
-                     ];
-                 },
+		 notify: true
              },
 
              selectedImgListHidden: {
