@@ -46,7 +46,40 @@
                  type: Boolean,
                  value: true,
              },
+
+	     availableImgList: {
+		 type: Array,
+		 value: function() {
+		     return [
+			 {"img": "img-foo1", "pool": "pool-rbd1"},
+			 {"img": "img-foo2", "pool": "pool-rbd1"},
+			 {"img": "img-foo3", "pool": "pool-rbd2"},
+			 {"img": "img-foo4", "pool": "pool-rbd3"},
+			 {"img": "img-foo5", "pool": "pool-rbd3"}
+		     ];
+		 },
+		 notify: true
+	     },
+
+	     availableIntfList: {
+		 type: Array,
+		 value: function() {
+		     return [
+			 {"addr": "192.168.1.10", "node": "igw1.foobar.com"},
+			 {"addr": "192.168.1.11", "node": "igw2.foobar.com"},
+			 {"addr": "192.168.1.12", "node": "igw3.foobar.com"},
+			 {"addr": "192.168.1.13", "node": "igw4.foobar.com"},
+			 {"addr": "192.168.1.14", "node": "igw5.foobar.com"}
+		     ];
+		 },
+		 notify: true
+	     }
          },
+
+	 observers: [
+	     "_iscsiImagesChanged(availableImgList.splices)",
+	     "_iscsiInterfacesChanged(availableIntfList.splices)"
+	 ],
 
          ready: function() {
              this.addEventListener('removeTarget', function(e) {
@@ -63,6 +96,52 @@
              });
          },
 
+         _iscsiImagesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated RBD image list");
+
+             if (changeRecord) {
+                 changeRecord.indexSplices.forEach(function(s) {
+                     s.removed.forEach(function(img) {
+                         console.log(img.img + ":" + img.pool + " removed");
+                     });
+                     for (var i=0; i<s.addedCount; i++) {
+                         var index = s.index + i;
+                         var newImg = s.object[index];
+                         console.log(newImg.img + " added at index " + index);
+                     }
+                 }, this);
+
+                 /* Walk the targetList and notify all targets. */
+                 for (var i = 0; i < this.targetList.length; i++) {
+                     var target = this.targetList[i];
+                     target.notifyPath("availableImgList", this.availableImgList.slice());
+                 }
+             }
+         },
+
+         _iscsiInterfacesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated interfaces list");
+
+             if (changeRecord) {
+                 changeRecord.indexSplices.forEach(function(s) {
+                     s.removed.forEach(function(intf) {
+                         console.log(intf.node + ":" + intf.addr + " removed");
+                     });
+                     for (var i=0; i<s.addedCount; i++) {
+                         var index = s.index + i;
+                         var newIntf = s.object[index];
+                         console.log(newIntf + " added at index " + index);
+                     }
+                 }, this);
+
+                 /* Walk the targetList and notify all targets. */
+                 for (var i = 0; i < this.targetList.length; i++) {
+                     var target = this.targetList[i];
+                     target.notifyPath("availableIntfList", this.availableIntfList.slice());
+                 }
+             }
+         },
+
          displayGenerateConfigFileButton: function() {
              /* Button is only active/displayed if targets exist. */
              if (this.targetList.length)
@@ -74,6 +153,8 @@
          newTarget: function() {
              var target = document.createElement("iscsi-target");
              this.push("targetList", target);
+             target.set("availableImgList", this.availableImgList);
+             target.set("availableIntfList", this.availableIntfList);
 
              /* Note: this.$['...'] is the equivalent of document.getElementById("generate-config-file-button");
               * If element id is a single word, this.$.id can be used.  Further, this.$.generateConfigFileButton
