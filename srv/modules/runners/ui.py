@@ -87,7 +87,8 @@ class Iscsi(object):
 		break
 	    return config
 	else:
-	    return result
+	    for master in result.keys():
+		return result[master]
 
 
     def config(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
