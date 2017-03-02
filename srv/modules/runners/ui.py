@@ -5,6 +5,7 @@ import sys
 import os
 import json
 import salt.client
+import salt.utils.minions
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +44,8 @@ class Iscsi(object):
 	"""
 	self.data['config'] = self.config()
 	self.data['interfaces'] = self.interfaces()
+	self.data['images'] = self.images()
 
-	#self.data.append({ 'name': 'images', 'data': content })
 	return self.data
 
     def interfaces(self, wrapped=True):
@@ -70,11 +71,20 @@ class Iscsi(object):
 
 	    return igws
 
-    def images(self):
+    def images(self, wrapped=True):
 	"""
 	"""
-
-	pass
+	__opts__ = salt.config.client_config('/etc/salt/master')
+	result = salt.utils.minions.mine_get('I@roles:master', 'cephimages.list', 'compound', __opts__)
+	if wrapped:
+	    config = []
+	    for master in result.keys():
+		for pool in result[master]:
+		    config.append({ 'pool': pool, 'img': result[master][pool] })
+		break
+	    return config
+	else:
+	    return result
 
 
     def config(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
@@ -115,3 +125,7 @@ def iscsi_config(**kwargs):
 def iscsi_interfaces(**kwargs):
     i = Iscsi(**kwargs)
     return i.interfaces(wrapped=False)
+
+def iscsi_images(**kwargs):
+    i = Iscsi(**kwargs)
+    return i.images(wrapped=False)
