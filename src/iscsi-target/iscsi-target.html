@@ -60,7 +60,22 @@
                      return [];
                  },
              },
+	     /* Follows iscsi-conf:availableImgList.  Do not modify here. */
+	     availableImgList: {
+		 type: Array,
+		 notify: true
+	     },
+	     /* Follows iscsi-conf:availableIntfList.  Do not modify here. */
+	     availableIntfList: {
+		 type: Array,
+		 notify: true
+	     }
          },
+
+	 observers: [
+	     "_iscsiImagesChanged(availableImgList.splices)",
+	     "_iscsiInterfacesChanged(availableIntfList.splices)"
+	 ],
 
          ready: function() {
              this.addEventListener("removeConfig", function(e) {
@@ -80,13 +95,34 @@
              });
          },
 
+         _iscsiImagesChanged: function(changeRecord) {
+             /* NOTE: changeRecord is always undefined here. */
+             console.log(this.is + ":" + arguments.callee.name + ": updated RBD image list");
+
+             for (var i = 0; i < this.configList.length; i++) {
+                 var targetConfig = this.configList[i];
+                 targetConfig.notifyPath("availableImgList", this.availableImgList.slice());
+             }
+         },
+
+         _iscsiInterfacesChanged: function(changeRecord) {
+             /* NOTE: changeRecord is always undefined here. */
+             console.log(this.is + ":" + arguments.callee.name + ": updated interface list");
+
+             for (var i = 0; i < this.configList.length; i++) {
+                 var targetConfig = this.configList[i];
+                 targetConfig.notifyPath("availableIntfList", this.availableIntfList.slice());
+             }
+         },
+
          removeTarget: function() {
              this.fire('removeTarget');
          },
 
          addConfig: function() {
-             console.debug(this);
              var targetConfig = document.createElement("iscsi-target-config");
+             targetConfig.set("availableImgList", this.availableImgList);
+             targetConfig.set("availableIntfList", this.availableIntfList);
              this.push("configList", targetConfig);
              /* var beforeNode = Polymer.dom(this.root).childNodes[-1];*/
              Polymer.dom(this.firstElementChild).appendChild(targetConfig);
