@@ -46,16 +46,22 @@
             "salt-api-error": "handleErr"
         },
 
-        /* Prepare the elemtn by retrieving sessionStorage.wfauth. */
         ready: function() {
+        },
+
+        /* Prepare the element by retrieving sessionStorage.wfauth. */
+        _prepare: function() {
             if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
+                console.log(this.is + ":" + arguments.callee.name + ": Populating salt-api element.");
                 var wfauth = JSON.parse(sessionStorage.wfauth);
                 this.saltApiNode = wfauth.node;
                 this.saltApiPort = wfauth.port;
+                return true;
             } else {
                 /* We have no state.  All we can do is re-prompt for auth credentials. */
                 console.log(this.is + ":" + arguments.callee.name + ": sessionStorage.wfauth not found.  Firing 'wf-salt-api-error-401'");
                 this._fire401ToWfAuth();
+                return false;
             }
         },
 
@@ -70,11 +76,19 @@
         },
 
         runGet: function() {
-            this.$.wfsaltapi.runGet();
+            if (this._prepare()) {
+                this.$.wfsaltapi.runGet();
+            } else {
+                this.fire("wf-salt-api-error");
+            }
         },
 
         runPost: function() {
-            this.$.wfsaltapi.runPost();
+            if (this._prepare()) {
+                this.$.wfsaltapi.runPost();
+            } else {
+                this.fire("wf-salt-api-error");
+            }
         },
 
         handle200: function(e, detail) {
