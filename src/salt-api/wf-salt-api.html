@@ -2,7 +2,7 @@
 
 <link rel="import" href="../salt-api/salt-api.html">
 
-<dom-module id="wf-salt-api" attributes="cmd arg target func">
+<dom-module id="wf-salt-api" attributes="cmd arg target func canned">
     <template>
         <salt-api
             id="wfsaltapi"
@@ -14,7 +14,9 @@
             func="{{func}}"
             userid=""
             password=""
-            authtype="">
+            authtype=""
+            client="runner"
+            canned="{{canned}}">
         </salt-api>
     </template>
 </dom-module>
