@@ -35,7 +35,9 @@
             <paper-dropdown-menu label="Available Nodes">
                 <div class="dropdown-content">
                     <template is="dom-repeat" items="{{availableIntfList}}" as="i">
-                        <paper-item><paper-checkbox on-change="nodeCheckboxChanged">{{i.node}} : {{i.addr}}</paper-checkbox></paper-item>
+                        <paper-item>
+                            <paper-checkbox id="intfCheckBox" on-change="nodeCheckboxChanged" checked$="{{_isIntfSelected(i)}}">{{i.node}} : {{i.addr}}</paper-checkbox>
+                        </paper-item>
                     </template>
                 </div>
             </paper-dropdown-menu>
@@ -43,7 +45,9 @@
             <paper-dropdown-menu label="Available Images">
                 <div class="dropdown-content">
                     <template is="dom-repeat" items="{{availableImgList}}" as="i">
-                        <paper-item><paper-checkbox on-change="imgCheckboxChanged">{{i.img}} : {{i.pool}}</paper-checkbox></paper-item>
+                        <paper-item>
+                                <paper-checkbox id="imgCheckBox" on-change="imgCheckboxChanged" checked$="{{_isImgSelected(i)}}">{{i.img}} : {{i.pool}}</paper-checkbox>
+                        </paper-item>
                     </template>
                 </div>
             </paper-dropdown-menu>
@@ -336,8 +340,197 @@
              },
          },
 
+         observers: [
+	     "_iscsiImagesChanged(availableImgList.splices)",
+	     "_iscsiInterfacesChanged(availableIntfList.splices)",
+             "_iscsiSelectedImagesChanged(selectedImgList.splices)",
+             "_iscsiSelectedInterfacesChanged(selectedIntfList.splices)"
+	 ],
+
          ready: function() {
              /* TBD */
+         },
+
+         /* Considering objects equal if they have the same number of keys and keys have
+          * the same values.  We don't care about key ordering within an object.
+          */
+         _objectsEqual: function(obj1, obj2) {
+             var obj1Keys = Object.keys(obj1);
+             var obj2Keys = Object.keys(obj2);
+
+             if (obj1Keys.length != obj2Keys.length) {
+                 return false;
+             }
+
+             for (var i = 0; i < obj1Keys.length; i++) {
+                 if (obj1[obj1Keys[i]] != obj2[obj1Keys[i]]) {
+                     return false;
+                 }
+             }
+
+             return true;
+         },
+
+         /* Check based on value, not identity (ie. indexOf). Return index or -1
+          * if not found.
+          */
+         _indexOfObjInArr: function(obj, arr) {
+             for (var i = 0; i < arr.length; i++) {
+                 if (this._objectsEqual(obj, arr[i])) {
+                     /* Return index of first find. */
+                     return i;
+                 }
+             }
+
+             return -1;
+         },
+
+         /* Returns true if obj is in selectedImgList*/
+         _isImgSelected: function(obj) {
+             if (this._indexOfObjInArr(obj, this.selectedImgList) != -1) {
+                 return true;
+             } else {
+                 return false;
+             }
+         },
+
+         /* On selectedImgList changes, handle checkboxes. */
+         _iscsiSelectedImagesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated selected RBD image list");
+
+             if (changeRecord) {
+                 /* Grab all imgCheckBox's */
+                 var imgCheckBoxes = Polymer.dom(this.root).querySelectorAll("#imgCheckBox");
+
+                 changeRecord.indexSplices.forEach(function(s) {
+                     s.removed.forEach(function(img) {
+                         console.log(this.is + ":" + arguments.callee.name + ": " + img.img + ":" + img.pool + " was removed from selected list");
+
+                         /* Uncheck corresponding checkbox. */
+                         var i = this._indexOfObjInArr(img, this.availableImgList);
+                         if (i != -1 && i < imgCheckBoxes.length) {
+                             imgCheckBoxes[i].checked = false;
+                         } else {
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to deselect checkbox at index " + i);
+                         }
+                     }, this);
+                     for (var i=0; i<s.addedCount; i++) {
+                         var index = s.index + i;
+                         var newImg = s.object[index];
+                         console.log(this.is + ":" + arguments.callee.name + ": " + newImg.img + ":" + newImg.pool + " added at index " + index);
+
+                         /* Check corresponding checkbox. */
+                         var i = this._indexOfObjInArr(newImg, this.availableImgList);
+                         if (i != -1 && i < imgCheckBoxes.length) {
+                             imgCheckBoxes[i].checked = true;
+                         } else {
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + i);
+                         }
+                     }
+                 }, this);
+             }
+
+             /* Check if we should hide the selected list */
+             if (this.selectedImgList.length > 0) {
+                 this.selectedImgListHidden = false;
+             } else {
+                 this.selectedImgListHidden = true;
+             }
+         },
+
+         /* Invoked when availableImgList changes. */
+         _iscsiImagesChanged: function(changeRecord) {
+             /* NOTE: changeRecord is always undefined here. */
+             console.log(this.is + ":" + arguments.callee.name + ": updated availalbe RBD image list");
+
+             if (this.selectedImgList.length != 0) {
+                 var notFound = [];
+                 /* Select those that are in selectedImgList but not in availableImgList. */
+                 for (var i = 0; i < this.selectedImgList.length; i++) {
+                     if (this._indexOfObjInArr(this.selectedImgList[i], this.availableImgList) == -1) {
+                         notFound.push(i);
+                     }
+                 }
+
+                 /* Remove notFound images from selectedImgList. */
+                 for (var i = notFound.length -1; i >= 0; i--) {
+                     this.splice("selectedImgList", notFound[i],1);
+                 }
+             }
+         },
+
+         /* Returns true if obj is in selectedIntfList */
+         _isIntfSelected: function(obj) {
+             if (this._indexOfObjInArr(obj, this.selectedIntfList) != -1) {
+                 return true;
+             } else {
+                 return false;
+             }
+         },
+
+         /* On selectedIntfList changes, handle checkboxes. */
+         _iscsiSelectedInterfacesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated selected interfaces list");
+
+             if (changeRecord) {
+                 /* Grab all intfCheckBox's */
+                 var intfCheckBoxes = Polymer.dom(this.root).querySelectorAll("#intfCheckBox");
+
+                 changeRecord.indexSplices.forEach(function(s) {
+                     s.removed.forEach(function(intf) {
+                         console.log(this.is + ":" + arguments.callee.name + ": " + intf.node + ":" + intf.addr + " was removed from selected list");
+
+                         /* Uncheck corresponding checkbox. */
+                         var i = this._indexOfObjInArr(intf, this.availableIntfList);
+                         if (i != -1 && i < intfCheckBoxes.length) {
+                             intfCheckBoxes[i].checked = false;
+                         } else {
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to deselect checkbox at index " + i);
+                         }
+                     }, this);
+                     for (var i=0; i<s.addedCount; i++) {
+                         var index = s.index + i;
+                         var newIntf = s.object[index];
+                         console.log(this.is + ":" + arguments.callee.name + ": " + newIntf.node + ":" + newIntf.addr + " added at index " + index);
+
+                         /* Check corresponding checkbox. */
+                         var i = this._indexOfObjInArr(newIntf, this.availableIntfList);
+                         if (i != -1 && i < intfCheckBoxes.length) {
+                             intfCheckBoxes[i].checked = true;
+                         } else {
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + i);
+                         }
+                     }
+                 }, this);
+             }
+
+             /* Check if we should hide the selected list */
+             if (this.selectedIntfList.length > 0) {
+                 this.selectedIntfListHidden = false;
+             } else {
+                 this.selectedIntfListHidden = true;
+             }
+         },
+
+         /* Invoked when availableIntfList changes. */
+         _iscsiInterfacesChanged: function(changeRecord) {
+             /* NOTE: changeRecord is always undefined here. */
+             console.log(this.is + ":" + arguments.callee.name + ": updated available interface list");
+
+             if (this.selectedIntfList.length != 0) {
+                 var notFound = [];
+                 /* Select those that are in selectedIntfList but not in availableIntfList. */
+                 for (var i = 0; i < this.selectedIntfList.length; i++) {
+                     if (this._indexOfObjInArr(this.selectedIntfList[i], this.availableIntfList) == -1) {
+                         notFound.push(i);
+                     }
+                 }
+
+                 /* Remove notFound interfaces from selectedIntfList. */
+                 for (var i = notFound.length -1; i >= 0; i--) {
+                     this.splice("selectedIntfList", notFound[i],1);
+                 }
+             }
          },
 
          removeConfig: function() {
@@ -351,16 +544,13 @@
                  console.log(intf.node + ":" + intf.addr + " selected - adding to selected list.");
                  this.push("selectedIntfList", intf);
              } else {
-                 console.log(intf.node + ":" + intf.addr + " deselected - removing from selected list.");
-                 var index = this.selectedIntfList.indexOf(intf);
-                 this.splice("selectedIntfList", index, 1);
-             }
-
-             /* Check if we should hide the selected list */
-             if (this.selectedIntfList.length > 0) {
-                 this.selectedIntfListHidden = false;
-             } else {
-                 this.selectedIntfListHidden = true;
+                 var index = this._indexOfObjInArr(intf, this.selectedIntfList);
+                 if (index == -1) {
+                     console.error("Checked " + intf.node + ":" + intf.addr + " not found in selected list.");
+                 } else {
+                     console.log(intf.node + ":" + intf.addr + " deselected - removing from selected list.");
+                     this.splice("selectedIntfList", index, 1);
+                 }
              }
          },
 
@@ -371,16 +561,13 @@
                  console.log(img.img + ":" + img.pool + " selected - adding to selected list.");
                  this.push("selectedImgList", img);
              } else {
-                 console.log(img.img + ":" + img.pool + " deselected - removing from selected list.");
-                 var index = this.selectedImgList.indexOf(img);
-                 this.splice("selectedImgList", index, 1);
-             }
-
-             /* Check if we should hide the selected list */
-             if (this.selectedImgList.length > 0) {
-                 this.selectedImgListHidden = false;
-             } else {
-                 this.selectedImgListHidden = true;
+                 var index = this._indexOfObjInArr(img, this.selectedImgList);
+                 if (index == -1) {
+                     console.error("Checked " + img.img + ":" + img.pool + " not found in selected list.");
+                 } else {
+                     console.log(img.img + ":" + img.pool + " deselected - removing from selected list at index " + index);
+                     this.splice("selectedImgList", index, 1);
+                 }
              }
          },
 
@@ -555,7 +742,6 @@
              this.$.addCommonAuthDialog.close();
              this.authHidden = false;
          },
-
      });
     </script>
 </dom-module>
