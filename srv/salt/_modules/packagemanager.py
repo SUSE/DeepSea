@@ -196,7 +196,7 @@ class Zypper(PackageManager):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
-        if self._patches_needed()
+        if self._patches_needed():
             base_command = ['zypper']
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
