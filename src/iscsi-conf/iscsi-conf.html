@@ -2,8 +2,10 @@
 
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 
 <link rel="import" href="../iscsi-target/iscsi-target.html">
+<link rel="import" href="../salt-api/wf-salt-api.html">
 
 <dom-module id="iscsi-conf">
     <template>
@@ -26,11 +28,27 @@
 
         <h1>iSCSI Targets</h1>
         <paper-icon-button title="Add a new iSCSI target" class="add-target-button" icon="add" on-tap="newTarget">Add Target</paper-icon-button>
+
+        <paper-button id="get-iscsi-data-button" raised on-click="_getIscsiData"
+                      disabled$="{{getIscsiDataButtonDisabled}}">Query iSCSI Data
+            <paper-spinner active$="{{getIscsiDataButtonDisabled}}" hidden$="{{!getIscsiDataButtonDisabled}}">
+            </paper-spinner>
+        </paper-button>
         <br>
         <paper-button raised on-click="generateConfigFile" id="generate-config-file-button"
                       class="generate-config-file-button" icon="add" hidden$="{{generateConfigFileButtonHidden}}">
             Generate LRBD Config
         </paper-button>
+
+        <!-- Query interfaces and images from salt-api backend. -->
+        <wf-salt-api
+            id="populateiscsi"
+            cmd=""
+            arg=""
+            target=""
+            func="ui.populate_iscsi"
+            canned="1">
+	</wf-salt-api>
     </template>
 
     <script>
@@ -46,7 +64,38 @@
                  type: Boolean,
                  value: true,
              },
+
+	     availableImgList: {
+		 type: Array,
+		 value: function() {
+		     return [];
+		 },
+		 notify: true
+	     },
+
+	     availableIntfList: {
+		 type: Array,
+		 value: function() {
+		     return [];
+		 },
+		 notify: true
+	     },
+
+             getIscsiDataButtonDisabled: {
+                 type: Boolean,
+                 value: true
+             }
          },
+
+	 observers: [
+	     "_iscsiImagesChanged(availableImgList.splices)",
+	     "_iscsiInterfacesChanged(availableIntfList.splices)"
+	 ],
+
+         listeners: {
+	     "wf-salt-api-response": "handleIscsi200",
+	     "wf-salt-api-error": "handleIscsiErr"
+	 },
 
          ready: function() {
              this.addEventListener('removeTarget', function(e) {
@@ -61,6 +110,62 @@
                  }
                  this.displayGenerateConfigFileButton();
              });
+
+             /* On load, try to populate iSCSI data. */
+             this._getIscsiData();
+         },
+
+         /* Invokes the populateiscsi wf-salt-api ajax call. */
+         _getIscsiData: function() {
+             console.log(this.is + ":" + arguments.callee.name + ": updating iSCSI data");
+
+             /* Disable load button and enable spinner. */
+             this.getIscsiDataButtonDisabled = true;
+
+             /* Try to get some data. */
+             this.$.populateiscsi.runPost();
+         },
+
+         handleIscsi200: function(e) {
+             console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
+             console.log(this.is + ":" + arguments.callee.name + ": populating image and interface lists");
+
+             var resp = e.detail.response.return[0];
+             this.getIscsiDataButtonDisabled = false;
+
+             if (resp.interfaces === undefined || resp.images === undefined) {
+                 alert("Invalid iSCSI data returned from server.");
+             } else {
+                 this.set("availableImgList", resp.images);
+                 this.set("availableIntfList", resp.interfaces);
+             }
+         },
+
+         handleIscsiErr: function(e) {
+             console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
+
+             alert("Failed to obtain iSCSI data from server.");
+             this.getIscsiDataButtonDisabled = false;
+         },
+
+         _iscsiImagesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated RBD image list");
+
+             /* Walk the targetList and notify all targets. */
+             for (var i = 0; i < this.targetList.length; i++) {
+                 var target = this.targetList[i];
+                 target.notifyPath("availableImgList", this.availableImgList.slice());
+             }
+         },
+
+         _iscsiInterfacesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated interfaces list");
+
+             /* Walk the targetList and notify all targets. */
+             for (var i = 0; i < this.targetList.length; i++) {
+                 var target = this.targetList[i];
+                 target.notifyPath("availableIntfList", this.availableIntfList.slice());
+             }
          },
 
          displayGenerateConfigFileButton: function() {
@@ -74,6 +179,8 @@
          newTarget: function() {
              var target = document.createElement("iscsi-target");
              this.push("targetList", target);
+             target.set("availableImgList", this.availableImgList);
+             target.set("availableIntfList", this.availableIntfList);
 
              /* Note: this.$['...'] is the equivalent of document.getElementById("generate-config-file-button");
               * If element id is a single word, this.$.id can be used.  Further, this.$.generateConfigFileButton
