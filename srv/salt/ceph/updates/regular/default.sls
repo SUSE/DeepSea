@@ -3,6 +3,6 @@ zypper update regular:
     - name: packagemanager.up
     - kwargs:
         'reboot': True
-        'debug': True
+        'debug': False
         'kernel': False
     - fire_event: True
