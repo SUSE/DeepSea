@@ -196,7 +196,7 @@ class Zypper(PackageManager):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
-        if self._updates_needed():
+        if self._patches_needed()
             base_command = ['zypper']
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
@@ -226,7 +226,8 @@ class Zypper(PackageManager):
 
 
 def up(**kwargs):
-    strat = up.__name__
+    #strat = up.__name__
+    strat = 'patch'
     obj = PackageManager(**kwargs)
     obj.pm._handle(strat=strat)
 
