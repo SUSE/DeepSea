@@ -196,7 +196,7 @@ class Zypper(PackageManager):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
-        if self._patches_needed():
+        if self._updates_needed():
             base_command = ['zypper']
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
@@ -215,6 +215,19 @@ class Zypper(PackageManager):
             log.info("returncode: {}".format(proc.returncode))
 
             if int(proc.returncode) == 102:
+                """
+                zypper up doesn't return the necessary exitcodes.
+                zypper patch does.
+                zypper patch only accepts repos that are from official repos
+                zypper up processes all repos.
+
+                In a environment where you simply don't have shiny and signed repos
+                like in a development environment we can't rely on a returncode
+                driven rebooting.
+
+                => Keep checks for kernel updates in /srv/salt/ceph/stage/prep.sls until
+                   a better solution is found.
+                """
                 self.reboot_in()
             if int(proc.returncode) > 0 and int(proc.returncode) < 100:
                 if int(proc.returncode) in self.RETCODES:
@@ -226,8 +239,7 @@ class Zypper(PackageManager):
 
 
 def up(**kwargs):
-    #strat = up.__name__
-    strat = 'patch'
+    strat = up.__name__
     obj = PackageManager(**kwargs)
     obj.pm._handle(strat=strat)
 

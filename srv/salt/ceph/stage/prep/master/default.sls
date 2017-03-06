@@ -28,6 +28,12 @@ prepare master:
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
+
+restart master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.updates.restart
+
 unlock:
   salt.runner:
     - name: filequeue.remove

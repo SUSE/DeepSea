@@ -26,14 +26,21 @@ updates:
     - tgt: '*'
     - sls: ceph.updates
 
+restart:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.updates.restart
+
 {% elif salt.saltutil.runner('select.minions', cluster='ceph') != [] and salt['pillar.get']('fsid') != None %}
 
 {% for host in salt.saltutil.runner('getnodes.sorted_unique_nodes', cluster='ceph') %}
 
-wait until the cluster is not in a bad state anymore to process {{ host }}:
+wait until the cluster has recovered before processing {{ host }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.wait
+
+{% if salt.saltutil.runner('cephservices.wait', cluster='ceph') == True  %}
 
 updating {{ host }}:
   salt.state:
@@ -41,6 +48,16 @@ updating {{ host }}:
     - tgt_type: compound
     - sls: ceph.updates
     - failhard: True
+
+{% endif %}
+
+check if restart is needed for {{ host }}:
+  salt.state:
+    - tgt: {{ host }}
+    - tgt_type: compound
+    - sls: ceph.updates.restart
+    - failhard: True
+
 
 {% endfor %}
 
