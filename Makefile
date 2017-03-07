@@ -132,6 +132,11 @@ install:
 	install -m 644 srv/salt/ceph/mds/files/*.j2 $(DESTDIR)/srv/salt/ceph/mds/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart
 	install -m 644 srv/salt/ceph/mds/restart/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart
+	# state files - salt-api
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cherrypy
+	install -m 644 srv/salt/ceph/cherrypy/*.sls $(DESTDIR)/srv/salt/ceph/cherrypy
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cherrypy/files
+	install -m 644 srv/salt/ceph/cherrypy/files/*.conf* $(DESTDIR)/srv/salt/ceph/cherrypy/files
 
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
