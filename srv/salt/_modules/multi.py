@@ -79,6 +79,38 @@ def _summarize(results):
     msg['avg'] = avg_sum
     return msg
 
+def iperf_client_cmd( server, cpu=1, port=5201 ):
+    '''
+    Use iperf to test minion to server
+        
+    CLI Example:
+    .. code-block:: bash
+    salt 'node' ceph_sles.iperf server cpu_number=1 port=5201
+    '''
+    if not server:
+        return False
+    iperf_cmd = [ "/usr/bin/iperf3", "-fM", "-A"+str(cpu), "-t10", "-c"+server, "-p"+str(port)]
+    log.debug('iperf_client_cmd: cmd {}'.format(iperf_cmd))
+    proc = Popen(iperf_cmd, stdout=PIPE, stderr=PIPE)
+    proc.wait()
+    return server, proc.returncode, proc.stdout.read(), proc.stderr.read()
+
+def iperf_server_cmd( cpu=1, port=5201 ):
+    '''
+    Use iperf to test minion to server
+        
+    CLI Example:
+    .. code-block:: bash
+    salt 'node' ceph_sles.iperf server cpu_number=1 port=5201
+    '''
+    iperf_cmd = [ "/usr/bin/iperf3", "-s", "-D", "-A"+str(cpu),  "-p"+str(port)]
+    log.debug('iperf_server_cmd: cmd {}'.format(iperf_cmd))
+    with open( "/var/log/iperf_cpu" + str(cpu) + "_port" + str(port) + ".log", "wb") as out, \
+    open( "/var/log/iperf_cpu" + str(cpu) + "_port" + str(port) + ".err", "wb" ) as err:
+        proc = Popen(iperf_cmd, stdout=out, stderr=err)
+    return True
+
+
 def ping(*hosts):
     '''
     Ping a list of hosts and summarize the results
