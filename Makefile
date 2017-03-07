@@ -338,12 +338,15 @@ install:
 	ln -sf services		$(DESTDIR)/srv/salt/ceph/stage/4
 	ln -sf removal		$(DESTDIR)/srv/salt/ceph/stage/5
 
+        ##### Please restart you salt-master before using DeepSea...
+        ##### systemctl restart salt-master
+
 
 rpm: tarball
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
-tarball: 
+tarball:
 	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
 	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.gz HEAD
 
