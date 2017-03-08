@@ -45,11 +45,13 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 %build
 
 %install
-make DESTDIR=%{buildroot} install
+make DESTDIR=%{buildroot} copy-files
 
 %post
 # Initialize to most likely value
 sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+# change owner to salt, so deepsea can create proposals
+chown -R salt /srv/pillar/ceph
 # Restart salt-master if it's running, so it picks up
 # the config changes in /etc/salt/master.d/modules.conf
 systemctl try-restart salt-master > /dev/null 2>&1 || :
