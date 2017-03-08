@@ -6,7 +6,7 @@ usage:
 	@echo -e "\tmake install\tInstall DeepSea on this host"
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
 
-install:
+copy-files:
 	# salt-master config files
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
 	install -m 644 etc/salt/master.d/modules.conf $(DESTDIR)/etc/salt/master.d/
@@ -338,6 +338,10 @@ install:
 	ln -sf services		$(DESTDIR)/srv/salt/ceph/stage/4
 	ln -sf removal		$(DESTDIR)/srv/salt/ceph/stage/5
 
+install: copy-files
+	sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+	chown -R salt /srv/pillar/ceph
+	systemctl restart salt-master
 
 rpm: tarball
 	rpmbuild -bb deepsea.spec
