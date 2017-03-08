@@ -4,7 +4,7 @@ import logging
 import multiprocessing.dummy
 import multiprocessing
 import re
-from subprocess import call, Popen, PIPE
+from subprocess import check_call, Popen, PIPE, CalledProcessError
 
 log = logging.getLogger(__name__)
 
@@ -31,11 +31,26 @@ def _all(func, hosts):
     pool = multiprocessing.dummy.Pool(threads)
     for instance in pool.map(func, hosts):
         all_instances.append(instance)
-    
+
     return all_instances
 
+def _summarize_iperf(result):
+    '''
+    Scan the results and summarize for iperf result
+    '''
+    host, rc, out, err = result
+    msg = {}
+    if rc == 0:
+        msg['succeeded'] = host
+    	msg['speed'] = out
+    	msg['filter'] = re.match(r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Bytes/sec)', out, re.DOTALL ).group(2)
+    if rc == 1:
+        msg['failed'] = host
+    if rc == 2:
+        msg['errored'] = host
+    return msg
 
-def _summarize(results):
+def _summarize_ping(results):
     '''
     Scan the results and summarize
     '''
@@ -56,18 +71,18 @@ def _summarize(results):
         if rc == 2:
             errored.append(host)
 
-    log.debug('multi._summarize average={}'.format(avg))
+    log.debug('multi._summarize_ping average={}'.format(avg))
 
     if avg:
         avg_sum = sum(i.get('avg') for i in avg) / len(avg)
         if len(avg) > 2:
             for i in avg:
                 if (avg_sum * len(avg) / 2) < i.get('avg') :
-                    log.debug('_summarize: slow host running = {} avg = {}, s'.format( i.get('avg'), avg_sum ))
+                    log.debug('_summarize_ping: slow host running = {} avg = {}, s'.format( i.get('avg'), avg_sum ))
                     slow.append(i.get('host'))
     else:
         avg_sum = 0 
-    
+
     msg = {}
     msg['succeeded'] = len(success)
     if failed:
@@ -79,13 +94,25 @@ def _summarize(results):
     msg['avg'] = avg_sum
     return msg
 
-def iperf_client_cmd( server, cpu=1, port=5201 ):
+def iperf(server, cpu, port):
+    '''
+    iperf test to a specific server 
+
+    CLI Example:
+    .. code-block:: bash
+        sudo salt 'node' multi.iperf <hostname>|<ip> <cpu_core> <port>
+    '''
+    log.debug('iperf server ={}'.format(server))
+    return _summarize_iperf( iperf_client_cmd( server, cpu, port ) )
+    #return True
+
+def iperf_client_cmd( server, cpu=0, port=5200 ):
     '''
     Use iperf to test minion to server
         
     CLI Example:
     .. code-block:: bash
-    salt 'node' ceph_sles.iperf server cpu_number=1 port=5201
+    salt 'node' multi.iperf_client_cmd <server_name/ip> cpu=<which_cpu_core default 0> port=<default 5200>
     '''
     if not server:
         return False
@@ -95,21 +122,31 @@ def iperf_client_cmd( server, cpu=1, port=5201 ):
     proc.wait()
     return server, proc.returncode, proc.stdout.read(), proc.stderr.read()
 
-def iperf_server_cmd( cpu=1, port=5201 ):
+def iperf_server_cmd( cpu=0, port=5200 ):
     '''
     Use iperf to test minion to server
         
     CLI Example:
     .. code-block:: bash
-    salt 'node' ceph_sles.iperf server cpu_number=1 port=5201
+    salt 'node' multi.iperf_server_cmd <server_name/ip> cpu=<which_cpu_core default 0> port=<default 5200>
     '''
     iperf_cmd = [ "/usr/bin/iperf3", "-s", "-D", "-A"+str(cpu),  "-p"+str(port)]
     log.debug('iperf_server_cmd: cmd {}'.format(iperf_cmd))
-    with open( "/var/log/iperf_cpu" + str(cpu) + "_port" + str(port) + ".log", "wb") as out, \
-    open( "/var/log/iperf_cpu" + str(cpu) + "_port" + str(port) + ".err", "wb" ) as err:
-        proc = Popen(iperf_cmd, stdout=out, stderr=err)
+    #with open( "/var/log/iperf_cpu" + str(cpu) + "_port" + str(port) + ".log", "wb") as out, \
+    #open( "/var/log/iperf_cpu" + str(cpu) + "_port" + str(port) + ".err", "wb" ) as err:
+    #proc = Popen(iperf_cmd, stdout=out, stderr=err)
+    proc = Popen(iperf_cmd);
+    # it doesn't report fail so no need to check 
     return True
 
+def kill_iperf_cmd():
+    '''
+    Clean up all the iperf3 server and clean it. 
+    '''
+    kill_cmd = [ "/usr/bin/killall", "-9", "iperf3"]
+    log.debug('kill_iperf_cmd: cmd {}'.format(kill_cmd))
+    proc = Popen(kill_cmd)
+    return True
 
 def ping(*hosts):
     '''
@@ -122,7 +159,7 @@ def ping(*hosts):
     # I should be filter all the localhost here? 
     log.debug('ping hostlist={}'.format(list(hosts)))
     results = _all(ping_cmd, list(hosts))
-    return _summarize(results)
+    return _summarize_ping(results)
 
 def ping_cmd(host):
     '''
@@ -134,8 +171,20 @@ def ping_cmd(host):
     '''
     cmd = [ "/usr/bin/ping", "-c1", "-q", "-W1", host ]
     log.debug('ping_cmd hostname={}'.format(host))
-
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
     proc.wait()
     return host, proc.returncode, proc.stdout.read(), proc.stderr.read()
 
+def prepare_iperf_server():
+    '''
+    Create N server base on the total core number of your cpu count
+
+    CLI Example:
+    .. code-block:: bash
+    salt 'node' multi.prepare_iperf_server 
+
+    '''
+    cpus = multiprocessing.cpu_count()
+    for cpu in range(cpus):
+        iperf_server_cmd( cpu, 5200+cpu )
+    return True
