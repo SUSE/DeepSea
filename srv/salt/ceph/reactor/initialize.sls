@@ -3,7 +3,7 @@
 # automation, the last stage will remove the lock.  Overlapping restarts
 # will trigger only one run.
 
-{% if salt['saltutil.runner']('filequeue.add', queue='lock', queue='master', duplicate_fail=True) == True %}
+{% if salt['saltutil.runner']('filequeue.add', item='lock', queue='master', duplicate_fail=True) == True %}
 
 master:
   runner.state.orchestrate:
@@ -16,7 +16,7 @@ master:
 # The difference is these steps are only performed for the restarted minion
 # and only if the master has completed its prep stage.
 
-{% if salt['saltutil.runner']('filequeue.check', queue='complete', queue='master') == True %}
+{% if salt['saltutil.runner']('filequeue.check', item='complete', queue='master') == True %}
 ceph.sync:
   local.state.apply:
     - tgt: {{ data['id'] }}

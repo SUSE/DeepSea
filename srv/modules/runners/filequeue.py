@@ -65,11 +65,11 @@ class FileQueue(object):
         return dirs
 
 
-    def touch(self, name):
+    def touch(self, item):
         """
         Create or update filename.  Return based on duplicate_fail.
         """
-        filename = "{}/{}".format(self.queue_dir, name)
+        filename = "{}/{}".format(self.queue_dir, item)
         ret = os.path.isfile(filename)
         with open(filename, "w") as entry:
             log.info("creating {}".format(filename))
@@ -77,9 +77,9 @@ class FileQueue(object):
 
         if (ret and 'duplicate_fail' in self.settings and
             self.settings['duplicate_fail']):
-            self._fire_event(False, [ name, "present" ])
+            self._fire_event(False, [ item, "present" ])
             return False
-        self._fire_event(True, [ name, "added" ])
+        self._fire_event(True, [ item, "added" ])
         return True
 
 
@@ -115,20 +115,20 @@ class FileQueue(object):
             self._fire_event(True, [ "empty" ])
             return True
 
-    def remove(self, name):
+    def remove(self, item):
         """
         Remove file
         """
-        filename = "{}/{}".format(self.queue_dir, name)
+        filename = "{}/{}".format(self.queue_dir, item)
         if os.path.isfile(filename):
             log.debug("removing {}".format(filename))
             os.remove(filename)
-            self._fire_event(True, [ name, "remove"])
+            self._fire_event(True, [ item, "remove"])
             return True
-        self._fire_event(False, [ name, "absent"])
+        self._fire_event(False, [ item, "absent"])
         return False
 
-    def vacate(self, name):
+    def vacate(self, item):
         """
         Remove file and check if empty in a single operation
 
@@ -137,14 +137,14 @@ class FileQueue(object):
         """
         files = self.ls()
         log.debug("queue {} contains {}".format(self.queue_dir, files))
-        filename = "{}/{}".format(self.queue_dir, name)
+        filename = "{}/{}".format(self.queue_dir, item)
 
         if os.path.isfile(filename):
             log.debug("deleting {}".format(filename))
             os.remove(filename)
 
         if len(files) == 1:
-            if files[0] == name:
+            if files[0] == item:
                 log.debug("queue {} is vacated".format(self.queue_dir))
                 self._fire_event(True, [ "vacated" ])
                 return True
@@ -157,18 +157,18 @@ class FileQueue(object):
 
 
 
-    def check(self, name):
+    def check(self, item):
         """
         Return whether the file exists
         """
-        filename = "{}/{}".format(self.queue_dir, name)
+        filename = "{}/{}".format(self.queue_dir, item)
         ret = os.path.isfile(filename)
         if ret:
             log.info("file {} exists".format(filename))
-            self._fire_event(True, [ name, "exists"])
+            self._fire_event(True, [ item, "exists"])
         else:
             log.info("file {} is missing".format(filename))
-            self._fire_event(False, [ name, "missing"])
+            self._fire_event(False, [ item, "missing"])
         return ret
 
     def _fire_event(self, result, operation):
