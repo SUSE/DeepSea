@@ -120,7 +120,7 @@ def wait(**kwargs):
         if check(**kwargs):
             log.debug("Services are up")
             return True
-        time.sleep(settings['delay'])
+        time.sleep(current_delay)
         if current_delay < 60:
             current_delay += settings['delay']
         else:

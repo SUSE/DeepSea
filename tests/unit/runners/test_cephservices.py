@@ -54,18 +54,19 @@ class TestCephServices():
         assert result == False
 
     @patch('srv.modules.runners.cephservices.check', autospec=True)
-    def test_wait(self, check):
-
-        local = check.return_value
-        local.cmd.return_value = True
+    @patch('srv.modules.runners.cephservices._timeout', autospec=True)
+    def test_wait(self, check, timeout):
+        check.return_value = True
+        timeout.return_value = 60
 
         result = cephservices.wait(delay=0)
         assert result == True
 
     @patch('srv.modules.runners.cephservices.check', autospec=True)
-    def test_wait_raises_runtimeerror(self, check):
-        local = check.return_value
-        local.cmd.return_value = False
+    @patch('srv.modules.runners.cephservices._timeout', autospec=True)
+    def test_wait_raises_runtimeerror(self, check, timeout):
+        check.return_value = False
+        timeout.return_value = 0
 
         with pytest.raises(RuntimeError) as excinfo:
             cephservices.wait(delay=0, timeout=0)
