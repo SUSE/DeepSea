@@ -9,12 +9,12 @@ prevent empty rendering:
 
 cephfs data:
   cmd.run:
-    - name: "ceph osd pool create cephfs_data 256"
+    - name: "ceph osd pool create cephfs_data 128"
     - unless: "rados lspools | grep -q cephfs_data"
 
 cephfs metadata:
   cmd.run:
-    - name: "ceph osd pool create cephfs_metadata 256"
+    - name: "ceph osd pool create cephfs_metadata 128"
     - unless: "rados lspools | grep -q cephfs_metadata"
 
 cephfs:
