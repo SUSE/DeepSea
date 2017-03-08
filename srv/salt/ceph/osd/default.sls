@@ -10,13 +10,13 @@ include:
 {% set fstype = "xfs" %}
 
 {% if dmcrypt %}
-   {% set base_cmd = base_cmd %}
+   {% set base_cmd = base_cmd + " --dmcrypt"%}
 {% endif %}
 
 {% if bluestore %}
-   {% set cmd = base_cmd  + "--bluestore" + data_and_journal + cluster_ident + cluster_uuid %}
+   {% set cmd = base_cmd + " --bluestore " + data_and_journal + cluster_ident + cluster_uuid %}
 {% else %}
-   {% set cmd = base_cmd + "--fs-type" + fstype + data_and_journal + cluster_ident + cluster_uuid %}
+   {% set cmd = base_cmd + " --fs-type " + fstype + data_and_journal + cluster_ident + cluster_uuid %}
 {% endif %}
 
 {% for device in salt['pillar.get']('storage:osds') %}
