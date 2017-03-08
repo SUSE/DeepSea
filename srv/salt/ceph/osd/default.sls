@@ -4,24 +4,26 @@ include:
 {% set bluestore = salt['pillar.get']('bluestore') %}
 {% set dmcrypt = salt['pillar.get']('dmcrypt') %}
 {% set base_cmd = "ceph-disk -v prepare" %}
-{% set cluster_ident = "--cluster {{ salt['pillar.get']('cluster') }}" %}
-{% set cluster_uuid = "--cluster-uuid {{ salt['pillar.get']('fsid') }}" %}
+{% set cluster_ident = "--cluster" + salt['pillar.get']('cluster') %}
+{% set cluster_uuid = "--cluster-uuid" +  salt['pillar.get']('fsid') %}
 {% set data_and_journal = "--data-dev --journal-dev" %}
 {% set fstype = "xfs" %}
 
 {% if dmcrypt %}
-   {% set base_cmd = {{ base_cmd }} --dmcrypt %}
+   {% set base_cmd = base_cmd %}
+{% endif %}
+
 {% if bluestore %}
-   {% set cmd = {{ base_cmd }} --bluestore {{ data_and_journal }} {{ cluster_ident }} {{ cluster_uuid }} %}
+   {% set cmd = base_cmd  + "--bluestore" + data_and_journal + cluster_ident + cluster_uuid %}
 {% else %}
-   {% set cmd = {{ base_cmd }} --fs-type {{ fstype }} {{ data_and_journal }} {{ cluster_ident }} {{ cluster_uuid }} %}
+   {% set cmd = base_cmd + "--fs-type" + fstype + data_and_journal + cluster_ident + cluster_uuid %}
 {% endif %}
 
 {% for device in salt['pillar.get']('storage:osds') %}
 {% set dev = salt['cmd.run']('readlink -f ' + device ) %}
 prepare {{ device }}:
   cmd.run:
-    - name: {{ cmd }} {{ device }}"
+    - name: "{{ cmd }} {{ device }}"
     - unless: "fsck {{ dev }}1"
     - fire_event: True
 
