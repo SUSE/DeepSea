@@ -80,7 +80,8 @@ def _cached_roles(search):
     """
     Return the cached roles in a convenient structure.  Trust the cached
     values from the master pillar since a downed minion will be absent 
-    from any dynamic query.
+    from any dynamic query.  Also, do not worry about downed minions that
+    are outside of the search criteria.
     """
     pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
                                                      use_cached_grains=True,
@@ -108,7 +109,7 @@ def wait(**kwargs):
     checked.  Raising an exception is ugly but does stop the process.
     """
     settings = {
-        'timeout': 900,
+        'timeout': _timeout(**kwargs),
         'delay': 3
     }
     settings.update(kwargs)
@@ -116,14 +117,26 @@ def wait(**kwargs):
     end_time = time.time() + settings['timeout']
     current_delay = settings['delay']
     while end_time > time.time():
-        if check():
+        if check(**kwargs):
             log.debug("Services are up")
             return True
         time.sleep(settings['delay'])
         if current_delay < 60:
-            current_delay += delay
+            current_delay += settings['delay']
         else:
             current_delay = 60
     log.error("Timeout expired")
     raise RuntimeError("Timeout expired")
 
+def _timeout(cluster='ceph', **kwargs):
+    """
+    Assume 15 minutes for physical hardware since some hardware has long 
+    shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
+    """
+    local = salt.client.LocalClient()
+    search = "I@cluster:{}".format(cluster)
+    virtual = local.cmd(search, 'grains.get', [ 'virtual' ], expr_form="compound")
+    if 'physical' in  virtual.values():
+        return 900
+    else:
+        return 120
