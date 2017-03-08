@@ -6,11 +6,11 @@ include:
 {% set base_cmd = "ceph-disk -v prepare" %}
 {% set cluster_ident = "--cluster {{ salt['pillar.get']('cluster') }}" %}
 {% set cluster_uuid = "--cluster-uuid {{ salt['pillar.get']('fsid') }}" %}
-{% set data_and_journal = "--data-dev --journal-dev"
+{% set data_and_journal = "--data-dev --journal-dev" %}
 {% set fstype = "xfs" %}
 
 {% if dmcrypt %}
-   {% set base_cmd = {{ base_cmd }} --dmcrypt
+   {% set base_cmd = {{ base_cmd }} --dmcrypt %}
 {% if bluestore %}
    {% set cmd = {{ base_cmd }} --bluestore {{ data_and_journal }} {{ cluster_ident }} {{ cluster_uuid }} %}
 {% else %}
