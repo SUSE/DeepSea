@@ -71,6 +71,20 @@
 
     <script>
 
+     class Image {
+         constructor(img, pool) {
+             this.img = img ? img : "undefined";
+             this.pool = pool ? pool : "undefined";
+         }
+     }
+
+     class Interface {
+         constructor(node, addr) {
+             this.node = node ? node : "undefined";
+             this.addr = addr ? addr : "undefined";
+         }
+     }
+
      Polymer({
          is: 'iscsi-target-config',
          properties: {

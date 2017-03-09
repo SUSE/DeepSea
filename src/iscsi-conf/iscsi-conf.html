@@ -115,6 +115,32 @@
              this._getIscsiData();
          },
 
+         /* Takes an array of { "img": "", "pool": "" } and returns an
+          * array of iscsi-conf-target:{Image}.
+          */
+         _parseImgData: function(imgDataArr) {
+             var imageArr = [];
+             for (var i = 0; i < imgDataArr.length; i++) {
+                 var img = imgDataArr[i].img;
+                 var pool = imgDataArr[i].pool;
+                 imageArr.push(new Image(img, pool));
+             }
+             return imageArr;
+         },
+
+         /* Takes an array of { "node": "", "addr": "" } and returns an
+          * array of iscsi-conf-target:{Interface}.
+          */
+         _parseIntfData: function(intfDataArr) {
+             var interfaceArr = [];
+             for (var i = 0; i < intfDataArr.length; i++) {
+                 var node = intfDataArr[i].node;
+                 var addr = intfDataArr[i].addr;
+                 interfaceArr.push(new Interface(node, addr));
+             }
+             return interfaceArr;
+         },
+
          /* Invokes the populateiscsi wf-salt-api ajax call. */
          _getIscsiData: function() {
              console.log(this.is + ":" + arguments.callee.name + ": updating iSCSI data");
@@ -136,8 +162,8 @@
              if (resp.interfaces === undefined || resp.images === undefined) {
                  alert("Invalid iSCSI data returned from server.");
              } else {
-                 this.set("availableImgList", resp.images);
-                 this.set("availableIntfList", resp.interfaces);
+                 this.set("availableImgList", this._parseImgData(resp.images));
+                 this.set("availableIntfList", this._parseIntfData(resp.interfaces));
              }
          },
 
