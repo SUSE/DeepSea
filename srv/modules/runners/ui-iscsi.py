@@ -12,12 +12,13 @@ log = logging.getLogger(__name__)
 
 
 """
-Consolidate any user interface calls for Wolffish and openATTIC.
+Consolidate any user interface iscsi calls for Wolffish and openATTIC.
 
 Guiding ideas:
 - Provide all data necessary for one view in one call.  That is, minimize
-  the number of ajax calls
-- Accommodate the data structures of the web (i.e. list of dictionaries)
+  the number of ajax calls.  Use lists of keyword named dictionaries.
+  (c.f. Wolffish)
+- Provide a separate call for each function.  Return dictionaries (c.f. openATTIC)
 - Do not query Ceph directly.  Performance will vary too greatly.  Use other
   modules with Salt mines.
 """
@@ -32,6 +33,7 @@ class Iscsi(object):
 
     def __init__(self, **kwargs):
 	"""
+	Set yaml dumper, initialize Salt client
 	"""
 	self.data = {}
 	self.friendly_dumper = yaml.SafeDumper
@@ -40,11 +42,7 @@ class Iscsi(object):
 
     def populate(self):
 	"""
-	Parse grains for all network interfaces on igw roles.  Possibly
-	select public interface.
-	Read a Salt mine of an unwritten module that lists all images
-	and their pools.
-	Read the existing lrbd.conf
+	Return the lrbd configuration, interfaces and images.
 	"""
 	self.data['config'] = self.config()
 	self.data['interfaces'] = self.interfaces()
@@ -54,6 +52,8 @@ class Iscsi(object):
 
     def interfaces(self, wrapped=True):
 	"""
+	Parse grains for all network interfaces on igw roles.  Possibly
+	select public interface.
 	"""
 	_stdout = sys.stdout
 	sys.stdout = open(os.devnull, 'w')
@@ -76,6 +76,8 @@ class Iscsi(object):
 
     def images(self, wrapped=True):
 	"""
+	Read a Salt mine of cephimages that lists all images
+	and their pools.
 	"""
 	__opts__ = salt.config.client_config('/etc/salt/master')
 	result = salt.utils.minions.mine_get('I@roles:master', 'cephimages.list', 'compound', __opts__)
@@ -93,6 +95,7 @@ class Iscsi(object):
 
     def config(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
 	"""
+	Read the existing lrbd.conf
 	"""
 	if os.path.exists(filename):
 	    return json.loads(open(filename).read())
@@ -183,7 +186,7 @@ class Iscsi(object):
 	else:
 	    return interfaces[canned]
 
-def populate_iscsi(**kwargs):
+def populate(**kwargs):
     """
     Populate the iSCSI view
     """
@@ -192,27 +195,25 @@ def populate_iscsi(**kwargs):
 	return i.canned_populate(int(kwargs['canned']))
     return i.populate()
 
-def save_iscsi(**kwargs):
+def save(**kwargs):
     """
     Save the iSCSI configuration
     """
     i = Iscsi()
     return i.save(**kwargs)
 
-def iscsi_config(**kwargs):
+def config(**kwargs):
     i = Iscsi(**kwargs)
     return i.config()
 
-def iscsi_interfaces(**kwargs):
+def interfaces(**kwargs):
     i = Iscsi(**kwargs)
     if 'canned' in kwargs:
 	return i.canned_interfaces(int(kwargs['canned']), wrapped=False)
     return i.interfaces(wrapped=False)
 
-def iscsi_images(**kwargs):
+def images(**kwargs):
     i = Iscsi(**kwargs)
     if 'canned' in kwargs:
 	return i.canned_images(int(kwargs['canned']), wrapped=False)
     return i.images(wrapped=False)
-
-
