@@ -71,3 +71,20 @@ class TestCephServices():
         with pytest.raises(RuntimeError) as excinfo:
             cephservices.wait(delay=0, timeout=0)
 
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_timeout(self, localclient):
+        local = localclient.return_value
+        local.cmd.return_value = { 'virtual' : 'kvm' }
+
+        ret = cephservices._timeout()
+        assert ret == 120
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_physical_timeout(self, localclient):
+        local = localclient.return_value
+        local.cmd.return_value = { 'virtual' : 'physical' }
+
+        ret = cephservices._timeout()
+        assert ret == 900
+
+
