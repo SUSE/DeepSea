@@ -40,7 +40,9 @@ wait until the cluster has recovered before processing {{ host }}:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.wait
 
-{% if salt.saltutil.runner('cephservices.wait', cluster='ceph') == True  %}
+check services after processing {{ host }}:
+  salt.runner:
+    - name: cephservices.wait
 
 updating {{ host }}:
   salt.state:
@@ -49,15 +51,12 @@ updating {{ host }}:
     - sls: ceph.updates
     - failhard: True
 
-{% endif %}
-
 check if restart is needed for {{ host }}:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.updates.restart
     - failhard: True
-
 
 {% endfor %}
 
