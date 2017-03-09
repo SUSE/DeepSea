@@ -9,6 +9,7 @@
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
@@ -35,23 +36,33 @@
                 <paper-icon-button icon="delete" on-tap="removeTarget"></paper-icon-button>
             </paper-toolbar>
             <br>
-            Target: <input is="iron-input" bind-value="{{name}}">
+            <label>Target:</label>
+            <input is="iron-input" bind-value="{{name}}" style="width: 45%">
+            <br>
 
-            <!-- Authentication menu -->
-            <paper-dropdown-menu label="Authentication Protocol" style="margin: 10px">
-                <paper-listbox class="dropdown-content" selected="0">
-                    <template is="dom-repeat" items="{{authTypes}}" as="a">
-                        <!-- Actual authentication classes have a 'desc' class property. -->
-                        <template is="dom-if" if="{{a.desc}}">
-                            <paper-item on-click="configureAuth">{{a.desc}}</paper-item>
+            <div style="float:left; width:50%">
+                <!-- Authentication menu -->
+                <paper-dropdown-menu label="Authentication Protocol" style="width: 98%; margin: 10px;">
+                    <paper-listbox class="dropdown-content" selected="0">
+                        <template is="dom-repeat" items="{{authTypes}}" as="a">
+                            <!-- Actual authentication classes have a 'desc' class property. -->
+                            <template is="dom-if" if="{{a.desc}}">
+                                <paper-item on-click="configureAuth">{{a.desc}}</paper-item>
+                            </template>
+                            <!-- The 'no auth' option. -->
+                            <template is="dom-if" if="{{!a.desc}}">
+                                <paper-item on-click="configureAuth">{{a}}</paper-item>
+                            </template>
                         </template>
-                        <!-- The 'no auth' option. -->
-                        <template is="dom-if" if="{{!a.desc}}">
-                            <paper-item on-click="configureAuth">{{a}}</paper-item>
-                        </template>
-                    </template>
-                </paper-listbox>
-            </paper-dropdown-menu>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+            </div>
+
+                <!-- Custom key:val input area -->
+            <div style="float:left; width:50%">
+                <paper-textarea label='Custom target JSON entries: { "key":"value", ... }' placeholder='{ "foo": "bar", "baz": "buz" }' value="{{customTargetEntries}}" rows="1" max-rows="4" style="width: 98%; margin: 10px"></paper-textarea>
+            </div>
+            <div style="clear:both"></div>
 
             <!-- Authentication dialog -->
             <paper-dialog id='addCommonAuthDialog' class="target-config-auth-dialog">
@@ -94,6 +105,7 @@
             </paper-dialog>
 
             <!-- Details of configured authentication -->
+            <!-- TODO: remove this entire listbox -->
             <paper-listbox class="dropdown-content" selected="0" style="" hidden$="{{authHidden}}">
                 <span class="title">Configured Authentication Protocol</span>
                 <template is="dom-if" if="{{auth}}">
@@ -127,9 +139,7 @@
                     </template>
                 </template>
             </paper-listbox>
-
             <br>
-
             <div>
                 <div class="target-add-config">
                     <paper-button raised on-click="addConfig"><iron-icon icon="add"></iron-icon>Config</paper-button>
@@ -307,6 +317,11 @@
                  type: Boolean,
                  value: true,
              },
+
+             customTargetEntries: {
+                 type: String,
+                 value: ""
+             }
          },
 
 	 observers: [
