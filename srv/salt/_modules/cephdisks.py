@@ -28,12 +28,12 @@ class HardwareDetections(object):
         REQUIREMENTS FOR THE PROGRAMM TO WORK:
         gptfdisk, pciutils, smartmontools
         """
-        self.detection_method = self.find_detection_tool(kwargs.get('detection_method', None))
+        self.detection_method = self._find_detection_tool(kwargs.get('detection_method', None))
         self.hw_raid = kwargs.get('hw_raid', None)
         self.hw_raid_name = kwargs.get('raid_controller_name', None)
         self.software_raid = kwargs.get('sw_raid', None)
 
-    def is_removable(self, base):
+    def _is_removable(self, base):
         """
         Ask the kernel if device is a removable
 
@@ -48,7 +48,7 @@ class HardwareDetections(object):
         if (removable == "1"):
             return True
 
-    def is_rotational(self, base):
+    def _is_rotational(self, base):
         """
         Ask the kernel for the disk's rotational value
 
@@ -65,7 +65,7 @@ class HardwareDetections(object):
         else:
             return "0"
 
-    def return_device_bus_id(self, device):
+    def _return_device_bus_id(self, device):
         """
         Tries to get the BUS_ID for a device. Used to query
         S.M.A.R.T with -d <raidctrl>,<busid>
@@ -74,7 +74,7 @@ class HardwareDetections(object):
         return:
             str: bus_id of device
         """
-        lsscsi_path = self.which('lsscsi')
+        lsscsi_path = self._which('lsscsi')
         cmd = lsscsi_path
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
@@ -102,11 +102,11 @@ class HardwareDetections(object):
         return:
             bool: 0 if SSD else 1
         """
-        smartctl_path = self.which('smartctl')
-        bus_id = self.return_device_bus_id(device)
+        smartctl_path = self._which('smartctl')
+        bus_id = self._return_device_bus_id(device)
         if not bus_id:
             log.warning('Could not find bus_id for {}. Falling back to legacy detection mode'.format(device))
-            return self.is_rotational(base)
+            return self._is_rotational(base)
         try:
             cmd = "{} -i /dev/{} -d {},{}".format(smartctl_path,
                                                   device,
@@ -127,9 +127,9 @@ class HardwareDetections(object):
         except:
             """ If something fails, fall back to the default detection mode"""
             log.warning('Something went wrong during smartctl query for device {}. Falling back to legacy detection mode'.format(device))
-            return self.is_rotational(base)
+            return self._is_rotational(base)
 
-    def detect_raidctrl(self):
+    def _detect_raidctrl(self):
         """
         Detect raidcontroller type and name
 
@@ -146,15 +146,15 @@ class HardwareDetections(object):
                 log.info("Using user-provided options for raidname and raidtype")
                 return info
             else:
-                return self.hw_raid_ctrl_detection()
+                return self._hw_raid_ctrl_detection()
         elif self.software_raid:
             log.info('Found a software raid setup')
             info['raidtype'] = 'software'
             return info
         else:
-            return self.hw_raid_ctrl_detection()
+            return self._hw_raid_ctrl_detection()
 
-    def hw_raid_ctrl_detection(self):
+    def _hw_raid_ctrl_detection(self):
         """
         Calls out for lspci to retrieve information
         about the underlying RAID-Controller
@@ -163,7 +163,7 @@ class HardwareDetections(object):
         """
         info = {}
         info['controller_name'] = None
-        lspci_path = self.which('lspci')
+        lspci_path = self._which('lspci')
         cmd = "{} -vv | grep -i raid".format(lspci_path)
         # Verify that proc.stdout actually gives something
         # Or set default to None.
@@ -201,7 +201,7 @@ class HardwareDetections(object):
             log.info("No raidctrl found")
             return info
 
-    def which(self, program, failhard=True):
+    def _which(self, program, failhard=True):
         """
         Instead of using python's built-in _platform_ we rely
         on the tools presence.
@@ -213,7 +213,7 @@ class HardwareDetections(object):
         return:
             str: the full path of the programm
         """
-        def is_exe(fpath):
+        def _is_exe(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
         fpath, fname = os.path.split(program)
@@ -224,7 +224,7 @@ class HardwareDetections(object):
             for path in os.environ["PATH"].split(os.pathsep):
                 path = path.strip('"')
                 exe_file = os.path.join(path, program)
-                if is_exe(exe_file):
+                if _is_exe(exe_file):
                     return exe_file
         if failhard is False:
             return None
@@ -237,7 +237,7 @@ class HardwareDetections(object):
             log.info(msg)
             raise StandardError(msg)
 
-    def find_detection_tool(self, overwrite_method=None):
+    def _find_detection_tool(self, overwrite_method=None):
         """
         Finds the right tool to identify the underlying hardware.
         return:
@@ -254,10 +254,10 @@ class HardwareDetections(object):
             log.error(err_msg)
             raise Exception(err_msg)
 
-        if self.which('hwinfo', failhard=False):
+        if self._which('hwinfo', failhard=False):
             """ SUSE, openSUSE """
             return self._hwinfo
-        elif self.which('lshw', failhard=False):
+        elif self._which('lshw', failhard=False):
             """ Ubuntu, Fedora, CentOS """
             return self._lshw
         else:
@@ -276,7 +276,7 @@ class HardwareDetections(object):
             dict: hwinfo output as dict
         """
         results = {}
-        hwinfo_path = self.which('hwinfo')
+        hwinfo_path = self._which('hwinfo')
         cmd = "{} --disk --only /dev/{}".format(hwinfo_path, device)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
@@ -319,7 +319,7 @@ class HardwareDetections(object):
         # TODO: Search for all possible codes:
         data = "Partition GUID code: 45B0969E-9B03-4F30-B4C6-B4B80CEFF106"
         journal = "Partition GUID code: 4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D"
-        sgdisk_path = self.which('sgdisk')
+        sgdisk_path = self._which('sgdisk')
         for partition_id in ids:
             cmd = "{} -i {} {}".format(sgdisk_path, partition_id, device)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -341,7 +341,7 @@ class HardwareDetections(object):
         """
 
         results = {}
-        lshw_path = self.which('lshw')
+        lshw_path = self._which('lshw')
         cmd = "{} -class disk -xml".format(lshw_path)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = proc.communicate()
@@ -374,13 +374,13 @@ class HardwareDetections(object):
                         else:
                             disk_description[attr] = node.find(key).text
                 disk_description['Device File'] = self._udevadm(ident)
-                disk_description['Driver'] = self.find_driver(ident)
+                disk_description['Driver'] = self._find_driver(ident)
                 results[ident].update(disk_description)
             else:
                 log.info('No logicalname found. Cannot identiy that disk.')
         return results
 
-    def find_driver(self, ident):
+    def _find_driver(self, ident):
         """
         lshw can't detect the driver used. proposal.py relies on
         this information to determine the journal distribution.
@@ -388,7 +388,7 @@ class HardwareDetections(object):
         """
         return 'None'
 
-    def preflight_check(self, hardware_dict):
+    def _preflight_check(self, hardware_dict):
         """
         Check if lshw or hwinfo actually returned the 
         needed fields of 'Capacity', 'Model', 'Device File',
@@ -414,7 +414,7 @@ class HardwareDetections(object):
         """
 
         drives = []
-        raid_ctrl = self.detect_raidctrl()
+        raid_ctrl = self._detect_raidctrl()
         hw = self.detection_method()
         for path in glob('/sys/block/*/device'):
             base = os.path.dirname(path)
@@ -428,7 +428,7 @@ class HardwareDetections(object):
                 if not self._osd("/dev/" + device, ids):
                     continue
 
-            if (self.is_removable(base)):
+            if (self._is_removable(base)):
                 continue
 
             if hw:
@@ -436,16 +436,16 @@ class HardwareDetections(object):
             else:
                 hardware = self.detection_method(device)
 
-            if raid_ctrl['raidtype'] and self.which('smartctl'):
+            if raid_ctrl['raidtype'] and self._which('smartctl'):
                 """ Trying to correct the kernel's assumption here """
                 log.info("Requirements met to utilize S.M.A.R.T on {}".format(device))
                 rotational = self._query_disktype(device, raid_ctrl, base)
                 hardware['rotational'] = rotational
             else:
-                hardware['rotational'] = self.is_rotational(base)
+                hardware['rotational'] = self._is_rotational(base)
 
             hardware['device'] = device
-            self.preflight_check(hardware)
+            self._preflight_check(hardware)
             drives.append(hardware)
         return drives
 
