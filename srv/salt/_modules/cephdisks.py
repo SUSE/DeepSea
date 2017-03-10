@@ -450,15 +450,13 @@ class HardwareDetections(object):
         return drives
 
 
-def list_drives(**kwargs):
+def list_(**kwargs):
     hwd = HardwareDetections(**kwargs)
     return hwd.assemble_device_list()
 
-def list(**kwargs):
-    list_drives(**kwargs)
-
-def ls(**kwargs):
-    list_drives(**kwargs)
-
 def version():
     print VERSION
+
+__func_alias__ = {
+                'list_': 'list',
+                }
