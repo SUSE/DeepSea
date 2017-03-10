@@ -7,35 +7,38 @@ import time
 from mock import patch, MagicMock
 from srv.modules.runners import filequeue
 
+@pytest.fixture
+def dirpath():
+    return tempfile.mkdtemp()
+
 class TestFileQueue():
     '''
     This class tests the FileQueue class for the salt runner
     '''
-    def test_default_queue(self):
+
+
+    def test_default_queue(self, dirpath):
         '''
         Verify that the default queue exists
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         queue = os.path.isdir("{}/default".format(dirpath))
         shutil.rmtree(dirpath)
         assert queue == True
 
-    def test_named_queue(self):
+    def test_named_queue(self, dirpath):
         '''
         Verify that the 'lunch' queue exists
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath, queue='lunch')
         queue = os.path.isdir("{}/lunch".format(dirpath))
         shutil.rmtree(dirpath)
         assert queue == True
 
-    def test_dirs(self):
+    def test_dirs(self, dirpath):
         '''
         Verify that dirs returns the queues
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath, queue='lunch')
         names = fq.dirs()
         shutil.rmtree(dirpath)
@@ -54,24 +57,22 @@ class TestFileQueue():
         assert touched and exists 
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_ls(self, fire_event):
+    def test_ls(self, fire_event, dirpath):
         '''
         Verify that ls returns filenames
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         touched = fq.touch("blue")
         files = fq.ls()
         shutil.rmtree(dirpath)
-        assert files == ['red', 'blue']
+        assert set(files) == set(['red', 'blue'])
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_items(self, fire_event):
+    def test_items(self, fire_event, dirpath):
         '''
         Verify that items returns filenames in time order
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         time.sleep(0.1)
@@ -83,22 +84,20 @@ class TestFileQueue():
         assert files == ['blue', 'red']
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_empty(self, fire_event):
+    def test_empty(self, fire_event, dirpath):
         '''
         Verify that empty is true for a queue with no items
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         ret = fq.empty()
         shutil.rmtree(dirpath)
         assert ret == True
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_empty_fails(self, fire_event):
+    def test_empty_fails(self, fire_event, dirpath):
         '''
         Verify that empty is false for a queue with any items
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         ret = fq.empty()
@@ -106,11 +105,10 @@ class TestFileQueue():
         assert ret == False
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_remove(self, fire_event):
+    def test_remove(self, fire_event, dirpath):
         '''
         Verify that remove works
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         touched = fq.touch("blue")
@@ -120,11 +118,10 @@ class TestFileQueue():
         assert ret and files == ['blue']
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_vacate(self, fire_event):
+    def test_vacate(self, fire_event, dirpath):
         '''
         Verify that vacate works
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         ret = fq.vacate('red')
@@ -132,11 +129,10 @@ class TestFileQueue():
         assert ret == True
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_vacate_fails(self, fire_event):
+    def test_vacate_fails(self, fire_event, dirpath):
         '''
         Verify that vacate returns false for any items in queue
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         touched = fq.touch("blue")
@@ -145,11 +141,10 @@ class TestFileQueue():
         assert ret == None
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_check(self, fire_event):
+    def test_check(self, fire_event, dirpath):
         '''
         Verify that check works
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         checked = fq.check("red")
@@ -157,11 +152,10 @@ class TestFileQueue():
         assert checked == True
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
-    def test_check_fails(self, fire_event):
+    def test_check_fails(self, fire_event, dirpath):
         '''
         Verify that check fails
         '''
-        dirpath = tempfile.mkdtemp()
         fq = filequeue.FileQueue(root_dir=dirpath)
         touched = fq.touch("red")
         checked = fq.check("blue")
