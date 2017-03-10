@@ -89,7 +89,6 @@ def _cached_roles(search):
                                                      opts=__opts__)
 
     cached = pillar_util.get_minion_pillar()
-    expected = set(cached.keys())
     roles = {}
     for minion in cached.keys():
         if 'roles' in cached[minion]:
@@ -109,7 +108,7 @@ def wait(**kwargs):
     checked.  Raising an exception is ugly but does stop the process.
     """
     settings = {
-        'timeout': _timeout(**kwargs),
+        'timeout': _timeout(cluster=kwargs.setdefault('cluster', 'ceph')),
         'delay': 3
     }
     settings.update(kwargs)
@@ -128,7 +127,7 @@ def wait(**kwargs):
     log.error("Timeout expired")
     raise RuntimeError("Timeout expired")
 
-def _timeout(cluster='ceph', **kwargs):
+def _timeout(cluster='ceph'):
     """
     Assume 15 minutes for physical hardware since some hardware has long 
     shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
