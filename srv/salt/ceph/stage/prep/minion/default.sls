@@ -43,6 +43,7 @@ wait until the cluster has recovered before processing {{ host }}:
 check services after processing {{ host }}:
   salt.runner:
     - name: cephservices.wait
+    - failhard: True
 
 updating {{ host }}:
   salt.state:
