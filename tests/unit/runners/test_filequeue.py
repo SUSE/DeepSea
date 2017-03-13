@@ -66,7 +66,7 @@ class TestFileQueue():
         touched = fq.touch("blue")
         files = fq.ls()
         shutil.rmtree(dirpath)
-        assert set(files) == set(['red', 'blue'])
+        assert sorted(files) == (['blue', 'red'])
 
     @patch('srv.modules.runners.filequeue.FileQueue._fire_event', autospec=True)
     def test_items(self, fire_event, dirpath):
