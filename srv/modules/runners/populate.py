@@ -596,22 +596,8 @@ class CephRoles(object):
         Create a file for ganesha hosts.
         """
         minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
-        self._add_pub_interface(minion_dir)
 
     def _add_pub_interface(self, minion_dir):
-        if not os.path.isdir(minion_dir):
-            _create_dirs(minion_dir, self.root_dir)
-        for server in self.servers:
-            filename = minion_dir + "/" +  server + ".yml"
-            contents = {}
-            contents['public_address'] = self._public_interface(server)
-            self.writer.write(filename, contents)
-
-    def ganesha_members(self):
-        """
-        Create a file for ganesha hosts.
-        """
-        minion_dir = "{}/role-ganesha/stack/default/{}/minions".format(self.root_dir, self.cluster)
         if not os.path.isdir(minion_dir):
             _create_dirs(minion_dir, self.root_dir)
         for server in self.servers:
