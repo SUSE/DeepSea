@@ -5,6 +5,7 @@ usage:
 	@echo "Usage:"
 	@echo -e "\tmake install\tInstall DeepSea on this host"
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
+	@echo -e "\tmake test\tRun unittests"
 
 copy-files:
 	# salt-master config files
@@ -343,7 +344,7 @@ install: copy-files
 	chown -R salt /srv/pillar/ceph
 	systemctl restart salt-master
 
-rpm: tarball
+rpm: tarball test
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
@@ -353,5 +354,3 @@ tarball:
 
 test:
 	tox
-
-
