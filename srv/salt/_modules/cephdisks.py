@@ -218,7 +218,7 @@ class HardwareDetections(object):
 
         fpath, fname = os.path.split(program)
         if fpath:
-            if is_exe(program):
+            if _is_exe(program):
                 return program
         else:
             for path in os.environ["PATH"].split(os.pathsep):
