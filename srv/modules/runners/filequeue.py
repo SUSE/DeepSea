@@ -85,11 +85,11 @@ class FileQueue(object):
 
     def ls(self):
         """
-        List filenames
+        List filenames in alpha-numeric order
         """
         files = glob.glob("{}/*".format(self.queue_dir))
         files = [ os.path.basename(f) for f in files ]
-        return files
+        return sorted(files)
 
     def items(self):
         """
