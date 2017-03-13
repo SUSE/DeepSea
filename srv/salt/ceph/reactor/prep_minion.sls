@@ -1,6 +1,6 @@
 
 
-{% if salt['saltutil.runner']('filequeue.check', name='complete', queue='master') == True %}
+{% if salt['saltutil.runner']('filequeue.check', queue='complete', queue='master') == True %}
 ceph.sync:
   local.state.apply:
     - tgt: {{ data['id'] }}
