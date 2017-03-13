@@ -9,11 +9,6 @@ sync:
     - tgt: '*'
     - sls: ceph.sync
 
-mines:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.mines
-
 repo:
   salt.state:
     - tgt: '*'
@@ -33,6 +28,11 @@ restart:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates.restart
+
+mines:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.mines
 
 complete:
   salt.state:
