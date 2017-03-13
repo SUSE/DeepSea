@@ -142,10 +142,20 @@ class Validate(object):
         self.data = data
         self.grains = grains
         self.printer = printer
+        self.in_dev_env = self.__dev_env()
         self.passed = OrderedDict()
         self.errors = OrderedDict()
         self.warnings = OrderedDict()
         self._minion_check()
+
+    def __dev_env(self):
+        if 'DEV_ENV' in os.environ:
+            return os.environ['DEV_ENV'].lower() != 'false'
+        elif len(self.data.keys()) > 1:
+            any_minion = self.data.keys()[0]
+            if 'DEV_ENV' in self.data[any_minion]:
+                return self.data[any_minion]['DEV_ENV']
+        return False
 
     def _minion_check(self):
         """
@@ -160,6 +170,10 @@ class Validate(object):
         """
         if key not in self.errors and key not in self.warnings:
             self.passed[key] = "valid"
+
+    def dev_env(self):
+        if self.in_dev_env:
+            self.passed['DEV_ENV'] = "True"
 
     def fsid(self):
         """
@@ -263,7 +277,7 @@ class Validate(object):
                 if not 'storage' in self.data[node]:
                     missing.append(node)
 
-        if len(storage) < 4:
+        if len(storage) < 4 and not self.in_dev_env:
             msg = "Too few storage nodes {}".format(",".join(storage))
             self.errors['storage'] = [ msg ]
         else:
@@ -606,6 +620,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
+
     has_printer = printer is not None
     if not has_printer:
         printer = get_printer(**kwargs)
@@ -623,6 +638,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
 
     v = Validate(cluster, pillar_data, grains_data, printer)
+    v.dev_env()
     v.fsid()
     v.public_network()
     v.public_interface()
