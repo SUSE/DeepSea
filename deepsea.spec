@@ -32,6 +32,7 @@ BuildRequires:  salt-master
 Requires:       salt-master
 Requires:       salt-minion
 Requires:       python-ipaddress
+Requires:       hwinfo
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
