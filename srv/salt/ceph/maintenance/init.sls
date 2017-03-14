@@ -1,3 +1,2 @@
 include:
-  - .{{ salt['pillar.get']('maintenance_init', 'default') }}
-
+  - .{{ salt['pillar.get']('maintenance_upgrade_init', 'default') }}

@@ -14,7 +14,7 @@ def _preserve_order_sorted(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def sorted_unique_nodes(cluster=None):
+def unique(cluster=None):
     """ 
     Assembling a list of nodes.
     Ordered(MON < OSD < MDS < RGW < IGW)  

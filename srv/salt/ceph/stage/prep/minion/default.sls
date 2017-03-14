@@ -33,12 +33,13 @@ restart:
 
 {% elif salt.saltutil.runner('select.minions', cluster='ceph') != [] and salt['pillar.get']('fsid') != None %}
 
-{% for host in salt.saltutil.runner('getnodes.sorted_unique_nodes', cluster='ceph') %}
+{% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.wait
+    - failhard: True
 
 check services after processing {{ host }}:
   salt.runner:
