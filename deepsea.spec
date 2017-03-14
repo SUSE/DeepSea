@@ -32,6 +32,9 @@ BuildRequires:  salt-master
 Requires:       salt-master
 Requires:       salt-minion
 Requires:       python-ipaddress
+%if 0%{?leap_version} == 420200
+Requires:       python-netaddr
+%endif
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
