@@ -51,9 +51,6 @@ def wait(**kwargs):
     """
     Periodically check until all services are up or until the timeout is
     reached.  Use a backoff for the delay to avoid filling logs.
-
-    Note: state.orch does not obey return codes from runners last time I 
-    checked.  Raising an exception is ugly but does stop the process.
     """
     settings = {
         'timeout': _timeout(),

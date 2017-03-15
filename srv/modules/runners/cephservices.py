@@ -21,7 +21,8 @@ A secondary purpose is a utility to check the current state of all services.
 def check(cluster='ceph', **kwargs):
     """
     Query the status of running processes for each role.  Also, verify that
-    all minions assigned roles do respond.  Return False if any fail. 
+    all minions assigned roles do respond.  Return False if any fail. Return
+    False if no roles are assigned.
     """
     processes = { 'mon': [ 'ceph-mon' ],
                  'storage': [ 'ceph-osd' ],
@@ -31,8 +32,18 @@ def check(cluster='ceph', **kwargs):
                  'ganesha': [ 'ganesha.nfsd', 'rpcbind', 'rpc.statd' ] }
     search = "I@cluster:{}".format(cluster)
 
+    if 'roles' in kwargs:
+        for role in processes.keys():
+            if role not in kwargs['roles']:
+                processes.pop(role)
+
     roles = _cached_roles(search)
     status = _status(processes, search)
+    log.debug("roles: {}".format(pprint.pformat(roles)))
+    log.debug("status: {}".format(pprint.pformat(status)))
+
+    if not roles:
+        return False
 
     ret = True
     for role in status.keys():
