@@ -63,7 +63,7 @@ class TestCephProcesses():
         assert result == True
 
     @patch('salt.client.LocalClient', autospec=True)
-    def test_wait(self, localclient):
+    def test_wait_fails(self, localclient):
         local = localclient.return_value
         local.cmd.return_value = {'mon1.ceph': True, 
                                   'mon3.ceph': False, 
