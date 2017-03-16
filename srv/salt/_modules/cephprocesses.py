@@ -1,31 +1,21 @@
 #!/usr/bin/python
 
-import salt.client
-import pprint
-import os
-import sys
 import logging
 import time
-import salt.utils
-import salt.utils.master
 
 log = logging.getLogger(__name__)
 
 """
-The original purpose of this module is to verify that proceeding with an
+The original purpose of this runner is to verify that proceeding with an
 upgrade is safe.  All expected services are running.
 
 A secondary purpose is a utility to check the current state of all services.
-
-Note: a runner exists with the same name, but this module is necessary for
-orchestrations to fail properly.  Need naming suggestions. Technically, this
-is checking for processes and not services.
 """
 
 def check():
     """
-    Query the status of running processes for each role.  Return False if any 
-    fail. 
+    Query the status of running processes for each role.  Return False if any
+    fail.
     """
     processes = { 'mon': [ 'ceph-mon' ],
                  'storage': [ 'ceph-osd' ],
@@ -70,11 +60,11 @@ def wait(**kwargs):
         else:
             current_delay = 60
     log.error("Timeout expired")
-    raise RuntimeError("Timeout expired")
+    return False
 
 def _timeout():
     """
-    Assume 15 minutes for physical hardware since some hardware has long 
+    Assume 15 minutes for physical hardware since some hardware has long
     shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
     """
     if 'physical' ==  __grains__['virtual']:
