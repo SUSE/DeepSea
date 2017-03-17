@@ -12,8 +12,8 @@ zypper update only kernel:
   module.run:
     - name: packagemanager.up
     - kwargs:
-        'reboot': True
-        'debug': True
+        'reboot': False
+        'debug': False
         'kernel': True
     - fire_event: True
 

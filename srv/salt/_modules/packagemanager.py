@@ -150,6 +150,7 @@ class Zypper(PackageManager):
         the child get kwargs passed as arguments to
         have the possibility to handle those differently.
         """
+        self.base_command = ['zypper']
         self.zypper_flags = ['--non-interactive']
         self.kernel = kwargs.get('kernel', False)
         self.reboot = kwargs.get('reboot', True)
@@ -160,8 +161,20 @@ class Zypper(PackageManager):
         Refresh Zypper before updating
         """
         log.info("Refreshing Repositories..")
-        cmd = "zypper {} refresh".format(self.zypper_flags)
-        Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+
+        cmd = []
+        strat = ["refresh"]
+        cmd.extend(self.base_command)
+        cmd.extend(self.zypper_flags)
+        cmd.extend(strat)
+
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        proc.wait()
+        if proc.returncode != 0:
+            log.error('Refreshing failed. Check the repos')
+            log.debug('Executing {}'.format(cmd))
+            return False
+        
 
     def _updates_needed(self):
         """
@@ -169,6 +182,7 @@ class Zypper(PackageManager):
         """
         self._refresh()
         cmd = "zypper lu | grep -sq 'No updates found'"
+        log.debug('Executing {}'.format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
         if proc.returncode != 0:
@@ -182,9 +196,16 @@ class Zypper(PackageManager):
         Updates that are sourced from an official Update
         Repository
         """
-        cmd = "zypper {} patch-check".format(self.zypper_flags)
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+
+        cmd = []
+        strat = ["patch-check"]
+        cmd.extend(self.base_command)
+        cmd.extend(self.zypper_flags)
+        cmd.extend(strat)
+
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         proc.wait()
+        log.debug('Executing {}'.format(cmd))
         if proc.returncode == 100:
             log.info(self.RETCODES[proc.returncode])
             log.info('Patches Needed')
@@ -196,17 +217,20 @@ class Zypper(PackageManager):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
+        cmd = []
+
         if self._updates_needed():
-            base_command = ['zypper']
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
                 strategy_flags.append("--dry-run")
             if self.kernel and strat != 'dup':
                 strategy_flags.append("--with-interactive")
-            base_command.extend(self.zypper_flags)
-            base_command.extend(strat.split())
-            base_command.extend(strategy_flags)
-            proc = Popen(base_command, stdout=PIPE, stderr=PIPE)
+            cmd.extend(self.base_command)
+            cmd.extend(self.zypper_flags)
+            cmd.extend(strat.split())
+            cmd.extend(strategy_flags)
+            log.debug('Executing {}'.format(cmd))
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, stderr = proc.communicate()
             for line in stdout:
                 log.info(line)
@@ -233,7 +257,7 @@ class Zypper(PackageManager):
                 if int(proc.returncode) in self.RETCODES:
                     log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))
                 log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
-                raise StandardError('Zypper failed. Look at the logs')
+                raise StandardError('Zypper failed with code: {}. Look at the logs'.format(proc.returncode))
         else:
             log.info('System up to date')
 

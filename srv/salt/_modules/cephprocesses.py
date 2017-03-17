@@ -36,7 +36,6 @@ def check():
 
     return ret
 
-
 def wait(**kwargs):
     """
     Periodically check until all services are up or until the timeout is
