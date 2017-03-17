@@ -14,7 +14,7 @@ def _preserve_order_sorted(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def unique(cluster=None):
+def unique(cluster=None, exclude=[]):
     """ 
     Assembling a list of nodes.
     Ordered(MON < OSD < MDS < RGW < IGW)  
@@ -25,6 +25,13 @@ def unique(cluster=None):
 
     cluster_assignment = "I@cluster:{}".format(cluster)
     roles = ['mon', 'storage', 'mds', 'rgw', 'igw', 'ganesha']
+    # Adding an exclude param here to allow skipping of individual
+    # roles. 
+    # Usecase: If an admin wants to have manual control over the upgrade
+    # process in missioncritical connections like iscsi where one needs
+    # to be sure that the MPIO successfully failed over before re booting/starting
+    # the service.
+    roles = [role for role in roles if role not in exclude]
     for role in roles:
          dct = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
          all_clients += dct.keys()

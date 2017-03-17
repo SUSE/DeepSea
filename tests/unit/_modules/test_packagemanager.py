@@ -179,7 +179,7 @@ class TestZypper():
             zypp._handle()
             assert po.called is True
             assert reboot_in.called is False
-        excinfo.match('Zypper failed. Look at the logs*')
+        excinfo.match('Zypper failed with*')
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -197,7 +197,7 @@ class TestZypper():
             zypp._handle()
             assert po.called is True
             assert reboot_in.called is False
-        excinfo.match('Zypper failed. Look at the logs*')
+        excinfo.match('Zypper failed with*')
 
 class TestApt():
 

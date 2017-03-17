@@ -344,6 +344,9 @@ copy-files:
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
+	# state files - check processes
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephprocesses
+	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/cephprocesses/
 
 	# state files - orchestrate stage symlinks
 	ln -sf prep		$(DESTDIR)/srv/salt/ceph/stage/0
