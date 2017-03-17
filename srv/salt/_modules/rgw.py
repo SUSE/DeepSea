@@ -67,6 +67,9 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
     """
     Write each user to its own file
     """
+    if 'rgw_configurations' not in __pillar__:
+        return
+    
     for role in __pillar__['rgw_configurations']:
         for user in __pillar__['rgw_configurations'][role]['users']:
             if 'uid' not in user or 'name' not in user:
