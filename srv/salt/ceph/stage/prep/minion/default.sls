@@ -4,6 +4,11 @@ begin:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.events.begin_prep
 
+mines:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.mines
+
 sync:
   salt.state:
     - tgt: '*'
@@ -19,19 +24,7 @@ common packages:
     - tgt: '*'
     - sls: ceph.packages.common
 
-{% if salt.saltutil.runner('select.minions', cluster='ceph') == [] %}
-
-updates:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.updates
-
-restart:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.updates.restart
-
-{% elif salt.saltutil.runner('select.minions', cluster='ceph') != [] and salt['pillar.get']('fsid') != None %}
+{% if salt['saltutil.runner']('cephprocesses.check', roles=['mon']) == True %}
 
 {% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
 
@@ -41,44 +34,18 @@ wait until the cluster has recovered before processing {{ host }}:
     - sls: ceph.wait
     - failhard: True
 
-check services after processing {{ host }}:
-  salt.runner:
-    - name: cephservices.wait
-    - failhard: True
-
-updating {{ host }}:
-  salt.state:
-    - tgt: {{ host }}
-    - tgt_type: compound
-    - sls: ceph.updates
-    - failhard: True
-
-check if restart is needed for {{ host }}:
-  salt.state:
-    - tgt: {{ host }}
-    - tgt_type: compound
-    - sls: ceph.updates.restart
-    - failhard: True
+.include:
+- ceph.maintenance.update
 
 {% endfor %}
 
 {% else %}
 
-prevent empty rendering:
-  test.nop:
-    - name: skip
+.include:
+- ceph.maintenance.update
 
 {% endif %}
 
-restart:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.updates.restart
-
-mines:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.mines
 
 complete:
   salt.state:
