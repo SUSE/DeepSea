@@ -201,7 +201,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/maintenance
-%dir /srv/salt/ceph/maintenance/update
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/upgrade
 %dir /srv/salt/ceph/updates
@@ -352,7 +351,6 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/*.sls
-%config /srv/salt/ceph/maintenance/update/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls
 %config /srv/salt/ceph/updates/*.sls
 %config /srv/salt/ceph/updates/restart/*.sls

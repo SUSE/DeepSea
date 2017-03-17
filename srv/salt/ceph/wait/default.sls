@@ -5,3 +5,8 @@ wait:
        'status': "HEALTH_ERR"
    - fire_event: True
 
+cephserives:
+  module.run:
+    - name: cephprocesses.wait
+    - fire_event: True
+
