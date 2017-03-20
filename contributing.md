@@ -1,5 +1,5 @@
 Contributor Guidelines
----------------------------
+======================
 
 Contributions to Deepsea are welcome and greatly appreciated, every little bit
 helps in making the project a little better for everyone.
@@ -7,7 +7,7 @@ helps in making the project a little better for everyone.
 The following are a few guidelines to get you started contributing to DeepSea.
 
 Signing your work
-=======================
+-----------------
 
 In order to keep a record of code attributions, we expect you to sign-off your
 patches. The rules are pretty simple and similar to many other open source
@@ -29,7 +29,7 @@ commit message.
 
 
 Sending Patches
-====================
+---------------
 
 We accept patches via Github Pull Requests. Here is a quick guide to get you
 going:
@@ -73,7 +73,7 @@ going:
    spurious merge commits.
 
 Reporting Issues
-======================
+----------------
 
 Report issues/ request features via the github issues interface at
 https://github.com/SUSE/DeepSea/issues/new
