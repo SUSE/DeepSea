@@ -12,7 +12,7 @@ upgrade is safe.  All expected services are running.
 A secondary purpose is a utility to check the current state of all services.
 """
 
-def check():
+def check(only_for=[]):
     """
     Query the status of running processes for each role.  Return False if any
     fail.
@@ -26,13 +26,24 @@ def check():
 
     ret = True
     if 'roles' in __pillar__:
-        for role in __pillar__['roles']:
-            if role in processes:
-                for process in processes[role]:
-                    result = __salt__['status.pid'](process)
-                    if result == '':
-                        log.error("ERROR: process {} for role {} is not running".format(process, role))
-                        ret = False
+        if only_for:
+          for role in only_for:
+            log.info("Checking {} for status".format(role)
+            for process in processes[role]:
+	      result = __salt__['status.pid'](process)
+              if result == '':
+                log.error("ERROR: process {} for role {} is not running".format(process, role))
+                ret = False
+        else:
+          for role in __pillar__['roles']:
+              if role in processes:
+                  for process in processes[role]:
+                      result = __salt__['status.pid'](process)
+                      print "ON ROLE: {}".format(role)
+                      print "RESULT: {}".format(result)
+                      if result == '':
+                          log.error("ERROR: process {} for role {} is not running".format(process, role))
+                          ret = False
 
     return ret
 
