@@ -67,15 +67,18 @@
 
             <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedIntfListHidden}}">
                 <span class="title">Selected Nodes</span>
-                <template is="dom-repeat" items="{{selectedIntfList}}" as="i">                
+                <template is="dom-repeat" items="{{selectedIntfList}}" as="i">
                     <paper-item>{{i.node}} : {{i.addr}}</paper-item>
                 </template>
             </paper-listbox>
 
             <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedImgListHidden}}">
                 <span class="title">Selected Images</span>
-                <template is="dom-repeat" items="{{selectedImgList}}" as="i">                
+                <template is="dom-repeat" items="{{selectedImgList}}" as="i">
                     <paper-item>{{i.img}} : {{i.pool}}</paper-item>
+                    <template is="dom-repeat" items="{{i.initiatorList}}" as="initiator">
+                        <paper-item style="margin-left:2em">{{initiator}}</paper-item>
+                    </template>
                 </template>
             </paper-listbox>
         </div>
@@ -244,7 +247,11 @@
                  initiator = this.availableInitiatorList[i];
                  initiatorCheckBoxStr = this._initiatorCheckboxIDGen(img, initiator);
                  initiatorCheckBox = Polymer.dom(this.root).querySelector("#"+initiatorCheckBoxStr);
-                 initiatorCheckBox.checked = false;
+                 if (initiatorCheckBox) {
+                     initiatorCheckBox.checked = false;
+                 } else {
+                     console.error("Unable to uncheck null checkbox: " + initiatorCheckBox);
+                 }
              }
          },
 
