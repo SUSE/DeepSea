@@ -255,6 +255,7 @@
                  value: function() {
                      return [];
                  },
+                 notify: true
              },
 
              initiatorInputHidden: {
@@ -326,7 +327,8 @@
 
 	 observers: [
 	     "_iscsiImagesChanged(availableImgList.splices)",
-	     "_iscsiInterfacesChanged(availableIntfList.splices)"
+	     "_iscsiInterfacesChanged(availableIntfList.splices)",
+             "_iscsiInitiatorsChanged(auth.initiatorList.*)"
 	 ],
 
          ready: function() {
@@ -367,15 +369,41 @@
              }
          },
 
+         /* Tracks this.auth.initiatorList changes.  These are parsed this.initiatorList entries
+          * appended to this target's auth structure.
+          */
+         _iscsiInitiatorsChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated initator list");
+
+             for (var i = 0; i < this.configList.length; i++) {
+                 var targetConfig = this.configList[i];
+
+                 if (this.auth && this.auth.initiatorList) {
+                     targetConfig.notifyPath("availableInitiatorList", this.auth.initiatorList.slice());
+                 } else {
+                     targetConfig.notifyPath("availableInitiatorList", []);
+                 }
+             }
+         },
+
          removeTarget: function() {
              this.fire('removeTarget');
          },
 
          addConfig: function() {
              var targetConfig = document.createElement("iscsi-target-config");
-             targetConfig.set("availableImgList", this.availableImgList);
-             targetConfig.set("availableIntfList", this.availableIntfList);
+
+             /* Set available Image, Interface and Initiator structures for each config. */
+             targetConfig.set("availableImgList", this.availableImgList.slice());
+             targetConfig.set("availableIntfList", this.availableIntfList.slice());
+             if (this.auth && this.auth.initiatorList) {
+                 targetConfig.set("availableInitiatorList", this.auth.initiatorList.slice());
+             } else {
+                 targetConfig.set("availableInitiatorList", []);
+             }
+
              this.push("configList", targetConfig);
+
              /* var beforeNode = Polymer.dom(this.root).childNodes[-1];*/
              Polymer.dom(this.firstElementChild).appendChild(targetConfig);
 
@@ -530,7 +558,6 @@
              }
 
              this.auth = new CommonAuth(this.userid, this.password, iList, mutAuth, discAuth);
-             console.log(this.auth);
              this.$.addCommonAuthDialog.close();
              this.authHidden = false;
          },
