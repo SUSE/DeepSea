@@ -165,8 +165,6 @@ class LRBDConf {
 
     /* Helper method to populate this.auth.  Returns true/false. */
     _populateAuthFromFile(authArr) {
-        console.log("_populateAuthFromFile()");
-
         /* A null authArr signals that the lrbd.conf is missing this
          * section and thus is incomplete.  Fail here.
          */
@@ -229,8 +227,6 @@ class LRBDConf {
 
     /* Helper method to populate this.targets.  Returns true/false. */
     _populateTargetsFromFile(targetsArr) {
-        console.log("_populateTargetsFromFile()");
-
         /* Validate the format of the targets section.  If no targets are specified,
          * return a failure immediately.
          */
@@ -282,8 +278,6 @@ class LRBDConf {
 
     /* Helper method to populate this.portals.  Returns true/false. */
     _populatePortalsFromFile(portalsArr) {
-        console.log("_populatePortalsFromFile()");
-
         /* A null portalsArr signals that the lrbd.conf is missing this
          * section and thus is incomplete.  Fail here.
          */
@@ -323,8 +317,6 @@ class LRBDConf {
 
     /* Helper method to populate this.pools.  Returns true/false. */
     _populatePoolsFromFile(poolsArr) {
-        console.log("_populatePoolsFromFile()");
-
         /* A null poolsArr signals that the lrbd.conf is missing this
          * section and thus is incomplete.  Fail here.
          */
@@ -415,8 +407,6 @@ class LRBDConf {
 
     /* Helper method to poulate this.auth. Returns true/false. */
     _populateAuthFromUI(uiTargetsArr) {
-        console.log("_populateAuthFromUI()");
-
         for (var i = 0; i < uiTargetsArr.length; i++) {
             var uiTarget = uiTargetsArr[i];
             var uiTargetAuth = uiTarget.auth;
@@ -480,13 +470,30 @@ class LRBDConf {
 
     /* Helper method to poulate this.targets. Returns true/false. */
     _populateTargetsFromUI(uiTargetsArr) {
-        console.log("_populateTargetsFromUI()");
-
         for (var i = 0; i < uiTargetsArr.length; i++) {
             var uiTarget = uiTargetsArr[i];
 
             /* Leaving hosts empty for now. */
             var lrbdTarget = new LRBDTarget(uiTarget.name, null);
+
+            /* If any customTargetEntries present, parse them here. */
+            if (uiTarget.customTargetEntries.length) {
+                var customTargetEntriesJSON;
+                try {
+                    customTargetEntriesJSON = JSON.parse(uiTarget.customTargetEntries);
+                    /* Append the custom entries to lrbdTarget, omitting 'hosts' and 'target' as they
+                     * are part of the LRBDTarget class.
+                     */
+                    for (var ent in customTargetEntriesJSON) {
+                        if (ent != 'hosts' && ent != 'target') {
+                            lrbdTarget[ent] = customTargetEntriesJSON[ent];
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to parse custom target entries.");
+                    return false;
+                }
+            }
 
             /* Walk the configList of uiTarget and extract selected interfaces.
              * We allow empty hosts array in the LRBDTarget.
@@ -522,8 +529,6 @@ class LRBDConf {
      * correctly populated.  Returns true/false.
      */
     _populatePortalsFromUI(uiTargetsArr) {
-        console.log("_populatePortalsFromUI()");
-
         /* First populate this.portals with unique LRBDPortal entries.
          * Allowing empty this.portals.
          */
@@ -579,8 +584,6 @@ class LRBDConf {
 
     /* Helper method to poulate this.pools. Returns true/false. */
     _populatePoolsFromUI(uiTargetsArr) {
-        console.log("_populatePoolsFromUI");
-
         for (var i = 0; i < uiTargetsArr.length; i++) {
             var uiTarget = uiTargetsArr[i];
 
