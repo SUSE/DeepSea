@@ -32,7 +32,7 @@ BuildRequires:  salt-master
 Requires:       salt-master
 Requires:       salt-minion
 Requires:       python-ipaddress
-%if 0%{?leap_version} == 420200
+%if 0%{?sle_version} == 120200 && 0%{?is_opensuse} == 1
 Requires:       python-netaddr
 %endif
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
