@@ -64,7 +64,7 @@ def _status(search, roles):
         role_search = search + " and I@roles:{}".format(role)
         status[role] = local.cmd(role_search,
                                  'cephprocesses.check',
-                                 [],
+                                 [roles.keys()],
                                  expr_form="compound")
 
     log.debug(pprint.pformat(status))
