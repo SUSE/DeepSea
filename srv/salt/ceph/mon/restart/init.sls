@@ -1,4 +1,4 @@
 
 include:
-  - .{{ salt['pillar.get']('restart', 'default') }}
+  - .{{ salt['pillar.get']('mon_restart_init', 'default') }}
 
