@@ -247,7 +247,6 @@
              this.push("targetList", target);
              target.set("availableImgList", this.availableImgList.slice());
              target.set("availableIntfList", this.availableIntfList.slice());
-             target.set("customTargetEntries", JSON.stringify({"foo":"bar", "baz":"buz"}, null, 2));
 
              /* Note: this.$['...'] is the equivalent of document.getElementById("generate-config-file-button");
               * If element id is a single word, this.$.id can be used.  Further, this.$.generateConfigFileButton
@@ -259,24 +258,48 @@
          },
 
          generateConfigFile: function() {
-             /* Only allow once in-flight attempt at a time. */
-             this.generateConfigFileButtonDisabled = true;
+             /* First, check if any target has specified customTargetEntries.  Verify that they
+              * are valid (ie. parse to JSON).
+              */
+             var customTargetEntriesParsed = true;
 
-             if (!this.lrbdConf.populateFromUI(this.targetList)) {
-                 console.error("Failed to populate " + this.lrbdConf + " from the UI.");
-                 alert("Failed to generate an LRBD configuration.");
-                 this.generateConfigFileButtonDisabled = false;
-             } else {
-                 /* Try to actually save LRBDConf.
-                  * Note that cherrypy searches for "arg" in request body:
-                  * netapi/rest_cherrypy/app.py:lowdata_fmt().  If sent as plain text,
-                  * "targets", etc in lrbdConf will trigger a match and a subsequent traceback
-                  * when cherrypy tries to access data['arg'] as if it were a valid dictionary
-                  * key.  URI encoding remedies this, however, it would be safer to also
-                  * replace all instances of 'a' with '%61' after the encoding pass.
-                  */
-                 this.$.saveiscsi.data = encodeURIComponent(JSON.stringify(this.lrbdConf, null, 2));
-                 this.$.saveiscsi.runPost();
+             for (var i = 0; i < this.targetList.length; i++) {
+                 var target = this.targetList[i];
+                 var customTargetEntries;
+
+                 /* Reset validity of target.$.customTargetEntriesInput */
+                 target.$.customTargetEntriesInput.invalid = false;
+
+                 if (target.customTargetEntries.length) {
+                     try {
+                         customTargetEntries = JSON.parse(target.customTargetEntries);
+                     } catch (e) {
+                         target.$.customTargetEntriesInput.invalid = true;
+                         customTargetEntriesParsed = false;
+                     }
+                 }
+             }
+
+             if (customTargetEntriesParsed) {
+                 /* Only allow once in-flight attempt at a time. */
+                 this.generateConfigFileButtonDisabled = true;
+
+                 if (!this.lrbdConf.populateFromUI(this.targetList)) {
+                     console.error("Failed to populate " + this.lrbdConf + " from the UI.");
+                     alert("Failed to generate an LRBD configuration.");
+                     this.generateConfigFileButtonDisabled = false;
+                 } else {
+                     /* Try to actually save LRBDConf.
+                      * Note that cherrypy searches for "arg" in request body:
+                      * netapi/rest_cherrypy/app.py:lowdata_fmt().  If sent as plain text,
+                      * "targets", etc in lrbdConf will trigger a match and a subsequent traceback
+                      * when cherrypy tries to access data['arg'] as if it were a valid dictionary
+                      * key.  URI encoding remedies this, however, it would be safer to also
+                      * replace all instances of 'a' with '%61' after the encoding pass.
+                      */
+                     this.$.saveiscsi.data = encodeURIComponent(JSON.stringify(this.lrbdConf, null, 2));
+                     this.$.saveiscsi.runPost();
+                 }
              }
          }
      });
