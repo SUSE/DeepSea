@@ -60,7 +60,7 @@
 
                 <!-- Custom key:val input area -->
             <div style="float:left; width:50%">
-                <paper-textarea label='Custom target JSON entries: { "key":"value", ... }' placeholder='{ "foo": "bar", "baz": "buz" }' value="{{customTargetEntries}}" rows="1" max-rows="4" style="width: 98%; margin: 10px"></paper-textarea>
+                <paper-textarea id="customTargetEntriesInput" label='Custom target JSON entries: { "key":"value", ... }' placeholder='{ "foo": "bar", "baz": "buz" }' error-message="Invalid JSON input." value="{{customTargetEntries}}" rows="1" max-rows="4" style="width: 98%; margin: 10px"></paper-textarea>
             </div>
             <div style="clear:both"></div>
 
