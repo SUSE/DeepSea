@@ -2,14 +2,14 @@
 
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 
-<dom-module id="salt-api" attributes="node port cmd arg target func userid password authtype client canned">
+<dom-module id="salt-api" attributes="node port cmd arg target func data userid password authtype client canned">
     <template>
         <iron-ajax
             id="saltapi"
             url="http://{{node}}:{{port}}/{{cmd}}/{{arg}}"
             content-type="{{contentType}}"
             method="{{method}}"
-            body='{"client":"{{client}}", "tgt":"{{target}}", "fun":"{{func}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}", "canned":"{{canned}}"}'
+            body='{"client":"{{client}}", "tgt":"{{target}}", "fun":"{{func}}", "data":"{{data}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}", "canned":"{{canned}}"}'
             handle-as="json"
             on-response="handle200"
             on-error="handleErr"
