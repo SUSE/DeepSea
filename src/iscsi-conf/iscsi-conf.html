@@ -7,6 +7,8 @@
 <link rel="import" href="../iscsi-target/iscsi-target.html">
 <link rel="import" href="../salt-api/wf-salt-api.html">
 
+<script src="lrbdutils.js"></script>
+
 <dom-module id="iscsi-conf">
     <template>
         <style>
@@ -36,7 +38,7 @@
         </paper-button>
         <br>
         <paper-button raised on-click="generateConfigFile" id="generate-config-file-button"
-                      class="generate-config-file-button" icon="add" hidden$="{{generateConfigFileButtonHidden}}">
+                      class="generate-config-file-button" icon="add" hidden$="{{generateConfigFileButtonHidden}}" disabled$="{{generateConfigFileButtonDisabled}}">
             Generate LRBD Config
         </paper-button>
 
@@ -47,6 +49,18 @@
             arg=""
             target=""
             func="ui.populate_iscsi"
+            data=""
+            canned="1">
+	</wf-salt-api>
+
+        <!-- Query interfaces and images from salt-api backend. -->
+        <wf-salt-api
+            id="saveiscsi"
+            cmd=""
+            arg=""
+            target=""
+            func="ui.save_iscsi"
+            data=""
             canned="1">
 	</wf-salt-api>
     </template>
@@ -63,6 +77,11 @@
              generateConfigFileButtonHidden: {
                  type: Boolean,
                  value: true,
+             },
+
+             generateConfigFileButtonDisabled: {
+                 type: Boolean,
+                 value: false
              },
 
 	     availableImgList: {
@@ -84,6 +103,10 @@
              getIscsiDataButtonDisabled: {
                  type: Boolean,
                  value: true
+             },
+
+             lrbdConf: {
+                 type: LRBDConf,
              }
          },
 
@@ -113,6 +136,37 @@
 
              /* On load, try to populate iSCSI data. */
              this._getIscsiData();
+
+             /* Create an empty LRBD Config.  Population needs to wait until we
+              * have obtained data from salt-api.
+              */
+             this.lrbdConf = new LRBDConf();
+         },
+
+         /* Takes an array of { "img": "", "pool": "" } and returns an
+          * array of iscsi-conf-target:{Image}.
+          */
+         _parseImgData: function(imgDataArr) {
+             var imageArr = [];
+             for (var i = 0; i < imgDataArr.length; i++) {
+                 var img = imgDataArr[i].img;
+                 var pool = imgDataArr[i].pool;
+                 imageArr.push(new Image(img, pool));
+             }
+             return imageArr;
+         },
+
+         /* Takes an array of { "node": "", "addr": "" } and returns an
+          * array of iscsi-conf-target:{Interface}.
+          */
+         _parseIntfData: function(intfDataArr) {
+             var interfaceArr = [];
+             for (var i = 0; i < intfDataArr.length; i++) {
+                 var node = intfDataArr[i].node;
+                 var addr = intfDataArr[i].addr;
+                 interfaceArr.push(new Interface(node, addr));
+             }
+             return interfaceArr;
          },
 
          /* Invokes the populateiscsi wf-salt-api ajax call. */
@@ -128,24 +182,36 @@
 
          handleIscsi200: function(e) {
              console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
-             console.log(this.is + ":" + arguments.callee.name + ": populating image and interface lists");
 
-             var resp = e.detail.response.return[0];
-             this.getIscsiDataButtonDisabled = false;
+             if (e.target === this.$.populateiscsi) {
+                 console.log(this.is + ":" + arguments.callee.name + ": populating image and interface lists");
 
-             if (resp.interfaces === undefined || resp.images === undefined) {
-                 alert("Invalid iSCSI data returned from server.");
-             } else {
-                 this.set("availableImgList", resp.images);
-                 this.set("availableIntfList", resp.interfaces);
+                 var resp = e.detail.response.return[0];
+                 this.getIscsiDataButtonDisabled = false;
+
+                 /* TODO: do we want to load the config, even if there are no available images/interfaces? */
+                 if (!resp.interfaces || !resp.images) {
+                     alert("Invalid iSCSI data returned from server.");
+                 } else {
+                     this.set("availableImgList", this._parseImgData(resp.images));
+                     this.set("availableIntfList", this._parseIntfData(resp.interfaces));
+                     this.lrbdConf.populateFromFile(resp.config);
+                 }
+             } else if (e.target === this.$.saveiscsi) {
+                 this.generateConfigFileButtonDisabled = false;
              }
          },
 
          handleIscsiErr: function(e) {
              console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
 
-             alert("Failed to obtain iSCSI data from server.");
-             this.getIscsiDataButtonDisabled = false;
+             if (e.target === this.$.populateiscsi) {
+                 alert("Failed to obtain iSCSI data from server.");
+                 this.getIscsiDataButtonDisabled = false;
+             } else if (e.target === this.$.saveiscsi) {
+                 alert("Failed to push iSCSI configuration to server.");
+                 this.generateConfigFileButtonDisabled = false;
+             }
          },
 
          _iscsiImagesChanged: function(changeRecord) {
@@ -179,8 +245,8 @@
          newTarget: function() {
              var target = document.createElement("iscsi-target");
              this.push("targetList", target);
-             target.set("availableImgList", this.availableImgList);
-             target.set("availableIntfList", this.availableIntfList);
+             target.set("availableImgList", this.availableImgList.slice());
+             target.set("availableIntfList", this.availableIntfList.slice());
 
              /* Note: this.$['...'] is the equivalent of document.getElementById("generate-config-file-button");
               * If element id is a single word, this.$.id can be used.  Further, this.$.generateConfigFileButton
@@ -192,48 +258,49 @@
          },
 
          generateConfigFile: function() {
-             console.log("================================================================");
-             console.log("generateConfigFile():");
+             /* First, check if any target has specified customTargetEntries.  Verify that they
+              * are valid (ie. parse to JSON).
+              */
+             var customTargetEntriesParsed = true;
+
              for (var i = 0; i < this.targetList.length; i++) {
-                 console.log("target: " + this.targetList[i].name);
-                 for (var j = 0; j < this.targetList[i].configList.length; j++) {
-                     console.log("----------------------------------------------------------------");
-                     console.log("config " + j + ": " + this.targetList[i].configList[j]);
-                     console.log("selected interfaces:")
-                     for (var k = 0; k < this.targetList[i].configList[j].selectedIntfList.length; k++) {
-                         console.log(this.targetList[i].configList[j].selectedIntfList[k]);
-                     }
-                     console.log("selected images:")
-                     for (var l = 0; l < this.targetList[i].configList[j].selectedImgList.length; l++) {
-                         console.log(this.targetList[i].configList[j].selectedImgList[l]);
-                     }
-                     console.log("auth: " + this.targetList[i].configList[j].auth);
-                     if (this.targetList[i].configList[j].auth) {
-                         console.log("userid: " + this.targetList[i].configList[j].auth.userid);
-                         console.log("password: " + this.targetList[i].configList[j].auth.password);
-                     }
-                     if (this.targetList[i].configList[j].auth && this.targetList[i].configList[j].auth.initiatorList) {
-                         console.log("initiators: " + this.targetList[i].configList[j].auth.initiatorList);
-                     }
-                     if (this.targetList[i].configList[j].auth && this.targetList[i].configList[j].auth.mutualAuth) {
-                         console.log("Mutual auth userid: " + this.targetList[i].configList[j].auth.mutualAuth.userid);
-                         console.log("Mutual auth password: " + this.targetList[i].configList[j].auth.mutualAuth.password);
-                         console.log("Mutual auth enabled: " + this.targetList[i].configList[j].auth.mutualAuth.enabled);
-                     }
-                     if (this.targetList[i].configList[j].auth && this.targetList[i].configList[j].auth.discoveryAuth) {
-                         console.log("Discovery auth userid: " + this.targetList[i].configList[j].auth.discoveryAuth.userid);
-                         console.log("Discovery auth password: " + this.targetList[i].configList[j].auth.discoveryAuth.password);
-                         console.log("Discovery auth enabled: " + this.targetList[i].configList[j].auth.discoveryAuth.enabled);
-                         if (this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth) {
-                             console.log("Discovery mutual auth userid: " + this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth.userid);
-                             console.log("Discovery mutual auth password: " + this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth.password);
-                             console.log("Discovery mutual auth enabled: " + this.targetList[i].configList[j].auth.discoveryAuth.mutualAuth.enabled);
-                         }
+                 var target = this.targetList[i];
+                 var customTargetEntries;
+
+                 /* Reset validity of target.$.customTargetEntriesInput */
+                 target.$.customTargetEntriesInput.invalid = false;
+
+                 if (target.customTargetEntries.length) {
+                     try {
+                         customTargetEntries = JSON.parse(target.customTargetEntries);
+                     } catch (e) {
+                         target.$.customTargetEntriesInput.invalid = true;
+                         customTargetEntriesParsed = false;
                      }
                  }
-                 console.log("----------------------------------------------------------------");
              }
-             console.log("================================================================");
+
+             if (customTargetEntriesParsed) {
+                 /* Only allow once in-flight attempt at a time. */
+                 this.generateConfigFileButtonDisabled = true;
+
+                 if (!this.lrbdConf.populateFromUI(this.targetList)) {
+                     console.error("Failed to populate " + this.lrbdConf + " from the UI.");
+                     alert("Failed to generate an LRBD configuration.");
+                     this.generateConfigFileButtonDisabled = false;
+                 } else {
+                     /* Try to actually save LRBDConf.
+                      * Note that cherrypy searches for "arg" in request body:
+                      * netapi/rest_cherrypy/app.py:lowdata_fmt().  If sent as plain text,
+                      * "targets", etc in lrbdConf will trigger a match and a subsequent traceback
+                      * when cherrypy tries to access data['arg'] as if it were a valid dictionary
+                      * key.  URI encoding remedies this, however, it would be safer to also
+                      * replace all instances of 'a' with '%61' after the encoding pass.
+                      */
+                     this.$.saveiscsi.data = encodeURIComponent(JSON.stringify(this.lrbdConf, null, 2));
+                     this.$.saveiscsi.runPost();
+                 }
+             }
          }
      });
     </script>

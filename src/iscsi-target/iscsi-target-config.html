@@ -2,14 +2,14 @@
 
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../bower_components/iron-input/iron-input.html">
-<link rel="import" href="../../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+
 <link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-submenu.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
 <link rel="import" href="../wf-styles/wf-styles.html">
@@ -45,114 +45,39 @@
             <paper-dropdown-menu label="Available Images">
                 <div class="dropdown-content">
                     <template is="dom-repeat" items="{{availableImgList}}" as="i">
-                        <paper-item>
-                                <paper-checkbox id="imgCheckBox" on-change="imgCheckboxChanged" checked$="{{_isImgSelected(i)}}">{{i.img}} : {{i.pool}}</paper-checkbox>
+                        <paper-item class="menu-trigger">
+                            <paper-checkbox id="imgCheckBox" on-change="imgCheckboxChanged" checked$="{{_isImgSelected(i)}}">{{i.img}} : {{i.pool}}</paper-checkbox>
                         </paper-item>
+                        <!-- <paper-submenu opened="true"> -->
+                        <!-- <paper-menu class="menu-content" multi="true"> -->
+                                <template is="dom-repeat" items="{{availableInitiatorList}}" as="j">
+                                    <paper-item style="margin-left:2em">
+                                        <!-- <paper-checkbox id="initiatorCheckBox-{{i.img}}-{{i.pool}}-{{j}}" on-change="imgInitiatorCheckboxChanged" checked$="{{_isInitiatorSelected(i, j)}}">{{j}}</paper-checkbox> -->
+                                        <paper-checkbox id="{{_initiatorCheckboxIDGen(i, j)}}" on-change="imgInitiatorCheckboxChanged" checked$="{{_isInitiatorSelected(i, j)}}">{{j}}</paper-checkbox>
+                                    </paper-item>
+                                </template>
+                                <!-- </paper-menu> -->
+                            <!-- </paper-submenu> -->
                     </template>
                 </div>
             </paper-dropdown-menu>
-
-            <paper-dropdown-menu label="Authentication Protocol" >
-                <paper-listbox class="dropdown-content" selected="0">
-                    <template is="dom-repeat" items="{{authTypes}}" as="a">
-                        <!-- Actual authentication classes have a 'desc' class property. -->
-                        <template is="dom-if" if="{{a.desc}}">
-                            <paper-item on-click="configureAuth">{{a.desc}}</paper-item>
-                        </template>
-                        <!-- The 'no auth' option. -->
-                        <template is="dom-if" if="{{!a.desc}}">
-                            <paper-item on-click="configureAuth">{{a}}</paper-item>
-                        </template>
-                    </template>
-                </paper-listbox>
-            </paper-dropdown-menu>
-
-            <paper-dialog id='addCommonAuthDialog' class="target-config-auth-dialog">
-                <paper-input label='userid' value='{{userid}}'></paper-input>
-                <paper-input label='password' value='{{password}}'></paper-input>
-
-                <paper-checkbox on-change="initiatorInputCheckboxChanged">Add initiators (optional)</paper-checkbox>
-                <div hidden$="{{initiatorInputHidden}}">
-                    <label>Initiators (one per line)</label>
-                    <br>
-                    <iron-autogrow-textarea class="paper-input-input" max-rows="5" rows="5" value="{{initiatorList}}"></iron-autogrow-textarea>
-                </div>
-                <br>
-                <hr>
-                <paper-checkbox on-change="mutInputCheckboxChanged">Add mutual authentication (optional)</paper-checkbox>
-                <div hidden$="{{mutInputHidden}}">
-                    <paper-input label='Mutual userid' value='{{mutUserId}}'></paper-input>
-                    <paper-input label='Mutual password' value='{{mutPassword}}'></paper-input>
-                    <paper-checkbox on-change="mutEnabledCheckboxChanged" checked="{{mutEnabled}}">Mutual authentication enabled (default)</paper-checkbox>
-                </div>
-                <br>
-                <hr>
-                <paper-checkbox on-change="discInputCheckboxChanged">Add discovery authentication (optional)</paper-checkbox>
-                <div hidden$="{{discInputHidden}}">
-                    <paper-input label='Discovery userid' value='{{discUserId}}'></paper-input>
-                    <paper-input label='Discovery password' value='{{discPassword}}'></paper-input>
-                    <paper-checkbox on-change="discEnabledCheckboxChanged" checked="{{discEnabled}}">Discovery authentication enabled (default)</paper-checkbox>
-                    <br>
-                    <paper-checkbox on-change="discMutInputCheckboxChanged">Add discovery mutual authentication (optional)</paper-checkbox>
-                    <div hidden$="{{discMutInputHidden}}">
-                        <paper-input label='Discovery mutual userid' value='{{discMutUserId}}'></paper-input>
-                        <paper-input label='Discovery mutual password' value='{{discMutPassword}}'></paper-input>
-                        <paper-checkbox on-change="discMutEnabledCheckboxChanged" checked="{{discMutEnabled}}">Mutual authentication enabled (default)</paper-checkbox>
-                    </div>
-                </div>
-                <div class='buttons'>
-                    <paper-button dialog-dismiss>Cancel</paper-button>
-                    <paper-button on-click='addCommonAuth'>Add</paper-button>
-                </div>
-            </paper-dialog>
 
             <br>
             <br>
 
             <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedIntfListHidden}}">
                 <span class="title">Selected Nodes</span>
-                <template is="dom-repeat" items="{{selectedIntfList}}" as="i">                
+                <template is="dom-repeat" items="{{selectedIntfList}}" as="i">
                     <paper-item>{{i.node}} : {{i.addr}}</paper-item>
                 </template>
             </paper-listbox>
 
             <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedImgListHidden}}">
                 <span class="title">Selected Images</span>
-                <template is="dom-repeat" items="{{selectedImgList}}" as="i">                
+                <template is="dom-repeat" items="{{selectedImgList}}" as="i">
                     <paper-item>{{i.img}} : {{i.pool}}</paper-item>
-                </template>
-            </paper-listbox>
-
-            <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{authHidden}}">
-                <span class="title">Configured Authentication Protocol</span>
-                <template is="dom-if" if="{{auth}}">
-                    <paper-item>{{auth}}</paper-item>
-                    <paper-item class="target-config-auth-item">userid: {{auth.userid}}</paper-item>
-                    <paper-item class="target-config-auth-item">password: {{auth.password}}</paper-item>
-                    <template is="dom-if" if="{{auth.initiatorList.length}}">
-                        <paper-item class="target-config-auth-item">initiators:</paper-item>
-                        <template is="dom-repeat" items="{{auth.initiatorList}}" as="i">
-                            <!-- Further nest initiator elements under label. -->
-                            <paper-item class="target-config-auth-item" style="margin-left:2em">{{i}}</paper-item>
-                        </template>
-                    </template>
-                    <template is="dom-if" if="{{auth.mutualAuth}}">
-                        <paper-item class="target-config-auth-item">Mutual authentication:</paper-item>
-                        <paper-item class="target-config-auth-item" style="margin-left:2em">userid: {{auth.mutualAuth.userid}}</paper-item>
-                        <paper-item class="target-config-auth-item" style="margin-left:2em">password: {{auth.mutualAuth.password}}</paper-item>
-                        <paper-item class="target-config-auth-item" style="margin-left:2em">enabled: {{auth.mutualAuth.enabled}}</paper-item>
-                    </template>
-                    <template is="dom-if" if="{{auth.discoveryAuth}}">
-                        <paper-item class="target-config-auth-item">Discovery authentication:</paper-item>
-                        <paper-item class="target-config-auth-item" style="margin-left:2em">userid: {{auth.discoveryAuth.userid}}</paper-item>
-                        <paper-item class="target-config-auth-item" style="margin-left:2em">password: {{auth.discoveryAuth.password}}</paper-item>
-                        <paper-item class="target-config-auth-item" style="margin-left:2em">enabled: {{auth.discoveryAuth.enabled}}</paper-item>
-                        <template is="dom-if" if="{{auth.discoveryAuth.mutualAuth}}">
-                            <paper-item class="target-config-auth-item" style="margin-left:2em">Discovery mutual authentication:</paper-item>
-                            <paper-item class="target-config-auth-item" style="margin-left:3em">userid: {{auth.discoveryAuth.mutualAuth.userid}}</paper-item>
-                            <paper-item class="target-config-auth-item" style="margin-left:3em">password: {{auth.discoveryAuth.mutualAuth.password}}</paper-item>
-                            <paper-item class="target-config-auth-item" style="margin-left:3em">enabled: {{auth.discoveryAuth.mutualAuth.enabled}}</paper-item>
-                        </template>
+                    <template is="dom-repeat" items="{{i.initiatorList}}" as="initiator">
+                        <paper-item style="margin-left:2em">{{initiator}}</paper-item>
                     </template>
                 </template>
             </paper-listbox>
@@ -161,44 +86,21 @@
 
     <script>
 
-     /* All auths mechanisms stem from here. */
-     class BaseAuth {
-         constructor(userid, password) {
-             this.userid = userid;
-             this.password = password;
+     class Image {
+         constructor(img, pool) {
+             this.img = img ? img : "undefined";
+             this.pool = pool ? pool : "undefined";
+             /* Always start with an empty initiatorList. */
+             this.initiatorList = [];
          }
      }
 
-     /* Used within CommonAuth and DiscoveryAuth*/
-     class MutualAuthFrag extends BaseAuth {
-         constructor(userid, password, enabled) {
-             super(userid, password);
-             this.enabled = enabled;
+     class Interface {
+         constructor(node, addr) {
+             this.node = node ? node : "undefined";
+             this.addr = addr ? addr : "undefined";
          }
      }
-
-     class DiscoveryAuthFrag extends MutualAuthFrag {
-         constructor(userid, password, enabled, mutualAuth) {
-             super(userid, password, enabled);
-             this.mutualAuth = mutualAuth;
-         }
-     }
-
-     /* The simplest auth available to be configured by the user. */
-     class CommonAuth extends BaseAuth {
-         constructor(userid, password, initiatorList, mutualAuth, discoveryAuth) {
-             super(userid, password);
-             this.initiatorList = initiatorList;
-             this.mutualAuth = mutualAuth;
-             this.discoveryAuth = discoveryAuth;
-         }
-
-         toString() {
-             return "Common authentication";
-         }
-     }
-     /* Class properties and prototype data properties need be created outside the declaration. */
-     CommonAuth.desc = "Common authentication";
 
      Polymer({
          is: 'iscsi-target-config',
@@ -239,195 +141,205 @@
                  },
              },
 
-             authTypes: {
-                 type: Array,
-                 /* Could also be [null,CommonAuth..], but this way I can more uniformly display in the template. */
-                 value: [ {"type": null, "desc": "No authentication"},
-                          {"type": CommonAuth, "desc": CommonAuth.desc},
-                 ]
-             },
-
-             auth: {
-                 type: Object,
-                 value: function() {
-                     /* Default is no auth (ie. an empty object). */
-                     return null;
-                 }
-             },
-
-             /* Only display auth if not null. */
-             authHidden: {
-                 type: Boolean,
-                 value: true,
-             },
-
-             userid: {
-                 type: String,
-                 value: "",
-             },
-
-             password: {
-                 type: String,
-                 value: "",
-             },
-
-             initiatorList: {
-                 type: Array,
-                 value: function() {
-                     return [];
-                 },
-             },
-
-             initiatorInputHidden: {
-                 type: Boolean,
-                 value: true,
-             },
-
-             /* Mutual auth related elements.  Mutual auth is contained within the context of
-              * an auth instance.
-              */
-             mutUserId: {
-                 type: String,
-                 value: "",
-             },
-             mutPassword: {
-                 type: String,
-                 value: "",
-             },
-             mutEnabled: {
-                 type: Boolean,
-                 value: false,
-             },
-             mutInputHidden: {
-                 type: Boolean,
-                 value: true,
-             },
-
-             /* Discovery auth related elements.  Discovery auth is contained within the context of
-              * an auth instance.
-              */
-             discUserId: {
-                 type: String,
-                 value: "",
-             },
-             discPassword: {
-                 type: String,
-                 value: "",
-             },
-             discEnabled: {
-                 type: Boolean,
-                 value: false,
-             },
-             discInputHidden: {
-                 type: Boolean,
-                 value: true,
-             },
-             discMutUserId: {
-                 type: String,
-                 value: "",
-             },
-             discMutPassword: {
-                 type: String,
-                 value: "",
-             },
-             discMutEnabled: {
-                 type: Boolean,
-                 value: false,
-             },
-             discMutInputHidden: {
-                 type: Boolean,
-                 value: true,
-             },
+             availableInitiatorList: {
+                 type: Array, /* [ Strings ] */
+                 notify: true
+             }
          },
 
          observers: [
 	     "_iscsiImagesChanged(availableImgList.splices)",
 	     "_iscsiInterfacesChanged(availableIntfList.splices)",
-             "_iscsiSelectedImagesChanged(selectedImgList.splices)",
-             "_iscsiSelectedInterfacesChanged(selectedIntfList.splices)"
+             /* "_iscsiSelectedImagesChanged(selectedImgList.splices)",*/
+             "_iscsiSelectedImagesChanged(selectedImgList.*)",
+             "_iscsiSelectedInterfacesChanged(selectedIntfList.splices)",
+             "_iscsiInitiatorsChanged(availableInitiatorList.splices)"
 	 ],
 
          ready: function() {
-             /* TBD */
+
          },
 
-         /* Considering objects equal if they have the same number of keys and keys have
-          * the same values.  We don't care about key ordering within an object.
+         /* Genertes a valid 'id' string which replaces '.' with '-dot-'.
+          * Needed for querySlector*() to function, as dots are interpreted
+          * as css attributes.
           */
-         _objectsEqual: function(obj1, obj2) {
-             var obj1Keys = Object.keys(obj1);
-             var obj2Keys = Object.keys(obj2);
+         _initiatorCheckboxIDGen(i, j) {
+             var imgStr = i.img.replace(/\./g,'-dot-');
+             var poolStr = i.pool.replace(/\./g,'-dot-');
+             var initiatorStr = j.replace(/\./g,'-dot-');
 
-             if (obj1Keys.length != obj2Keys.length) {
-                 return false;
-             }
-
-             for (var i = 0; i < obj1Keys.length; i++) {
-                 if (obj1[obj1Keys[i]] != obj2[obj1Keys[i]]) {
-                     return false;
-                 }
-             }
-
-             return true;
+             return "initiatorCheckBox-" + imgStr + "-" + poolStr + "-" + initiatorStr;
          },
 
-         /* Check based on value, not identity (ie. indexOf). Return index or -1
-          * if not found.
-          */
-         _indexOfObjInArr: function(obj, arr) {
-             for (var i = 0; i < arr.length; i++) {
-                 if (this._objectsEqual(obj, arr[i])) {
-                     /* Return index of first find. */
-                     return i;
-                 }
-             }
-
-             return -1;
+         /* Passed to findIndex().  True if img and pool instance variables are equal. */
+         _imgsEqual: function(elem, index, arr) {
+             return (elem.img === this.img && elem.pool === this.pool);
          },
 
-         /* Returns true if obj is in selectedImgList*/
-         _isImgSelected: function(obj) {
-             if (this._indexOfObjInArr(obj, this.selectedImgList) != -1) {
+         /* Passed to findIndex().  True if node and addr instance variables are equal. */
+         _intfsEqual: function(elem, index, arr) {
+             return (elem.node === this.node && elem.addr === this.addr);
+         },
+
+         /* Returns true if img is in selectedImgList*/
+         _isImgSelected: function(img) {
+             if (this.selectedImgList.findIndex(this._imgsEqual, img) !== -1) {
                  return true;
              } else {
                  return false;
              }
          },
 
+         /* Returns true if initiator is in in*/
+         _isInitiatorSelected: function(img, initiatorStr) {
+             /* img is from this.availableImageList, but initiators are housed in
+              * this.selectedImgList[x].initiatorList.  Thus, first find img in
+              * this.selectedImgList.
+              */
+             var selectedImgIndex = this.selectedImgList.findIndex(this._imgsEqual, img);
+             if (selectedImgIndex === -1) {
+                 return false; // img not in this.selectedImgList
+             } else {
+                 var selectedImg = this.selectedImgList[selectedImgIndex];
+                 if (selectedImg.initiatorList.indexOf(initiatorStr) === -1) {
+                     return false;
+                 } else {
+                     return true;
+                 }
+             }
+         },
+
+         _iscsiInitiatorsChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updating available initiators for all images.");
+
+             /* When this.availalbeInitiatorList changes, we need to ensure we remove any selected
+              * initiators which are no longer available.
+              */
+             for (var i = 0; i < this.selectedImgList.length; i++) {
+                 var selectedImg = this.selectedImgList[i];
+
+                 var notFound = [];
+                 for (var j = 0; j < selectedImg.initiatorList.length; j++) {
+                     var selectedInitiator = selectedImg.initiatorList[j];
+
+                     /* If the initiator is no longer in the available list, mark it for removal
+                      * from the images initiatorList.  _iscsiSelectedImagesChanged() will handle
+                      * the related checkbox.
+                      */
+                     if (this.availableInitiatorList.indexOf(selectedInitiator) === -1) {
+                         notFound.push(j);
+                     }
+                 }
+
+                 /* Actually do the removal from the end of the array. */
+                 for (var k = notFound.length - 1; k >= 0; k--) {
+                     console.log("Removing " + selectedImg.initiatorList[notFound[k]] + " from " + selectedImg.img + ":" + selectedImg.pool);
+                     this.splice("selectedImgList." + i + ".initiatorList", notFound[k], 1);
+                 }
+             }
+
+         },
+
+         /* Simple helper function that disables all initiator checkboxes for a given image. */
+         _disableAllInitiators: function(img) {
+             for (var i = 0; i < this.availableInitiatorList.length; i++) {
+                 initiator = this.availableInitiatorList[i];
+                 initiatorCheckBoxStr = this._initiatorCheckboxIDGen(img, initiator);
+                 initiatorCheckBox = Polymer.dom(this.root).querySelector("#"+initiatorCheckBoxStr);
+                 if (initiatorCheckBox) {
+                     initiatorCheckBox.checked = false;
+                 } else {
+                     console.error("Unable to uncheck null checkbox: " + initiatorCheckBox);
+                 }
+             }
+         },
+
          /* On selectedImgList changes, handle checkboxes. */
          _iscsiSelectedImagesChanged: function(changeRecord) {
+             /* debugger;*/
              console.log(this.is + ":" + arguments.callee.name + ": updated selected RBD image list");
 
              if (changeRecord) {
+                 var initiator;
+                 var initiatorCheckBoxStr;
+                 var initiatorCheckBox;
+
                  /* Grab all imgCheckBox's */
                  var imgCheckBoxes = Polymer.dom(this.root).querySelectorAll("#imgCheckBox");
 
-                 changeRecord.indexSplices.forEach(function(s) {
-                     s.removed.forEach(function(img) {
-                         console.log(this.is + ":" + arguments.callee.name + ": " + img.img + ":" + img.pool + " was removed from selected list");
+                 /* We only care about splices to selectedImgList _and_ to
+                  * selectedImgList[x].initiatorList.
+                  */
+                 var changeSubpath = changeRecord.path.indexOf('.initiatorList.splices');
 
-                         /* Uncheck corresponding checkbox. */
-                         var i = this._indexOfObjInArr(img, this.availableImgList);
-                         if (i != -1 && i < imgCheckBoxes.length) {
-                             imgCheckBoxes[i].checked = false;
-                         } else {
-                             console.log(this.is + ":" + arguments.callee.name + ": unable to deselect checkbox at index " + i);
-                         }
-                     }, this);
-                     for (var i=0; i<s.addedCount; i++) {
-                         var index = s.index + i;
-                         var newImg = s.object[index];
-                         console.log(this.is + ":" + arguments.callee.name + ": " + newImg.img + ":" + newImg.pool + " added at index " + index);
+                 if (changeSubpath !== -1) {
+                     var imgPath = changeRecord.path.substring(0, changeSubpath);
+                     /* console.log("imgPath: " + imgPath);*/
+                     var img = this.get(imgPath);
+                     var index = changeRecord.base.indexOf(img);
+                     console.log('initiatorList modified on selectedImgList at index ' + index + '.  New img is: ');
 
-                         /* Check corresponding checkbox. */
-                         var i = this._indexOfObjInArr(newImg, this.availableImgList);
-                         if (i != -1 && i < imgCheckBoxes.length) {
-                             imgCheckBoxes[i].checked = true;
+                     /* Any time we add/remove an initiator from an image, we need to update the
+                      * initiator check boxes for that image.  The current checked check boxes are
+                      * the ones related to the list of initiators in the image's initiatorList array.
+                      */
+                     this._disableAllInitiators(img);
+                     /* Since we disabled all availableInitiatorList checkboxes in the previous loop, enable the
+                      * corresponding checkboxes that are selected.
+                      */
+                     for (var j = 0; j < img.initiatorList.length; j++) {
+                         initiator = img.initiatorList[j];
+
+                         /* If the initiator is in our available list, set the checkbox. */
+                         if (this.availableInitiatorList.indexOf(initiator) !== -1) {
+                             initiatorCheckBoxStr = this._initiatorCheckboxIDGen(img, initiator);
+                             initiatorCheckBox = Polymer.dom(this.root).querySelector("#" + initiatorCheckBoxStr);
+                             if (initiatorCheckBox) {
+                                 initiatorCheckBox.checked = true;
+                             } else {
+                                 /* Should not get here. */
+                                 console.error("Failed to find initiator check box: " + initiatorCheckBoxStr);
+                             }
                          } else {
-                             console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + i);
+                             /* Can get here if multiple entries from this.availableInitiatorList were removed at once. */
+                             console.log("Unavailable initiator: " + initiator + " found in selected list for img: " + img);
                          }
                      }
-                 }, this);
+                     /* console.log("initiatorCheckBoxes:");*/
+                     /* console.log(initiatorCheckBoxes);*/
+
+                 } else if (changeRecord.path === "selectedImgList.splices") {
+                     changeRecord.value.indexSplices.forEach(function(s) {
+                         s.removed.forEach(function(img) {
+                             console.log(this.is + ":" + arguments.callee.name + ": " + img.img + ":" + img.pool + " was removed from selected list");
+
+                             /* On removal of img from selectedImgList, un-check all initiators. */
+                             this._disableAllInitiators(img);
+
+                             /* Uncheck corresponding checkbox. */
+                             var i = this.availableImgList.findIndex(this._imgsEqual, img);
+                             if (i != -1 && i < imgCheckBoxes.length) {
+                                 imgCheckBoxes[i].checked = false;
+                             } else {
+                                 console.log(this.is + ":" + arguments.callee.name + ": unable to deselect checkbox at index " + i);
+                             }
+                         }, this);
+                         for (var i = 0; i < s.addedCount; i++) {
+                             var index = s.index + i;
+                             var newImg = s.object[index];
+                             console.log(this.is + ":" + arguments.callee.name + ": " + newImg.img + ":" + newImg.pool + " added at index " + index);
+
+                             /* Check corresponding checkbox. */
+                             var j = this.availableImgList.findIndex(this._imgsEqual, newImg);
+                             if (j !== -1 && j < imgCheckBoxes.length) {
+                                 imgCheckBoxes[j].checked = true;
+                             } else {
+                                 console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + j);
+                             }
+                         }
+                     }, this);
+                 }
              }
 
              /* Check if we should hide the selected list */
@@ -447,7 +359,7 @@
                  var notFound = [];
                  /* Select those that are in selectedImgList but not in availableImgList. */
                  for (var i = 0; i < this.selectedImgList.length; i++) {
-                     if (this._indexOfObjInArr(this.selectedImgList[i], this.availableImgList) == -1) {
+                     if (this.availableImgList.findIndex(this._imgsEqual, this.selectedImgList[i]) === -1) {
                          notFound.push(i);
                      }
                  }
@@ -460,8 +372,8 @@
          },
 
          /* Returns true if obj is in selectedIntfList */
-         _isIntfSelected: function(obj) {
-             if (this._indexOfObjInArr(obj, this.selectedIntfList) != -1) {
+         _isIntfSelected: function(intf) {
+             if (this.selectedIntfList.findIndex(this._intfsEqual, intf) !== -1) {
                  return true;
              } else {
                  return false;
@@ -481,7 +393,7 @@
                          console.log(this.is + ":" + arguments.callee.name + ": " + intf.node + ":" + intf.addr + " was removed from selected list");
 
                          /* Uncheck corresponding checkbox. */
-                         var i = this._indexOfObjInArr(intf, this.availableIntfList);
+                         var i = this.availableIntfList.findIndex(this._intfsEqual, intf);
                          if (i != -1 && i < intfCheckBoxes.length) {
                              intfCheckBoxes[i].checked = false;
                          } else {
@@ -494,11 +406,11 @@
                          console.log(this.is + ":" + arguments.callee.name + ": " + newIntf.node + ":" + newIntf.addr + " added at index " + index);
 
                          /* Check corresponding checkbox. */
-                         var i = this._indexOfObjInArr(newIntf, this.availableIntfList);
-                         if (i != -1 && i < intfCheckBoxes.length) {
-                             intfCheckBoxes[i].checked = true;
+                         var j = this.availableIntfList.findIndex(this._intfsEqual, newIntf);
+                         if (j != -1 && j < intfCheckBoxes.length) {
+                             intfCheckBoxes[j].checked = true;
                          } else {
-                             console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + i);
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + j);
                          }
                      }
                  }, this);
@@ -521,7 +433,7 @@
                  var notFound = [];
                  /* Select those that are in selectedIntfList but not in availableIntfList. */
                  for (var i = 0; i < this.selectedIntfList.length; i++) {
-                     if (this._indexOfObjInArr(this.selectedIntfList[i], this.availableIntfList) == -1) {
+                     if (this.availableIntfList.findIndex(this._intfsEqual, this.selectedIntfList[i]) === -1) {
                          notFound.push(i);
                      }
                  }
@@ -544,8 +456,8 @@
                  console.log(intf.node + ":" + intf.addr + " selected - adding to selected list.");
                  this.push("selectedIntfList", intf);
              } else {
-                 var index = this._indexOfObjInArr(intf, this.selectedIntfList);
-                 if (index == -1) {
+                 var index = this.selectedIntfList.findIndex(this._intfsEqual, intf);
+                 if (index === -1) {
                      console.error("Checked " + intf.node + ":" + intf.addr + " not found in selected list.");
                  } else {
                      console.log(intf.node + ":" + intf.addr + " deselected - removing from selected list.");
@@ -557,12 +469,15 @@
          imgCheckboxChanged: function(e) {
              var img = e.model.__data__.i;
              console.log("imgCheckboxChanged()");
+             console.log(e);
              if (e.target.checked) {
                  console.log(img.img + ":" + img.pool + " selected - adding to selected list.");
-                 this.push("selectedImgList", img);
+                 var newImg = new Image(img.img, img.pool);
+                 console.log(newImg);
+                 this.push("selectedImgList", newImg);
              } else {
-                 var index = this._indexOfObjInArr(img, this.selectedImgList);
-                 if (index == -1) {
+                 var index = this.selectedImgList.findIndex(this._imgsEqual, img);
+                 if (index === -1) {
                      console.error("Checked " + img.img + ":" + img.pool + " not found in selected list.");
                  } else {
                      console.log(img.img + ":" + img.pool + " deselected - removing from selected list at index " + index);
@@ -571,177 +486,49 @@
              }
          },
 
-         initiatorInputCheckboxChanged: function(e) {
-             console.log("initiatorInputCheckboxChanged()");
+         imgInitiatorCheckboxChanged: function(e) {
+             var img = e.model.__data__.i;
+             var initiator = e.model.__data__.j;
+             var index;
+             var newImg;
+
+             /* Add/remove the initiator to img.initiatorList. */
              if (e.target.checked) {
-                 console.log("Initiator input activated.");
-                 this.initiatorInputHidden = false;
-                 this.$.addCommonAuthDialog.center();
+                 console.log(initiator + " on " + img.img + ":" + img.pool + " selected - adding to image's initiator list.");
+
+                 /* First, add the image to the selected list */
+                 index = this.selectedImgList.findIndex(this._imgsEqual, img);
+                 if (index === -1) {
+                     console.log(img.img + ":" + img.pool + " not found in selected image liste.  Adding");
+                     var newImg = new Image(img.img, img.pool);
+                     this.push("selectedImgList", newImg);
+                     var newImgIndex = this.selectedImgList.findIndex(this._imgsEqual, newImg);
+                     if (newImgIndex !== -1) {
+                         this.push("selectedImgList." + newImgIndex + ".initiatorList", initiator);
+                     } else {
+                         /* Should not happen! */
+                         console.error("Failed to add " + newImg.img + ":" + newImg.pool + " to selected image list.");
+                     }
+                 } else {
+                     this.push("selectedImgList." + index + ".initiatorList", initiator);
+                 }
              } else {
-                 console.log("Initiator input de-activated.");
-                 this.initiatorInputHidden = true;
-                 this.$.addCommonAuthDialog.center();
-                 /* Clear bound vars. */
-                 this.initiatorList = [];
-             }
-         },
-
-         mutInputCheckboxChanged: function(e) {
-             console.log("mutInputCheckboxChanged()");
-             if (e.target.checked) {
-                 console.log("Mutual input activated.");
-                 this.mutInputHidden = false;
-                 this.$.addCommonAuthDialog.center();
-                 /* Enabling mutual auth input auto-enables mutual auth. */
-                 this.mutEnabled = true;
-             } else {
-                 console.log("Mutual input de-activated.");
-                 this.mutInputHidden = true;
-                 this.$.addCommonAuthDialog.center();
-                 /* Disabling mutual auth input auto-disables mutual auth. */
-                 this.mutEnabled = false;
-                 /* Clear bound vars. */
-                 this.mutUserId = "";
-                 this.mutPassword = "";
-             }
-         },
-
-         mutEnabledCheckboxChanged: function(e) {
-             console.log("mutEnabledCheckboxChanged()");
-             if (e.target.checked) {
-                 console.log("Mutual enabled.");
-                 this.mutEnabled = true;
-             } else {
-                 console.log("Mutual disabled.");
-                 this.mutEnabled = false;
-             }
-         },
-
-         discInputCheckboxChanged: function(e) {
-             console.log("discInputCheckboxChanged()");
-             if (e.target.checked) {
-                 console.log("Discovery input activated.");
-                 this.discInputHidden = false;
-                 this.$.addCommonAuthDialog.center();
-                 /* Enabling mutual auth input auto-enables mutual auth. */
-                 this.discEnabled = true;
-             } else {
-                 console.log("Discovery input de-activated.");
-                 this.discInputHidden = true;
-                 this.$.addCommonAuthDialog.center();
-                 /* Disabling mutual auth input auto-disables mutual auth. */
-                 this.discEnabled = false;
-                 /* Clear bound vars. */
-                 this.discUserId = "";
-                 this.discPassword = "";
-                 this.discMutUserId = "";
-                 this.discMutPassword = "";
-             }
-         },
-
-         discEnabledCheckboxChanged: function(e) {
-             console.log("discEnabledCheckboxChanged()");
-             if (e.target.checked) {
-                 console.log("Discovery enabled.");
-                 this.discEnabled = true;
-             } else {
-                 console.log("Discovery disabled.");
-                 this.discEnabled = false;
-             }
-         },
-
-         discMutInputCheckboxChanged: function(e) {
-             console.log("discMutInputCheckboxChanged()");
-             if (e.target.checked) {
-                 console.log("Discovery mutual input activated.");
-                 this.discMutInputHidden = false;
-                 this.$.addCommonAuthDialog.center();
-                 /* Enabling mutual auth input auto-enables mutual auth. */
-                 this.discMutEnabled = true;
-             } else {
-                 console.log("Discovery mutual input de-activated.");
-                 this.discMutInputHidden = true;
-                 this.$.addCommonAuthDialog.center();
-                 /* Disabling mutual auth input auto-disables mutual auth. */
-                 this.discMutEnabled = false;
-                 /* Clear bound vars. */
-                 this.discMutUserId = "";
-                 this.discMutPassword = "";
-             }
-         },
-
-         discMutEnabledCheckboxChanged: function(e) {
-             console.log("discMutEnabledCheckboxChanged()");
-             if (e.target.checked) {
-                 console.log("Discovery mutual enabled.");
-                 this.discMutEnabled = true;
-             } else {
-                 console.log("Discovery mutual disabled.");
-                 this.discMutEnabled = false;
-             }
-         },
-
-         configureAuth: function(e) {
-             var authType = e.model.__data__.a;
-             console.log("configureAuth(): " + authType.desc + " selected.");
-             /* console.log(e.currentTarget);*/
-
-             /* TODO: If common auth dialog will be used, no need for type
-              * detection beyond 'if !null'
-              */
-             if (authType.type === null) {
-                 this.auth = null;
-                 this.authHidden = true;
-             } else if (authType.type === CommonAuth) {
-                 this.$.addCommonAuthDialog.open();
-             } else {
-                 alert("Invalid authentication type selected.");
-             }
-         },
-
-         addCommonAuth: function() {
-             console.log("addCommonAuth:");
-             console.log("Creating new auth with userid: " + this.userid + " password: "
-                       + this.password + " initiatorList: " + this.initiatorList);
-
-             /* By default, our initiator list will be empty. */
-             var iList = [];
-
-             /* If the user has entered a list of initiators, process them. */
-             if (this.initiatorList.length) {
-                 /* Remove blank entries from initiatorList, which is currently just a long string. */
-                 iList = this.initiatorList.split("\n");
-                 for (var i = 0; i < iList.length; i++) {
-                     if (iList[i].length === 0) {
-                         iList.splice(i, 1);
+                 /* First, find the image in the selected list. */
+                 index = this.selectedImgList.findIndex(this._imgsEqual, img);
+                 if (index === -1) {
+                     console.error(img.img + " not found in selected image list.");
+                 } else {
+                     var initiatorIndex = this.selectedImgList[index].initiatorList.indexOf(initiator);
+                     if (initiatorIndex === -1) {
+                         console.error(initiator + " not found in " + this.selectedImgList[index].img + "'s initiator list.");
+                     } else {
+                         console.log(initiator + " on " + this.selectedImgList[index].img + ":" + this.selectedImgList[index].pool + " deselected - removing from image's initiator list.");
+                         /* this.selectedImgList[index].initiatorList.splice(initiatorIndex, 1);*/
+                         this.splice("selectedImgList." + index + ".initiatorList", initiatorIndex, 1);
                      }
                  }
              }
-
-             /* Check mutual auth. */
-             /* TODO: better error detection needed. */
-             var mutAuth = null;
-             if (this.mutUserId.length && this.mutPassword.length) {
-                 mutAuth = new MutualAuthFrag(this.mutUserId, this.mutPassword, this.mutEnabled);
-             }
-
-             /* Check discovery auth. */
-             /* TODO: better error detection needed. */
-             var discAuth = null;
-             if (this.discUserId.length && this.discPassword.length) {
-                 /* Check discovery mutual auth. */
-                 var discMutAuth = null
-                 if (this.discMutUserId.length && this.discMutPassword.length) {
-                     discMutAuth = new MutualAuthFrag(this.discMutUserId, this.discMutPassword, this.discMutEnabled);
-                 }
-                 discAuth = new DiscoveryAuthFrag(this.discUserId, this.discPassword, this.discEnabled, discMutAuth);
-             }
-
-             this.auth = new CommonAuth(this.userid, this.password, iList, mutAuth, discAuth);
-             console.log(this.auth);
-             this.$.addCommonAuthDialog.close();
-             this.authHidden = false;
-         },
+         }
      });
     </script>
 </dom-module>
