@@ -1,12 +1,117 @@
 #!/usr/bin/python
 
 import logging
+import multiprocessing
+import operator
 import re
 import salt.client
+import time
+
+
 
 from netaddr import IPNetwork, IPAddress
 
 log = logging.getLogger(__name__)
+
+def get_cpu_count(server):
+    local = salt.client.LocalClient()
+    #node, cpu_core = (local.cmd("S@"+server, 'grains.item',  ['num_cpus'], expr_form="compound")).popitem()
+    result = local.cmd("S@"+server + " or " + server , 'grains.item',  ['num_cpus'], expr_form="compound")
+    cpu_core = result.values()[0]['num_cpus']
+    return cpu_core
+
+def iperf(cluster = None, exclude = None, **kwargs):
+    """
+    iperf server created from the each minions and then clients are created 
+    base on the server's cpu count and request that number of other minions
+    as client to hit the server and report the total bendwidth. 
+
+    TODO: Convert commented out print statements to log.debug
+
+    CLI Example: (Before DeepSea with a cluster configuration)
+    .. code-block:: bash
+        sudo salt-run net.iperf
+
+    or you can run it with exclude
+    .. code-block:: bash
+        sudo salt-run net.iperf exclude="E@host*,host-osd-name*,192.168.1.1"
+
+    (After DeepSea with a cluster configuration)
+    .. code-block:: bash
+        sudo salt-run net.iperf cluster=ceph
+        sudo salt-run net.iperf ceph
+
+    """
+    addresses = []
+    local = salt.client.LocalClient()
+    if cluster:
+        search = "I@cluster:{}".format(cluster)
+        networks = local.cmd(search , 'pillar.item', [ 'cluster_network', 'public_network' ], expr_form="compound")
+        total = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
+        addresses = []
+        for host in sorted(total.iterkeys()):
+            if 'cluster_network' in networks[host]:
+                addresses.extend(_address(total[host], networks[host]['cluster_network']))
+            if 'public_network' in networks[host]:
+                addresses.extend(_address(total[host], networks[host]['public_network']))
+    else:
+        search = "*"
+        addresses = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
+        addresses = _flatten(addresses.values())
+        # Lazy loopback removal - use ipaddress when adding IPv6
+        try:
+            if addresses:
+                addresses.remove('127.0.0.1')
+            #if exclude_iplist:
+            #    for ex_ip in exclude_iplist:
+            #        log.debug( "ping: removing {} ip ".format(ex_ip))
+            #        addresses.remove(ex_ip)
+        except ValueError:
+            log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
+            pass
+    #print addresses
+    start_service = []
+    results = []
+    jid = []
+    log.debug( "iperf: minions list {} ".format(addresses) )
+    for server in addresses:
+        cpu_core = get_cpu_count(server)
+        log.debug( "iperf: server {} cpu count {} ".format(server, cpu_core) )
+        for x in range(cpu_core):
+            log.debug( "iperf: create server {} count {} port {} ".format(server, x, 5800+x ) )
+            start_service.append( local.cmd( "S@"+server, 'multi.iperf_server_cmd', [ x, 5800+x ], expr_form="compound"))
+
+    for server in addresses: 
+        cpu_core = get_cpu_count(server)
+        log.debug( "iperf: server {} cpu count {} ".format(server, cpu_core) )
+        clients = list(addresses)
+        clients.remove(server)
+        for x, client in enumerate(clients):
+            log.debug( "iperf: num {} client {} to server {}".format(x,client, server) )
+            if( x < cpu_core ):
+    	        jid.append( local.cmd_async("S@"+client, 'multi.iperf', [server, 0, 5800+x ], expr_form="compound"))
+                log.debug( "iperf: from {} calling server {} with cpu {} port {} ".format(client, server, 0, 5800+x) )
+        log.debug( "iperf: Server {} async iperf client count {}".format(server, len(jid)) )
+
+    log.debug( "iperf: All Async iperf client count {}".format(len(jid)) )
+    not_done = True
+    while not_done:
+        not_done = False
+        for job in jid:
+            if not __salt__['jobs.lookup_jid'](job):
+                log.debug( "iperf: job not done {} ".format(job) )
+                time.sleep(1)
+                not_done = True
+    results = []
+    for job in jid:
+            #results.update( __salt__['jobs.lookup_jid'](job) )
+            results.append( __salt__['jobs.lookup_jid'](job) )
+            #results.append( job )
+    
+    # return results
+    _summarize_iperf( results ) 
+    return "Done" 
+    #_summarize(len(addresses), results)
 
 def ping(cluster = None, exclude = None, **kwargs):
     """
@@ -210,6 +315,54 @@ def _summarize(total, results):
         print "Failed: \n    {}".format("\n    ".join(failed))
     if errored:
        print "Errored: \n    {}".format("\n    ".join(errored))
+
+def _iperf_result_get_server(result):
+    return result['server']
+
+def _summarize_iperf(results):
+    """
+    iperf summarize the successes, failures and errors across all minions
+    """
+
+    #for result in sorted( results ):
+    #for result in results.sort( key=(operator.itemgetter(0))['server']):
+    server = {}
+    for result in results:
+        for host in result:
+            print "Server:\n{}".format(result[host]['server'])
+	    if not result[host]['server'] in server:
+	        server.update( {result[host]['server']:""} )
+	        #server.update( {result[host]['server'],list()} )
+            if result[host]['succeeded']:
+                print "success:\n{}".format(result[host]['succeeded']) 
+                print "filter:\n{}".format(result[host]['filter']) 
+	        server[result[host]['server']] += result[host]['filter']
+            elif result[host]['failed']:
+                print "failed:\n{}".format(result[host]['failed']) 
+		server[result[host]['server']] += "Failed from ".format(host)
+            elif result[host]['errored']:
+                print "errored :\n{}".format(result[host]['errored']) 
+		server[result[host]['server']] += "Error from ".format(host)
+
+    return server
+"""
+    success = []
+    failed = []
+    errored = []
+    filter_result = []
+    log.debug( "_summarize: results {}".format(results))
+    for host in sorted(results.iterkeys()):
+        #if results[host]['succeeded'] == total:
+            #success.append(host)
+        if 'failed' in results[host]:
+            failed.append("{} from {}".format(results[host]['failed'], host))
+        if 'errored' in results[host]:
+            errored.append("{} from {}".format(results[host]['errored'], host))
+        if 'filter' in results[host]:
+            filter_result.append("node {} to {} speed".format(results[host]['filter'], host))
+    if filter_result:
+        print "Speed of the network: \n    {}".format("\n    ".join(filter_result))
+"""
 
 def _skip_dunder(settings):
     """

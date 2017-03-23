@@ -40,14 +40,17 @@ def _summarize_iperf(result):
     '''
     host, rc, out, err = result
     msg = {}
+    msg['server'] = host
     if rc == 0:
-        msg['succeeded'] = host
+        msg['succeeded'] = True
     	msg['speed'] = out
     	msg['filter'] = re.match(r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Bytes/sec)', out, re.DOTALL ).group(2)
     if rc == 1:
-        msg['failed'] = host
+        msg['succeeded'] = False
+        msg['failed'] = True
     if rc == 2:
-        msg['errored'] = host
+        msg['succeeded'] = False
+        msg['errored'] = True
     return msg
 
 def _summarize_ping(results):
