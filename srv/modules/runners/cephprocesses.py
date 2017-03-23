@@ -29,7 +29,7 @@ def check(cluster='ceph', **kwargs):
     if 'roles' in kwargs:
         for role in kwargs['roles']:
             if role not in roles:
-                log.error("You queried for role {} but there is no such role in your cluster. Aborting")
+                log.error("You queried for role {} but there is no such role in your cluster. Aborting".format(role))
                 return False
         roles = {k: roles[k] for k in kwargs['roles']}
 
