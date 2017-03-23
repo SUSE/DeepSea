@@ -9,12 +9,12 @@ class TestCephProcesses():
 
     @patch('salt.client.LocalClient', autospec=True)
     def test_status(self, localclient):
-        result = {'mon1.ceph': True, 
-                  'mon3.ceph': True, 
+        result = {'mon1.ceph': True,
+                  'mon3.ceph': True,
                   'mon2.ceph': True}
 
         search = "I@cluster:ceph"
-        roles = [ 'mon' ]
+        roles = {'mon': ['mon1', 'mon2', 'mon3']}
 
         local = localclient.return_value
         local.cmd.return_value = result
