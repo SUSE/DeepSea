@@ -3,8 +3,6 @@
 import salt.config
 import logging
 from subprocess import call, Popen, PIPE
-import os
-import json
 
 log = logging.getLogger(__name__)
 
