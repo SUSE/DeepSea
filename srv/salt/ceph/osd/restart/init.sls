@@ -1,4 +1,4 @@
 
 include:
-  - .{{ salt['pillar.get']('restart', 'default') }}
+  - .{{ salt['pillar.get']('osd_restart_init', 'default') }}
 
