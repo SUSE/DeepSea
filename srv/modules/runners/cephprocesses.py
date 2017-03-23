@@ -27,6 +27,10 @@ def check(cluster='ceph', **kwargs):
 
     roles = _cached_roles(search)
     if 'roles' in kwargs:
+        for role in kwargs['roles']:
+            if role not in roles:
+                log.error("You queried for role {} but there is no such role in your cluster. Aborting")
+                return False
         roles = {k: roles[k] for k in kwargs['roles']}
 
     status = _status(search, roles)
