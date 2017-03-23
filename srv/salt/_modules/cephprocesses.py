@@ -12,38 +12,39 @@ upgrade is safe.  All expected services are running.
 A secondary purpose is a utility to check the current state of all services.
 """
 
-def check(only_for=[]):
+def check(roles=[]):
     """
     Query the status of running processes for each role.  Return False if any
     fail.
     """
-    processes = { 'mon': [ 'ceph-mon' ],
-                 'storage': [ 'ceph-osd' ],
-                 'mds': [ 'ceph-mds' ],
-                 'igw': [ 'lrbd' ],
-                 'rgw': [ 'radosgw' ],
-                 'ganesha': [ 'ganesha.nfsd', 'rpcbind', 'rpc.statd' ] }
+    processes = {'mon': ['ceph-mon'],
+                 'storage': ['ceph-osd'],
+                 'mds': ['ceph-mds'],
+                 'igw': ['lrbd'],
+                 'rgw': ['radosgw'],
+                 'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd']}
 
     ret = True
-    if 'roles' in __pillar__:
-        if only_for:
-          for role in only_for:
-            log.info("Checking {} for status".format(role)
-            for process in processes[role]:
-	      result = __salt__['status.pid'](process)
-              if result == '':
+
+    def check_process(role):
+        for process in processes[role]:
+            result = __salt__['status.pid'](process)
+            log.info("Pid for process {} is {}".format(process, result))
+            if result == '':
                 log.error("ERROR: process {} for role {} is not running".format(process, role))
-                ret = False
-        else:
-          for role in __pillar__['roles']:
-              if role in processes:
-                  for process in processes[role]:
-                      result = __salt__['status.pid'](process)
-                      print "ON ROLE: {}".format(role)
-                      print "RESULT: {}".format(result)
-                      if result == '':
-                          log.error("ERROR: process {} for role {} is not running".format(process, role))
-                          ret = False
+                return False
+            else:
+                return True
+
+    if 'roles' in __pillar__:
+        for role in __pillar__['roles']:
+            # custom roles are used
+            if roles:
+                if role in roles:
+                    ret = check_process(role)
+            # use all available roles from pillar
+            else:
+                ret = check_process(role)
 
     return ret
 

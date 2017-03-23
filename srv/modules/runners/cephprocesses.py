@@ -28,6 +28,7 @@ def check(cluster='ceph', **kwargs):
     if 'roles' in kwargs:
         roles = { k:roles[k] for k in kwargs['roles'] }
 
+	
     status = _status(search, roles)
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
@@ -45,6 +46,10 @@ def check(cluster='ceph', **kwargs):
     for role in status.keys():
         for minion in status[role]:
             if status[role][minion] == False:
+                # Currently no checking for passive mds.
+                # status.pid returns None as the process is idling.
+                # therefore it will also report that i.e mon is not running
+                # if mon and mds are on the same node
                 log.error("ERROR: {} process on {} is not running".format(role, minion))
                 ret = False
 
@@ -60,6 +65,13 @@ def _status(search, roles):
 
     status = {}
     local = salt.client.LocalClient()
+
+    ignore_roles = [ 'admin', 'master' ]
+
+    for ig_role in ignore_roles:
+      if roles.has_key(ig_role) and roles:
+        roles.pop(ig_role)
+
     for role in roles:
         role_search = search + " and I@roles:{}".format(role)
         status[role] = local.cmd(role_search,
