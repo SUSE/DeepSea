@@ -17,6 +17,7 @@ upgrade is safe.  All expected processes are running.
 A secondary purpose is a utility to check the current state of all processes.
 """
 
+
 def check(cluster='ceph', **kwargs):
     """
     Query the status of running processes for each role.  Also, verify that
@@ -26,9 +27,8 @@ def check(cluster='ceph', **kwargs):
 
     roles = _cached_roles(search)
     if 'roles' in kwargs:
-        roles = { k:roles[k] for k in kwargs['roles'] }
+        roles = {k: roles[k] for k in kwargs['roles']}
 
-	
     status = _status(search, roles)
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
@@ -45,7 +45,7 @@ def check(cluster='ceph', **kwargs):
 
     for role in status.keys():
         for minion in status[role]:
-            if status[role][minion] == False:
+            if status[role][minion] is False:
                 # Currently no checking for passive mds.
                 # status.pid returns None as the process is idling.
                 # therefore it will also report that i.e mon is not running
