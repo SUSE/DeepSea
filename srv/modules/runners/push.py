@@ -211,6 +211,8 @@ class PillarData(object):
         common = {}
         with open(filename, "r") as policy:
             for line in policy:
+                # strip comments from the end of the line
+                line = re.sub(' #.*$', '', line)
                 line = line.rstrip()
                 if (line.startswith('#') or not line):
                     log.debug("Ignoring '{}'".format(line))
@@ -240,7 +242,6 @@ class PillarData(object):
                 log.debug("    {}".format(filename))
         return common
 
-
     def _parse(self, line):
         """
         Return globbed files constrained by optional slices or regexes.
@@ -262,11 +263,8 @@ class PillarData(object):
             files = glob.glob(line)
         return files
 
-
     def _shift_dir(self, path):
         """
         Remove the leftmost directory, expects beginning /
         """
         return "/".join(path.split('/')[2:])
-
-
