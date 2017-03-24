@@ -44,7 +44,7 @@ def _summarize_iperf(result):
     if rc == 0:
         msg['succeeded'] = True
     	msg['speed'] = out
-    	msg['filter'] = re.match(r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Bytes/sec)', out, re.DOTALL ).group(2)
+    	msg['filter'] = re.match(r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Mbits/sec)', out, re.DOTALL ).group(2)
     if rc == 1:
         msg['succeeded'] = False
         msg['failed'] = True
@@ -119,7 +119,7 @@ def iperf_client_cmd( server, cpu=0, port=5200 ):
     '''
     if not server:
         return False
-    iperf_cmd = [ "/usr/bin/iperf3", "-fM", "-A"+str(cpu), "-t10", "-c"+server, "-p"+str(port)]
+    iperf_cmd = [ "/usr/bin/iperf3", "-fm", "-A"+str(cpu), "-t10", "-c"+server, "-p"+str(port)]
     log.debug('iperf_client_cmd: cmd {}'.format(iperf_cmd))
     proc = Popen(iperf_cmd, stdout=PIPE, stderr=PIPE)
     proc.wait()
