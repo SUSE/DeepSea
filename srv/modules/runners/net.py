@@ -109,8 +109,8 @@ def iperf(cluster = None, exclude = None, **kwargs):
             #results.append( job )
     
     # return results
-    _summarize_iperf( results ) 
-    return "Done" 
+    return _summarize_iperf( results ) 
+    #return "Done" 
     #_summarize(len(addresses), results)
 
 def ping(cluster = None, exclude = None, **kwargs):
@@ -326,25 +326,38 @@ def _summarize_iperf(results):
 
     #for result in sorted( results ):
     #for result in results.sort( key=(operator.itemgetter(0))['server']):
-    server = {}
+    server_results = {}
     for result in results:
         for host in result:
-            print "Server:\n{}".format(result[host]['server'])
-	    if not result[host]['server'] in server:
-	        server.update( {result[host]['server']:""} )
+            #print "Server:\n{}".format(result[host]['server'])
+	    if not result[host]['server'] in server_results:
+	        server_results.update( {result[host]['server']:""} )
 	        #server.update( {result[host]['server'],list()} )
             if result[host]['succeeded']:
-                print "success:\n{}".format(result[host]['succeeded']) 
-                print "filter:\n{}".format(result[host]['filter']) 
-	        server[result[host]['server']] += result[host]['filter']
+                #print "success:\n{}".format(result[host]['succeeded']) 
+                #print "filter:\n{}".format(result[host]['filter']) 
+	        server_results[result[host]['server']] += " " + result[host]['filter']
             elif result[host]['failed']:
-                print "failed:\n{}".format(result[host]['failed']) 
-		server[result[host]['server']] += "Failed from ".format(host)
+                #print "failed:\n{}".format(result[host]['failed']) 
+		server_results[result[host]['server']] += " Failed to connect from {}".format(host)
             elif result[host]['errored']:
-                print "errored :\n{}".format(result[host]['errored']) 
-		server[result[host]['server']] += "Error from ".format(host)
+                #print "errored :\n{}".format(result[host]['errored']) 
+		server_results[result[host]['server']] += " Error to connect from {}".format(host)
 
-    return server
+    for key, result in server_results.iteritems():
+        total = 0
+        print "Key = " + key 
+        speed = result.split('Mbits/sec')
+	speed = filter(None, speed)
+        print "Value = {}".format(speed)
+        try:
+            for v in speed:
+                total += float(v.strip())
+        	print "total = {}".format(total)
+            server_results[key] = str(total) + " Mbits/sec"
+        except ValueError:
+            continue 
+    return server_results
 """
     success = []
     failed = []
