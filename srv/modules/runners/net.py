@@ -42,10 +42,19 @@ def iperf(cluster = None, exclude = None, **kwargs):
         sudo salt-run net.iperf ceph
 
     """
+    exclude_string = exclude_iplist = None
+    if exclude:
+        exclude_string, exclude_iplist = _exclude_filter(exclude)
+
     addresses = []
     local = salt.client.LocalClient()
     if cluster:
         search = "I@cluster:{}".format(cluster)
+
+        if exclude_string:
+            search += " and not ( " + exclude_string + " )"
+            log.debug( "iperf: search {} ".format(search))
+
         networks = local.cmd(search , 'pillar.item', [ 'cluster_network', 'public_network' ], expr_form="compound")
         total = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
         addresses = []
@@ -56,16 +65,19 @@ def iperf(cluster = None, exclude = None, **kwargs):
                 addresses.extend(_address(total[host], networks[host]['public_network']))
     else:
         search = "*"
+        if exclude_string:
+            search += " and not ( " + exclude_string + " )"
+            log.debug( "ping: search {} ".format(search))
         addresses = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
         addresses = _flatten(addresses.values())
         # Lazy loopback removal - use ipaddress when adding IPv6
         try:
             if addresses:
                 addresses.remove('127.0.0.1')
-            #if exclude_iplist:
-            #    for ex_ip in exclude_iplist:
-            #        log.debug( "ping: removing {} ip ".format(ex_ip))
-            #        addresses.remove(ex_ip)
+            if exclude_iplist:
+                for ex_ip in exclude_iplist:
+                    log.debug( "ping: removing {} ip ".format(ex_ip))
+                    addresses.remove(ex_ip)
         except ValueError:
             log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
             pass
@@ -323,9 +335,6 @@ def _summarize_iperf(results):
     """
     iperf summarize the successes, failures and errors across all minions
     """
-
-    #for result in sorted( results ):
-    #for result in results.sort( key=(operator.itemgetter(0))['server']):
     server_results = {}
     for result in results:
         for host in result:
@@ -346,36 +355,15 @@ def _summarize_iperf(results):
 
     for key, result in server_results.iteritems():
         total = 0
-        print "Key = " + key 
         speed = result.split('Mbits/sec')
 	speed = filter(None, speed)
-        print "Value = {}".format(speed)
         try:
             for v in speed:
                 total += float(v.strip())
-        	print "total = {}".format(total)
             server_results[key] = str(total) + " Mbits/sec"
         except ValueError:
             continue 
     return server_results
-"""
-    success = []
-    failed = []
-    errored = []
-    filter_result = []
-    log.debug( "_summarize: results {}".format(results))
-    for host in sorted(results.iterkeys()):
-        #if results[host]['succeeded'] == total:
-            #success.append(host)
-        if 'failed' in results[host]:
-            failed.append("{} from {}".format(results[host]['failed'], host))
-        if 'errored' in results[host]:
-            errored.append("{} from {}".format(results[host]['errored'], host))
-        if 'filter' in results[host]:
-            filter_result.append("node {} to {} speed".format(results[host]['filter'], host))
-    if filter_result:
-        print "Speed of the network: \n    {}".format("\n    ".join(filter_result))
-"""
 
 def _skip_dunder(settings):
     """
