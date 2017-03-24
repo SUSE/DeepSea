@@ -28,6 +28,19 @@ class LRBDTarget {
         this.target = targetName ? targetName : "undefined";
         this.hosts = hosts ? hosts : [];
     }
+
+    /* Returns JSON object of all custom (ie. not "target" or "hosts") entries.
+     */
+    getCustomEntries() {
+	var customEntries = {};
+	for (var ent in this) {
+	    if (ent !== 'target' && ent !== 'hosts') {
+		customEntries[ent] = this[ent];
+	    }
+	}
+
+	return customEntries;
+    }
 }
 
 /*******************************************************************************
@@ -642,28 +655,51 @@ class LRBDConf {
                              * TODO: need a tie break when: Two identical images selected in separate configs, one with
                              * an initiator(s) the other without - lrbd to handle the tie break, or us?
                              */
-                            if (img.initiatorList && img.initiatorList.length) {
-                                for (var n = 0; n < img.initiatorList.length; n++) {
-                                    var initiator = img.initiatorList[n];
 
-                                    /* Only push if no matching tpg entry present. */
+			    /* First, determine if we should even add the image as a tpg entry.  A hit hear means we
+			     * have an entry that matches portal and image name.
+			     */
+			    var tpgIndex = lrbdPoolGateway.tpg.findIndex(
+				(function(elem, index, arr) {
+				    return (elem.portal === (this.intfObj.node + "-portal")) &&
+					(elem.image === (this.imgObj.img));
+				}), {"intfObj": intf, "imgObj": img});
+
+			    // Deal with the non-initiator tpg entry.
+			    if (img.initiatorList.length === 0) {
+				if (tpgIndex === -1) {
+				    lrbdPoolGateway.tpg.push(new LRBDPoolGatewayTPG(intf.node + "-portal", null, img.img));
+				} else {
                                     if (lrbdPoolGateway.tpg.findIndex(
                                         (function(elem, index, arr) {
                                             return (elem.portal === (this.intfObj.node + "-portal")) &&
-                                                   (elem.image === (this.imgObj.img)) &&
-                                                   (elem.initiator === (this.initiator));
-                                        }), {"intfObj": intf, "imgObj": img, "initiator": initiator}) === -1) {
-                                        lrbdPoolGateway.tpg.push(new LRBDPoolGatewayTPG(intf.node + "-portal", initiator, img.img));
+						(elem.image === (this.imgObj.img)) &&
+						(elem.initiator === (this.initiator));
+					}), {"intfObj": intf, "imgObj": img, "initiator": null}) === -1) {
+					lrbdPoolGateway.tpg.push(new LRBDPoolGatewayTPG(intf.node + "-portal", null, img.img));
                                     }
-                                    
                                 }
                             } else {
-                                /* Only push if no matching tpg entry present. */
-                                if (lrbdPoolGateway.tpg.findIndex(
-                                    (function(elem, index, arr) {
-                                        return (elem.portal === (this.intfObj.node + "-portal")) && (elem.image === (this.imgObj.img));
-                                    }), {"intfObj": intf, "imgObj": img}) === -1) {
-                                    lrbdPoolGateway.tpg.push(new LRBDPoolGatewayTPG(intf.node + "-portal", null, img.img));
+				if (tpgIndex === -1) {
+				    for (var n = 0; n < img.initiatorList.length; n++) {
+					var initiator = img.initiatorList[n];
+
+					lrbdPoolGateway.tpg.push(new LRBDPoolGatewayTPG(intf.node + "-portal", initiator, img.img));
+				    }
+				} else {
+				    for (var n = 0; n < img.initiatorList.length; n++) {
+					var initiator = img.initiatorList[n];
+
+					/* Only push if no matching tpg entry present. */
+					if (lrbdPoolGateway.tpg.findIndex(
+					    (function(elem, index, arr) {
+						return (elem.portal === (this.intfObj.node + "-portal")) &&
+						    (elem.image === (this.imgObj.img)) &&
+						    (elem.initiator === (this.initiator));
+					    }), {"intfObj": intf, "imgObj": img, "initiator": initiator}) === -1) {
+					    lrbdPoolGateway.tpg.push(new LRBDPoolGatewayTPG(intf.node + "-portal", initiator, img.img));
+					}
+				    }
                                 }
                             }
                         }

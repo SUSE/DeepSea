@@ -69,7 +69,7 @@
                 <paper-input label='userid' value='{{userid}}'></paper-input>
                 <paper-input label='password' value='{{password}}'></paper-input>
 
-                <paper-checkbox on-change="initiatorInputCheckboxChanged">Add initiators (optional)</paper-checkbox>
+		<paper-checkbox on-change="initiatorInputCheckboxChanged" checked="{{!initiatorInputHidden}}">Add initiators (optional)</paper-checkbox>
                 <div hidden$="{{initiatorInputHidden}}">
                     <label>Initiators (one per line)</label>
                     <br>
@@ -77,7 +77,7 @@
                 </div>
                 <br>
                 <hr>
-                <paper-checkbox on-change="mutInputCheckboxChanged">Add mutual authentication (optional)</paper-checkbox>
+		<paper-checkbox on-change="mutInputCheckboxChanged" checked="{{!mutInputHidden}}">Add mutual authentication (optional)</paper-checkbox>
                 <div hidden$="{{mutInputHidden}}">
                     <paper-input label='Mutual userid' value='{{mutUserId}}'></paper-input>
                     <paper-input label='Mutual password' value='{{mutPassword}}'></paper-input>
@@ -85,13 +85,13 @@
                 </div>
                 <br>
                 <hr>
-                <paper-checkbox on-change="discInputCheckboxChanged">Add discovery authentication (optional)</paper-checkbox>
+		<paper-checkbox on-change="discInputCheckboxChanged" checked="{{!discInputHidden}}">Add discovery authentication (optional)</paper-checkbox>
                 <div hidden$="{{discInputHidden}}">
                     <paper-input label='Discovery userid' value='{{discUserId}}'></paper-input>
                     <paper-input label='Discovery password' value='{{discPassword}}'></paper-input>
                     <paper-checkbox on-change="discEnabledCheckboxChanged" checked="{{discEnabled}}">Discovery authentication enabled (default)</paper-checkbox>
                     <br>
-                    <paper-checkbox on-change="discMutInputCheckboxChanged">Add discovery mutual authentication (optional)</paper-checkbox>
+		    <paper-checkbox on-change="discMutInputCheckboxChanged" checked="{{!discMutInputHidden}}">Add discovery mutual authentication (optional)</paper-checkbox>
                     <div hidden$="{{discMutInputHidden}}">
                         <paper-input label='Discovery mutual userid' value='{{discMutUserId}}'></paper-input>
                         <paper-input label='Discovery mutual password' value='{{discMutPassword}}'></paper-input>
@@ -390,6 +390,7 @@
              this.fire('removeTarget');
          },
 
+	 /* Returns a reference to the config element. */
          addConfig: function() {
              var targetConfig = document.createElement("iscsi-target-config");
 
@@ -407,6 +408,7 @@
              /* var beforeNode = Polymer.dom(this.root).childNodes[-1];*/
              Polymer.dom(this.firstElementChild).appendChild(targetConfig);
 
+	     return targetConfig;
          },
 
          initiatorInputCheckboxChanged: function(e) {
