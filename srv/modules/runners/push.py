@@ -212,7 +212,7 @@ class PillarData(object):
         with open(filename, "r") as policy:
             for line in policy:
                 # strip comments from the end of the line
-                line = re.sub(' #.*$', '', line)
+                line = re.sub('\s+#.*$', '', line)
                 line = line.rstrip()
                 if (line.startswith('#') or not line):
                     log.debug("Ignoring '{}'".format(line))
