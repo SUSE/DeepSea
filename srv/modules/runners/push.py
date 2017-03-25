@@ -56,7 +56,9 @@ All files are overwritten in the destination tree /srv/pillar/ceph/stack/default
 
 """
 
-stack = imp.load_source('pillar.stack', '/srv/modules/pillar/stack.py')
+cur_file_path = os.path.dirname(os.path.realpath(__file__))
+stack_path = os.path.abspath('{}/../pillar/stack.py'.format(cur_file_path))
+stack = imp.load_source('pillar.stack', stack_path)
 log = logging.getLogger(__name__)
 
 
