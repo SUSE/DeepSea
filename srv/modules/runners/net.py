@@ -98,11 +98,13 @@ def iperf(cluster = None, exclude = None, **kwargs):
         log.debug( "iperf: server {} cpu count {} ".format(server, cpu_core) )
         clients = list(addresses)
         clients.remove(server)
-        for x, client in enumerate(clients):
-            log.debug( "iperf: num {} client {} to server {}".format(x,client, server) )
-            if( x < cpu_core ):
-    	        jid.append( local.cmd_async("S@"+client, 'multi.iperf', [server, 0, 5800+x ], expr_form="compound"))
-                log.debug( "iperf: from {} calling server {} with cpu {} port {} ".format(client, server, 0, 5800+x) )
+        clients_size = len(clients)
+        for x in xrange(0, cpu_core, clients_size):
+            for y, client in enumerate(clients):
+                log.debug( "iperf: server port num {}, num {} client {} to server {}".format(5800+x+y,x/clients_size, client, server) )
+                if( x+y < cpu_core ):
+    	            jid.append( local.cmd_async("S@"+client, 'multi.iperf', [server, x/clients_size, 5800+x+y ], expr_form="compound"))
+                    log.debug( "iperf: actually called from {} to server {} with cpu {} port {} ".format(client, server, x/clients_size, 5800+x+y) )
         log.debug( "iperf: Server {} async iperf client count {}".format(server, len(jid)) )
 
     log.debug( "iperf: All Async iperf client count {}".format(len(jid)) )
