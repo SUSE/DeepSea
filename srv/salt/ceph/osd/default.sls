@@ -28,7 +28,7 @@ prepare {{ data }}:
 
 activate {{ data }}:
   cmd.run:
-    - name: "ceph-disk -v activate --mark-init systemd --mount {{ data }}"
+    - name: "ceph-disk -v activate --mark-init systemd --mount {{ data }}1"
     - unless: "grep -q ^{{ data }} /proc/mounts"
     - fire_event: True
 
