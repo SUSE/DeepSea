@@ -1,3 +1,4 @@
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') %}
 
 cephfs pools:
   salt.state:
@@ -14,4 +15,6 @@ mds:
     - tgt: "I@roles:mds and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.mds
+
+{% endif %}
 
