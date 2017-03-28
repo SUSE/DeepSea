@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 from subprocess import call, Popen, PIPE
 import salt.client
