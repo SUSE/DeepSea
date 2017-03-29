@@ -23,7 +23,7 @@ With these observations in mind, DeepSea addresses them with the following strat
 Collect each set of tasks into a simple goal.  Each goal is a Stage.  DeepSea currently has six stages described below.
 
 * **Stage 0 Provisioning**
-While many sites will provide their own provisioning of servers, the various virtual and cloud environments may not.  This stage is optional but present to allow for updating and rebooting if necessary.
+While many sites will provide their own provisioning of servers, the various virtual and cloud environments may not.
 
 * **Stage 1 Discovery**
 Considering the wide range of supported hardware by Ceph, use Salt to interrogate each of the servers and collect the necessary information for configuring Ceph.
