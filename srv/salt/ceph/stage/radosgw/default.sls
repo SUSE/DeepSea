@@ -1,3 +1,4 @@
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') or salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw_configurations') %}
 
 rgw auth:
   salt.state:
@@ -19,3 +20,4 @@ rgw users:
     - sls: ceph.rgw
 
 {% endfor %}
+{% endif %}

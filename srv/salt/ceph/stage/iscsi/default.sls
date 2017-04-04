@@ -1,3 +1,4 @@
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
 
 auth:
   salt.state:
@@ -27,6 +28,7 @@ iscsi apply:
     - tgt_type: compound
     - sls: ceph.igw
 
+{% endif %}
 # Move these to somewhere else... TBD
 #multipathd:
 #  salt.state:

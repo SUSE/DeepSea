@@ -1,3 +1,5 @@
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') or salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha_configurations') %}
+
 ganesha auth:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -19,3 +21,4 @@ start {{ role }}::
     - sls: ceph.ganesha
 
 {% endfor %}
+{% endif %}
