@@ -8,19 +8,9 @@ validate failed:
 
 {% endif %}
 
-sync master:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.sync
-
 {% set notice = salt['saltutil.runner']('advise.salt_run') %}
 
-repo master:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.repo
-
-upgrading 
+upgrading:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
