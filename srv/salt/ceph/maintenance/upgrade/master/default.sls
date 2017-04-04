@@ -20,7 +20,7 @@ repo master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.repo
 
-upgrading {{ host }}:
+upgrading 
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
