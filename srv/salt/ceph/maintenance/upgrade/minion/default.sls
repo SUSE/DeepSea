@@ -20,13 +20,11 @@ check if services are up after processing {{ host }}:
     - failhard: True
 
 unset noout after processing {{ host }}:
-  salt.function:
-    - name: cmd.run
+  salt.state:
+    - sls: ceph.noout.unset
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - arg:
-      - ceph osd unset noout
     - failhard: True
-
+    
 upgrading {{ host }}:
   salt.state:
     - tgt: {{ host }}
@@ -46,11 +44,9 @@ rebooting {{ host }}:
 # After the last item in the iteration was processed the reactor 
 # still sets ceph osd set noout. So setting this after is still necessary.
 unset noout after processing all hosts: 
-  salt.function:
-    - name: cmd.run
+  salt.state:
+    - sls: ceph.noout.unset
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - arg:
-      - ceph osd unset noout
     - failhard: True
 
 #postflight

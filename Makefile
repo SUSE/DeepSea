@@ -155,6 +155,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/mon/files/*.j2 $(DESTDIR)/srv/salt/ceph/mon/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart
 	install -m 644 srv/salt/ceph/mon/restart/*.sls $(DESTDIR)/srv/salt/ceph/mon/restart
+	# state files - noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/set
+	install -m 644 srv/salt/ceph/noout/set/*.sls $(DESTDIR)/srv/salt/ceph/noout/set
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/unset
+	install -m 644 srv/salt/ceph/noout/unset/*.sls $(DESTDIR)/srv/salt/ceph/noout/unset
 	# state files - openattic
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic
 	install -m 644 srv/salt/ceph/openattic/*.sls $(DESTDIR)/srv/salt/ceph/openattic/
@@ -300,9 +306,9 @@ copy-files:
 	install -m 644 srv/salt/ceph/updates/kernel/*.sls $(DESTDIR)/srv/salt/ceph/updates/kernel/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance
 	install -m 644 srv/salt/ceph/maintenance/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/
-
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
-	install -m 644 srv/salt/ceph/maintenance/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/noout
+	install -m 644 srv/salt/ceph/maintenance/noout/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/master
 	install -m 644 srv/salt/ceph/maintenance/upgrade/master/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/master
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/minion
