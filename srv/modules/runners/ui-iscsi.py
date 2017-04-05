@@ -1,16 +1,5 @@
 #!/usr/bin/python
 
-import logging
-import sys
-import os
-import json
-import yaml
-import salt.client
-import salt.utils.minions
-
-log = logging.getLogger(__name__)
-
-
 """
 Consolidate any user interface iscsi calls for Wolffish and openATTIC.
 
@@ -23,6 +12,17 @@ Guiding ideas:
   modules with Salt mines.
 """
 
+import logging
+import sys
+import os
+import json
+import yaml
+import salt.client
+import salt.utils.minions
+
+log = logging.getLogger(__name__)
+
+
 class Iscsi(object):
     """
     Populating the view requires network interfaces by host, images by pool
@@ -30,8 +30,7 @@ class Iscsi(object):
     Saving the choices requires writing out the lrbd.conf
     """
 
-
-    def __init__(self, **kwargs):
+    def __init__(self):
 	"""
 	Set yaml dumper, initialize Salt client
 	"""
@@ -58,16 +57,16 @@ class Iscsi(object):
 	_stdout = sys.stdout
 	sys.stdout = open(os.devnull, 'w')
 
-	igws = self.local.cmd("I@roles:igw", 'grains.get', [ 'ipv4'], expr_form="compound")
+	igws = self.local.cmd("I@roles:igw", 'grains.get', ['ipv4'], expr_form="compound")
 	sys.stdout = _stdout
 	if wrapped:
-	    config = []
+	    data = []
 	    for igw in igws.keys():
 		for addr in igws[igw]:
 		    if addr == '127.0.0.1':
 			continue
-		    config.append({ 'node': igw, 'addr': addr })
-	    return config
+		    data.append({'node': igw, 'addr': addr})
+	    return data
 	else:
 	    for igw in igws.keys():
 		igws[igw].remove('127.0.0.1')
@@ -80,18 +79,19 @@ class Iscsi(object):
 	and their pools.
 	"""
 	__opts__ = salt.config.client_config('/etc/salt/master')
-	result = salt.utils.minions.mine_get('I@roles:master', 'cephimages.list', 'compound', __opts__)
+	result = salt.utils.minions.mine_get('I@roles:master',
+					     'cephimages.list',
+					     'compound', __opts__)
 	if wrapped:
-	    config = []
+	    data = []
 	    for master in result.keys():
 		for pool in result[master]:
-		    config.append({ 'pool': pool, 'img': result[master][pool] })
+		    data.append({'pool': pool, 'img': result[master][pool]})
 		break
-	    return config
+	    return data
 	else:
 	    for master in result.keys():
 		return result[master]
-
 
     def config(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
 	"""
@@ -130,11 +130,11 @@ class Iscsi(object):
 	    contents = yaml.safe_load(yml)
 	contents['igw_config'] = 'default-ui'
 	with open(filename, 'w') as yml:
-	    yml.write(yaml.dump(contents, Dumper=self.friendly_dumper,
-						  default_flow_style=False))
+	    yml.write(yaml.dump(contents,
+				Dumper=self.friendly_dumper,
+				default_flow_style=False))
 	# refresh pillar
-	self.local.cmd("I@roles:master", 'saltutils.pillar_refresh', [ ''], expr_form="compound")
-
+	self.local.cmd("I@roles:master", 'saltutils.pillar_refresh', [''], expr_form="compound")
 
     def canned_populate(self, canned):
 	"""
@@ -152,68 +152,82 @@ class Iscsi(object):
 	"""
 	Return canned example for pools and images
 	"""
-	images = { 1: { 'rbd' : [ 'demo1', 'demo2', 'demo3' ] },
-		   2: { 'car' : [ 'cement' ],
-			'whirl' : [ 'cheese' ],
-			'rbd': [ 'wood', 'writers', 'city' ],
-			'swimming': [ 'cell' ] } }
+	_images = {1: {'rbd': ['demo1', 'demo2', 'demo3']},
+		   2: {'car': ['cement'],
+		       'whirl': ['cheese'],
+		       'rbd': ['wood', 'writers', 'city'],
+		       'swimming': ['cell']}}
 	if wrapped:
-	    config = []
-	    for pool in images[canned].keys():
-		for img in images[canned][pool]:
-		    config.append({ 'pool': pool, 'img': img })
-	    return config
+	    data = []
+	    for pool in _images[canned].keys():
+		for img in _images[canned][pool]:
+		    data.append({'pool': pool, 'img': img})
+	    return data
 	else:
-	    return images[canned]
+	    return data[canned]
 
     def canned_interfaces(self, canned, wrapped=True):
 	"""
 	Return canned example for nodes and addresses
 	"""
-	interfaces = { 1: { 'igw1' : [ '192.168.0.2', '192.168.1.2', '192.168.2.2' ] },
-		       2: { 'node1': [ '10.0.0.10' ],
-			    'node2': [ '10.0.0.11' ],
-			    'node3': [ '10.0.0.12',
-				       '172.16.31.12',
-				       '192.168.10.112' ],
-			    'node4': [ '1.2.3.4' ] } }
+	_interfaces = {1: {'igw1': ['192.168.0.2', '192.168.1.2', '192.168.2.2']},
+		      2: {'node1': ['10.0.0.10'],
+			  'node2': ['10.0.0.11'],
+			  'node3': ['10.0.0.12',
+				    '172.16.31.12',
+				    '192.168.10.112'],
+			  'node4': ['1.2.3.4']}}
 	if wrapped:
-	    config = []
-	    for node in interfaces[canned].keys():
-		for addr in interfaces[canned][node]:
-		    config.append({ 'node': node, 'addr': addr })
-	    return config
+	    data = []
+	    for node in _interfaces[canned].keys():
+		for addr in _interfaces[canned][node]:
+		    data.append({'node': node, 'addr': addr})
+	    return data
 	else:
-	    return interfaces[canned]
+	    return _interfaces[canned]
+
 
 def populate(**kwargs):
     """
     Populate the iSCSI view
     """
-    i = Iscsi(**kwargs)
+    iscsi = Iscsi()
     if 'canned' in kwargs:
-	return i.canned_populate(int(kwargs['canned']))
-    return i.populate()
+	return iscsi.canned_populate(int(kwargs['canned']))
+    return iscsi.populate()
+
 
 def save(**kwargs):
     """
     Save the iSCSI configuration
     """
-    i = Iscsi()
-    return i.save(**kwargs)
+    iscsi = Iscsi()
+    return iscsi.save(**kwargs)
 
-def config(**kwargs):
-    i = Iscsi(**kwargs)
-    return i.config()
+
+def config():
+    """
+    Return the iSCSI configuration
+    """
+    iscsi = Iscsi()
+    return iscsi.config()
+
 
 def interfaces(**kwargs):
-    i = Iscsi(**kwargs)
+    """
+    Return the list of interfaces by minion
+    """
+    iscsi = Iscsi()
     if 'canned' in kwargs:
-	return i.canned_interfaces(int(kwargs['canned']), wrapped=False)
-    return i.interfaces(wrapped=False)
+	return iscsi.canned_interfaces(int(kwargs['canned']), wrapped=False)
+    return iscsi.interfaces(wrapped=False)
+
 
 def images(**kwargs):
-    i = Iscsi(**kwargs)
+    """
+    Return the list of images by pool
+    """
+    iscsi = Iscsi()
     if 'canned' in kwargs:
-	return i.canned_images(int(kwargs['canned']), wrapped=False)
-    return i.images(wrapped=False)
+	return iscsi.canned_images(int(kwargs['canned']), wrapped=False)
+    return iscsi.images(wrapped=False)
