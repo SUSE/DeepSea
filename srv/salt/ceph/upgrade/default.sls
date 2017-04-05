@@ -1,4 +1,4 @@
-zypper dup:
+packagemanager dup:
   module.run:
     - name: packagemanager.dup
     - kwargs:

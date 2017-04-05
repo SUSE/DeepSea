@@ -25,7 +25,7 @@ def reboot(running, installed):
     log.info(message)
 
     proc = Popen([ "/usr/bin/wall" ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    output = proc.communicate(input=message)
+    proc.communicate(input=message)
 
     return True
 
@@ -33,10 +33,10 @@ def generic(message):
     """
     Used to print arbitrary text to the screen.
     """
-    message = message
+    message = str(message)
     log.info(message)
 
     proc = Popen([ "/usr/bin/wall" ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    output = proc.communicate(input=message)
+    proc.communicate(input=message)
 
     return True

@@ -9,33 +9,34 @@ log = logging.getLogger(__name__)
 class PackageManager(object):
 
     """
-    That is not the nativ salt module and is not ment to
+    That is not the native salt module and is not meant to
     replace it.
-    This module was created to react on packagemanagers
-    reboot advice.
+    This module was created to react on the host package 
+    manager's reboot advice, rebooting if required.
     """
 
     def __init__(self, **kwargs):
         self.debug = kwargs.get('debug', False)
         self.kernel = kwargs.get('kernel', False)
         self.reboot = kwargs.get('reboot', True)
+        self.reboot_delay = kwargs.get('reboot_delay', True)
 
         self.platform = linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
             self.pm = Zypper(**kwargs)
-        elif "fedora" in self.platform or "centos" in self.platform:
+        elif "ubuntu" in self.platform or "debian" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
                              "Open an issue on github.com/SUSE/DeepSea")
 
-    def reboot_in(self):
+    def _reboot(self):
         """
         Assuming `shutdown -r` works on all platforms
         """
-        log.info("The PackageManager asked for a systemreboot. Rebooting in 1 Minute")
+        log.info("The PackageManager asked for a system reboot. Rebooting in 1 Minute")
         if self.debug or not self.reboot:
             log.debug("Faking Reboot")
             return None
@@ -108,7 +109,7 @@ class Apt(PackageManager):
             log.info("returncode: {}".format(proc.returncode))
             if proc.returncode == 0:
                 if os.path.isfile('/var/run/reboot-required'):
-                    self.reboot_in()
+                    self._reboot()
             elif proc.returncode != 0:
                 raise StandardError("Apt exited with non-0 returncode")
         else:
@@ -252,7 +253,7 @@ class Zypper(PackageManager):
                 => Keep checks for kernel updates in /srv/salt/ceph/stage/prep.sls until
                    a better solution is found.
                 """
-                self.reboot_in()
+                self._reboot()
             if int(proc.returncode) > 0 and int(proc.returncode) < 100:
                 if int(proc.returncode) in self.RETCODES:
                     log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))

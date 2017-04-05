@@ -14,10 +14,10 @@ def _preserve_order_sorted(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def unique(cluster=None, exclude=[]):
+def unique(cluster='ceph', exclude=[]):
     """ 
     Assembling a list of nodes.
-    Ordered(MON < OSD < MDS < RGW < IGW)  
+    Ordered(MON, OSD, MDS, RGW, IGW)  
     """ 
     all_clients = []
 
@@ -33,6 +33,6 @@ def unique(cluster=None, exclude=[]):
     # the service.
     roles = [role for role in roles if role not in exclude]
     for role in roles:
-         dct = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
-         all_clients += dct.keys()
+        nodes = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
+        all_clients += nodes.keys()
     return _preserve_order_sorted(all_clients)
