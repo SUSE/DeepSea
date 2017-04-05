@@ -1,6 +1,5 @@
-
-
 {% if salt['saltutil.runner']('validate.setup') == False %}
+
 validate failed:
   salt.state:
     - name: just.exit

@@ -8,8 +8,6 @@ validate failed:
 
 {% endif %}
 
-{% set notice = salt['saltutil.runner']('advise.salt_run') %}
-
 upgrading:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
