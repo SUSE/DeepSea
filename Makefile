@@ -357,6 +357,12 @@ copy-files:
 	# state files - check processes
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephprocesses
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/cephprocesses/
+	# state files - warning
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning
+	install -m 644 srv/salt/ceph/warning/*.sls $(DESTDIR)/srv/salt/ceph/warning/
+	# state files - warning/noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning/noout
+	install -m 644 srv/salt/ceph/warning/noout/*.sls $(DESTDIR)/srv/salt/ceph/warning/noout/
 
 	# state files - orchestrate stage symlinks
 	ln -sf prep		$(DESTDIR)/srv/salt/ceph/stage/0

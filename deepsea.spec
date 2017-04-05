@@ -212,6 +212,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/updates
 %dir /srv/salt/ceph/updates/restart
 %dir /srv/salt/ceph/wait
+%dir /srv/salt/ceph/warning
+%dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/cephprocesses
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
@@ -368,6 +370,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/updates/kernel/*.sls
 %config /srv/salt/ceph/updates/regular/*.sls
 %config /srv/salt/ceph/wait/*.sls
+%config /srv/salt/ceph/warning/*.sls
+%config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/cephprocesses/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
