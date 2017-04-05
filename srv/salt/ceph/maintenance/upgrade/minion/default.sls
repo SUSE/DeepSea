@@ -1,9 +1,8 @@
 # preflight
-
 warning:
   salt.state:
-    - name: ceph.warning.noout
     - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.warning.noout
     - failhard: True
 
 {% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
