@@ -55,7 +55,7 @@ updating {{ host }}:
     - sls: ceph.updates
     - failhard: True
 
-check if restart is needed for {{ host }}:
+restart {{ host }} if updates require:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound

@@ -27,20 +27,20 @@ class TestPackageManager():
         assert isinstance(ret.pm, Zypper) is True
 
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    def test_PackageManager_centos(self, dist_return):
+    def test_PackageManager_debian(self, dist_return):
         """
         Test Packagemanager assignments based on `patform` mocks.
         """
-        dist_return.return_value = ('centos', '8', 'x86_64')
+        dist_return.return_value = ('debian', '8', 'x86_64')
         ret = PackageManager()
         assert isinstance(ret.pm, Apt) is True
 
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    def test_PackageManager_fedora(self, dist_return):
+    def test_PackageManager_ubuntu(self, dist_return):
         """
         Test Packagemanager assignments based on `patform` mocks.
         """
-        dist_return.return_value = ('fedora', '23', 'x86_64')
+        dist_return.return_value = ('ubuntu', '23', 'x86_64')
         ret = PackageManager()
         assert isinstance(ret.pm, Apt) is True
 
@@ -52,7 +52,7 @@ class TestPackageManager():
         """
         dist_return.return_value = ('opensuse', '42.2', 'x86_64')
         ret = PackageManager()
-        ret.reboot_in()
+        ret._reboot()
         assert po.called is True
 
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
@@ -132,10 +132,10 @@ class TestZypper():
         assert po.called is True
         assert ret is False
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._updates_needed')
-    def test__handle_updates_present(self, updates_needed, po, reboot_in, zypp):
+    def test__handle_updates_present(self, updates_needed, po, _reboot, zypp):
         """
         Given there are updates pending.
         Zypper returns 102 which should lead to a reboot.
@@ -145,12 +145,12 @@ class TestZypper():
         po.return_value.communicate.return_value = ("packages out", "error")
         zypp._handle()
         assert po.called is True
-        assert reboot_in.called is True
+        assert _reboot.called is True
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._updates_needed')
-    def test__handle_updates_not_present(self, updates_needed, po, reboot_in, zypp):
+    def test__handle_updates_not_present(self, updates_needed, po, _reboot, zypp):
         """
         Given there are no updates pending.
         Zypper returns 102 which should lead to a reboot.
@@ -161,12 +161,12 @@ class TestZypper():
         po.return_value.communicate.return_value = ("packages out", "error")
         zypp._handle()
         assert po.called is False
-        assert reboot_in.called is False
+        assert _reboot.called is False
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._updates_needed')
-    def test__handle_updates_present_failed_99(self, updates_needed, po, reboot_in, zypp):
+    def test__handle_updates_present_failed_99(self, updates_needed, po, _reboot, zypp):
         """
         Given there are updates pending.
         The returncode is > 0 but < 100.
@@ -178,13 +178,13 @@ class TestZypper():
         with pytest.raises(StandardError) as excinfo:
             zypp._handle()
             assert po.called is True
-            assert reboot_in.called is False
+            assert _reboot.called is False
         excinfo.match('Zypper failed with*')
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._updates_needed')
-    def test__handle_updates_present_failed_1(self, updates_needed, po, reboot_in, zypp):
+    def test__handle_updates_present_failed_1(self, updates_needed, po, _reboot, zypp):
         """
         Given there are updates pending.
         The returncode is > 0 but < 100.
@@ -196,7 +196,7 @@ class TestZypper():
         with pytest.raises(StandardError) as excinfo:
             zypp._handle()
             assert po.called is True
-            assert reboot_in.called is False
+            assert _reboot.called is False
         excinfo.match('Zypper failed with*')
 
 class TestApt():
@@ -208,7 +208,7 @@ class TestApt():
         """
         self.linux_dist = patch('srv.salt._modules.packagemanager.linux_distribution')
         self.lnx_dist_object = self.linux_dist.start()
-        self.lnx_dist_object.return_value = ('fedora', '42.2', 'x86_64')
+        self.lnx_dist_object.return_value = ('ubuntu', '42.2', 'x86_64')
         # Test all permutations of :debug :kernel and :reboot
         args = {'debug': False, 'kernel': False, 'reboot': False}
         yield PackageManager(**args).pm
@@ -248,10 +248,10 @@ class TestApt():
         assert po.called is True
         assert ret is True
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_present_reboot_file_present(self, updates_needed, po, reboot_in, apt):
+    def test__handle_updates_present_reboot_file_present(self, updates_needed, po, _reboot, apt):
         """
         Given there are pending updates.
         And Apt returns with 0
@@ -265,12 +265,12 @@ class TestApt():
             mock_file.return_value = True
             apt._handle()
             assert po.called is True
-            assert reboot_in.called is True
+            assert _reboot.called is True
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_present_reboot_file_present_raise(self, updates_needed, po, reboot_in, apt):
+    def test__handle_updates_present_reboot_file_present_raise(self, updates_needed, po, _reboot, apt):
         """
         Given there are pending updates.
         And Apt returns with non-0
@@ -287,12 +287,12 @@ class TestApt():
                 apt._handle()
                 excinfo.match('Apt exited with non-0 return*')
                 assert po.called is True
-                assert reboot_in.called is False
+                assert _reboot.called is False
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_present_reboot_file_not_present(self, updates_needed, po, reboot_in, apt):      
+    def test__handle_updates_present_reboot_file_not_present(self, updates_needed, po, _reboot, apt):      
         """
         Given there are pending updates.
         And Apt returns with 0
@@ -306,12 +306,12 @@ class TestApt():
             mock_file.return_value = False
             apt._handle()
             assert po.called is True
-            assert reboot_in.called is False
+            assert _reboot.called is False
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_present_failed_99(self, updates_needed, po, reboot_in, apt):
+    def test__handle_updates_present_failed_99(self, updates_needed, po, _reboot, apt):
         """
         Given there are pending updates.
         And Apt returns non-0 returncodes
@@ -326,12 +326,12 @@ class TestApt():
             apt._handle()
             excinfo.match('Apt exited with non-0 return*')
             assert po.called is True
-            assert reboot_in.called is False
+            assert _reboot.called is False
 
-    @mock.patch('srv.salt._modules.packagemanager.PackageManager.reboot_in')
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     @mock.patch('srv.salt._modules.packagemanager.Apt._updates_needed')
-    def test__handle_updates_not_present(self, updates_needed, po, reboot_in, apt):
+    def test__handle_updates_not_present(self, updates_needed, po, _reboot, apt):
         """
         Given there are no pending updates.
         And Apt returns non-0 returncodes
@@ -342,4 +342,4 @@ class TestApt():
         po.return_value.returncode = 1
         po.return_value.communicate.return_value = ("packages out", "error")
         assert po.called is False
-        reboot_in.called is False
+        _reboot.called is False

@@ -8,7 +8,7 @@ switch kernel:
             candidates:
             - kernel-default-base
 
-zypper update only kernel:
+packagemanager update only kernel:
   module.run:
     - name: packagemanager.up
     - kwargs:

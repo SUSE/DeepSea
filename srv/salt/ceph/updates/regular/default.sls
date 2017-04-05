@@ -1,4 +1,4 @@
-zypper update regular:
+packagemanager update regular:
   module.run:
     - name: packagemanager.up
     - kwargs:
