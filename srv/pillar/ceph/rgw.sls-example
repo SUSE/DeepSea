@@ -7,6 +7,9 @@
 #      - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
 
 rgw_configurations:
+  rgw:
+    users:
+      - { uid: "admin", name: "Admin", email: "admin@demo.nil", system: True }
   silver:
     users:
       - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
