@@ -19,12 +19,6 @@ check if services are up after processing {{ host }}:
     - sls: ceph.cephprocesses
     - failhard: True
 
-unset noout after processing {{ host }}:
-  salt.state:
-    - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - failhard: True
-    
 upgrading {{ host }}:
   salt.state:
     - tgt: {{ host }}
@@ -37,6 +31,7 @@ rebooting {{ host }}:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.updates.restart
+    - fire_event: 'salt/ceph/set/noout'
     - failhard: True
 
 {% endfor %}
@@ -49,4 +44,9 @@ unset noout after processing all hosts:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
+warning:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.warning.noout
+    - failhard: True
 #postflight
