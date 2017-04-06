@@ -72,6 +72,10 @@ unset noout after processing all hosts:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
+# Here needs to be 100% definitive check that the cluster is not up yet.
+# the parent if conditional can be False if one of the mons is down.
+# but even if all are down, this is no indication of rebooting/updateing
+# all nodes at once
 {% else %}
 
 updates:

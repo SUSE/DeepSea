@@ -1,6 +1,7 @@
 warning about ceph flag:
   module.run:
     - name: advise.generic 
-    - message: "Make sure you have the 'noout' flag _UNSET_ after a successfull upgrade"
+    - message: "Ceph will be set to noout during the upgrade process to avoid unnecessary data 
+shuffling. Make sure it's disabled afterwards with `ceph osd unset noout`"
     - fire_event: True
     - failhard: True
