@@ -468,7 +468,7 @@ class CephRoles(object):
         self.public_networks, self.cluster_networks = self.public_cluster(self.networks)
 
         #self.master_contents = {}
-        self.available_roles = []
+        self.available_roles = [ 'storage' ]
 
     def _rgw_configurations(self):
         """
