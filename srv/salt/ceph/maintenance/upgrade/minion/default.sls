@@ -5,6 +5,16 @@ ready:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
 
+mines:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.mines
+
+sync:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.sync
+
 warning_after:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
