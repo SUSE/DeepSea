@@ -8,6 +8,16 @@ validate failed:
 
 {% endif %}
 
+update deepsea:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.updates.self
+  
+sync master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.sync
+
 upgrading:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}

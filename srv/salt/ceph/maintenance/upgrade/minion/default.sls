@@ -1,6 +1,11 @@
 # preflight
 
-warning_before:
+ready:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+
+warning_after:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.warning.noout
