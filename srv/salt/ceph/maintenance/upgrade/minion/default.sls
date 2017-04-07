@@ -15,6 +15,16 @@ sync:
     - tgt: '*'
     - sls: ceph.sync
 
+update salt-minions:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.updates.salt
+
+ready after salt upgrade:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+
 warning_before:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}

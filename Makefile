@@ -306,6 +306,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/updates/kernel/*.sls $(DESTDIR)/srv/salt/ceph/updates/kernel/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/self
 	install -m 644 srv/salt/ceph/updates/self/*.sls $(DESTDIR)/srv/salt/ceph/updates/self/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/salt
+	install -m 644 srv/salt/ceph/updates/salt/*.sls $(DESTDIR)/srv/salt/ceph/updates/salt/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance
 	install -m 644 srv/salt/ceph/maintenance/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
