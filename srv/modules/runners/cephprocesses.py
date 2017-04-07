@@ -18,30 +18,23 @@ A secondary purpose is a utility to check the current state of all processes.
 """
 
 
-def check(cluster='ceph', **kwargs):
+def check(cluster='ceph', roles=[]):
     """
     Query the status of running processes for each role.  Also, verify that
     all minions assigned roles do respond.  Return False if any fail.
     """
     search = "I@cluster:{}".format(cluster)
 
-    roles = _cached_roles(search)
-    if 'roles' in kwargs:
-        for role in kwargs['roles']:
-            if role not in roles:
-                log.error("You queried for role {} but there is no such role in your cluster. Aborting".format(role))
-                return False
-        roles = {k: roles[k] for k in kwargs['roles']}
+    if not roles:
+        roles = _cached_roles(search)
 
     status = _status(search, roles)
+    
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
 
-    if not roles:
-        return False
-
     ret = True
-    for role in roles.keys():
+    for role in roles:
         for minion in roles[role]:
             if minion not in status[role]:
                 log.error("ERROR: {} minion did not respond".format(minion))
@@ -50,10 +43,6 @@ def check(cluster='ceph', **kwargs):
     for role in status.keys():
         for minion in status[role]:
             if status[role][minion] is False:
-                # Currently no checking for passive mds.
-                # status.pid returns None as the process is idling.
-                # therefore it will also report that i.e mon is not running
-                # if mon and mds are on the same node
                 log.error("ERROR: {} process on {} is not running".format(role, minion))
                 ret = False
 
@@ -69,12 +58,6 @@ def _status(search, roles):
 
     status = {}
     local = salt.client.LocalClient()
-
-    ignore_roles = [ 'admin', 'master' ]
-
-    for ig_role in ignore_roles:
-      if roles.has_key(ig_role) and roles:
-        roles.pop(ig_role)
 
     for role in roles:
         role_search = search + " and I@roles:{}".format(role)
