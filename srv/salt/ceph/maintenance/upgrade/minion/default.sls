@@ -15,7 +15,7 @@ sync:
     - tgt: '*'
     - sls: ceph.sync
 
-warning_after:
+warning_before:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.warning.noout
