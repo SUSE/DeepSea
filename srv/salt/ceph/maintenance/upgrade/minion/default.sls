@@ -1,5 +1,6 @@
 # preflight
-warning:
+
+warning_before:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.warning.noout
@@ -44,9 +45,10 @@ unset noout after processing all hosts:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
-warning:
+warning_after:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.warning.noout
     - failhard: True
+
 #postflight
