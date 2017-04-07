@@ -1,4 +1,3 @@
-
 begin:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -25,6 +24,12 @@ common packages:
     - sls: ceph.packages.common
 
 {% if salt['saltutil.runner']('cephprocesses.check', roles=['mon']) == True %}
+
+warning_before:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.warning.noout
+    - failhard: True
 
 {% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
 
@@ -60,6 +65,7 @@ restart {{ host }} if updates require:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.updates.restart
+    - fire_event: 'salt/ceph/set/noout'
     - failhard: True
 
 {% endfor %}
@@ -70,6 +76,12 @@ unset noout after processing all hosts:
   salt.state:
     - sls: ceph.noout.unset
     - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+warning_after:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.warning.noout
     - failhard: True
 
 # Here needs to be 100% definitive check that the cluster is not up yet.
