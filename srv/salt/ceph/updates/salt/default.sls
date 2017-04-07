@@ -1,5 +1,5 @@
-update deepsea:
+update salt:
   pkg.latest:
     - pkgs:
-      - deepsea
+      - salt-minion 
       - salt-master
