@@ -28,13 +28,19 @@ def check(roles=[]):
 
     def check_process(role):
         for process in processes[role]:
-            result = __salt__['status.pid'](process)
+            pid = __salt__['status.pid'](process)
             log.info("Pid for process {} is {}".format(process, result))
-            if result == '':
+            if not pid.isdigit():
                 log.error("ERROR: process {} for role {} is not running".format(process, role))
                 return False
             else:
                 return True
+
+    ignore_roles = [ 'admin', 'master' ]
+
+    for ig_role in ignore_roles:
+      if ig_role in roles:
+        roles.pop(ig_role)
 
     if 'roles' in __pillar__:
         for role in __pillar__['roles']:
