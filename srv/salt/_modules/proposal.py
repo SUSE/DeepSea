@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import cephdisks
-import copy
 import logging
 
+
 log = logging.getLogger(__name__)
+
+'''
+This module will propose OSD layouts for the local machine. It uses
+cephdisks.list.
+'''
 
 
 class Proposal(object):
@@ -63,16 +68,15 @@ class Proposal(object):
         if sum([not self.nvmes, not self.ssds, not self.spinners]) is 2:
             # short cut when only one type is present, concatenate all 3 lists
             log.debug('found only one type of disks...proposing standalone')
-            return self._propose(self.nvmes + self.ssds + self.spinners)
+            standalone = self._filter(self.nvmes + self.ssds + self.spinners,
+                                      'data')
+            return {'standalone': self._propose(standalone)}
         # create all proposals
         configs = [('nvmes', 'ssds', 'spinners'),
                    ('nvmes', 'spinners', 'ssds'),
                    ('ssds', 'spinners', 'nvmes')]
-        proposals = []
+        proposals = {}
         for journal, data, other in configs:
-            # TODO filter here for size. what would that mean for data
-            # drives...currently we'd potentially propose filtered standalone
-            # osds. might be what we want though
             # copy the disk lists here so the proposal methods only mutate the
             # copies and we can run mutliple proposals
             d = self._filter(getattr(self, data), 'data')
@@ -80,7 +84,7 @@ class Proposal(object):
             o = self._filter(getattr(self, other), 'data')
             proposal = self._propose(d, j, o)
             if proposal:
-                proposals.append(proposal)
+                proposals['{}:{}'.format(journal, data)] = proposal
         return proposals
 
     def _propose(self, d_disks, j_disks=[], o_disks=[]):
@@ -110,8 +114,8 @@ class Proposal(object):
             for i in range(0, self.data_r):
                 data_disk = data_disks.pop()
                 external.append('{}: {}'.format(
-                    data_disk['Device File'],
-                    journal_disk['Device File']))
+                    self._device(data_disk),
+                    self._device(journal_disk)))
         return external
 
     def _propose_standalone(self, leftovers):
@@ -119,7 +123,7 @@ class Proposal(object):
         for leftover in leftovers:
             log.info('proposing {} as standalone osd'.format(
                 leftover['device']))
-            standalone.append(leftover['Device File'])
+            standalone.append(self._device(leftover))
         return standalone
 
     def _filter(self, disks, d_j):
@@ -132,6 +136,17 @@ class Proposal(object):
                 if not max_ or cap <= max_:
                     filtered.append(disk)
         return filtered
+
+    def _device(self, drive):
+        """
+        Default to Device File value.  Use by-id if available.
+        """
+        if 'Device Files' in drive:
+            for path in drive['Device Files'].split(', '):
+                if 'by-id' in path:
+                    return path
+        else:
+            return drive['Device File']
 
 
 def generate(**kwargs):
