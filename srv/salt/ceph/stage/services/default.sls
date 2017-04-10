@@ -4,4 +4,4 @@ include:
   - ..cephfs
   - ..radosgw
   - ..ganesha
-
+  - ..openattic

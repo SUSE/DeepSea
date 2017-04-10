@@ -9,4 +9,3 @@ enable openattic-systemd:
   service.running:
     - name: openattic-systemd
     - enable: True
-

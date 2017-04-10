@@ -154,6 +154,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/remove/mds
 %dir /srv/salt/ceph/remove/rgw
 %dir /srv/salt/ceph/remove/storage
+%dir /srv/salt/ceph/remove/openattic
 %dir /srv/salt/ceph/reset
 %dir /srv/salt/ceph/rescind
 %dir /srv/salt/ceph/rescind/admin
@@ -176,6 +177,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/rgw/keyring
 %dir /srv/salt/ceph/rescind/storage
 %dir /srv/salt/ceph/rescind/storage/keyring
+%dir /srv/salt/ceph/rescind/openattic
+%dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/rgw
 %dir /srv/salt/ceph/rgw/files
@@ -310,6 +313,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/remove/mds/*.sls
 %config /srv/salt/ceph/remove/rgw/*.sls
 %config /srv/salt/ceph/remove/storage/*.sls
+%config /srv/salt/ceph/remove/openattic/*.sls
 %config /srv/salt/ceph/rescind/*.sls
 %config /srv/salt/ceph/rescind/admin/*.sls
 %config /srv/salt/ceph/rescind/client-iscsi/*.sls
@@ -331,6 +335,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/rgw/keyring/*.sls
 %config /srv/salt/ceph/rescind/storage/*.sls
 %config /srv/salt/ceph/rescind/storage/keyring/*.sls
+%config /srv/salt/ceph/rescind/openattic/*.sls
+%config /srv/salt/ceph/rescind/openattic/keyring/*.sls
 %config /srv/salt/ceph/reset/*.sls
 %config /srv/salt/ceph/restart/*.sls
 %config /srv/salt/ceph/rgw/*.sls
@@ -386,4 +392,4 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 
 %changelog
 * Thu Sep  8 2016 Eric Jackson
-- 
+-
