@@ -42,17 +42,19 @@ class Proposal(object):
         if data_filter.count(':') is 1:
             self.data_min = int(data_filter.split(':')[0])
             self.data_max = int(data_filter.split(':')[1])
+            assert self.data_max >= self.data_min
         else:
-            self.data_min = self.data_max = int(data_filter)
-        assert self.data_max >= self.data_min
+            self.data_min = int(data_filter)
+            self.data_max = 0
 
         journal_filter = kwargs.get('journal', '0')
         if journal_filter.count(':') is 1:
             self.journal_min = int(journal_filter.split(':')[0])
             self.journal_max = int(journal_filter.split(':')[1])
+            assert self.journal_max >= self.journal_min
         else:
-            self.journal_min = self.journal_max = int(journal_filter)
-        assert self.journal_max >= self.journal_min
+            self.journal_min = int(journal_filter)
+            self.journal_max = 0
 
     # TODO better name
     def create(self):
@@ -71,23 +73,21 @@ class Proposal(object):
             # TODO filter here for size. what would that mean for data
             # drives...currently we'd potentially propose filtered standalone
             # osds. might be what we want though
-            proposal = self._propose(getattr(self, data),
-                                     getattr(self, journal),
-                                     getattr(self, other))
+            # copy the disk lists here so the proposal methods only mutate the
+            # copies and we can run mutliple proposals
+            d = self._filter(getattr(self, data), 'data')
+            j = self._filter(getattr(self, journal), 'journal')
+            o = self._filter(getattr(self, other), 'data')
+            proposal = self._propose(d, j, o)
             if proposal:
                 proposals.append(proposal)
         return proposals
 
-    def _propose(self, data_disks, journal_disks=[], other_disks=[]):
-        # change the reference to the disk lsits here so the proposal
-        # methods only mutate the copies and we can run mutliple proposals
-        d_disks = copy.copy(data_disks)
-        j_disks = copy.copy(journal_disks)
-        o_disks = copy.copy(other_disks)
+    def _propose(self, d_disks, j_disks=[], o_disks=[]):
         # first consume all journal disks and respective data disks as detailed
         # in ratio
         external = []
-        if journal_disks:
+        if j_disks:
             external = self._propose_external(d_disks, j_disks)
         standalone = []
         # then add standalones if any leftovers
@@ -122,27 +122,16 @@ class Proposal(object):
             standalone.append(leftover['Device File'])
         return standalone
 
-    def _filter_disks(self):
-        for disk in self.disks:
-            # TODO if we have nvme ssd should be data
-            if self._suits(disk, 'data') and disk['rotational'] is 1:
-                log.debug(('disks {} rotates, candidate for data or ',
-                           'osd').format(disk['device']))
-                self.data_disk.append(disk)
-            elif self._suits(disk, 'journal'):
-                log.debug(('disk {} is solid state, candidate for ',
-                           'journal or osd').format(disk['device']))
-                self.journal_disk.append(disk)
-            else:
-                log.debug(('disk {} does not pass capacity filters',
-                           '...ignored').format(disk['device']))
-                self.unassigned_disk.append(disk)
-
-    def _suits(self, disk, d_j):
-        cap = int(disk['Capacity'].split(' ')[0])
+    def _filter(self, disks, d_j):
+        filtered = []
         min_ = getattr(self, '{}_min'.format(d_j))
         max_ = getattr(self, '{}_max'.format(d_j))
-        return min_ <= cap <= max_
+        for disk in disks:
+            cap = int(disk['Capacity'].split(' ')[0])
+            if min_ <= cap:
+                if not max_ or cap <= max_:
+                    filtered.append(disk)
+        return filtered
 
 
 def generate(**kwargs):

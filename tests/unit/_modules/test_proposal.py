@@ -18,7 +18,7 @@ class TestProposal(object):
         self.check_proposal_init(p, 5, 1, 0, 0, 0, 0)
 
         p = proposal.Proposal([], ratio="2:1", data='50', journal='20')
-        self.check_proposal_init(p, 2, 1, 50, 50, 20, 20)
+        self.check_proposal_init(p, 2, 1, 50, 0, 20, 0)
 
         p = proposal.Proposal([], ratio="2:1", data='20:50', journal='5:20')
         self.check_proposal_init(p, 2, 1, 20, 50, 5, 20)
