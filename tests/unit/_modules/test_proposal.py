@@ -83,3 +83,31 @@ class TestProposal(object):
         prop = p._propose(p.spinners, p.ssds)
         assert len(prop['data+journals']) is 7
         assert len(prop['osds']) is 10
+
+    def test_filter(self, output_helper):
+        # currently the disks in output_helper.cephdisks_ouput are
+        # spinners: 1862 GB
+        # ssds:     372 GB
+        # nvme:     745 GB
+        p = proposal.Proposal(output_helper.cephdisks_output, ratio='3:1',
+                              data='500')
+        filtered = p._filter(p.spinners, 'data')
+        assert len(filtered) is len(p.spinners)
+        filtered = p._filter(p.ssds, 'data')
+        assert len(filtered) is 0
+
+        p = proposal.Proposal(output_helper.cephdisks_output, ratio='3:1',
+                              data='500:800')
+        filtered = p._filter(p.spinners, 'data')
+        assert len(filtered) is 0
+        filtered = p._filter(p.ssds, 'data')
+        assert len(filtered) is 0
+        filtered = p._filter(p.nvmes, 'data')
+        assert len(filtered) is len(p.nvmes)
+
+        p = proposal.Proposal(output_helper.cephdisks_output, ratio='3:1',
+                              journal='500:800')
+        filtered = p._filter(p.ssds, 'journal')
+        assert len(filtered) is 0
+        filtered = p._filter(p.nvmes, 'journal')
+        assert len(filtered) is len(p.nvmes)
