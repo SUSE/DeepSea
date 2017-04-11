@@ -29,7 +29,7 @@ def check(cluster='ceph', roles=[], tolerate_down=0):
         roles_d, roles = _cached_roles(search)
 
     status = _status(search, roles)
-    
+
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
 
@@ -38,12 +38,13 @@ def check(cluster='ceph', roles=[], tolerate_down=0):
     for role in status.keys():
         for minion in status[role]:
             if status[role][minion] is False:
-		if tolerate_down == 0:
-                  log.error("ERROR: {} process on {} is not running".format(role, minion))
-                  ret = False
+                if tolerate_down == 0:
+                    log.error("ERROR: {} process on {} is not running".format(role, minion))
+                    ret = False
                 tolerate_down -= 1
 
     return ret
+
 
 def _status(search, roles):
     """
@@ -67,6 +68,7 @@ def _status(search, roles):
 
     sys.stdout = _stdout
     return status
+
 
 def _cached_roles(search):
     """
@@ -109,16 +111,15 @@ def wait(cluster='ceph', **kwargs):
     local = salt.client.LocalClient()
     status = local.cmd(search,
                        'cephprocesses.wait',
-                       [ 'timeout={}'.format(settings['timeout']),
-                         'delay={}'.format(settings['delay']) ],
+                       ['timeout={}'.format(settings['timeout']),
+                        'delay={}'.format(settings['delay'])],
                        expr_form="compound")
-
 
     sys.stdout = _stdout
     log.debug("status: ".format(pprint.pformat(status)))
     if False in status.values():
         for minion in status.keys():
-            if status[minion] == False:
+            if status[minion] is False:
                 log.error("minion {} failed".format(minion))
         return False
     return True
@@ -131,8 +132,8 @@ def _timeout(cluster='ceph'):
     """
     local = salt.client.LocalClient()
     search = "I@cluster:{}".format(cluster)
-    virtual = local.cmd(search, 'grains.get', [ 'virtual' ], expr_form="compound")
-    if 'physical' in  virtual.values():
+    virtual = local.cmd(search, 'grains.get', ['virtual'], expr_form="compound")
+    if 'physical' in virtual.values():
         return 900
     else:
         return 120
