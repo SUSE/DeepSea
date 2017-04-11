@@ -1,20 +1,19 @@
-restart:
-  cmd.run:
-    - name: "systemctl restart nfs"
-    - unless: "systemctl is-failed nfs"
-    - fire_event: True
+restart nfs:
+  module.run:
+    - name: service.restart
+    - m_name: nfs
 
-  cmd.run:
-    - name: "systemctl restart rpc-statd"
-    - unless: "systemctl is-failed rpc-statd"
-    - fire_event: True
+restart rpc-statd:
+  module.run:
+    - name: service.restart
+    - m_name: rpc-statd
 
-  cmd.run:
-    - name: "systemctl restart rpcbind"
-    - unless: "systemctl is-failed rpcbind"
-    - fire_event: True
+restart rpcbind:
+  module.run:
+    - name: service.restart
+    - m_name: rpcbind
 
-  cmd.run:
-    - name: "systemctl restart nfs-ganesha.service"
-    - unless: "systemctl is-failed nfs-ganesha.service"
-    - fire_event: True
+restart nfs-ganesha:
+  module.run:
+    - name: service.restart
+    - m_name: nfs-ganesha
