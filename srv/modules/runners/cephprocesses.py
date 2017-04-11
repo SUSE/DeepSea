@@ -26,7 +26,7 @@ def check(cluster='ceph', roles=[]):
     search = "I@cluster:{}".format(cluster)
 
     if not roles:
-        roles = _cached_roles(search)
+        roles_d, roles = _cached_roles(search)
 
     status = _status(search, roles)
     
@@ -34,11 +34,6 @@ def check(cluster='ceph', roles=[]):
     log.debug("status: {}".format(pprint.pformat(status)))
 
     ret = True
-    for role in roles:
-        for minion in roles[role]:
-            if minion not in status[role]:
-                log.error("ERROR: {} minion did not respond".format(minion))
-                ret = False
 
     for role in status.keys():
         for minion in status[role]:
@@ -63,7 +58,7 @@ def _status(search, roles):
         role_search = search + " and I@roles:{}".format(role)
         status[role] = local.cmd(role_search,
                                  'cephprocesses.check',
-                                 [roles.keys()],
+                                 roles=roles,
                                  expr_form="compound")
 
     log.debug(pprint.pformat(status))
@@ -91,7 +86,7 @@ def _cached_roles(search):
                 roles.setdefault(role, []).append(minion)
 
     log.debug(pprint.pformat(roles))
-    return roles
+    return roles, roles.keys()
 
 
 def wait(cluster='ceph', **kwargs):
