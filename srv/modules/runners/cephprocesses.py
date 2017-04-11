@@ -18,7 +18,7 @@ A secondary purpose is a utility to check the current state of all processes.
 """
 
 
-def check(cluster='ceph', roles=[]):
+def check(cluster='ceph', roles=[], tolerate_down=0):
     """
     Query the status of running processes for each role.  Also, verify that
     all minions assigned roles do respond.  Return False if any fail.
@@ -38,8 +38,10 @@ def check(cluster='ceph', roles=[]):
     for role in status.keys():
         for minion in status[role]:
             if status[role][minion] is False:
-                log.error("ERROR: {} process on {} is not running".format(role, minion))
-                ret = False
+		if tolerate_down == 0:
+                  log.error("ERROR: {} process on {} is not running".format(role, minion))
+                  ret = False
+                tolerate_down -= 1
 
     return ret
 
