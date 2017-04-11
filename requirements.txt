@@ -1,7 +1,0 @@
-# Development requirements
-ipaddress
-jinja2
-pylint
-PyYAML
-salt
-saltpylint
