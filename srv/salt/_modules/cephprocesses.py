@@ -32,11 +32,16 @@ def check(**kwargs):
     roles = kwargs.get('roles', __pillar__['roles'])
 
     if not set(roles).issubset(__pillar__['roles']):
+      # or just return False
       raise ValueError("You checked for {}. Can't find that in assigned roles".format(roles))
 
     def check_process(role):
         for process in processes[role]:
             pid = __salt__['status.pid'](process)
+            if role == 'storage' and '\n' in pid:
+	       # There are of no use yet. We can only safe results on a per node basis
+               # Would require an even bigger rework. Keeping it there for future improvements
+               pid_list = pid.split('\n')
             if pid == '':
                 log.error("ERROR: process {} for role {} is not running".format(process, role))
                 return False
@@ -49,9 +54,11 @@ def check(**kwargs):
       if not role in ignored_roles:
         results[role] = check_process(role)
 
+
     for role, pid in results.iteritems():
       if pid is False:
         can_continue = False
+    
 
     return can_continue 
 
