@@ -12,7 +12,7 @@ upgrade is safe.  All expected services are running.
 A secondary purpose is a utility to check the current state of all services.
 """
 
-def check(roles=[]):
+def check(**kwargs):
     """
     Query the status of running processes for each role.  Return False if any
     fail.
@@ -22,38 +22,38 @@ def check(roles=[]):
                  'mds': ['ceph-mds'],
                  'igw': ['lrbd'],
                  'rgw': ['radosgw'],
-                 'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd']}
+                 'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
+		 'admin': [],
+                 'master': []}
 
-    ret = True
+    can_continue = True
+    results = {}
+
+    roles = kwargs.get('roles', __pillar__['roles'])
+
+    if not set(roles).issubset(__pillar__['roles']):
+      raise ValueError("You checked for {}. Can't find that in assigned roles".format(roles))
 
     def check_process(role):
         for process in processes[role]:
             pid = __salt__['status.pid'](process)
-            log.info("Pid for process {} is {}".format(process, result))
-            if not pid.isdigit():
+            if pid == '':
                 log.error("ERROR: process {} for role {} is not running".format(process, role))
                 return False
             else:
                 return True
 
-    ignore_roles = [ 'admin', 'master' ]
+    ignored_roles = ['admin', 'master']
 
-    for ig_role in ignore_roles:
-      if ig_role in roles:
-        roles.pop(ig_role)
+    for role in roles:
+      if not role in ignored_roles:
+        results[role] = check_process(role)
 
-    if 'roles' in __pillar__:
-        for role in __pillar__['roles']:
-            # custom roles are used
-            if roles:
-                if role in roles:
-                    ret = check_process(role)
-            # use all available roles from pillar
-            else:
-                ret = check_process(role)
+    for role, pid in results.iteritems():
+      if pid is False:
+        can_continue = False
 
-    return ret
-
+    return can_continue 
 
 def wait(**kwargs):
     """
