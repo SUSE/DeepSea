@@ -88,7 +88,7 @@
         - tgt: {{ master }}
         - sls: ceph.wait
 
-    restarting igw on {{ host }}:
+    restarting ganesha on {{ host }}:
       salt.state:
         - tgt: {{ host }}
         - tgt_type: compound
