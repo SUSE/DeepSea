@@ -2,6 +2,7 @@ from subprocess import Popen, PIPE
 from platform import linux_distribution
 import logging
 import os
+import salt
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class PackageManager(object):
             log.debug("Faking Reboot")
             return None
         log.debug("Initializing Reboot.")
+        __salt__['event.fire_master'](None, 'salt/ceph/set/noout')
         cmd = "shutdown -r"
         Popen(cmd, stdout=PIPE, shell=True)
 
@@ -175,7 +177,6 @@ class Zypper(PackageManager):
             log.error('Refreshing failed. Check the repos')
             log.debug('Executing {}'.format(cmd))
             return False
-        
 
     def _updates_needed(self):
         """
@@ -271,5 +272,11 @@ def up(**kwargs):
 
 def dup(**kwargs):
     strat = dup.__name__
+    obj = PackageManager(**kwargs)
+    obj.pm._handle(strat=strat)
+
+
+def patch(**kwargs):
+    strat = patch.__name__
     obj = PackageManager(**kwargs)
     obj.pm._handle(strat=strat)
