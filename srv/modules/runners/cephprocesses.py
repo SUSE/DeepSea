@@ -26,7 +26,7 @@ def check(cluster='ceph', roles=[], tolerate_down=0):
     search = "I@cluster:{}".format(cluster)
 
     if not roles:
-        roles_d, roles = _cached_roles(search)
+        roles = _cached_roles(search)
 
     status = _status(search, roles)
 
@@ -90,7 +90,7 @@ def _cached_roles(search):
                 roles.setdefault(role, []).append(minion)
 
     log.debug(pprint.pformat(roles))
-    return roles, roles.keys()
+    return roles.keys()
 
 
 def wait(cluster='ceph', **kwargs):
