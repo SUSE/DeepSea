@@ -852,3 +852,25 @@ def proposals(**kwargs):
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
     return [ True ]
+
+def nproposals(**kwargs):
+    """
+    Collect the hardware profiles, all possible role assignments and common
+    configuration under /srv/pillar/ceph/proposals
+    """
+    settings = Settings()
+
+    salt_writer = SaltWriter(**kwargs)
+
+    ceph_cluster = CephCluster(settings, salt_writer, **kwargs)
+    ceph_cluster.generate()
+
+    for name in ceph_cluster.names:
+
+        # Determine roles and save proposals
+        ceph_roles = CephRoles(settings, name, ceph_cluster.minions, salt_writer)
+        ceph_roles.generate()
+        ceph_roles.cluster_config()
+        ceph_roles.monitor_members()
+        ceph_roles.igw_members()
+    return [ True ]

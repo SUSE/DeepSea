@@ -6,11 +6,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-'''
-This module will propose OSD layouts for the local machine. It uses
-cephdisks.list.
-'''
-
 
 class Proposal(object):
 
@@ -63,19 +58,24 @@ class Proposal(object):
 
     # TODO better name
     def create(self):
+        proposals = {'standalone': {},
+                     'nvme:ssd': {},
+                     'nvme:spinner': {},
+                     'ssd:spinner': {}}
+        standalone = self._filter(self.nvmes + self.ssds + self.spinners,
+                                  'data')
+        proposals['standalone'] = self._propose(standalone)
+
         # uncertain how hacky this is. This branch is taken if any 2 out of
         # there lists is empty
         if sum([not self.nvmes, not self.ssds, not self.spinners]) is 2:
-            # short cut when only one type is present, concatenate all 3 lists
             log.debug('found only one type of disks...proposing standalone')
-            standalone = self._filter(self.nvmes + self.ssds + self.spinners,
-                                      'data')
-            return {'standalone': self._propose(standalone)}
-        # create all proposals
+            return proposals
+
+        # create all other proposals
         configs = [('nvmes', 'ssds', 'spinners'),
                    ('nvmes', 'spinners', 'ssds'),
                    ('ssds', 'spinners', 'nvmes')]
-        proposals = {}
         for journal, data, other in configs:
             # copy the disk lists here so the proposal methods only mutate the
             # copies and we can run mutliple proposals
@@ -150,6 +150,40 @@ class Proposal(object):
 
 
 def generate(**kwargs):
+    '''
+    A function to generate a storage profile proposal for ceph. It will try to
+    propose 4 different setups, that depending on the hardware and the passed
+    arguments might be empty. It will return (potentially empty) proposals for
+    - journals on nvme, data on ssd
+    - journals on nvme, data on spinners
+    - journals on ssds, data on spinners and
+    - only standalone OSDS.
+    All unpartitioned disks will be considered.
+
+    The OSD/journal disk ration can be influenced by passing 'ratio="6:1"'
+    meaning 6 OSDs will share one journal device (default is 5:1).
+
+    'data' and 'journal' are size filters that tell the module to consider only
+    drives of a certain size to be data or journal devices. Both filters can
+    either be a number, which will only consider drives of an exact size , or a
+    range 'min:max'. Both filters are interpreted as gigabytes.
+
+    CLI Examples::
+        salt '*' proposal.generate
+        salt '*' proposal.generate ratio="7:1"
+        salt '*' proposal.generate data="1000:3000" journal="1000"
+            Only consider drives between 1TB and 3TB for data drives and 1TB
+            drives for journal devices.
+        salt '*' proposal.generate journal="2000"
+            Consider verything for data drives and only 2TB drives for journal
+            devices.
+
+    Returns::
+        {'nvme:ssd': <proposal>,
+         'nvme:spinnerssd': <proposal>,
+         'ssd:spinner': <proposal>,
+         'standalone': <proposal>}
+    '''
     disks = cephdisks.list_(**kwargs)
     proposal = Proposal(disks, **kwargs)
     return proposal.create()
