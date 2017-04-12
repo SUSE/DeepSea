@@ -1,6 +1,6 @@
 packagemanager update regular:
   module.run:
-    - name: packagemanager.up
+    - name: packagemanager.patch
     - kwargs:
         'reboot': {{ salt['pillar.get']('auto_reboot', True) }} 
         'debug': {{ salt['pillar.get']('debug', False) }} 
