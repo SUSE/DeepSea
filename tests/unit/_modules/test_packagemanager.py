@@ -46,17 +46,6 @@ class TestPackageManager():
 
     @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
-    def test_reboot(self, po, dist_return):
-        """
-        Reboot method
-        """
-        dist_return.return_value = ('opensuse', '42.2', 'x86_64')
-        ret = PackageManager()
-        ret._reboot()
-        assert po.called is True
-
-    @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    @mock.patch('srv.salt._modules.packagemanager.Popen')
     def test_not_implemented(self, po, dist_return):
         """
         Your platform is not supported
@@ -66,6 +55,7 @@ class TestPackageManager():
             PackageManager()
         excinfo.match('Failed to detect PackageManager for OS.*')
 
+
 class TestZypper():
 
     @pytest.fixture(scope='class')
@@ -74,7 +64,7 @@ class TestZypper():
         Fixture to always get Zypper.
         """
         self.linux_dist = patch('srv.salt._modules.packagemanager.linux_distribution')
-        self.lnx_dist_object  = self.linux_dist.start()
+        self.lnx_dist_object = self.linux_dist.start()
         self.lnx_dist_object.return_value = ('opensuse', '42.2', 'x86_64')
         args = {'debug': False, 'kernel': False, 'reboot': False}
         yield PackageManager(**args).pm
@@ -198,6 +188,7 @@ class TestZypper():
             assert po.called is True
             assert _reboot.called is False
         excinfo.match('Zypper failed with*')
+
 
 class TestApt():
 
