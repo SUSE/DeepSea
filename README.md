@@ -7,6 +7,14 @@ As it grows, it might tackle bigger fish.
 
 ## Running the Wolffish app ##
 
+### Docker ###
+
+Based on opensuse:tumbleweed.  Will install all necessary dependencies
+and serve wolffish.
+
+    $ sudo docker build -t wolffish .
+    $ sudo docker run wolffish
+
 ### Viewing Locally ###
 
 First, make sure you have `npm4` installed.
