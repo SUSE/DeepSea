@@ -60,12 +60,15 @@ updating {{ host }}:
     - sls: ceph.updates
     - failhard: True
 
+# call a runner here to set the noout flag
+{% if salt['saltutil.runner']('cephops.set_noout') %}
 restart {{ host }} if updates require:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.updates.restart
     - failhard: True
+{% endif %}
 
 {% endfor %}
 
