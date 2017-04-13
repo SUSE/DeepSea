@@ -2,7 +2,6 @@ from subprocess import Popen, PIPE
 from platform import linux_distribution
 import logging
 import os
-import salt
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +19,6 @@ class PackageManager(object):
         self.debug = kwargs.get('debug', False)
         self.kernel = kwargs.get('kernel', False)
         self.reboot = kwargs.get('reboot', True)
-        self.reboot_delay = kwargs.get('reboot_delay', True)
 
         self.platform = linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
