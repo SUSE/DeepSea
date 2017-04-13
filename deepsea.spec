@@ -97,6 +97,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/ganesha/key
 %dir /srv/salt/ceph/ganesha/keyring
 %dir /srv/salt/ceph/ganesha/install
+%dir /srv/salt/ceph/ganesha/restart
 %dir /srv/salt/ceph/ganesha/service
 %dir /srv/salt/ceph/igw
 %dir /srv/salt/ceph/igw/config
@@ -237,6 +238,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/ganesha/install/*.sls
 %config /srv/salt/ceph/ganesha/key/*.sls
 %config /srv/salt/ceph/ganesha/keyring/*.sls
+%config /srv/salt/ceph/ganesha/restart/*.sls
 %config /srv/salt/ceph/ganesha/service/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
