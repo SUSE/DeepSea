@@ -6,6 +6,9 @@
 {% set installed = salt['cmd.run']('rpm -q --last kernel-default | head -1 | cut -f1 -d\  ') | replace('kernel-default-', '') %}
 
 
+# call a runner here to set the noout flag
+{% set rc = salt['saltutil.runner']('cephops.set_noout' %}
+
 warning:
   module.run:
     - name: advise.reboot
@@ -20,5 +23,11 @@ reboot:
     - unless: "echo {{ installed }} | grep -q {{ kernel }}"
     - failhard: True
     - fire_event: True
+
+{% else %}
+
+prevent empty rendering:
+  test.nop:
+    - name: skip
 
 {% endif %}

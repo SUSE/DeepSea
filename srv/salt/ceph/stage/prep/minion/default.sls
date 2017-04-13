@@ -65,7 +65,6 @@ restart {{ host }} if updates require:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.updates.restart
-    - fire_event: 'salt/ceph/set/noout'
     - failhard: True
 
 {% endfor %}
