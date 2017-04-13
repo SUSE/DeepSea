@@ -1,4 +1,4 @@
-{% if salt['pillar.get']('auto_reboot', True) == True and salt[pillar.get]('update_method_init', default) != 'default' %}
+{% if salt['pillar.get']('auto_reboot', True) == True and salt['pillar.get']('update_method_init', default) != 'default' %}
 
 # to avoid rebooting twice also check if update_method_init != 'patch'
 

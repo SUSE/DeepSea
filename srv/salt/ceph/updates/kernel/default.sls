@@ -8,12 +8,12 @@ switch kernel:
             candidates:
             - kernel-default-base
 
-packagemanager update only kernel:
+packagemanager patch only kernel:
   module.run:
     - name: packagemanager.up
     - kwargs:
-        'reboot': False
-        'debug': False
+        'reboot': {{ salt['pillar.get']('auto_reboot', True) }} 
+        'debug': {{ salt['pillar.get']('debug', False) }} 
         'kernel': True
     - fire_event: True
 
