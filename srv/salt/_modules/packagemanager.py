@@ -276,7 +276,7 @@ class Zypper(PackageManager):
         strategy_flags = ['--auto-agree-with-licenses']
         cmd = []
         cmd.extend(self.base_command)
-        cmd.extend('migration')
+        cmd.extend(['migration'])
         cmd.extend(strategy_flags)
         log.debug('Executing {}'.format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
