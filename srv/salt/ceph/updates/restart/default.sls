@@ -7,7 +7,7 @@
 
 
 # call a runner here to set the noout flag
-{% set rc = salt['saltutil.runner']('cephops.set_noout' %}
+{% set rc = salt['saltutil.runner']('cephops.set_noout') %}
 
 warning:
   module.run:
