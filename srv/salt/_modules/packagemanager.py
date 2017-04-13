@@ -213,13 +213,43 @@ class Zypper(PackageManager):
         log.info('No Patches Needed')
         return False
 
+    def _check_for_reboots(self, returncode):
+        if int(returncode) == 102:
+            """
+            zypper up doesn't return the necessary exitcodes.
+            zypper patch does.
+            zypper patch only accepts repos that are from official repos
+            zypper up processes all repos.
+
+            In a environment where you simply don't have shiny and signed repos
+            like in a development environment we can't rely on a returncode
+            driven rebooting.
+
+            => Keep checks for kernel updates in /srv/salt/ceph/stage/prep.sls until
+               a better solution is found.
+            """
+            self._reboot()
+        if int(returncode) > 0 and int(returncode) < 100:
+            if int(returncode) in self.RETCODES:
+                log.debug("Zypper Error: {}".format(self.RETCODES[returncode]))
+            log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
+            raise StandardError('Zypper failed with code: {}. Look at the logs'.format(returncode))
+
     def _handle(self, strat='up'):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
+
         cmd = []
 
-        if self._updates_needed():
+        if strat == 'up' or strat == 'dup':
+            check_method = self._updates_needed
+        elif strat == 'patch':
+            check_method = self._patches_needed
+        else:
+            raise ValueError("Don't know what to do with strategy: {}".format(strat))
+
+        if check_method():
             strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
             if self.debug:
                 strategy_flags.append("--dry-run")
@@ -237,29 +267,26 @@ class Zypper(PackageManager):
             for line in stderr:
                 log.info(line)
             log.info("returncode: {}".format(proc.returncode))
-
-            if int(proc.returncode) == 102:
-                """
-                zypper up doesn't return the necessary exitcodes.
-                zypper patch does.
-                zypper patch only accepts repos that are from official repos
-                zypper up processes all repos.
-
-                In a environment where you simply don't have shiny and signed repos
-                like in a development environment we can't rely on a returncode
-                driven rebooting.
-
-                => Keep checks for kernel updates in /srv/salt/ceph/stage/prep.sls until
-                   a better solution is found.
-                """
-                self._reboot()
-            if int(proc.returncode) > 0 and int(proc.returncode) < 100:
-                if int(proc.returncode) in self.RETCODES:
-                    log.debug("Zypper Error: {}".format(self.RETCODES[proc.returncode]))
-                log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
-                raise StandardError('Zypper failed with code: {}. Look at the logs'.format(proc.returncode))
+            self._check_for_reboots(proc.returncode)
         else:
-            log.info('System up to date')
+            log.info("No updates available.")
+
+    def _migrate(self):
+        # There is no dryrun or replacefiles or non-interactive
+        strategy_flags = ['--auto-agree-with-licenses']
+        cmd = []
+        cmd.extend(self.base_command)
+        cmd.extend('migration')
+        cmd.extend(strategy_flags)
+        log.debug('Executing {}'.format(cmd))
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = proc.communicate()
+        for line in stdout:
+            log.info(line)
+        for line in stderr:
+            log.info(line)
+        log.info("returncode: {}".format(proc.returncode))
+        self._check_for_reboots(proc.returncode)
 
 
 def up(**kwargs):
@@ -278,3 +305,8 @@ def patch(**kwargs):
     strat = patch.__name__
     obj = PackageManager(**kwargs)
     obj.pm._handle(strat=strat)
+
+
+def migrate(**kwargs):
+    pm = Zypper(**kwargs)
+    pm._migrate()

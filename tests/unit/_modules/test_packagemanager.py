@@ -134,6 +134,7 @@ class TestZypper():
         po.return_value.returncode = 102
         po.return_value.communicate.return_value = ("packages out", "error")
         zypp._handle()
+        assert updates_needed.called is True
         assert po.called is True
         assert _reboot.called is True
 
@@ -150,8 +151,53 @@ class TestZypper():
         po.return_value.returncode = 102
         po.return_value.communicate.return_value = ("packages out", "error")
         zypp._handle()
+        assert updates_needed.called is True
         assert po.called is False
         assert _reboot.called is False
+
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._patches_needed')
+    def test__handle_patches(self, patches_needed, po, _reboot, zypp):
+        """
+        Given there are no updates patches.
+        Zypper returns 102 which should lead to a reboot.
+        But the reboot block should not be reached, therefore no reboot.
+        """
+        patches_needed.return_value = False
+        po.return_value.returncode = 102
+        po.return_value.communicate.return_value = ("packages out", "error")
+        zypp._handle(strat='patch')
+        assert patches_needed.called is True
+        assert po.called is False
+        assert _reboot.called is False
+
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test__handle_migration(self, po, _reboot, zypp):
+        """
+        Given there is a no migration available.
+        Zypper returns 0 which should not lead to a reboot.
+        """
+        po.return_value.returncode = 0
+        po.return_value.communicate.return_value = ("packages out", "error")
+        zypp._migrate()
+        assert po.called is True
+        assert _reboot.called is False
+
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test__handle_migration_with_reboot(self, po, _reboot, zypp):
+        """
+        Given there is a migration available.
+        Zypper returns 102 which should lead to a reboot.
+        But the reboot block should be reached.
+        """
+        po.return_value.returncode = 102
+        po.return_value.communicate.return_value = ("packages out", "error")
+        zypp._migrate()
+        assert po.called is True
+        assert _reboot.called is True
 
     @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -188,6 +234,19 @@ class TestZypper():
             assert po.called is True
             assert _reboot.called is False
         excinfo.match('Zypper failed with*')
+
+    @mock.patch('srv.salt._modules.packagemanager.PackageManager._reboot')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test__handle_unknown_param(self, po, _reboot, zypp):
+        """
+        Given _handle is passed a unkown parameter.
+        Then _handle should raise an exception
+        """
+        with pytest.raises(StandardError) as excinfo:
+            zypp._handle(strat='Unknown')
+            assert po.called is False
+            assert _reboot.called is False
+        excinfo.match("Don't know what to do with strategy: *")
 
 
 class TestApt():
