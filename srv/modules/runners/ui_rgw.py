@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """
 Consolidate any user interface rgw calls for Wolffish and openATTIC.
@@ -9,7 +9,6 @@ here.
 """
 
 import logging
-import sys
 import os
 import json
 import re
@@ -25,7 +24,7 @@ class Radosgw(object):
     Return a structure containing S3 keys and urls
     """
 
-    def __init__(self, canned, cluster='ceph', pathname='/srv/salt/ceph/rgw/cache'):
+    def __init__(self, canned=None, cluster='ceph', pathname='/srv/salt/ceph/rgw/cache'):
         """
         Initialize and call routines
         """
@@ -53,9 +52,9 @@ class Radosgw(object):
                                 'secret_key': "0123456789012345678901234567890123456789",
                                 'urls': ["http://red1",
                                          "http://red2",
-                                         "http://blue1:8000", 
+                                         "http://blue1:8000",
                                          "http://blue2:8000"]}
-        
+
     def _admin(self, filename="user.admin.json"):
         """
         Expect admin user file; otherwise, search for first system user.
@@ -65,9 +64,10 @@ class Radosgw(object):
         if os.path.exists(filepath):
             user = json.loads(open(filepath).read())
         else:
-            for user_file in glob.glob("{}/user.*".format(pathname)):
+            user = None
+            for user_file in glob.glob("{}/user.*".format(self.pathname)):
                 user = json.loads(open(user_file).read())
-                if 'system' in user and user['system']:
+                if 'system' in user and user['system'] == "true":
                     break
                 user = None
             if not user:
@@ -76,7 +76,7 @@ class Radosgw(object):
                 return
         self.credentials['access_key'] = user['keys'][0]['access_key']
         self.credentials['secret_key'] = user['keys'][0]['secret_key']
-            
+
     def _urls(self):
         """
         Check for user defined endpoint; otherwise, return list of gateways as
@@ -86,21 +86,22 @@ class Radosgw(object):
         pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
                                                          use_cached_grains=True,
                                                          grains_fallback=False,
-                                                         opts=__opts__)
+                                                         opts='__opts__')
         cached = pillar_util.get_minion_pillar()
-        for minion in cached.keys():
-             if 'rgw_endpoint' in cached[minion]:
-                 self.credentials['urls'].append(cached[minion][endpoint])
-                 return
+        for minion in cached:
+            if 'rgw_endpoint' in cached[minion]:
+                self.credentials['urls'].append(cached[minion]['rgw_endpoint'])
+                return
 
         for client_file in glob.glob("{}/client.*".format(self.pathname)):
             port = None
             with open(client_file, 'r') as rgw_file:
-                 for line in rgw_file:
-                     if 'port=' in line:
-                         m = re.search('port=(\d+)', line)
-                         port = m.group(1)
+                for line in rgw_file:
+                    if 'port=' in line:
+                        match = re.search(r'port=(\d+)', line)
+                        port = match.group(1)
             parts = client_file.split('.')
+            resource = None
             # dedicated keys - use host part
             if len(parts) == 4:
                 resource = parts[2]
@@ -109,7 +110,8 @@ class Radosgw(object):
                 resource = parts[1]
             if port:
                 resource += ":{}".format(port)
-            self.credentials['urls'].append("http://{}".format(resource))
+            if resource:
+                self.credentials['urls'].append("http://{}".format(resource))
 
 
 def credentials(canned=None):
@@ -118,4 +120,3 @@ def credentials(canned=None):
     """
     radosgw = Radosgw(int(canned))
     return radosgw.credentials
-
