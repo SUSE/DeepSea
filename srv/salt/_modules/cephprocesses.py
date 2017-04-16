@@ -21,7 +21,7 @@ def check(**kwargs):
     processes = {'mon': ['ceph-mon'],
                  'storage': ['ceph-osd'],
                  'mds': ['ceph-mds'],
-                 'igw': ['lrbd'],
+                 'igw': [],
                  'rgw': ['radosgw'],
                  'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
                  'admin': [],
@@ -29,6 +29,10 @@ def check(**kwargs):
 
     can_continue = True
     results = {}
+
+    if 'roles' not in __pillar__:
+        # No roles assigned to this minion
+        return True
 
     roles = kwargs.get('roles', __pillar__['roles'])
 

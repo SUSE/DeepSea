@@ -30,8 +30,4 @@ restart master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart
 
-ready:
-  salt.runner:
-    - name: minions.ready
-    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
 

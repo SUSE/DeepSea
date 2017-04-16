@@ -5,15 +5,15 @@ ready:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
 
-mines:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.mines
+#mines:
+#  salt.state:
+#    - tgt: '*'
+#    - sls: ceph.mines
 
-sync:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.sync
+#sync:
+#  salt.state:
+#    - tgt: '*'
+#    - sls: ceph.sync
 
 update salt-minions:
   salt.state:
@@ -42,7 +42,7 @@ wait until the cluster is not in a bad state anymore to process {{ host }}:
 check if services are up after processing {{ host }}:
   salt.state:
     - tgt: "*"
-    - sls: ceph.cephprocesses
+    - sls: ceph.processes
     - failhard: True
 
 upgrading {{ host }}:
@@ -50,6 +50,12 @@ upgrading {{ host }}:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.upgrade
+    - failhard: True
+
+set noout {{ host }}:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.noout.set
     - failhard: True
 
 rebooting {{ host }}:
@@ -70,10 +76,10 @@ unset noout after processing all hosts:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
-warning_after:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.warning.noout
-    - failhard: True
-
+#warning_after:
+#  salt.state:
+#    - tgt: {{ salt['pillar.get']('master_minion') }}
+#    - sls: ceph.warning.noout
+#    - failhard: True
+#
 #postflight

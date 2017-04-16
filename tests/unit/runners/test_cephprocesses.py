@@ -19,7 +19,7 @@ class TestCephProcesses():
         local = localclient.return_value
         local.cmd.return_value = result
 
-        status = cephprocesses._status(search, roles)
+        status = cephprocesses._status(search, roles, False)
         assert status['mon'] == result
 
     @patch('srv.modules.runners.cephprocesses._status', autospec=True)

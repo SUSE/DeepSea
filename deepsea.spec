@@ -218,7 +218,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/wait
 %dir /srv/salt/ceph/warning
 %dir /srv/salt/ceph/warning/noout
-%dir /srv/salt/ceph/cephprocesses
+%dir /srv/salt/ceph/processes
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
 %config /srv/pillar/top.sls
@@ -365,8 +365,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/upgrade/*.sls
-%config /srv/salt/ceph/maintenance/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
+%config /srv/salt/ceph/maintenance/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/master/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/minion/*.sls
 %config /srv/salt/ceph/updates/*.sls
@@ -378,7 +378,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/wait/*.sls
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
-%config /srv/salt/ceph/cephprocesses/*.sls
+%config /srv/salt/ceph/processes/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*

@@ -18,7 +18,7 @@ A secondary purpose is a utility to check the current state of all processes.
 """
 
 
-def check(cluster='ceph', roles=[], tolerate_down=0):
+def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
     """
     Query the status of running processes for each role.  Also, verify that
     all minions assigned roles do respond.  Return False if any fail.
@@ -28,7 +28,7 @@ def check(cluster='ceph', roles=[], tolerate_down=0):
     if not roles:
         roles = _cached_roles(search)
 
-    status = _status(search, roles)
+    status = _status(search, roles, verbose)
 
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
@@ -45,8 +45,20 @@ def check(cluster='ceph', roles=[], tolerate_down=0):
 
     return ret
 
+def mon(cluster='ceph'):
+    """
+    Query all monitors.  If any are running, assume cluster is running and
+    return true.  The purpose of this function is to act as a conditional
+    to determines whether minion steps should happen serially or in parallel.
+    """
+    status = _status("I@cluster:{}".format(cluster), ['mon'], False)
+    running = False
+    for minion in status['mon']:
+        if status['mon'][minion]:
+            return True
+    return False
 
-def _status(search, roles):
+def _status(search, roles, verbose):
     """
     Return a structure of roles with module results
     """
@@ -62,11 +74,12 @@ def _status(search, roles):
         status[role] = local.cmd(role_search,
                                  'cephprocesses.check',
                                  roles=roles,
+                                 verbose=verbose,
                                  expr_form="compound")
 
-    log.debug(pprint.pformat(status))
 
     sys.stdout = _stdout
+    log.debug(pprint.pformat(status))
     return status
 
 

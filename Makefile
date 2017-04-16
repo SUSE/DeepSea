@@ -309,8 +309,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/salt
 	install -m 644 srv/salt/ceph/updates/salt/*.sls $(DESTDIR)/srv/salt/ceph/updates/salt/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance
-	install -m 644 srv/salt/ceph/maintenance/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
+	install -m 644 srv/salt/ceph/maintenance/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/noout
 	install -m 644 srv/salt/ceph/maintenance/noout/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/master
@@ -359,8 +359,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
 	# state files - check processes
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephprocesses
-	install -m 644 srv/salt/ceph/cephprocesses/*.sls $(DESTDIR)/srv/salt/ceph/cephprocesses/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes
+	install -m 644 srv/salt/ceph/processes/*.sls $(DESTDIR)/srv/salt/ceph/processes/
 	# state files - warning
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning
 	install -m 644 srv/salt/ceph/warning/*.sls $(DESTDIR)/srv/salt/ceph/warning/

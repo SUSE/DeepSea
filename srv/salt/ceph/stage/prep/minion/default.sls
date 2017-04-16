@@ -23,7 +23,7 @@ common packages:
     - tgt: '*'
     - sls: ceph.packages.common
 
-{% if salt['saltutil.runner']('cephprocesses.check', roles=['mon']) == True %}
+{% if salt['saltutil.runner']('cephprocesses.mon') == True %}
 
 warning_before:
   salt.state:
