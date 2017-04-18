@@ -167,7 +167,7 @@
          _initiatorCheckboxIDGen(i, j) {
              var imgStr = i.img.replace(/\./g,'-dot-');
              var poolStr = i.pool.replace(/\./g,'-dot-');
-             var initiatorStr = j.replace(/\./g,'-dot-');
+	     var initiatorStr = j.replace(/\./g,'-dot-').replace(/\:/g,'-col-');
 
              return "initiatorCheckBox-" + imgStr + "-" + poolStr + "-" + initiatorStr;
          },
@@ -191,7 +191,11 @@
              }
          },
 
-         /* Returns true if initiator is in in*/
+	 indexOfSelectedImg: function(img) {
+	     return this.selectedImgList.findIndex(this._imgsEqual, img);
+	 },
+
+	 /* Returns true if initiator is in the img's initiatorList. */
          _isInitiatorSelected: function(img, initiatorStr) {
              /* img is from this.availableImageList, but initiators are housed in
               * this.selectedImgList[x].initiatorList.  Thus, first find img in
@@ -293,7 +297,10 @@
 
                          /* If the initiator is in our available list, set the checkbox. */
                          if (this.availableInitiatorList.indexOf(initiator) !== -1) {
+			     console.log(img);
+			     console.log(initiator);
                              initiatorCheckBoxStr = this._initiatorCheckboxIDGen(img, initiator);
+			     console.log(initiatorCheckBoxStr);
                              initiatorCheckBox = Polymer.dom(this.root).querySelector("#" + initiatorCheckBoxStr);
                              if (initiatorCheckBox) {
                                  initiatorCheckBox.checked = true;
@@ -454,6 +461,7 @@
              console.log("nodeCheckboxChanged()");
              if (e.target.checked) {
                  console.log(intf.node + ":" + intf.addr + " selected - adding to selected list.");
+		 /* TODO: intf -> new Interface(intf.node, intf.addr) */
                  this.push("selectedIntfList", intf);
              } else {
                  var index = this.selectedIntfList.findIndex(this._intfsEqual, intf);

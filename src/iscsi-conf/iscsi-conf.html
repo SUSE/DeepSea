@@ -48,7 +48,7 @@
             cmd=""
             arg=""
             target=""
-            func="ui.populate_iscsi"
+            func="ui-iscsi.populate"
             data=""
             canned="1">
 	</wf-salt-api>
@@ -59,7 +59,7 @@
             cmd=""
             arg=""
             target=""
-            func="ui.save_iscsi"
+            func="ui-iscsi.save"
             data=""
             canned="1">
 	</wf-salt-api>
@@ -180,6 +180,194 @@
              this.$.populateiscsi.runPost();
          },
 
+	 populateUIFromLRBD: function() {
+	     /* Step 0 - kill current UI view - TODO: yea this is brutal, we'll
+	      * figure out the right flow for this later.
+	      */
+	     for (var h = 0; h < this.targetList.length; h++) {
+		 this.removeChild(this.targetList[h]);
+	     }
+	     this.set("targetList", []);
+
+	     /* Step 1 - populate iscs-target elements. */
+	     for (var i = 0; i < this.lrbdConf.targets.length; i++) {
+		 /* Create the targets and set their name accordingly. */
+		 var lrbdTarget = this.lrbdConf.targets[i];
+
+		 /* See about customTargetEntries. */
+		 var customTargetEntries = lrbdTarget.getCustomEntries();
+		 var customTargetEntriesStr = null;
+		 if (Object.keys(customTargetEntries).length > 0) {
+		     customTargetEntriesStr = JSON.stringify(customTargetEntries);
+		 }
+
+		 var uiTarget = this.newTarget(null, null, lrbdTarget.target, customTargetEntriesStr);
+
+		 /* Set authentication schema. */
+		 var lrbdAuthIndex = this.lrbdConf.auth.findIndex(
+		     (function(elem, index, arr) {
+			 /* Find index of relevant lrbdConf.auth element matched on target name. */
+			 return elem.target === this.target;
+		     }), lrbdTarget);
+		 if (lrbdAuthIndex === -1) {
+		     /* TODO: this should not happen. */
+		     console.error("Failed to match auth entry for target.");
+		 } else {
+		     var lrbdAuthElem = this.lrbdConf.auth[lrbdAuthIndex];
+		     /* Check auth type. */
+		     if (lrbdAuthElem.authentication === "none") {
+			 /* No-op in this cause: target.auth remains null. */
+		     } else {
+			 /* tpg or tpg+identified.  Grab common userid and password. */
+			 uiTarget.userid = lrbdAuthElem.tpg.userid;
+			 uiTarget.password = lrbdAuthElem.tpg.password;
+
+			 /* Now check for mutual auth. */
+			 if (lrbdAuthElem.tpg.mutual) {
+			     uiTarget.mutInputHidden = false;
+			     uiTarget.mutUserId = lrbdAuthElem.tpg.userid_mutual;
+			     uiTarget.mutPassword = lrbdAuthElem.tpg.password_mutual;
+			     uiTarget.mutEnabled = lrbdAuthElem.tpg.mutual === "enable" ? true : false;
+			 }
+
+			 /* Now check for discovery auth, which may include discover mutual auth. */
+			 if (lrbdAuthElem.discovery) {
+			     uiTarget.discInputHidden = false;
+			     uiTarget.discUserId = lrbdAuthElem.discovery.userid;
+			     uiTarget.discPassword = lrbdAuthElem.discovery.password;
+			     uiTarget.discEnabled = lrbdAuthElem.discovery.auth === "enable" ? true : false;
+
+			     if (lrbdAuthElem.discovery.mutual) {
+				 uiTarget.discMutInputHidden = false;
+				 uiTarget.discMutUserId = lrbdAuthElem.discovery.userid_mutual;
+				 uiTarget.discMutPassword = lrbdAuthElem.discovery.password_mutual;
+				 uiTarget.discMutEnabled = lrbdAuthElem.discovery.mutual === "enable" ? true : false;
+			     }
+			 }
+
+			 if (lrbdAuthElem.authentication === "tpg+identified") {
+			     /* Do our best to populate the target's available initiator list.
+			      * There is no way from lrbdConf.pools to determine which initiators
+			      * belong in which target's auth.iList.  As such, we will populate
+			      * all targets who have common auth enabled with all possible initiators
+			      * from which to select.
+			      */
+			     uiTarget.initiatorInputHidden = false;
+			     for (var j = 0; j < this.lrbdConf.pools.length; j++) {
+				 var lrbdPool = this.lrbdConf.pools[j];
+				 for (var k = 0; k < lrbdPool.gateways.length; k++) {
+				     var lrbdPoolGateway = lrbdPool.gateways[k];
+				     for (var l = 0; l < lrbdPoolGateway.tpg.length; l++) {
+					 var lrbdPoolGatewayTPG = lrbdPoolGateway.tpg[l];
+					 if (lrbdPoolGatewayTPG.initiator &&
+					     (uiTarget.initiatorList.indexOf(lrbdPoolGatewayTPG.initiator) === -1)) {
+						 uiTarget.initiatorList += lrbdPoolGatewayTPG.initiator + "\n";
+					 }
+				     }
+				 }
+			     }
+			 }
+
+			 uiTarget.addCommonAuth();
+		     }
+		 }
+
+		 /* Before proceeding further, we need to add an iscsi-target-config element */
+		 var uiTargetConfig = uiTarget.addConfig();
+
+		 /* Now we can populate uiTarget.selectedIntfList from lrbdTarget.hosts. */
+		 for (var m = 0; m < lrbdTarget.hosts.length; m++) {
+		     var lrbdTargetHost = lrbdTarget.hosts[m];
+
+		     /* lrbdTargetHost.host forms the first part of an Interface().  Address entries
+		      * are then extracted from lrbdConf.portals.
+		      * TODO: no specific way to limit certain address to certain targets?
+		      */
+
+		     var lrbdPortalsIndex = this.lrbdConf.portals.findIndex(
+			 (function(elem, index, arr) {
+			     return elem.name === this.portal;
+			 }), lrbdTargetHost);
+		     if (lrbdPortalsIndex === -1) {
+			 console.log("No LRBDPortal found matching: " + lrbdTargetHost.portal);
+		     } else {
+			 /* We found a matching LRBDPortal.  For each addr in LRBDPortal.addresses,
+			  * create a new Interface() and add it to the target's selected list.
+			  */
+			 var lrbdPortalsElem = this.lrbdConf.portals[lrbdPortalsIndex];
+			 for (var n = 0; n < lrbdPortalsElem.addresses.length; n++) {
+			     var lrbdPortalsElemAddr = lrbdPortalsElem.addresses[n];
+			     uiTargetConfig.push("selectedIntfList", new Interface(lrbdTargetHost.host, lrbdPortalsElemAddr));
+			 }
+		     }
+		 }
+
+		 /* To select images, we access lrbdConf.pools entries.  Each entry gives us the pool (needed
+		  * to select an image).  Then, we access lrbdConf.pools[x].gateways.  For each gateway.host,
+		  * if uiTargetConfig.selectedImgList has a host entry that matches, then we can access
+		  * lrbdConf.pools[x].gateways[y].tpg and create an Image()
+		  */
+		 for (var o = 0; o < this.lrbdConf.pools.length; o++) {
+		     var lrbdPool = this.lrbdConf.pools[o];
+
+		     for (var p = 0; p < lrbdPool.gateways.length; p++) {
+			 var lrbdPoolGateway = lrbdPool.gateways[p];
+
+			 /* Try to find if a selected interface exists matching lrbdPoolGateway.host */
+			 if (uiTargetConfig.selectedIntfList.findIndex(
+			     (function(elem, index, arr) {
+				 return elem.node === this.host;
+			     }), lrbdPoolGateway) !== -1) {
+			     /* Our target's config matches. */
+			     for (var q = 0; q < lrbdPoolGateway.tpg.length; q++) {
+				 var lrbdPoolGatewayTPG = lrbdPoolGateway.tpg[q];
+
+				 /* Assuming all entries are for unique images, unless initiator present, then
+				  * assuming initiators are unique!
+				  */
+				 var newImg = new Image(lrbdPoolGatewayTPG.image, lrbdPool.pool);
+				 if (!lrbdPoolGatewayTPG.initiator) {
+				     /* If no initiator, then there should be only one entry for this image,
+				      * thus provided it is not already in the selected list, go ahead and
+				      * add it.
+				      */
+				     if (!uiTargetConfig._isImgSelected(newImg)) {
+					 uiTargetConfig.push("selectedImgList", newImg);
+				     }
+				 } else {
+				     /* We have the case of an initiator(s).  Thus, we may have multiple
+				      * entries for the same image, but with a different initiator.
+				      */
+				     var selectedImgIndex;
+				     if (!uiTargetConfig._isImgSelected(newImg)) {
+					 /* push() returns new length of array, thus length - 1 is the
+					  * index at which our image was pushed.
+					  */
+					 selectedImgIndex = uiTargetConfig.push("selectedImgList", newImg) - 1;
+				     } else {
+					 selectedImgIndex = uiTargetConfig.indexOfSelectedImg(newImg);
+				     }
+
+				     /* Now append the initiator is not already present in the image.  But only
+				      * do this if the parent uiTarget has initiatorList configured.
+				      */
+				     if (uiTarget.initiatorList.length &&
+					 !uiTargetConfig._isInitiatorSelected(uiTargetConfig.selectedImgList[selectedImgIndex],
+									      lrbdPoolGatewayTPG.initiator)) {
+					 uiTargetConfig.push("selectedImgList." + selectedImgIndex + ".initiatorList", lrbdPoolGatewayTPG.initiator);
+				     }
+				 }
+			     }
+			 }
+		     }
+		 }
+
+
+	     } /* for (var i = 0; i < this.lrbdConf.targets.length; i++) */
+
+
+	 },
+
          handleIscsi200: function(e) {
              console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
 
@@ -196,6 +384,9 @@
                      this.set("availableImgList", this._parseImgData(resp.images));
                      this.set("availableIntfList", this._parseIntfData(resp.interfaces));
                      this.lrbdConf.populateFromFile(resp.config);
+
+		     /* Try to visualize lrbdConf */
+		     this.populateUIFromLRBD();
                  }
              } else if (e.target === this.$.saveiscsi) {
                  this.generateConfigFileButtonDisabled = false;
@@ -242,8 +433,20 @@
                  this.generateConfigFileButtonHidden = true;
          },
 
-         newTarget: function() {
+	 /* Create and populate a new iscsi-target.
+	  * targetName expects a String, customTargetEntries expects stringified JSON.
+	  * Returns the created target entry... needed by populate populateUIFromLRBD().
+	  */
+	 newTarget: function(event, obj, targetName, customTargetEntriesStr) {
              var target = document.createElement("iscsi-target");
+
+	     if (targetName) {
+		 target.name = targetName;
+	     }
+	     if (customTargetEntriesStr) {
+		 target.customTargetEntries = customTargetEntriesStr;
+	     }
+
              this.push("targetList", target);
              target.set("availableImgList", this.availableImgList.slice());
              target.set("availableIntfList", this.availableIntfList.slice());
@@ -255,6 +458,8 @@
               */
              Polymer.dom(this.root).insertBefore(target, this.$["generate-config-file-button"]);
              this.displayGenerateConfigFileButton();
+
+	     return target;
          },
 
          generateConfigFile: function() {

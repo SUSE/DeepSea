@@ -9,7 +9,7 @@
             url="http://{{node}}:{{port}}/{{cmd}}/{{arg}}"
             content-type="{{contentType}}"
             method="{{method}}"
-            body='{"client":"{{client}}", "tgt":"{{target}}", "fun":"{{func}}", "data":"{{data}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}", "canned":"{{canned}}"}'
+            body='{"client":"{{client}}", "tgt":"{{target}}", "fun":"{{func}}", "data":"{{data}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}", "canned":"{{canned}}", "contenttype":"{{contentType}}"}'
             handle-as="json"
             on-response="handle200"
             on-error="handleErr"
