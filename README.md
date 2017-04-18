@@ -22,16 +22,81 @@ For contributing to DeepSea, refer to the [contribution guidelines](https://gith
 
 ## Usage
 ### Prepare Salt
-- Install salt-master on one host
-- Install salt-minion on all hosts including the master.
-- Accept keys (e.g. `salt-key -A -y`)
+#### Install and configure the Salt master
+- Install salt-master on one host. We shall refer to this host as the
+  `admin node`.
+- It is a recommended best practice to have a management network for Ceph to
+  prevent management traffic from interfering with Ceph data traffic. If you
+  have a network designated for management traffic, configure
+  the Salt master process to communicate only on the cluster's management
+  interface. This can be done by adding a file
+  `/etc/salt/master.d/interface.conf` with the content below where `X.X.X.X`
+  is the IP address of the `admin node` on the management network.
+  ```
+  interface: X.X.X.X
+  ```
+- It may be useful to add the `salt` network alias for the `admin node`, as
+  `salt` is the name of the Salt master minions will try to connect with by
+  default.
+#### Install and configure the Salt minions
+- Install salt-minion on all hosts including the `admin node`.
+- From the `admin node`, accept the Salt keys for all nodes in the Ceph cluster
+  (e.g. `salt-key -A -y`)
+- If you choose not to add the `salt` network alias for the `admin node`, you
+  will need to edit the file `/etc/salt/minion` on each minion and update the
+  `master` option to refer to the `admin node`.
+#### A theoretical example
+Note that this example is too small to work in reality. It is only to
+demonstrate the practical concepts.
+- This is a snippet from an example `/etc/hosts` file for our theoretical Ceph
+  cluster. You can see the `salt` alias for the `admin node` on the management
+  interface.
+  ```
+  192.168.10.254  admin-management admin.ceph salt
+  192.168.10.11   mon1-management mon1.ceph
+  192.168.10.21   data1-management data1.ceph
+
+  172.16.1.254    admin-public admin admin.ceph
+  172.16.1.11     mon1-public mon1 mon1.ceph
+  172.16.1.21     data1-public data1 data1.ceph
+
+  172.16.2.254    admin-cluster admin.ceph
+  172.16.2.11     mon1-cluster mon1.ceph
+  172.16.2.21     data1-cluster data1.ceph
+  ```
+- `/etc/salt/master.d/interface.conf` in our example would be
+  ```
+  # IP address of admin node on management network
+  interface: 192.168.10.254
+  ```
+- After accepting the Salt keys on the master, you can execute the command
+  `salt-key --list-all` on the `admin node`, and you should see that each minion
+  is listed under `Accepted Keys` and that each minion has the same id as
+  is demonstrated for our theoretical cluster. (Each entry under `Accepted
+  Keys` is a `minion id` by which Salt and DeepSea will target the node)
+  ```
+  > salt-key --list-all
+  Accepted Keys:
+  admin.ceph
+  data1.ceph
+  mon1.ceph
+  Denied Keys:
+  Unaccepted Keys:
+  Rejected Keys:
+  ```
 
 ### Install DeepSea
 - Install [rpm](https://build.opensuse.org/package/show/home:swiftgist/deepsea)
 - For non-RPM-distros, try `make install`.
 
 ### Configure
-- Edit [/srv/pillar/ceph/master_minion.sls](srv/pillar/ceph/master_minion.sls)
+- DeepSea needs to know which node will act as the Salt master.
+  To avoid any possible user confusion, DeepSea enforces that all minion
+  hostnames (including the `admin node`'s hostname) should match the minion id.
+  Edit [/srv/pillar/ceph/master_minion.sls](srv/pillar/ceph/master_minion.sls),
+  and ensure the value of `master_minion` matches the minion id for the
+  `admin node`. (In our example from __Prepare Salt__ above, the value should be
+  `admin.ceph`.)
 
 ### Steps
 - Run `salt-run state.orch ceph.stage.0` or `salt-run state.orch ceph.stage.prep`
