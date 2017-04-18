@@ -153,7 +153,7 @@ class Iscsi(object):
 
 	Note: could add samples from lrbd for config
 	"""
-	self.data['config'] = ''
+	self.data['config'] = self.config()
 	self.data['interfaces'] = self.canned_interfaces(canned)
 	self.data['images'] = self.canned_images(canned)
 
