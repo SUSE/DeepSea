@@ -17,6 +17,7 @@ import sys
 import os
 import json
 import yaml
+import urllib
 import salt.client
 import salt.utils.minions
 
@@ -109,9 +110,19 @@ class Iscsi(object):
 	"""
 	if 'data' in kwargs:
 	    self._set_igw_config(**kwargs)
-	    contents = kwargs['data']
+
+	    # Empty content-type header causes cherrypy to process the request
+	    # body as a string.  In such cases, the 'data' argument containing
+	    # the lrbd json structure should be URI encoded to prevent
+	    # accidental 'arg' substring matching, causing invalid handling
+	    # by cherrypy.  Further, a blank content-type is used to avoid
+	    # POST preflight checks which would render third party cookie auth
+	    # (ie. where the frontend is hosted on a different server than
+	    # salt-api) useless.
+	    contents = urllib.unquote(kwargs['data']) if 'contenttype' in kwargs and not kwargs['contenttype'] else kwargs['data']
+
 	    with open(filename, 'w') as conf:
-		conf.write(json.dumps(contents, indent=4) + '\n')
+		conf.write(contents)
 	else:
 	    log.error("No JSON data passed")
 
