@@ -1,0 +1,120 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../salt-api/salt-api.html">
+
+<dom-module id="wf-salt-api" attributes="cmd arg target func data canned">
+    <template>
+        <salt-api
+            id="wfsaltapi"
+            node="{{saltApiNode}}"
+            port="{{saltApiPort}}"
+            cmd="{{cmd}}"
+            arg="{{arg}}"
+            target="{{target}}"
+            func="{{func}}"
+            data="{{data}}"
+            userid=""
+            password=""
+            authtype=""
+            client="runner"
+            canned="{{canned}}">
+        </salt-api>
+    </template>
+</dom-module>
+
+<script>
+    Polymer({
+        is: 'wf-salt-api',
+
+        properties: {
+            saltApiNode: {
+                type: String
+            },
+            saltApiPort: {
+                type: Number
+            },
+            method: {
+                type: String,
+                value: ""
+            },
+            contentType: {
+                type: String,
+            }
+        },
+
+        listeners: {
+            "salt-api-response": "handle200",
+            "salt-api-error": "handleErr"
+        },
+
+        ready: function() {
+        },
+
+        /* Prepare the element by retrieving sessionStorage.wfauth. */
+        _prepare: function() {
+            if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
+                console.log(this.is + ":" + arguments.callee.name + ": Populating salt-api element.");
+                var wfauth = JSON.parse(sessionStorage.wfauth);
+                this.saltApiNode = wfauth.node;
+                this.saltApiPort = wfauth.port;
+                return true;
+            } else {
+                /* We have no state.  All we can do is re-prompt for auth credentials. */
+                console.log(this.is + ":" + arguments.callee.name + ": sessionStorage.wfauth not found.  Firing 'wf-salt-api-error-401'");
+                this._fire401ToWfAuth();
+                return false;
+            }
+        },
+
+        _fire401ToWfAuth: function() {
+            /* Try to fire an event to wf-auth. */
+            var wfAuth = document.querySelector("wf-auth");
+            if (wfAuth) {
+                wfAuth.fire("wf-salt-api-error-401");
+            } else {
+                /* TODO: we have no wf-auth!!! */
+            }
+        },
+
+        runGet: function() {
+            if (this._prepare()) {
+                this.$.wfsaltapi.runGet();
+            } else {
+                this.fire("wf-salt-api-error");
+            }
+        },
+
+        runPost: function() {
+            if (this._prepare()) {
+                this.$.wfsaltapi.runPost();
+            } else {
+                this.fire("wf-salt-api-error");
+            }
+        },
+
+        handle200: function(e, detail) {
+            console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
+            console.log(this.is + ":" + arguments.callee.name + ": firing 'wf-salt-api-response' event");
+            this.fire("wf-salt-api-response", e.detail);
+        },
+
+        handleErr: function(e, detail) {
+            console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
+            /* In case of an unauthorized request, fire a 401 event to wf-auth to trigger
+             * the auth-dialog and lock the current page.  Another code of interest is 0,
+             * which can be returned when an ajax request failed to contact the server.  If
+             * the 0 is a result of a down salt-api server, the next request that successfully
+             * reaches the server _after_ it restarts will also return a 401 as our cookie would
+             * have been invalidated, prompting a re-auth.  A network problem can also cause a
+             * 0 status code, but no re-auth in this case would be needed.  The user would simply
+             * need to re-issue the request.  Thus, the only time a 401 should be fired up to
+             * wf-auth, is when a 401 is received from salt-api.  Make no assumptions about 0.
+             */
+            if (e.detail.request.status == 401) {
+                this._fire401ToWfAuth();
+            }
+            console.log(this.is + ":" + arguments.callee.name + ": firing 'wf-salt-api-error' event");
+            this.fire("wf-salt-api-error", e.detail);
+        },
+    });
+</script>
