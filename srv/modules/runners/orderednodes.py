@@ -1,4 +1,6 @@
 import salt.client
+import sys
+import os
 
 
 def _preserve_order_sorted(seq):
@@ -31,8 +33,15 @@ def unique(cluster='ceph', exclude=[]):
     # process in missioncritical connections like iscsi where one needs
     # to be sure that the MPIO successfully failed over before re booting/starting
     # the service.
+
+    # When search matches no minions, salt prints to stdout.  Suppress stdout.
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
     roles = [role for role in roles if role not in exclude]
     for role in roles:
         nodes = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
         all_clients += nodes.keys()
+
+    sys.stdout = _stdout
     return _preserve_order_sorted(all_clients)
