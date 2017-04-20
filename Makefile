@@ -355,4 +355,4 @@ tarball:
 	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.gz HEAD
 
 test:
-	tox -c tox-pytest.ini
+	tox
