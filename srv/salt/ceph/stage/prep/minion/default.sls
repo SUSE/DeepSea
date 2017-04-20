@@ -38,7 +38,7 @@ wait until the cluster has recovered before processing {{ host }}:
 check if all processes are still running after processing {{ host }}:
   salt.state:
     - tgt: '*'
-    - sls: ceph.cephprocesses
+    - sls: ceph.processes
     - failhard: True
 
 unset noout {{ host }}:
