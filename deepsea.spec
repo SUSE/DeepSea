@@ -26,7 +26,7 @@ Summary:        Salt solution for deploying and managing Ceph
 License:        GPL-3.0
 Group:          System/Libraries
 Url:            http://bugs.opensuse.org
-Source0:        deepsea-%{version}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  salt-master
 Requires:       salt-master
@@ -48,7 +48,7 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 %build
 
 %install
-make DESTDIR=%{buildroot} copy-files
+make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
 
 %post
 # Initialize to most likely value
@@ -63,7 +63,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 
 %files
 %defattr(-,root,root,-)
-/srv/modules/pillar/stack.py
+/srv/modules/pillar/stack.py*
 %dir /srv/modules/runners
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/stack
@@ -204,7 +204,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/updates/restart
 %dir /srv/salt/ceph/wait
 %config(noreplace) /etc/salt/master.d/*.conf
-%config /srv/modules/runners/*.py
+%config /srv/modules/runners/*.py*
 %config /srv/pillar/top.sls
 %config /srv/pillar/ceph/init.sls
 %config /srv/pillar/ceph/benchmark/config.yml
@@ -214,7 +214,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/pillar/ceph/benchmark/templates/*.j2
 %config(noreplace) /srv/pillar/ceph/master_minion.sls
 %config /srv/pillar/ceph/stack/stack.cfg
-%config /srv/salt/_modules/*.py
+%config /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
@@ -251,7 +251,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/iperf/*.sls
 %config /srv/salt/ceph/iperf/*.service
-%config /srv/salt/ceph/iperf/*.py
+%config /srv/salt/ceph/iperf/*.py*
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
 %config /srv/salt/ceph/mds/key/*.sls
