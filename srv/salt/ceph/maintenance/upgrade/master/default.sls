@@ -8,7 +8,10 @@ validate failed:
 
 {% endif %}
 
-update deepsea:
+{% set notice =  salt['saltutil.runner']('advise.salt_upgrade') %}
+
+# May generate an unpack error which is safe to ignore
+update deepsea and master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.self
@@ -17,6 +20,7 @@ sync master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.sync
+    - failhard: True
 
 upgrading:
   salt.state:
@@ -25,7 +29,7 @@ upgrading:
     - sls: ceph.upgrade
     - failhard: True
 
-restart master:
+reboot master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart

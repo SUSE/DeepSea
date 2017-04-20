@@ -1,7 +1,8 @@
 
 ceph:
-  pkg.installed:
+  pkg.latest:
     - pkgs:
       - ceph
+    - dist-upgrade: True
     - fire_event: True
 

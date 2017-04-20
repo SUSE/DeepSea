@@ -35,3 +35,17 @@ In another terminal, try 'salt-run jobs.active' or
     return message
 
 
+def salt_upgrade():
+    """
+    Advise the installer that if the upgrade fails, rerun the orchestration.
+    """
+    message = '''
+        *************** PLEASE READ ***********************
+        Upgrading the salt master may result in an initial
+        failure.  Rerun the orchestration a second time to
+        continue the upgrade.
+        ***************************************************'''
+
+    print message
+    return message
+

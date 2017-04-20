@@ -1,23 +1,37 @@
 
+update salt:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.updates.salt
+
+ready:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+
 mines:
   salt.state:
     - tgt: '*'
     - sls: ceph.mines
+    - failhard: True
 
 sync:
   salt.state:
     - tgt: '*'
     - sls: ceph.sync
+    - failhard: True
 
 repo:
   salt.state:
     - tgt: '*'
     - sls: ceph.repo
+    - failhard: True
 
 common packages:
   salt.state:
     - tgt: '*'
     - sls: ceph.packages.common
+    - failhard: True
 
 {% if salt['saltutil.runner']('cephprocesses.mon') == True %}
 
@@ -59,9 +73,9 @@ updating {{ host }}:
     - sls: ceph.updates
     - failhard: True
 
-unset noout {{ host }}: 
+set noout {{ host }}: 
   salt.state:
-    - sls: ceph.noout.unset
+    - sls: ceph.noout.set
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
@@ -86,30 +100,6 @@ unset noout after final iteration:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
-upgrading remaining minions:
-  salt.runner:
-    - name: minions.message
-    - content: "Upgrading minions without roles"
-
-updating minions without roles:
-  salt.state:
-    - tgt: I@cluster:ceph
-    - tgt_type: compound
-    - sls: ceph.updates
-    - failhard: True
-
-restarting minions without roles:
-  salt.state:
-    - tgt: I@cluster:ceph
-    - tgt_type: compound
-    - sls: ceph.updates.restart
-    - failhard: True
-
-upgraded remaining minions:
-  salt.runner:
-    - name: minions.message
-    - content: "Upgraded minions without roles"
-
 #warning_after:
 #  salt.state:
 #    - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -123,9 +113,9 @@ updates:
     - tgt: '*'
     - sls: ceph.updates
 
+{% endif %}
+
 restart:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates.restart
-
-{% endif %}

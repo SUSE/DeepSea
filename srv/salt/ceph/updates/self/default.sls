@@ -3,3 +3,5 @@ update deepsea:
     - pkgs:
       - deepsea
       - salt-master
+      - salt-minion
+    - dist-upgrade: True
