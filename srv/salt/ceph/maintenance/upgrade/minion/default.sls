@@ -29,6 +29,11 @@ common packages:
 
 {% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
 
+upgrading {{ host }}:
+  salt.runner:
+    - name: minions.message
+    - content: "Upgrading host {{ host }}"
+
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -66,6 +71,12 @@ restart {{ host }} if updates require:
     - tgt_type: compound
     - sls: ceph.updates.restart
     - failhard: True
+
+upgraded {{ host }}:
+  salt.runner:
+    - name: minions.message
+    - content: "Upgraded host {{ host }}"
+
 
 {% endfor %}
 

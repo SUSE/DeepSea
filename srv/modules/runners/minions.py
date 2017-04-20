@@ -68,3 +68,8 @@ def ready(**kwargs):
 
     return True
 
+def message(**kwargs):
+    """
+    Pass along a message
+    """
+    log.warn("{}".format(kwargs['content']))
