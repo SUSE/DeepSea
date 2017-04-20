@@ -1,5 +1,4 @@
 
-
 {% if not salt['mine.get'](tgt='*', fun='roles.igw') %}
 
 wipe configuration:
@@ -14,9 +13,9 @@ stop lrbd:
   service.dead:
     - name: lrbd
     - enable: False
+    - onlyif: "test -f /usr/sbin/lrbd"
 
 uninstall lrbd:
   pkg.removed:
     - name: lrbd
     - onlyif: "test -f /usr/sbin/lrbd"
-
