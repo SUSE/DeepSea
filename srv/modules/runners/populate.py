@@ -280,7 +280,6 @@ class DiskConfiguration(object):
                 # what if server of servers returns anything -> no profile, no notification
                 self.storage_nodes.update(ret)
         else:
-            # salt-call mine.get '*' freedisks.list
             ret = salt.utils.minions.mine_update('*', '', 'glob', options.__opts__)
             self.storage_nodes = salt.utils.minions.mine_get('*', 'cephdisks.list', 'glob', options.__opts__)
 
