@@ -85,6 +85,30 @@ unset noout after final iteration:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
+starting remaining minions:
+  salt.runner:
+    - name: minions.message
+    - content: "Starting minions without roles"
+
+updating minions without roles:
+  salt.state:
+    - tgt: I@cluster:ceph
+    - tgt_type: compound
+    - sls: ceph.updates
+    - failhard: True
+
+restarting minions without roles:
+  salt.state:
+    - tgt: I@cluster:ceph
+    - tgt_type: compound
+    - sls: ceph.updates.restart
+    - failhard: True
+
+finishing remaining minions:
+  salt.runner:
+    - name: minions.message
+    - content: "Finished minions without roles"
+
 #warning_after:
 #  salt.state:
 #    - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -102,9 +126,10 @@ updates:
     - tgt: '*'
     - sls: ceph.updates
 
-{% endif %}
 
 restart:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates.restart
+
+{% endif %}
