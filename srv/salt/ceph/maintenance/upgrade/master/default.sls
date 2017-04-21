@@ -14,7 +14,7 @@ validate failed:
 update deepsea and master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.updates.self
+    - sls: ceph.updates.master
   
 sync master:
   salt.state:
