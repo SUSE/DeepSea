@@ -1,3 +1,0 @@
-
-silver nop:
-  test.nop
