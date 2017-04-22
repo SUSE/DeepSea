@@ -17,40 +17,48 @@ upgrade is safe.  All expected processes are running.
 A secondary purpose is a utility to check the current state of all processes.
 """
 
-def check(cluster='ceph', **kwargs):
+
+def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
     """
     Query the status of running processes for each role.  Also, verify that
     all minions assigned roles do respond.  Return False if any fail.
     """
     search = "I@cluster:{}".format(cluster)
 
-    roles = _cached_roles(search)
-    if 'roles' in kwargs:
-        roles = { k:roles[k] for k in kwargs['roles'] }
+    if not roles:
+        roles = _cached_roles(search)
 
-    status = _status(search, roles)
+    status = _status(search, roles, verbose)
+
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
 
-    if not roles:
-        return False
-
     ret = True
-    for role in roles.keys():
-        for minion in roles[role]:
-            if minion not in status[role]:
-                log.error("ERROR: {} minion did not respond".format(minion))
-                ret = False
 
     for role in status.keys():
         for minion in status[role]:
-            if status[role][minion] == False:
-                log.error("ERROR: {} process on {} is not running".format(role, minion))
-                ret = False
+            if status[role][minion] is False:
+                if tolerate_down == 0:
+                    log.error("ERROR: {} process on {} is not running".format(role, minion))
+                    ret = False
+                tolerate_down -= 1
 
     return ret
 
-def _status(search, roles):
+def mon(cluster='ceph'):
+    """
+    Query all monitors.  If any are running, assume cluster is running and
+    return true.  The purpose of this function is to act as a conditional
+    to determines whether minion steps should happen serially or in parallel.
+    """
+    status = _status("I@cluster:{}".format(cluster), ['mon'], False)
+    running = False
+    for minion in status['mon']:
+        if status['mon'][minion]:
+            return True
+    return False
+
+def _status(search, roles, verbose):
     """
     Return a structure of roles with module results
     """
@@ -60,17 +68,20 @@ def _status(search, roles):
 
     status = {}
     local = salt.client.LocalClient()
+
     for role in roles:
         role_search = search + " and I@roles:{}".format(role)
         status[role] = local.cmd(role_search,
                                  'cephprocesses.check',
-                                 [],
+                                 roles=roles,
+                                 verbose=verbose,
                                  expr_form="compound")
 
-    log.debug(pprint.pformat(status))
 
     sys.stdout = _stdout
+    log.debug(pprint.pformat(status))
     return status
+
 
 def _cached_roles(search):
     """
@@ -92,7 +103,7 @@ def _cached_roles(search):
                 roles.setdefault(role, []).append(minion)
 
     log.debug(pprint.pformat(roles))
-    return roles
+    return roles.keys()
 
 
 def wait(cluster='ceph', **kwargs):
@@ -113,16 +124,15 @@ def wait(cluster='ceph', **kwargs):
     local = salt.client.LocalClient()
     status = local.cmd(search,
                        'cephprocesses.wait',
-                       [ 'timeout={}'.format(settings['timeout']),
-                         'delay={}'.format(settings['delay']) ],
+                       ['timeout={}'.format(settings['timeout']),
+                        'delay={}'.format(settings['delay'])],
                        expr_form="compound")
-
 
     sys.stdout = _stdout
     log.debug("status: ".format(pprint.pformat(status)))
     if False in status.values():
         for minion in status.keys():
-            if status[minion] == False:
+            if status[minion] is False:
                 log.error("minion {} failed".format(minion))
         return False
     return True
@@ -135,8 +145,8 @@ def _timeout(cluster='ceph'):
     """
     local = salt.client.LocalClient()
     search = "I@cluster:{}".format(cluster)
-    virtual = local.cmd(search, 'grains.get', [ 'virtual' ], expr_form="compound")
-    if 'physical' in  virtual.values():
+    virtual = local.cmd(search, 'grains.get', ['virtual'], expr_form="compound")
+    if 'physical' in virtual.values():
         return 900
     else:
         return 120

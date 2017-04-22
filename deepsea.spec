@@ -122,6 +122,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mon/files
 %dir /srv/salt/ceph/mon/key
 %dir /srv/salt/ceph/mon/restart
+%dir /srv/salt/ceph/noout
+%dir /srv/salt/ceph/noout/set
+%dir /srv/salt/ceph/noout/unset
 %dir /srv/salt/ceph/openattic
 %dir /srv/salt/ceph/openattic/auth
 %dir /srv/salt/ceph/openattic/files
@@ -200,9 +203,22 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/sync
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
+%dir /srv/salt/ceph/maintenance
+%dir /srv/salt/ceph/maintenance/upgrade
+%dir /srv/salt/ceph/maintenance/noout
+%dir /srv/salt/ceph/maintenance/upgrade/master
+%dir /srv/salt/ceph/maintenance/upgrade/minion
+%dir /srv/salt/ceph/upgrade
 %dir /srv/salt/ceph/updates
+%dir /srv/salt/ceph/updates/master
+%dir /srv/salt/ceph/updates/salt
 %dir /srv/salt/ceph/updates/restart
+%dir /srv/salt/ceph/updates/regular
+%dir /srv/salt/ceph/updates/kernel
 %dir /srv/salt/ceph/wait
+%dir /srv/salt/ceph/warning
+%dir /srv/salt/ceph/warning/noout
+%dir /srv/salt/ceph/processes
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
 %config /srv/pillar/top.sls
@@ -265,6 +281,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/files/*.j2
 %config /srv/salt/ceph/mon/key/*.sls
 %config /srv/salt/ceph/mon/restart/*.sls
+%config /srv/salt/ceph/noout/set/*.sls
+%config /srv/salt/ceph/noout/unset/*.sls
 %config /srv/salt/ceph/openattic/*.sls
 %config /srv/salt/ceph/openattic/auth/*.sls
 %config /srv/salt/ceph/openattic/key/*.sls
@@ -346,9 +364,21 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
+%config /srv/salt/ceph/upgrade/*.sls
+%config /srv/salt/ceph/maintenance/noout/*.sls
+%config /srv/salt/ceph/maintenance/upgrade/*.sls
+%config /srv/salt/ceph/maintenance/upgrade/master/*.sls
+%config /srv/salt/ceph/maintenance/upgrade/minion/*.sls
 %config /srv/salt/ceph/updates/*.sls
 %config /srv/salt/ceph/updates/restart/*.sls
+%config /srv/salt/ceph/updates/master/*.sls
+%config /srv/salt/ceph/updates/salt/*.sls
+%config /srv/salt/ceph/updates/kernel/*.sls
+%config /srv/salt/ceph/updates/regular/*.sls
 %config /srv/salt/ceph/wait/*.sls
+%config /srv/salt/ceph/warning/*.sls
+%config /srv/salt/ceph/warning/noout/*.sls
+%config /srv/salt/ceph/processes/*.sls
 %doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*

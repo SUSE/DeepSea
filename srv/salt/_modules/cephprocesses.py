@@ -12,30 +12,33 @@ upgrade is safe.  All expected services are running.
 A secondary purpose is a utility to check the current state of all services.
 """
 
-def check():
+
+def check(**kwargs):
     """
     Query the status of running processes for each role.  Return False if any
     fail.
     """
-    processes = { 'mon': [ 'ceph-mon' ],
-                 'storage': [ 'ceph-osd' ],
-                 'mds': [ 'ceph-mds' ],
-                 'igw': [ 'lrbd' ],
-                 'rgw': [ 'radosgw' ],
-                 'ganesha': [ 'ganesha.nfsd', 'rpcbind', 'rpc.statd' ] }
+    processes = {'mon': ['ceph-mon'],
+                 'storage': ['ceph-osd'],
+                 'mds': ['ceph-mds'],
+                 'igw': [],
+                 'rgw': ['radosgw'],
+                 'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
+                 'admin': [],
+                 'master': []}
 
-    ret = True
+    running = True
+    results = {}
+
     if 'roles' in __pillar__:
-        for role in __pillar__['roles']:
-            if role in processes:
-                for process in processes[role]:
-                    result = __salt__['status.pid'](process)
-                    if result == '':
-                        log.error("ERROR: process {} for role {} is not running".format(process, role))
-                        ret = False
+        for role in kwargs.get('roles', __pillar__['roles']):
+            for process in processes[role]:
+                pid = __salt__['status.pid'](process)
+                if pid == '':
+                    log.error("ERROR: process {} for role {} is not running".format(process, role))
+                    running = False
 
-    return ret
-
+    return running
 
 def wait(**kwargs):
     """
@@ -62,12 +65,13 @@ def wait(**kwargs):
     log.error("Timeout expired")
     return False
 
+
 def _timeout():
     """
     Assume 15 minutes for physical hardware since some hardware has long
     shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
     """
-    if 'physical' ==  __grains__['virtual']:
+    if 'physical' == __grains__['virtual']:
         return 900
     else:
         return 120

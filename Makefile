@@ -155,6 +155,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/mon/files/*.j2 $(DESTDIR)/srv/salt/ceph/mon/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart
 	install -m 644 srv/salt/ceph/mon/restart/*.sls $(DESTDIR)/srv/salt/ceph/mon/restart
+	# state files - noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/set
+	install -m 644 srv/salt/ceph/noout/set/*.sls $(DESTDIR)/srv/salt/ceph/noout/set
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/unset
+	install -m 644 srv/salt/ceph/noout/unset/*.sls $(DESTDIR)/srv/salt/ceph/noout/unset
 	# state files - openattic
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic
 	install -m 644 srv/salt/ceph/openattic/*.sls $(DESTDIR)/srv/salt/ceph/openattic/
@@ -287,6 +293,30 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
+	# state files - update
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
+	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates
+	install -m 644 srv/salt/ceph/updates/*.sls $(DESTDIR)/srv/salt/ceph/updates/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/restart
+	install -m 644 srv/salt/ceph/updates/restart/*.sls $(DESTDIR)/srv/salt/ceph/updates/restart/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/regular
+	install -m 644 srv/salt/ceph/updates/regular/*.sls $(DESTDIR)/srv/salt/ceph/updates/regular/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/kernel
+	install -m 644 srv/salt/ceph/updates/kernel/*.sls $(DESTDIR)/srv/salt/ceph/updates/kernel/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/master
+	install -m 644 srv/salt/ceph/updates/master/*.sls $(DESTDIR)/srv/salt/ceph/updates/master/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/salt
+	install -m 644 srv/salt/ceph/updates/salt/*.sls $(DESTDIR)/srv/salt/ceph/updates/salt/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
+	install -m 644 srv/salt/ceph/maintenance/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/noout
+	install -m 644 srv/salt/ceph/maintenance/noout/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/master
+	install -m 644 srv/salt/ceph/maintenance/upgrade/master/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/master
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/minion
+	install -m 644 srv/salt/ceph/maintenance/upgrade/minion/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/minion
 	# state files - orchestrate stages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/all
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
@@ -325,13 +355,18 @@ copy-files:
 	install -m 644 srv/salt/ceph/time/init.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp
 	install -m 644 srv/salt/ceph/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/time/ntp/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates
-	install -m 644 srv/salt/ceph/updates/*.sls $(DESTDIR)/srv/salt/ceph/updates/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/restart
-	install -m 644 srv/salt/ceph/updates/restart/*.sls $(DESTDIR)/srv/salt/ceph/updates/restart/
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
+	# state files - check processes
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes
+	install -m 644 srv/salt/ceph/processes/*.sls $(DESTDIR)/srv/salt/ceph/processes/
+	# state files - warning
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning
+	install -m 644 srv/salt/ceph/warning/*.sls $(DESTDIR)/srv/salt/ceph/warning/
+	# state files - warning/noout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning/noout
+	install -m 644 srv/salt/ceph/warning/noout/*.sls $(DESTDIR)/srv/salt/ceph/warning/noout/
 
 	# state files - orchestrate stage symlinks
 	ln -sf prep		$(DESTDIR)/srv/salt/ceph/stage/0

@@ -4,4 +4,4 @@ wait:
    - kwargs:
        'status': "HEALTH_ERR"
    - fire_event: True
-
+   - failhard: True
