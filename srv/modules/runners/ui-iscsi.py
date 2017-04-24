@@ -242,3 +242,28 @@ def images(**kwargs):
     if 'canned' in kwargs:
 	return iscsi.canned_images(int(kwargs['canned']), wrapped=False)
     return iscsi.images(wrapped=False)
+
+
+def status():
+    local = salt.client.LocalClient()
+    status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
+    result = True
+    for _, v in status.iteritems():
+        result = result and v
+    return result
+
+
+def deploy():
+    runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
+    result = runner.cmd('state.orch', ['ceph.stage.iscsi'], print_event=False)
+    return result['data']['retcode'] == 0
+
+
+def undeploy():
+    local = salt.client.LocalClient()
+    results = local.cmd('I@roles:igw', 'service.stop', ['lrbd'], expr_form='compound')
+    result = True
+    for _, v in results.iteritems():
+        result = result and v
+    return result
+
