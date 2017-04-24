@@ -19,14 +19,14 @@ class Proposal(object):
         self.unassigned_disks = []
         self._parse_filters(kwargs)
         # we differentiate 3 kinds of drives for now
-        self.nvmes = [disk for disk in disks if disk['Driver'] ==
+        self.nvme = [disk for disk in disks if disk['Driver'] ==
                       self.NVME_DRIVER and disk['rotational'] is '0']
-        self.ssds = [disk for disk in disks if disk['Driver'] !=
+        self.ssd = [disk for disk in disks if disk['Driver'] !=
                      self.NVME_DRIVER and disk['rotational'] is '0']
-        self.spinners = [disk for disk in disks if disk['rotational'] is '1']
-        log.warn(self.nvmes)
-        log.warn(self.ssds)
-        log.warn(self.spinners)
+        self.spinner = [disk for disk in disks if disk['rotational'] is '1']
+        log.warn(self.nvme)
+        log.warn(self.ssd)
+        log.warn(self.spinner)
 
     def _parse_filters(self, kwargs):
         ratio = kwargs.get('ratio', '')
@@ -58,33 +58,31 @@ class Proposal(object):
 
     # TODO better name
     def create(self):
-        proposals = {'standalone': {},
-                     'nvme:ssd': {},
-                     'nvme:spinner': {},
-                     'ssd:spinner': {}}
-        standalone = self._filter(self.nvmes + self.ssds + self.spinners,
+        proposals = {'standalone': [],
+                     'nvme-ssd': [],
+                     'nvme-spinner': [],
+                     'ssd-spinner': []}
+        standalone = self._filter(self.nvme + self.ssd + self.spinner,
                                   'data')
         proposals['standalone'] = self._propose(standalone)
 
         # uncertain how hacky this is. This branch is taken if any 2 out of
         # there lists is empty
-        if sum([not self.nvmes, not self.ssds, not self.spinners]) is 2:
+        if sum([not self.nvme, not self.ssd, not self.spinner]) is 2:
             log.debug('found only one type of disks...proposing standalone')
             return proposals
 
         # create all other proposals
-        configs = [('nvmes', 'ssds', 'spinners'),
-                   ('nvmes', 'spinners', 'ssds'),
-                   ('ssds', 'spinners', 'nvmes')]
+        configs = [('nvme', 'ssd', 'spinner'),
+                   ('nvme', 'spinner', 'ssd'),
+                   ('ssd', 'spinner', 'nvme')]
         for journal, data, other in configs:
             # copy the disk lists here so the proposal methods only mutate the
             # copies and we can run mutliple proposals
             d = self._filter(getattr(self, data), 'data')
             j = self._filter(getattr(self, journal), 'journal')
             o = self._filter(getattr(self, other), 'data')
-            proposal = self._propose(d, j, o)
-            if proposal:
-                proposals['{}:{}'.format(journal, data)] = proposal
+            proposals['{}-{}'.format(journal, data)] = self._propose(d, j, o)
         return proposals
 
     def _propose(self, d_disks, j_disks=[], o_disks=[]):
@@ -97,11 +95,7 @@ class Proposal(object):
         # then add standalones if any leftovers
         if d_disks or j_disks or o_disks:
             standalone = self._propose_standalone(d_disks + j_disks + o_disks)
-        if not external and not standalone:
-            # don't return empty proposals
-            return None
-        else:
-            return {'data+journals': external, 'osds': standalone}
+        return external + standalone
 
     def _propose_external(self, data_disks, journal_disks):
         external = []
@@ -113,9 +107,8 @@ class Proposal(object):
             log.info('consuming {} as journal'.format(journal_disk['device']))
             for i in range(0, self.data_r):
                 data_disk = data_disks.pop()
-                external.append('{}: {}'.format(
-                    self._device(data_disk),
-                    self._device(journal_disk)))
+                external.append({self._device(data_disk):
+                                 self._device(journal_disk)})
         return external
 
     def _propose_standalone(self, leftovers):
@@ -123,7 +116,7 @@ class Proposal(object):
         for leftover in leftovers:
             log.info('proposing {} as standalone osd'.format(
                 leftover['device']))
-            standalone.append(self._device(leftover))
+            standalone.append({self._device(leftover): ''})
         return standalone
 
     def _filter(self, disks, d_j):
