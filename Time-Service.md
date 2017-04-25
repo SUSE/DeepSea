@@ -63,6 +63,7 @@ In this mode, all nodes will be configured to reference the servers defined by `
 
 #### `ntp_server_conf` and `ntp_client_conf`
 These settings define the source files DeepSea will use to distribute `ntp.conf` files on the NTP server and clients. These values are where a user may specify custom NTP configuration files to be distributed instead of DeepSea's basic versions. The `ntp_server_conf` file will be distributed only to the NTP server and only a server it is specified by `ntp_server`. The `ntp_client_conf` file will be distributed to all nodes not specified by `ntp_server`. NTP config files must be placed in '/srv/formulas/deepsea-ntp-formula/ntp/'. A few important notes and clarifications:
+- If these two settings are left blank or removed entirely, the default files `ntp-server-default.conf` and `ntp-client-default.conf` will be used.
 - These files, whether server or client, will always be named `ntp.conf` on a node onto which DeepSea deploys them.
 - Custom files will not obey the `higher_stratum_servers` setting to prevent unwanted interference with them. The default files configured by DeepSea, 'ntp-server-default.conf' and 'ntp-client-default.conf', do obey the 'higher_stratum_servers' setting.
 
