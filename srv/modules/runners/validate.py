@@ -494,7 +494,7 @@ class Validate(object):
             if re.search(r'{}'.format(server), line):
                 if re.search(r'no.*response', line):
                     msg = line
-                    self.errors['time_server'] = [ msg ]
+                    self.errors['time_service'] = [ msg ]
 
 
     def _ping_check(self, server):
@@ -503,36 +503,35 @@ class Validate(object):
         result = self._popen([ '/usr/bin/ping', '-c', '1', server ])
         for line in result[0]:
             if re.match(r'\d+ bytes from', line):
-                self.passed['time_server'] = "valid"
-        if not 'time_server' in self.passed:
+                self.passed['time_service'] = "valid"
+        if not 'time_service' in self.passed:
             if result[1]:
                 # Take stderr
-                self.errors['time_server'] = result[1]
+                self.errors['time_service'] = result[1]
             elif result[0][1]:
                 # Take second line of stdout
-                self.errors['time_server'] = [ result[0][1] ]
+                self.errors['time_service'] = [ result[0][1] ]
             else:
                 # how did we get here?
                 msg = "{} unavailable".format(server)
-                self.errors['time_server'] = [ msg ]
+                self.errors['time_service'] = [ msg ]
 
-
-    def time_server(self):
+    def time_service(self):
         """
         Check that time server is available
         """
-        time_server = self.data[self.data.keys()[0]].get("time_server", "")
-        time_service = self.data[self.data.keys()[0]].get("time_service", "")
-        if time_service == 'disabled':
-            self.passed['time_server'] = "disabled"
+        pillar_data = list(self.data.values())[0]
+        time_service_data = pillar_data.get('time_service')
+        if not time_service_data or not time_service_data.get('manage'):
+            self.passed['time_service'] = 'disabled'
             return
-
-        if (time_service == 'ntp' and os.path.isfile('/usr/sbin/sntp')):
-            self._ntp_check(time_server)
-        else:
-            self._ping_check(time_server)
-
-        self._set_pass_status('time_server')
+        ntp_server = time_service_data.get('ntp_server')
+        if ntp_server:
+            if os.path.isfile('/usr/sbin/sntp'):
+                self._ntp_check(ntp_server)
+            else:
+                self._ping_check(ntp_server)
+        self._set_pass_status('time_service')
 
     def fqdn(self):
         """
@@ -652,7 +651,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.mon_initial_members()
     v.osd_creation()
     v.pool_creation()
-    v.time_server()
+    v.time_service()
     v.fqdn()
     v.report()
 

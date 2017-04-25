@@ -354,6 +354,11 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time
 	install -m 644 srv/salt/ceph/time/default.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -m 644 srv/salt/ceph/time/init.sls $(DESTDIR)/srv/salt/ceph/time/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp-formula
+	# Install all files recursively under srv/salt/ceph/time/ntp-formula
+	for file in $(shell find srv/salt/ceph/time/ntp-formula/ -type f); do \
+		install -D -m 644 "$$file" $(DESTDIR)/"$$file"; \
+	done
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/

@@ -28,7 +28,7 @@ validate failed:
 {% endif %}
 
 
-{% if salt['pillar.get']('time_service') != "disabled" %}
+{% if salt['pillar.get']('time_service:manage') %}
 time:
   salt.state:
     - tgt: 'I@cluster:ceph'

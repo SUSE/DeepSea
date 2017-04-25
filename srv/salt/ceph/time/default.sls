@@ -1,3 +1,4 @@
 
 
 include:
+  - .ntp-formula.ntp
