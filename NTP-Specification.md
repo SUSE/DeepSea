@@ -1,5 +1,5 @@
-NTP Specification
-=================
+Time Service Specification
+==========================
 
 Ceph is highly dependent on accurate time, meaning time sync across the server is critical to Ceph. If we further consider that a large number of ceph deployments are in air-gapped network environments and won't have access to standard time servers, it becomes necessary to sync with time servers that exist within the air-gapped environment. One of the prime design tents of Deepsea is to produce a minimal useful cluster out of the box; the product of all of this, for a user who hasn't had the foresight or technical skill to set up a time server in the air-gapped environment, it is appropriate for DeepSea to be able to configure a basic time server and to distribute the configuration to the nodes.
 
