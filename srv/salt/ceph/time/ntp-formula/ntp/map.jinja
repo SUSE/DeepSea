@@ -1,0 +1,48 @@
+{% set map = {
+    'Arch': {
+        'client': 'ntp',
+        'server': 'ntp',
+        'service': 'ntpd',
+        'ntpdate': 'ntpdate',
+
+        'ntp_conf': '/etc/ntp.conf',
+        'ntpd_conf': '/etc/ntpd.conf',
+    },
+    'Debian': {
+        'client': 'ntp',
+        'server': 'ntpd',
+        'service': 'ntp',
+        'ntpdate': 'ntpdate',
+
+        'ntp_conf': '/etc/ntp.conf',
+        'ntpd_conf': '/etc/ntpd.conf',
+    },
+    'RedHat': {
+        'client': 'ntp',
+        'server': 'ntpd',
+        'service': 'ntpd',
+        'ntpdate': 'ntpdate',
+
+        'ntp_conf': '/etc/ntp.conf',
+        'ntpd_conf': '/etc/ntpd.conf',
+    },
+    'Suse': {
+        'client': 'ntp',
+        'server': 'ntp',
+        'service': salt['grains.filter_by']({
+            '11.3': 'ntp',
+            '11.4': 'ntp',
+            'default': 'ntpd',
+        }, grain='osrelease'),
+        'ntpdate': 'ntpdate',
+
+        'ntp_conf': '/etc/ntp.conf',
+        'ntpd_conf': '/etc/ntpd.conf',
+    },
+} %}
+
+{% if grains.get('saltversion', '').startswith('0.17') %}
+{% set ntp = salt['grains.filter_by'](map, merge=salt['pillar.get']('ntp:lookup')) %}
+{% else %}
+{% set ntp = map.get(grains.os_family) %}
+{% endif %}
