@@ -1,6 +1,6 @@
 Ceph is highly dependent on accurate time, meaning time sync across the server is critical to Ceph. If we further consider that a large number of ceph deployments are in air-gapped network environments and won't have access to standard time servers, it becomes necessary to sync with time servers that exist within the air-gapped environment. One of the prime design tents of Deepsea is to produce a minimal useful cluster out of the box; the product of all of this, for a user who hasn't had the foresight or technical skill to set up a time server in the air-gapped environment, it is appropriate for DeepSea to be able to configure a basic time server and to distribute the configuration to the nodes.
 
-In order to facilitate this goal and to fight against "feature creep," DeepSea should adhere to the below requirements for the time service.
+In order to facilitate this goal and to fight against "feature creep," DeepSea should adhere to the below requirements for the time service. These requirements are considered the maximum reasonable feature set for DeepSea. If the user has requirements that are more advanced than can be accommodated by this specification, they will need to disable DeepSea's NTP management and configure their own.
 
 Requirements
 ------------
@@ -67,3 +67,10 @@ These settings define the source files DeepSea will use to distribute `ntp.conf`
 - These files, whether server or client, will always be named `ntp.conf` on a node onto which DeepSea deploys them.
 - Custom files will not obey the `higher_stratum_servers` setting to prevent unwanted interference with them. The default files configured by DeepSea, 'ntp-server-default.conf' and 'ntp-client-default.conf', do obey the 'higher_stratum_servers' setting.
 
+Migrating from a DeepSea-managed time service to a user-managed time service
+----------------------------------------------------------------------------
+If the user wishes to no longer use DeepSea to manage their cluster time service, they should disable time service management as defined above via the configuration file. If NTP will not be used, uninstalling the NTP package from the systems manually will be necessary. After this, it is safe to migrate to another system for managing the cluster time service. 
+
+Migrating from a user-managed time service to a DeepSea-managed time service
+----------------------------------------------------------------------------
+If the user wishes to use DeepSea to manage their time service after previously using a custom service or configuration, it is safest to ensure the previous configuration is removed completely, not merely disabled. After the user is sure the previous service is no longer managing the cluster time service, they should enable the DeepSea time service management as defined above via the configuration file. After this, run all DeepSea stages, checking for errors along the way, to ensure the configuration works as expected.
