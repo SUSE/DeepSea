@@ -42,6 +42,7 @@ copy-files:
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
+	install -m 644 srv/pillar/ceph/stack/global.yml $(DESTDIR)/srv/pillar/ceph/stack/global.yml
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
@@ -383,7 +384,7 @@ rpm: tarball test
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
-tarball: 
+tarball:
 	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
 	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.gz HEAD
 

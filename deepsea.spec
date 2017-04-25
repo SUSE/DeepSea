@@ -229,6 +229,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/pillar/ceph/benchmark/templates/*.j2
 %config(noreplace) /srv/pillar/ceph/master_minion.sls
 %config /srv/pillar/ceph/stack/stack.cfg
+%config(noreplace) /srv/pillar/ceph/stack/global.yml
 %config /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
@@ -384,4 +385,4 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 
 %changelog
 * Thu Sep  8 2016 Eric Jackson
-- 
+-
