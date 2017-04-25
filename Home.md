@@ -13,3 +13,6 @@ Examples for changing the default settings and steps.
 
 * [Customize](customize)  <br>
 Examples desribing the disabling, replacing and modifying steps. 
+
+* [Central Configuration File](central_configuration_file) <br>
+Documentation relating how a user may modify DeepSea's central configuration file to meet their own requirements.
