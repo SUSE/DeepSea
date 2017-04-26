@@ -6,11 +6,11 @@ ntp:
   pkg.installed:
     - name: {{ ntp.client }}
 
-{% set time_server = salt['pillar.get']('time_service:ntp_server') %}
+{% set time_server = salt['pillar.get']('ceph:time_service:ntp_server') %}
 {% if time_server and time_server.startswith(grains['host']) %}
-  {% set ntp_conf_file = salt['pillar.get']('time_service:ntp_server_conf','ntp-server-default.conf') %}
+  {% set ntp_conf_file = salt['pillar.get']('ceph:time_service:ntp_server_conf','ntp-server-default.conf') %}
 {% else %}
-  {% set ntp_conf_file = salt['pillar.get']('time_service:ntp_client_conf','ntp-client-default.conf') %}
+  {% set ntp_conf_file = salt['pillar.get']('ceph:time_service:ntp_client_conf','ntp-client-default.conf') %}
 {% endif %}
 {% set ntp_conf_src = ['salt://ceph/time/ntp-formula/ntp/', ntp_conf_file]|join %}
 

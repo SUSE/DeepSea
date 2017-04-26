@@ -521,7 +521,7 @@ class Validate(object):
         Check that time server is available
         """
         pillar_data = list(self.data.values())[0]
-        time_service_data = pillar_data.get('time_service')
+        time_service_data = pillar_data.get('ceph', {}).get('time_service')
         if not time_service_data or not time_service_data.get('manage'):
             self.passed['time_service'] = 'disabled'
             return

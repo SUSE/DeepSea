@@ -28,7 +28,7 @@ validate failed:
 {% endif %}
 
 
-{% if salt['pillar.get']('time_service:manage') %}
+{% if salt['pillar.get']('ceph:time_service:manage') %}
 time:
   salt.state:
     - tgt: 'I@cluster:ceph'
