@@ -1,5 +1,5 @@
 ### NFS-Ganesha ###
-[NFS-Ganesha](https://github.com/nfs-ganesha/nfs-ganesha/) is a user-mode file server for NFS. It supports various File System Abstraction Layers (FSAL). Deepsea supports deployment of NFS-Ganesha for Ceph and RGW FSAL. 
+[NFS-Ganesha](https://github.com/nfs-ganesha/nfs-ganesha/) is a user-mode file server for NFS. It supports various File System Abstraction Layers (FSAL). Deepsea supports deployment of NFS-Ganesha for Cephfs and RGW FSAL. 
 
 ### Prerequisite ###
 * NFS-Ganesha version 2.5-dev7 or higher.
