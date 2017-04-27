@@ -33,18 +33,18 @@ base_dir = '/srv/pillar/ceph/proposals'
 
 std_args = {
     'standalone': False,
-    'standalone-leftovers': True,
+    'standalone-leftovers': False,
     'nvme-ssd': False,
     'nvme-spinner': False,
     'ssd-spinner': False,
-    'ratio': '5:1',
+    'ratio': 5,
     'target': '*',
-    'data': '0',
-    'journal': '0',
+    'data': 0,
+    'journal': 0,
     'name': 'default',
     'format': 'bluestore',
     'encryption': '',
-    'journal_size': '5',
+    'journal_size': 5,
 }
 
 

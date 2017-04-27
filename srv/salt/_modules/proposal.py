@@ -17,7 +17,7 @@ class Proposal(object):
         self.journal_disks = []
         self.data_disks = []
         self.unassigned_disks = []
-        self._parse_filters(kwargs)
+        self._parse_args(kwargs)
         # we differentiate 3 kinds of drives for now
         self.nvme = [disk for disk in disks if disk['Driver'] ==
                      self.NVME_DRIVER and disk['rotational'] is '0']
@@ -28,7 +28,7 @@ class Proposal(object):
         log.warn(self.ssd)
         log.warn(self.spinner)
 
-    def _parse_filters(self, kwargs):
+    def _parse_args(self, kwargs):
         self.data_r = kwargs.get('ratio', self.DEFAULT_DATA_R)
         assert type(self.data_r) is int and self.data_r >= 1
 
@@ -50,7 +50,8 @@ class Proposal(object):
             self.journal_min = int(journal_filter)
             self.journal_max = 0
 
-        self.add_leftover_as_standalone = False
+        self.add_leftover_as_standalone = kwargs.get('standalone-leftovers',
+                                                     False)
 
     # TODO better name
     def create(self):
@@ -87,9 +88,12 @@ class Proposal(object):
         external = []
         if j_disks:
             external = self._propose_external(d_disks, j_disks)
+        # then add standalones if any leftovers and if we have proposed any
+        # external at all. If no data+journal proposals have been made we'd
+        # just recreate everything as standalone
         standalone = []
-        # then add standalones if any leftovers
-        if self.add_leftover_as_standalone and (d_disks or j_disks or o_disks):
+        if (self.add_leftover_as_standalone and (d_disks or j_disks or o_disks)
+                and external):
             standalone = self._propose_standalone(d_disks + j_disks + o_disks)
         return external + standalone
 
