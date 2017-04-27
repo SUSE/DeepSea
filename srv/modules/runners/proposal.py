@@ -89,7 +89,7 @@ def peek(help_=False, **kwargs):
     local_client = salt.client.LocalClient()
 
     proposals = local_client.cmd(args['target'], 'proposal.generate',
-                                 expr_form='compound', **args)
+                                 expr_form='compound', kwarg=args)
 
     # determine somehow which proposal to choose
     for node, proposal in proposals.items():

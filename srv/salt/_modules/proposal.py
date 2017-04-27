@@ -20,41 +20,37 @@ class Proposal(object):
         self._parse_filters(kwargs)
         # we differentiate 3 kinds of drives for now
         self.nvme = [disk for disk in disks if disk['Driver'] ==
-                      self.NVME_DRIVER and disk['rotational'] is '0']
-        self.ssd = [disk for disk in disks if disk['Driver'] !=
                      self.NVME_DRIVER and disk['rotational'] is '0']
+        self.ssd = [disk for disk in disks if disk['Driver'] !=
+                    self.NVME_DRIVER and disk['rotational'] is '0']
         self.spinner = [disk for disk in disks if disk['rotational'] is '1']
         log.warn(self.nvme)
         log.warn(self.ssd)
         log.warn(self.spinner)
 
     def _parse_filters(self, kwargs):
-        ratio = kwargs.get('ratio', '')
-        if ratio.count(':') is 1:
-            self.data_r = int(ratio.split(':')[0])
-            self.journal_r = int(ratio.split(':')[1])
-        else:
-            self.data_r = self.DEFAULT_DATA_R
-            self.journal_r = 1
-        assert self.data_r >= self.journal_r
+        self.data_r = kwargs.get('ratio', self.DEFAULT_DATA_R)
+        assert type(self.data_r) is int and self.data_r >= 1
 
         data_filter = kwargs.get('data', '0')
-        if data_filter.count(':') is 1:
-            self.data_min = int(data_filter.split(':')[0])
-            self.data_max = int(data_filter.split(':')[1])
+        if type(data_filter) is str and data_filter.count('-') is 1:
+            self.data_min = int(data_filter.split('-')[0])
+            self.data_max = int(data_filter.split('-')[1])
             assert self.data_max >= self.data_min
         else:
             self.data_min = int(data_filter)
             self.data_max = 0
 
         journal_filter = kwargs.get('journal', '0')
-        if journal_filter.count(':') is 1:
-            self.journal_min = int(journal_filter.split(':')[0])
-            self.journal_max = int(journal_filter.split(':')[1])
+        if type(journal_filter) is str and journal_filter.count('-') is 1:
+            self.journal_min = int(journal_filter.split('-')[0])
+            self.journal_max = int(journal_filter.split('-')[1])
             assert self.journal_max >= self.journal_min
         else:
             self.journal_min = int(journal_filter)
             self.journal_max = 0
+
+        self.add_leftover_as_standalone = False
 
     # TODO better name
     def create(self):
@@ -64,7 +60,7 @@ class Proposal(object):
                      'ssd-spinner': []}
         standalone = self._filter(self.nvme + self.ssd + self.spinner,
                                   'data')
-        proposals['standalone'] = self._propose(standalone)
+        proposals['standalone'] = self._propose_standalone(standalone)
 
         # uncertain how hacky this is. This branch is taken if any 2 out of
         # there lists is empty
@@ -93,7 +89,7 @@ class Proposal(object):
             external = self._propose_external(d_disks, j_disks)
         standalone = []
         # then add standalones if any leftovers
-        if d_disks or j_disks or o_disks:
+        if self.add_leftover_as_standalone and (d_disks or j_disks or o_disks):
             standalone = self._propose_standalone(d_disks + j_disks + o_disks)
         return external + standalone
 
@@ -111,12 +107,12 @@ class Proposal(object):
                                  self._device(journal_disk)})
         return external
 
-    def _propose_standalone(self, leftovers):
+    def _propose_standalone(self, disks):
         standalone = []
-        for leftover in leftovers:
+        for disk in disks:
             log.info('proposing {} as standalone osd'.format(
-                leftover['device']))
-            standalone.append({self._device(leftover): ''})
+                disk['device']))
+            standalone.append({self._device(disk): ''})
         return standalone
 
     def _filter(self, disks, d_j):
@@ -153,18 +149,18 @@ def generate(**kwargs):
     - only standalone OSDS.
     All unpartitioned disks will be considered.
 
-    The OSD/journal disk ration can be influenced by passing 'ratio="6:1"'
-    meaning 6 OSDs will share one journal device (default is 5:1).
+    The OSD/journal disk ration can be influenced by passing 'ratio=6'
+    meaning 6 OSDs will share one journal device (default is 5).
 
     'data' and 'journal' are size filters that tell the module to consider only
     drives of a certain size to be data or journal devices. Both filters can
     either be a number, which will only consider drives of an exact size , or a
-    range 'min:max'. Both filters are interpreted as gigabytes.
+    range 'min-max'. Both filters are interpreted as gigabytes.
 
     CLI Examples::
         salt '*' proposal.generate
-        salt '*' proposal.generate ratio="7:1"
-        salt '*' proposal.generate data="1000:3000" journal="1000"
+        salt '*' proposal.generate ratio=7"
+        salt '*' proposal.generate data="1000-3000" journal="1000"
             Only consider drives between 1TB and 3TB for data drives and 1TB
             drives for journal devices.
         salt '*' proposal.generate journal="2000"
@@ -172,9 +168,9 @@ def generate(**kwargs):
             devices.
 
     Returns::
-        {'nvme:ssd': <proposal>,
-         'nvme:spinnerssd': <proposal>,
-         'ssd:spinner': <proposal>,
+        {'nvme-ssd': <proposal>,
+         'nvme-spinner': <proposal>,
+         'ssd-spinner': <proposal>,
          'standalone': <proposal>}
     '''
     disks = cephdisks.list_(**kwargs)
