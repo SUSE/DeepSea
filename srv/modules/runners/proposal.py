@@ -13,7 +13,7 @@ import string
 import random
 import yaml
 import json
-from os.path import dirname, basename, isdir
+from os.path import dirname, basename, isdir, isfile
 import os
 import struct
 import time
@@ -24,6 +24,8 @@ import ipaddress
 import logging
 
 import sys
+
+log = logging.getLogger(__name__)
 
 usage = '''
 proposal runner assembles node proposals
@@ -91,17 +93,44 @@ def peek(help_=False, **kwargs):
     proposals = local_client.cmd(args['target'], 'proposal.generate',
                                  expr_form='compound', kwarg=args)
 
-    # determine somehow which proposal to choose
+    # determine which proposal to choose
     for node, proposal in proposals.items():
         p = _choose_proposal(node, proposal, args)
         if p:
             pprint.pprint(p)
 
 
-def populate(**kwargs):
-    _parse_args(kwargs)
+def _write_proposal(p, profile_dir):
+
+    node, proposal = p.items()[0]
+
+    profile_file = '{}/{}.yml'.format(profile_dir, node)
+    if isfile(profile_file):
+        log.warn('not overwriting existing proposal {}'.format(node))
+        return
+
+    with open(profile_file, 'w') as outfile:
+        content = {'ceph': {'storage': {'devices': proposal}}}
+        yaml.dump(content, outfile, default_flow_style=False)
+
+
+def populate(help_=False, **kwargs):
+    if help_:
+        print(usage)
+    args = _parse_args(kwargs)
+
+    local_client = salt.client.LocalClient()
+
+    proposals = local_client.cmd(args['target'], 'proposal.generate',
+                                 expr_form='compound', kwarg=args)
 
     # check if profile of 'name' exists
-    profile_dir = '{}/profile-{}'.format(base_dir, kwargs['name'])
+    profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
     if not isdir(profile_dir):
         os.makedirs(profile_dir, 755)
+
+    # determine which proposal to choose
+    for node, proposal in proposals.items():
+        p = _choose_proposal(node, proposal, args)
+        if p:
+            _write_proposal(p, profile_dir)
