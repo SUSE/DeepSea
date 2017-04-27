@@ -41,7 +41,17 @@ common packages:
 #    - sls: ceph.warning.noout
 #    - failhard: True
 
-{% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
+{% if salt['pillar.get']('ceph:only_one_node') %}
+  {% set host_list = [salt['pillar.get']('ceph:only_one_node')] %}
+debugmsg:
+  salt.runner:
+    - name: minions.message
+    - content: "only one node {{ host_list }}"
+{% else %}
+  {% set host_list = salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
+{% endif %}
+
+{% for host in  host_list %}
 
 upgrading {{ host }}:
   salt.runner:
@@ -73,7 +83,7 @@ updating {{ host }}:
     - sls: ceph.updates
     - failhard: True
 
-set noout {{ host }}: 
+set noout {{ host }}:
   salt.state:
     - sls: ceph.noout.set
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -94,7 +104,7 @@ upgraded {{ host }}:
 
 {% endfor %}
 
-unset noout after final iteration: 
+unset noout after final iteration:
   salt.state:
     - sls: ceph.noout.unset
     - tgt: {{ salt['pillar.get']('master_minion') }}
