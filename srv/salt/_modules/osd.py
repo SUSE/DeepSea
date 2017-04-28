@@ -8,6 +8,8 @@ import logging
 import time
 import re
 import pprint
+import yaml
+import salt.client
 from subprocess import call, Popen, PIPE
 
 log = logging.getLogger(__name__)
@@ -56,17 +58,33 @@ def pairs():
 
     return pairs
 
-def configured():
+def _filter_devices(devices, **kwargs):
     """
-    Return the osds from the ceph namespace or original namespace
+    Filter devices if provided.  
+
+    Only supporting format currently.
+    """
+    if 'format' in kwargs:
+        devices = [ device for device in devices if devices[device]['format'] == kwargs['format'] ]
+
+    return devices
+
+def configured(**kwargs):
+    """
+    Return the osds from the ceph namespace or original namespace, optionally
+    filtered by attributes. 
     """
     osds = []
     devices = []
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
+        devices = _filter_devices(devices, **kwargs)
     if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
         devices = __pillar__['storage']['osds']
+        log.debug("devices: {}".format(devices))
+        if 'format' in kwargs and kwargs['format'] != 'filestore':
+            return []
     log.debug("devices: {}".format(devices))
     for device in devices:
         # find real device
@@ -274,16 +292,416 @@ def restore_weight(id, **kwargs):
     o.restore()
     return True
 
-class OSDcommands(object):
+class OSDConfig(object):
+    """
+    Attributes:
+    * format
+      * xfs
+        * raw(TBD)
+        * journal
+        * journal_size
+      * bluestore
+        * raw(TBD)
+        * wal_size
+        * wal_device
+        * db_size
+        * db_device
+    * encrypted
+    * capacity
+    """
+
+    V1 = 'v1'
+    V2 = 'v2'
+    DEFAULT_FORMAT_FOR_V1 = 'filestore'
+    DEFAULT_FORMAT_FOR_V2 = 'bluestore'
+
+    def __init__(self, device, **kwargs):
+        """
+        Set attributes for an OSD
+        """
+        filters = kwargs.get('filters', None)
+        # top_level_identifiier
+        self.tli = self._set_tli()
+        self.device = device
+        self.capacity = self.set_capacity()
+        self.size = self.set_bytes()
+        self.small = self._set_small()
+        self.disk_format = self.set_format()
+        self.journal = self.set_journal()
+        self.journal_size = self.set_journal_size()
+        self.wal_size = self.set_wal_size()
+        self.wal = self.set_wal()
+        self.db_size = self.set_db_size()
+        self.db = self.set_db()
+        # default for encryption can be retrieved from the global pillar
+        self.encryption = self.set_encryption()
+        log.debug("OSD config: \n{}".format(pprint.pformat(vars(self))))
+
+    def _set_tli(self):
+        """
+        Return the dictionary below ceph:storage:osds, if available
+        """
+        if ('ceph' in __pillar__ and
+           'storage' in __pillar__['ceph'] and
+           'osds' in __pillar__['ceph']['storage']):
+            return __pillar__['ceph']['storage']['osds']
+        return None
+
+    def set_bytes(self):
+        """
+        Return the bytes from the mine for this disk
+        """
+        disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
+        if disks:
+            for disk in disks[__grains__['id']]:
+                if disk['Device File'] == self.device:
+                    return int(disk['Bytes'])
+        else:
+            error = "Mine on {} for cephdisks.list".format(__grains__['id'])
+            log.error(error)
+            raise RuntimeError(error)
+
+    def set_capacity(self):
+        """
+        Return the capacity from the mine for this disk
+        """
+        disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
+        if disks:
+            for disk in disks[__grains__['id']]:
+                if disk['Device File'] == self.device:
+                    return disk['Capacity']
+        else:
+            error = "Mine on {} for cephdisks.list".format(__grains__['id'])
+            log.error(error)
+            raise RuntimeError(error)
+
+    def _set_small(self):
+        """
+        Check disk is less than 10GB, useful in VM environments
+        """
+        return self.size < 10000000000000 # 10GB
+
+    def _config_version(self):
+        """
+        Return version based on structure
+        """
+        if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
+            return OSDConfig.V1
+        if 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
+            return OSDConfig.V2
+
+    def set_format(self):
+        """
+        The original structure defaults to filestore.  The structure using
+        the ceph namespace defaults to bluestore.
+        """
+        if self._config_version() == OSDConfig.V1:
+            # Needs there be checks if the device is actually there?
+            # I think that stack.py takes care of removing the old entry..
+            # but that also means you can have EITHER the new version
+            # OR the old version..
+            return OSDConfig.DEFAULT_FORMAT_FOR_V1
+        if self._config_version() == OSDConfig.V2:
+            if 'format' in self.tli[self.device]:
+                return __pillar__['ceph']['storage']['osds'][self.device]['format']
+            return OSDConfig.DEFAULT_FORMAT_FOR_V2
+
+        raise("Probably a parsing Error or something not written to the pillar yet..")
+
+    def set_journal(self, default=False):
+        """
+        Return the journal device, if defined
+        """
+        if self._config_version() == OSDConfig.V1:
+            struct = __pillar__['storage']['data+journals']
+            if self.device in __pillar__['storage']['data+journals']:
+                return journal
+            else:
+                log.info("No journal specified for {}".format(self.device))
+        if self._config_version() == OSDConfig.V2:
+            if (self.device in self.tli and 
+               'journal' in self.tli[self.device]):
+                return self.tli[self.device]['journal']
+            else:
+                log.info("No journal specified for {}".format(self.device))
+        return default
+
+
+    def _check_existence(self, key, ident, device, default=None):
+        """
+        Check that key exists and return value
+        """
+        if key in ident[device]:
+            return ident[device][key]
+        return default
+
+    def set_journal_size(self, default=None):
+        """
+        Return journal size if defined.  Otherwise, return a size that is
+        10% of the corresponding disk if the disk is under 10GB.  For larger
+        disks, return 5G.
+        """
+        if self._config_version() == OSDConfig.V1:
+            return self._journal_default()
+        if self._config_version() == OSDConfig.V2:
+            return self._check_existence('journal_size', self.tli, self.device, default=self._journal_default())
+
+    def _journal_default(self):
+        """
+        """
+        if self.journal:
+            disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
+            if disks:
+                for disk in self.disks[__grains__['id']]:
+                    # Check size of journal disk
+                    if disk['Device File'] == self.journal:
+                        if int(disk['Bytes']) < 10000000000000: # 10GB
+                            return "{}K".format(int(int(disk['Bytes']) * 0.0001))
+                        else:
+                            return "5242880K"
+                log.error("Journal {} not found in cephdisks.list mine".format(self.journal))
+        else:
+            # Journal is same as OSD
+            if self.small:
+                if self.size:
+                    return "{}K".format(int(int(self.size) * 0.0001))
+                log.error("Size for {} not found in cephdisks.list mine".format(self.device))
+            else:
+                return "5242880K"
+
+    def set_wal_size(self, default=None):
+        """
+        Return the size of the wal, if defined
+        """
+        if self._config_version() == OSDConfig.V2:
+            return self._check_existence('wal_size', self.tli, self.device, default=default)
+
+    def set_wal(self):
+        """
+        Return the device of the wal, if defined
+        """
+        if self._config_version() == OSDConfig.V2:
+            return self._check_existence('wal', self.tli, self.device)
+
+    def set_db_size(self, default=None):
+        """
+        Return the size of the db, if defined
+        """
+        if self._config_version() == OSDConfig.V2:
+            return self._check_existence('db_size', self.tli, self.device, default=default)
+
+    def set_db(self):
+        """
+        Return the device of the db, if defined
+        """
+        if self._config_version() == OSDConfig.V2:
+            return self._check_existence('db', self.tli, self.device)
+
+    def set_encryption(self, default=False):
+        """
+        Return the type of encryption
+        """
+        if self._config_version() == OSDConfig.V2:
+            return self._check_existence('encryption', self.tli, self.device, default=default)
+
+class OSDPartitions(object):
+    """
+    Manage the creation/deletion of partitions related to OSDs
+    """
+
+    def __init__(self, config):
+        """
+        """
+        self.osd = config
+        self.disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
+
+    def partition(self):
+        """
+        """
+        if self.osd.disk_format == 'filestore':
+            self._xfs_partitions(self.osd.device, self.osd.size)
+        if self.osd.disk_format == 'bluestore':
+            self._bluestore_partitions(self.osd.device)
+        return 0
+
+    #def _journal_default(self, device):
+    #    """
+    #    Return a default journal size when one is not provided.  Use 5G unless
+    #    the drive is under 10G, then use 10%.
+    #    """
+    #    
+    #    for disk in self.disks[__grains__['id']]:
+    #        if disk['Device File'] == device:
+    #            if int(disk['Bytes']) < 10000000000000: # 10GB
+    #                return "{}K".format(int(int(disk['Bytes']) * 0.0001))
+    #            else:
+    #                return "5242880K"
+    #    return 0
+
+    def _xfs_partitions(self, device, disk_size):
+        """
+        Create partitions when journal_size is specified, use a default when
+        journal_size is not specified and do nothing when neither journal nor 
+        journal_size are specified. 
+        """
+        log.debug("xfs_paritions: {} {}".format(device, disk_size))
+        if self.osd.journal:
+            if self.osd.journal_size:
+                if self.osd.journal == device:
+                    # Create journal of journal_size, data as remainder
+                    self.create(self.osd.journal, [('journal', self.osd.journal_size), ('osd', None)])
+                else:
+                    # Create journal of journal_size on journal device
+                    # and data partition on whole disk of device
+                    self.create(self.osd.journal, [('journal', self.osd.journal_size)])
+                    self.create(self.osd.device, [('osd', None)])
+            else:
+                if self.osd.journal == self.osd.device:
+                    # Create journal, data as remainder
+                    self.create(self.osd.device, [('journal', self.osd.journal_size), 
+                                                 ('osd', None)])
+                else:
+                    # Create journal on journal device
+                    # and data partition on whole disk of device
+                    self.create(self.osd.journal, [('journal', self.osd.journal_size)])
+                    self.create(self.osd.device, [('osd', None)])
+        else:
+            log.debug("xfs_paritions: no journal")
+            if self.osd.journal_size:
+                # Create journal of journal_size, data as remainder
+                self.create(self.osd.device, [('journal', self.osd.journal_size), ('osd', None)])
+            elif self.osd.small:
+                # Create journal, data as remainder
+                self.create(self.osd.device, [('journal', self.osd.journal_size), 
+                                              ('osd', None)])
+
+        log.debug("xfs_paritions: leaving")
+
+    def _double(self, size):
+        """
+        Double the value of numeral 
+        """
+        log.info("double {}".format(size))
+        numeral = int(size[0:-1])
+        suffix = size[-1]
+        return "{}{}".format(numeral * 2, suffix)
+
+
+    def _halve(self, size):
+        """
+        Halve the value of numeral
+        """
+        log.info("halve {}".format(size))
+        numeral = int(size[0:-1])
+        suffix = size[-1]
+        return "{}{}".format(int(numeral / 2), suffix)
+
+    def _bluestore_partitions(self, device):
+        """
+        Create partitions when wal_size and/or db_size is specified
+        """
+        if self.osd.wal and self.osd.db:
+            if self.osd.wal:
+                if self.osd.wal_size:
+                    # Create wal of wal_size on wal device
+                    self.create(self.osd.wal, [('wal', self.osd.wal_size)])
+            else:
+                if self.osd.wal_size:
+                    # Create wal of wal_size on device
+                    self.create(self.osd.device, [('wal', self.osd.wal_size)])
+
+            if self.osd.db:
+                if self.osd.db_size:
+                    # Create db of db_size on db device
+                    self.create(self.osd.db, [('db', self.osd.db_size)])
+            else:
+                if self.osd.db_size:
+                    # Create db of db_size on device
+                    self.create(self.osd.device, [('db', self.osd.db_size)])
+        else:
+            # This situation seems unintentional - use faster media for
+            # the wal or db but not the other.  Help newbies out by 
+            # putting wal and db on same device
+            if self.osd.wal:
+                if self.osd.wal_size:
+                    # Create wal of wal_size on wal device
+                    # Create db on wal device
+                    self.create(self.osd.wal, [('wal', self.osd.wal_size), 
+                                             ('db', self._halve(self.osd.wal_size))])
+            else:
+                if self.osd.wal_size:
+                    # Create wal of wal_size on device
+                    # Create db on device
+                    self.create(self.osd.device, [('wal', self.osd.wal_size), 
+                                         ('db', self._halve(self.osd.wal_size))])
+            if self.osd.db:
+                if self.osd.db_size:
+                    # Create db of db_size on db device
+                    # Create wal on db device
+                    self.create(self.osd.db, [('wal', self._double(self.osd.db_size)), 
+                                            ('db', self.osd.db_size)])
+            else:
+                if self.osd.db_size:
+                    # Create db of db_size on device
+                    # Create wal on device
+                    self.create(self.osd.device, [('wal', self._double(self.osd.db_size)), 
+                                         ('db', self.osd.db_size)])
+
+    def create(self, device, partitions):
+        """
+        Create a partition
+        """
+        types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
+                 'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
+                 'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
+                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876'}
+
+        last_partition = self._last_partition(device)
+        index = 1
+        for partition_type, size in partitions:
+            number = last_partition + index
+            if size:
+                cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, types[partition_type], device)
+            else:
+                cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, types[partition_type], device)
+            log.info(cmd)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            proc.wait()
+            result = proc.stdout.read()
+            log.debug(pprint.pformat(result))
+            log.debug(pprint.pformat(proc.stderr.read()))
+            index += 1
+
+    def _last_partition(self, device):
+        """
+        """
+        pathnames = glob.glob("{}?*".format(device))
+        if pathnames:
+            partitions = sorted([ p.replace(device, "") for p in pathnames ], key=int)
+            last_part = int(pathnames[-1].replace(device, ""))
+            return last_part
+        return 0
+
+
+
+def partition(device):
+    """
+    """
+    config = OSDConfig(device)
+    osdp = OSDPartitions(config)
+    return osdp.partition()
+
+class OSDCommands(object):
     """
     Manage the generation of commands and checks for the ceph namespace and
     original namespace.
     """
 
-    def __init__(self):
+    def __init__(self, config):
         """
         Initialize settings
         """
+        self.osd = config
         self.settings = {}
         self.settings.update(self._storage())
         log.debug(pprint.pformat(self.settings))
@@ -298,13 +716,13 @@ class OSDcommands(object):
             # convert old structure
             for device in __pillar__['storage']['osds']:
                 storage['osds'][device] = {}
-                storage['osds'][device]['format'] = 'xfs'
+                storage['osds'][device]['format'] = 'filestore'
                 storage['osds'][device]['journal'] = ''
                 storage['osds'][device]['journal_size'] = ''
                 storage['osds'][device]['encryption'] = ''
             for device, journal in __pillar__['storage']['data+journals']:
                 storage['osds'][device] = {}
-                storage['osds'][device]['format'] = 'xfs'
+                storage['osds'][device]['format'] = 'filestore'
                 storage['osds'][device]['journal'] = journal
                 storage['osds'][device]['journal_size'] = ''
                 storage['osds'][device]['encryption'] = ''
@@ -312,32 +730,24 @@ class OSDcommands(object):
             storage = __pillar__['ceph']['storage']
         return storage
 
-    def osd_partition(self, device):
+    def osd_partition(self):
         """
         Find the data partition based on settings.
 
         TODO: dmcrypt
         """
+        device = self.osd.device
         if 'osds' in self.settings and device in self.settings['osds']:
-            if self.settings['osds'][device]['format'] == 'xfs':
-                if self.settings['osds'][device]['journal']:
+            if self.osd.disk_format == 'filestore':
+                if self.osd.journal:
                     # Journal on separate device
                     return 1
                 else:
                     # Journal on same device
                     return 2
-            if self.settings['osds'][device]['format'] == 'bluestore':
+            if self.osd.disk_format == 'bluestore':
                 return 1
         return 0
-
-    def _journal_device(self, device):
-        """
-        Return the journal from the ceph name space or original name space
-        """
-        if 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
-            return __pillar__['ceph']['storage']['osds'][device]['journal']
-        if 'storage' in __pillar__['ceph']:
-            return __pillar__['storage']['data+journals'][device]
 
     def is_partition(self, partition_type, device, partition):
         """
@@ -345,7 +755,8 @@ class OSDcommands(object):
         """
         types = { 'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
                   'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
-                  'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9' }
+                  'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
+                  'db': '30CD0809-C2B2-499C-8879-2D6B78529876'}
         cmd = "/usr/sbin/sgdisk -i {} {}".format(partition, device)
         log.info(cmd)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -356,37 +767,35 @@ class OSDcommands(object):
         id = "Partition GUID code: {}".format(types[partition_type])
         return id in result
 
-    def _journal_pathname(self, device):
+    def _journal_pathname(self):
         """
         Return the highest created Journal pathname
         """
-        journal_device = self._journal_device(device)
-        if journal_device:
-            log.debug("journal device: {}".format(journal_device))
-            pathnames = glob.glob("{}?*".format(journal_device))
-            partitions = sorted([ p.replace(journal_device, "") for p in pathnames ], key=int, reverse=True)
+        if self.osd.journal:
+            log.debug("journal device: {}".format(self.osd.journal))
+            pathnames = glob.glob("{}?*".format(self.osd.journal))
+            partitions = sorted([ p.replace(self.osd.journal, "") for p in pathnames ], key=int, reverse=True)
             log.debug("partitions: {}".format(partitions))
             for partition in partitions:
-                log.debug("checking {}{}".format(journal_device, partition))
-                if self.is_partition('journal', journal_device, partition):
-                    log.debug("found {}{}".format(journal_device, partition))
-                    return "{}{}".format(journal_device, partition)
-        return "{}0".format(journal_device)
+                log.debug("checking {}{}".format(self.osd.journal, partition))
+                if self.is_partition('journal', self.osd.journal, partition):
+                    log.debug("found {}{}".format(self.osd.journal, partition))
+                    return "{}{}".format(self.osd.journal, partition)
+        return "{}0".format(self.osd.journal)
 
-    def _wal_partition(self, device):
+    def _highest_partition(self, device, partition_type):
         """
-        Return the highest created Wal partition
+        Return the highest created partition of partition type
         """
-        if 'wal' in __pillar__['ceph']['storage']['osds'][device]:
-            wal_device =  __pillar__['ceph']['storage']['osds'][device]['wal']
-            log.debug("wal device: {}".format(wal_device))
-            pathnames = glob.glob("{}?*".format(wal_device))
-            partitions = sorted([ p.replace(wal_device, "") for p in pathnames ], key=int, reverse=True)
+        if device:
+            log.debug("{} device: {}".format(partition_type, device))
+            pathnames = glob.glob("{}?*".format(device))
+            partitions = sorted([ p.replace(device, "") for p in pathnames ], key=int, reverse=True)
             log.debug("partitions: {}".format(partitions))
             for partition in partitions:
-                log.debug("checking {}{}".format(wal_device, partition))
-                if self.is_partition('wal', wal_device, partition):
-                    log.debug("found {}{}".format(wal_device, partition))
+                log.debug("checking {}{}".format(device, partition))
+                if self.is_partition(partition_type, device, partition):
+                    log.debug("found {}{}".format(device, partition))
                     return "{}".format(partition)
         return 0
 
@@ -412,59 +821,117 @@ class OSDcommands(object):
             return __pillar__['fsid']
         return '00000000-0000-0000-0000-000000000000'
 
-    def _is_partitioned(self, device):
+    def is_partitioned(self, device):
         """
         Return whether the device is already partitioned
         """
-        partition = self.osd_partition(device)
-        return os.path.exists("{}{}".format(device, partition))
+        result = glob.glob("{}?*".format(device)) 
+        log.debug("Found {} partitions on {}".format(result, device))
+        return result != []
 
-    def _xfs_args(self, device):
+    def _filestore_args(self):
         """
-        XFS OSDs can take multiple forms
+        Filestore OSDs can take multiple forms
           OSD partition, Journal partition
           OSD device, Journal device
           OSD device
         """
-        if self._is_partitioned(device):
+        device = self.osd.device
+        if self.is_partitioned(device):
             # Prepartitioned OSD
-            if self.settings['osds'][device]['journal']:
-                args = "{}{} {}".format(device, self.osd_partition(device), self._journal_pathname(device))
+            if self.osd.journal:
+                args = "{}{} {}".format(device, self.osd_partition(), self._journal_pathname())
             else:
-                args = "{}{} {}{}".format(device, self.osd_partition(device), device, 1)
+                args = "{}{} {}{}".format(device, self.osd_partition(), device, 1)
         else:
             # Raw
-            if self.settings['osds'][device]['journal']:
-                args = "{} {}".format(device, self.settings['osds'][device]['journal'])
+            if self.osd.journal:
+                args = "{} {}".format(device, self.osd.journal)
             else:
                 args = "{}".format(device)
         return args
 
-    def _bluestore_args(self, device):
+    def _bluestore_args(self):
         """
         Bluestore OSDs can support multiple forms
-          OSD partition, Wal partition
-          OSD device, Wal device
           OSD device
+          OSD device, wal device
+          OSD device, wal partition
+          OSD device, db device
+          OSD device, db partition
+          OSD device, wal device, db device
+          OSD device, wal partition, db device
+          OSD device, wal device, db partition
+          OSD device, wal partition, db partition
+          OSD partition
+          OSD partition, wal device
+          OSD partition, wal partition
+          OSD partition, db device
+          OSD partition, db partition
+          OSD partition, wal device, db device
+          OSD partition, wal partition, db device
+          OSD partition, wal device, db partition
+          OSD partition, wal partition, db partition
 
-        Note: Omitting db combinations.
         """
         args = ""
-        if self._is_partitioned(device):
-            if 'wal' in self.settings['osds'][device] and self.settings['osds'][device]['wal']:
-                args = "--block.wal {}{} ".format(self.settings['osds'][device]['wal'], self._wal_partition(device))
-            args += "{}1".format(device)
+        if self.osd.wal and self.osd.db:
+            if self.osd.wal:
+                if self.is_partitioned(self.osd.wal):
+                    partition = self._highest_partition(self.osd.wal, 'wal')
+                    if partition:
+                        args = "--block.wal {}{} ".format(self.osd.wal, partition)
+                    else:
+                        args = "--block.wal {} ".format(self.osd.wal)
+                else:
+                    args = "--block.wal {} ".format(self.osd.wal)
+
+            if self.osd.db:
+                if self.is_partitioned(self.osd.db):
+                    partition = self._highest_partition(self.osd.db, 'db')
+                    if partition:
+                        args += "--block.db {}{} ".format(self.osd.db, partition)
+                    else:
+                        args += "--block.db {} ".format(self.osd.db)
+                else:
+                    args += "--block.db {} ".format(self.osd.db)
         else:
-            if 'wal' in self.settings['osds'][device] and self.settings['osds'][device]['wal']:
-                args = "--block.wal {} ".format(self.settings['osds'][device]['wal'])
-            # Let's keep this simple for now
-            #if 'db' in self.settings['osds'][device] and self.settings['osds'][device]['db']:
-            #    args = "--block.db {} ".format(self.settings['osds'][device]['db'])
-            args += "{}".format(device)
+            if self.osd.wal:
+                if self.is_partitioned(self.osd.wal):
+                    partition = self._highest_partition(self.osd.wal, 'wal')
+                    if partition:
+                        args += "--block.wal {}{} ".format(self.osd.wal, partition)
+                    else:
+                        args += "--block.wal {} ".format(self.osd.wal)
+
+                    partition = self._highest_partition(self.osd.wal, 'db')
+                    if partition:
+                        args += "--block.db {}{} ".format(self.osd.wal, partition)
+                else:
+                    args += "--block.wal {} ".format(self.osd.wal)
+
+            if self.osd.db:
+                if self.is_partitioned(self.osd.db):
+                    partition = self._highest_partition(self.osd.db, 'db')
+                    if partition:
+                        args += "--block.db {}{} ".format(self.osd.db, partition)
+                    else:
+                        args += "--block.db {} ".format(self.osd.db)
+
+                    partition = self._highest_partition(self.osd.db, 'wal')
+                    if partition:
+                        args += "--block.wal {}{} ".format(self.osd.db, partition)
+                else:
+                    args += "--block.db {} ".format(self.osd.db)
+
+        if self.is_partitioned(self.osd.device):
+            args += "{}1".format(self.osd.device)
+        else:
+            args += "{}".format(self.osd.device)
         return args
 
 
-    def prepare(self, device):
+    def prepare(self):
         """
         Generate the correct prepare command.
 
@@ -480,45 +947,172 @@ class OSDcommands(object):
             three unpartitioned disks
             unpartitioned disk and partitioned disk
             unpartitioned disk and two partitioned disks
+            two unpartitioned disks and partitioned disk
         """
         cmd = ""
-        if 'osds' in self.settings and device in self.settings['osds']:
+        args = ""
+        if self.osd.device:
             cmd = "ceph-disk -v prepare "
 
-            # XFS
-            if self.settings['osds'][device]['format'] == 'xfs':
+            # Dmcrypt
+            if self.osd.encryption == 'dmcrypt':
+                cmd += "--dmcrypt "
+            # Filestore
+            if self.osd.disk_format == 'filestore':
                 cmd += "--fs-type xfs "
-                args = self._xfs_args(device)
+                args = self._filestore_args()
             # Bluestore
-            if self.settings['osds'][device]['format'] == 'bluestore':
+            if self.osd.disk_format == 'bluestore':
                 cmd += "--bluestore "
-                args = self._bluestore_args(device)
+                args = self._bluestore_args()
+
+            if not args:
+                log.error("Format is neither filestore nor bluestore.")
 
             cmd += "--data-dev --journal-dev --cluster {} --cluster-uuid {} ".format(self._cluster_name(), self._fsid())
             cmd += args
         log.info("prepare: {}".format(cmd))
         return cmd
 
-    def activate(self, device):
+    def activate(self):
         """
         Generate the correct activate command.
+
+        Note: dmcrypt activates during the prepare step
         """
         cmd = ""
-        if 'osds' in self.settings and device in self.settings['osds']:
-            cmd = "ceph-disk -v activate --mark-init systemd --mount "
-            cmd += "{}{}".format(device, self.osd_partition(device))
-        log.info("prepare: {}".format(cmd))
+        if self.osd.device:
+            if self.osd.encryption == 'dmcrypt':
+                cmd = "# activated during prepare"
+            else:
+                cmd = "ceph-disk -v activate --mark-init systemd --mount "
+                cmd += "{}{}".format(self.osd.device, self.osd_partition())
+        log.info("activate: {}".format(cmd))
         return cmd
 
+    def detect(self, osd_id, pathname="/var/lib/ceph/osd"):
+        """
+        Return the osd type
+        """
+        filename = "{}/ceph-{}/type".format(pathname, osd_id) 
+        if os.path.exists(filename): 
+            with open(filename, 'r') as osd_type:
+                return osd_type.read().rstrip()
+
+class OSDGrains(object):
+    """
+    """
+
+    def __init__(self):
+        """
+        Initialize settings
+        """
+        pass
+
+    def partitions(self, osd_id, pathname="/var/lib/ceph/osd"):
+        """
+        Returns the partitions of the OSD
+        """
+        partitions = {}
+        mount_dir = "{}/ceph-{}".format(pathname, osd_id)
+        log.info("Checking /proc/mounts for {}".format(mount_dir))
+        with open("/proc/mounts", "r") as mounts:
+            for line in mounts:
+                entry = line.split()
+                if entry[1] == mount_dir:
+                    log.info("line: {}".format(line))
+                    partitions['osd'] = entry[0]
+
+        for device_type in ['journal', 'block', 'block.db', 'block.wal']:
+            result = self._real_devices(mount_dir, device_type)
+            if result:
+                partitions[device_type] = result
+        return partitions
+
+    def _real_devices(self, mount_dir, device_type):
+        """
+        Follow the symlinks for the current device name
+        """
+        symlink = "{}/{}".format(mount_dir, device_type)
+        log.info("Checking for {}".format(symlink))
+        if os.path.exists(symlink):
+            # find real device
+            cmd = "readlink -f {}".format(symlink)
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            proc.wait()
+            result = proc.stdout.read().rstrip()
+            log.debug(pprint.pformat(result))
+            log.debug(pprint.pformat(proc.stderr.read()))
+            return result
+
+
+    def retain(self):
+        """
+        Save the OSD partitions into the grains
+        """
+        ids = [ path.split('-')[1] for path in glob.glob("/var/lib/ceph/osd/*") if '-' in path ]
+        storage = {}
+        for osd_id in ids:
+            storage[osd_id] = self.partitions(osd_id)
+            log.debug("osd {}: {}".format(osd_id, pprint.pformat(storage[osd_id])))
+        self._grains(storage)
+
+
+    def _grains(self, storage, filename="/etc/salt/grains"):
+        """
+        Load and save grains when changed
+        """
+        if storage:
+            content = {}
+            if os.path.exists(filename):
+                with open(filename, 'r') as minion_grains:
+                    content = yaml.safe_load(minion_grains)
+            if 'ceph' in content:
+                if content['ceph'] != storage:
+                    content['ceph'] = storage
+                    self._update_grains(content)
+                else:
+                    log.debug("No update for {}".format(filename))
+            else:
+                content['ceph'] = storage
+                self._update_grains(content)
+
+    def _update_grains(self, content, filename="/etc/salt/grains"):
+        """
+        Update the yaml file without destroying other content
+        """
+        log.info("Updating {}".format(filename))
+        # Keep yaml human readable/editable
+        friendly_dumper = yaml.SafeDumper
+        friendly_dumper.ignore_aliases = lambda self, data: True
+
+        with open(filename, 'w') as minion_grains:
+            minion_grains.write(yaml.dump(content, 
+                                          Dumper=friendly_dumper,
+                                          default_flow_style=False))
+        log.info("Syncing grains")
+        __salt__['saltutil.sync_grains']()
+
+def is_partitioned(device):
+    """
+    Check if device is partitioned
+    """
+    osdc = OSDCommands()
+    return osdc.is_partitioned(device)
 
 def is_prepared(device):
     """
     Check if the device has already been prepared.  Return shell command.
+
+    Note: the alternate strategy to running is_prepared as part of an unless is
+    to create a state module.  However, will the admin be able to debug that
+    configuration without reading python?  This task is left for later...
     """
-    osdc = OSDcommands()
-    partition = osdc.osd_partition(device)
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    partition = osdc.osd_partition()
     if partition == 0:
-        log.error("Do not know which partition to check for {}".format(device))
+        log.error("Do not know which partition to check on {}".format(device))
         return "/bin/false"
 
     if osdc.is_partition('osd', device, partition) and _fsck(device, partition):
@@ -543,8 +1137,9 @@ def is_activated(device):
     """
     Check if the device has already been activated.  Return shell command.
     """
-    osdc = OSDcommands()
-    partition = osdc.osd_partition(device)
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    partition = osdc.osd_partition()
     pathname = "{}{}".format(device, partition)
     log.info("Checking /proc/mounts for {}".format(pathname))
     with open("/proc/mounts", "r") as mounts:
@@ -556,13 +1151,43 @@ def is_activated(device):
 def prepare(device):
     """
     Return ceph-disk command to prepare OSD.
+
+    Note: calling the partition command directly from the sls file will not
+    give the desired results since the evaluation of the prepare command (and
+    the partition check) occurs prior to creating the partitions
     """
-    osdc = OSDcommands()
-    return osdc.prepare(device)
+    config = OSDConfig(device)
+    osdp = OSDPartitions(config)
+    osdp.partition()
+    osdc = OSDCommands(config)
+    return osdc.prepare()
 
 def activate(device):
     """
     Return ceph-disk command to activate OSD.
     """
-    osdc = OSDcommands()
-    return osdc.activate(device)
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    return osdc.activate()
+
+def detect(osd_id):
+    """
+    """
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    return osdc.detect(osd_id)
+
+
+def partitions(osd_id):
+    """
+    """
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    return osdc.partitions(osd_id)
+
+def retain():
+    """
+    Save the OSD partitions in the local grains
+    """
+    osdg = OSDGrains()
+    return osdg.retain()
