@@ -146,11 +146,13 @@ def _write_proposal(p, profile_dir):
 
     # write out roles
     role_file = '{}/cluster/{}.sls'.format(profile_dir, node)
+
     with open(role_file, 'w') as outfile:
         content = {'roles': ['storage']}
         # implement merge of existing data
         yaml.dump(content, outfile, default_flow_style=False)
 
+    # TODO do not hardcode cluster name ceph here
     profile_file = '{}/stack/default/ceph/minions/{}.yml'.format(profile_dir,
                                                                  node)
     if isfile(profile_file):
@@ -162,6 +164,30 @@ def _write_proposal(p, profile_dir):
         content = {'ceph': {'storage': {'devices': proposal}}}
         # implement merge of existing data
         yaml.dump(content, outfile, default_flow_style=False)
+
+
+def _record_filter(args, base_dir):
+    filter_file = '{}/.filter'.format(base_dir)
+
+    if not isfile(filter_file):
+        # do a touch filter_file
+        open(filter_file, 'a').close()
+
+    current_filter = {}
+    with open(filter_file) as f:
+        current_filter = yaml.load(f)
+    if current_filter is None:
+        current_filter = {}
+
+    pprint.pprint(current_filter)
+
+    # filter a bunch of salt content and the target key before writing
+    rec_args = {k: v for k, v in args.items() if k is not 'target' and not
+                k.startswith('__')}
+    current_filter[args['target']] = rec_args
+
+    with open(filter_file, 'w') as f:
+        yaml.dump(current_filter, f, default_flow_style=False)
 
 
 def populate(help_=False, **kwargs):
@@ -178,6 +204,11 @@ def populate(help_=False, **kwargs):
     profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
     if not isdir(profile_dir):
         os.makedirs(profile_dir, 755)
+    # TODO do not hardcode cluster name ceph here
+    if not isdir('{}/stack/default/ceph/minions'.format(profile_dir)):
+        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 755)
+    if not isdir('{}/cluster'.format(profile_dir)):
+        os.makedirs('{}/cluster'.format(profile_dir), 755)
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
@@ -185,5 +216,6 @@ def populate(help_=False, **kwargs):
         if p:
             _write_proposal(p, profile_dir)
     # write out .filter here...will need some logic to merge existing data too.
+    _record_filter(args, profile_dir)
 
     return True
