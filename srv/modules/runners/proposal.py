@@ -6,36 +6,74 @@ import salt.client
 # import salt.utils
 # import salt.utils.minions
 
-import argparse
-import re
 import pprint
-import string
-import random
 import yaml
-import json
-from os.path import dirname, basename, isdir, isfile
+from os.path import isdir, isfile
 import os
-import struct
-import time
-import base64
-import errno
-import uuid
-import ipaddress
 import logging
-
-import sys
 
 log = logging.getLogger(__name__)
 
 usage = '''
-proposal runner assembles node proposals
+The proposal runner compiles and either shows or writes storage profile
+proposals. It offers two methods: 'peek' and 'populate'.
+The 'peek' method simply collects the proposals from the minions and displays
+the chosen proposal.
+The 'populate' method writes these proposals the a storage profile directory.
+By default this profile is written to
+'/srv/pillar/ceph/proposal/profile-default'. The profile can also be named by
+passing 'name=foo'. The profile is then written to
+'/srv/pillar/ceph/proposal/profile-foo'.
+
+There are several ways to influence what storage layouts are proposed and
+which proposal is actually chosen. By default this runner will try to propose
+the highest preforming storage setup for a node. That is it'll prefer journals
+on nvme and data on ssd over journal on nvme and data on spinners over journal
+on ssd and data on spinners (assuming the hardware is actually there). If all
+this fails standalone OSDs will be proposed.
+
+By default a 5 to 1 data device to journal device ratio will be proposed. This
+can be changed (to say 7 to 1) by passing 'ratio=7'. Drives that are leftover
+after proposing external journal OSDs will not be included unless
+'standalone-leftovers=True' is passed.
+
+To limit which drives will be considered as data or journal drives the 'data='
+and 'journal=' parameters can be specified. Both will take either a number or a
+range 'min-max' (for example data=500, data=500-1000). Only drives of the exact
+capacity in GB (in case of a number) or drives that fall into the range (also
+in GB) will be considered for data drives or journal drives respectively.
+
+The 'target=' paramter can be passed to only show or store proposals from
+minions fitting the specified glob. For example 'target="data1*"' will
+only query minions whose minion id starts with 'data1'.
+
+List of recognized parameters and their defaults:
+    standalone-leftovers=False - Set to True topropose leftover drives as
+                                 standalone OSDs.
+    standalone=False
+    nvme-ssd=False
+    nvme-spinner=False
+    ssd-spinner=False - Set any of these to True to force the runner to return
+                        a certain proposal. Note that this can end up returning
+                        an empty proposal
+    ratio=5 - Set the amount of data drives per journal drive
+    target='*' - Glob to specifiy which nodes will be queried
+    data=0
+    journal=0 - Size filter for data/journal drives. 0 means no filtering. A
+                number (in GB) can be specified or a range min-max (also in
+                GB). For example journal=500-1000 will only consider drives
+                between 500GB and 1TB for journal devices.
+    name=default - Name of the storage profile and thus location of the
+                   resulting files.
+    format=bluestore - The OSDs underlying storage format. Legal values are
+                       bluestore and filestore.
+    encryption='' - Set to dmcrypt to encrypt OSD. leave empty (the default)
+                    for non-encrypted OSDs.
 '''
 
-base_dir = '/srv/pillar/ceph/proposals'
-
 std_args = {
-    'standalone': False,
     'standalone-leftovers': False,
+    'standalone': False,
     'nvme-ssd': False,
     'nvme-spinner': False,
     'ssd-spinner': False,
@@ -46,8 +84,10 @@ std_args = {
     'name': 'default',
     'format': 'bluestore',
     'encryption': '',
-    'journal_size': 5,
+    'journal-size': 5,
 }
+
+base_dir = '/srv/pillar/ceph/proposals'
 
 
 def _parse_args(kwargs):
@@ -65,7 +105,7 @@ def _propose(node, proposal, args):
         dev_par['journal'] = v
         dev_par['format'] = args.get('format')
         dev_par['encryption'] = args.get('encryption')
-        dev_par['journal_size'] = args.get('journal_size')
+        dev_par['journal-size'] = args.get('journal-size')
         profile[k] = dev_par
 
     return {node: profile}
@@ -104,13 +144,23 @@ def _write_proposal(p, profile_dir):
 
     node, proposal = p.items()[0]
 
-    profile_file = '{}/{}.yml'.format(profile_dir, node)
+    # write out roles
+    role_file = '{}/cluster/{}.sls'.format(profile_dir, node)
+    with open(role_file, 'w') as outfile:
+        content = {'roles': ['storage']}
+        # implement merge of existing data
+        yaml.dump(content, outfile, default_flow_style=False)
+
+    profile_file = '{}/stack/default/ceph/minions/{}.yml'.format(profile_dir,
+                                                                 node)
     if isfile(profile_file):
         log.warn('not overwriting existing proposal {}'.format(node))
         return
 
+    # write storage profile
     with open(profile_file, 'w') as outfile:
         content = {'ceph': {'storage': {'devices': proposal}}}
+        # implement merge of existing data
         yaml.dump(content, outfile, default_flow_style=False)
 
 
@@ -134,3 +184,6 @@ def populate(help_=False, **kwargs):
         p = _choose_proposal(node, proposal, args)
         if p:
             _write_proposal(p, profile_dir)
+    # write out .filter here...will need some logic to merge existing data too.
+
+    return True
