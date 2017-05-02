@@ -139,6 +139,8 @@ class Iscsi(object):
         contents = {}
         with open(filename, 'r') as yml:
             contents = yaml.safe_load(yml)
+            if not contents:
+                contents = {}
         contents['igw_config'] = 'default-ui'
         with open(filename, 'w') as yml:
             yml.write(yaml.dump(contents,
