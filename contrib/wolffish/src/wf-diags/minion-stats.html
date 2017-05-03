@@ -1,0 +1,155 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-submenu.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+
+<link rel="import" href="../salt-api/wf-salt-api.html">
+
+<link rel="import" href="../wf-styles/wf-styles.html">
+
+<dom-module id="minion-stats">
+    <template>
+	<style include="wf-styles">
+	 :host {
+	     display: block;
+
+	     padding: 10px;
+	 }
+	</style>
+
+	<div class="wf-card">
+	    <paper-toolbar class="wf-card-toolbar">
+		<span class="title">Minion Stats</span>
+		<paper-icon-button icon="delete" on-tap="remove"></paper-icon-button>
+	    </paper-toolbar>
+
+            <paper-input label="Minion ID (blank to list all)" value="{{minionToQuery}}"></paper-input>
+            <paper-button raised on-click="queryMinions">Query</paper-button>
+
+            <!-- Place holder for our computed view of minion stats. -->
+            <div id="minionstatsdiv"></div>
+	</div>
+
+	<!-- Used to query /minions/(minionID) -->
+	<wf-salt-api
+	    id="minionstats"
+	    cmd="{{cmd}}"
+            arg="{{arg}}"
+	    target=""
+	    func="">
+	</wf-salt-api>
+    </template>
+
+    <script>
+     Polymer({
+	 is: "minion-stats",
+
+	 properties: {
+	     cmd: {
+		 type: String
+	     },
+             minionToQuery: {
+                 type: String,
+                 value: ""
+             }
+	 },
+
+	 listeners: {
+	     "wf-salt-api-response": "handleMinions200",
+	     "wf-salt-api-error": "handleMinionsErr"
+	 },
+
+	 ready: function() {
+	     this.cmd = "/minions";
+	 },
+
+         _clearMinionStatsDiv: function() {
+             this.$.minionstatsdiv.innerHTML = "";
+         },
+
+         _setMinionStatsDiv: function(htmlStr) {
+             this.$.minionstatsdiv.innerHTML = htmlStr;
+         },
+
+         queryMinions: function() {
+             this._clearMinionStatsDiv();
+             this.cmd = "minions";
+             this.arg = this.minionToQuery;
+             this.$.minionstats.runGet();
+         },
+
+         _isArr: function(variable) {
+             return variable.constructor === Array;
+         },
+
+         _isObj: function(variable) {
+             return variable.constructor === Object;
+         },
+
+         /* Recursively parses the minion stats JSON object and produces HTML.
+          * salt-api returns trusted information (not worried about rogue <script>
+          * tags... but may want to do this more safely later (ie. by setting
+          * textContent on a created element - TODO).
+          * htmlObj is used so that we are passing a pointer.
+          */
+         recParseObj: function(obj, htmlObj) {
+             for (var k in obj) {
+                 if (this._isObj(obj[k]) || this._isArr(obj[k])) {
+                     htmlObj.html += "<paper-submenu>";
+                     htmlObj.html += "<paper-item class='menu-trigger'>" + k + " &rtri;</paper-item>";
+                     htmlObj.html += "<paper-menu class='menu-content'>"
+                     this.recParseObj(obj[k], htmlObj);
+                     htmlObj.html += "</paper-submenu>";
+                 } else {
+                     htmlObj.html += "<paper-item>" + k + ": " + obj[k] + "</paper-item>";
+                 }
+             }
+             htmlObj.html += "<hr>";
+             htmlObj.html += "</paper-menu>";
+         },
+
+         parseMinions: function(minionsObj) {
+             console.log(this.is + ":" + arguments.callee.name + ": parsing minion data");
+             var htmlObj = {'html': "<paper-menu>"}
+             this.recParseObj(minionsObj, htmlObj);
+             htmlObj.html += "</paper-menu>";
+             this._setMinionStatsDiv(htmlObj.html);
+         },
+
+	 handleMinions200: function(e) {
+	     console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
+             var resp = e.detail.response.return[0];
+
+             /* TODO Is there no better way (ie. from request structure) to get minion id queried? */
+             if (Object.keys(resp).length == 0) {
+                 /* No minions found, or minionToQuery not found. */
+                 if (this.minionToQuery) {
+                     this._setMinionStatsDiv("<br>Reqested minion ID (" + this.minionToQuery + ") not found.");
+                 } else {
+                     this._setMinionStatsDiv("<br>No minions found.");
+                 }
+             } else {
+                 /* Returned minion object has keys, parse! */
+                 this.parseMinions(resp);
+             }
+                 
+	 },
+
+	 handleMinionsErr: function(e) {
+             console.log(this.is + ":" + arguments.callee.name + ": caught " + e.type);
+             this._setMinionStatsDiv("<br>Failed to obtain minion information from server.");
+	 },
+
+	 remove: function() {
+	     console.log(this.is + ":" + arguments.callee.name + ": firing 'remove-" + this.is + "' event");
+	     this.fire("remove-" + this.is);
+	 }
+     });
+    </script>
+</dom-module>

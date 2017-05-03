@@ -1,0 +1,542 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-input/iron-input.html">
+
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-submenu.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+
+<link rel="import" href="../wf-styles/wf-styles.html">
+
+<link rel="import" href="iscsi-target-styles.html">
+
+<dom-module id="iscsi-target-config">
+    <template>
+	<style include="wf-styles iscsi-target-styles">
+         :host {
+             display: block;
+
+             padding: 10px;
+         }
+        </style>
+
+	<div class="wf-card target-config-card">
+            <paper-toolbar class="target-config-toolbar">
+                <span class="title">iSCSI Target Configuration</span>
+                <paper-icon-button icon="delete" on-tap="removeConfig"></paper-icon-button>
+            </paper-toolbar>
+
+            <paper-dropdown-menu label="Available Nodes">
+                <div class="dropdown-content">
+                    <template is="dom-repeat" items="{{availableIntfList}}" as="i">
+                        <paper-item>
+                            <paper-checkbox id="intfCheckBox" on-change="nodeCheckboxChanged" checked$="{{_isIntfSelected(i)}}">{{i.node}} : {{i.addr}}</paper-checkbox>
+                        </paper-item>
+                    </template>
+                </div>
+            </paper-dropdown-menu>
+
+            <paper-dropdown-menu label="Available Images">
+                <div class="dropdown-content">
+                    <template is="dom-repeat" items="{{availableImgList}}" as="i">
+                        <paper-item class="menu-trigger">
+                            <paper-checkbox id="imgCheckBox" on-change="imgCheckboxChanged" checked$="{{_isImgSelected(i)}}">{{i.img}} : {{i.pool}}</paper-checkbox>
+                        </paper-item>
+                        <!-- <paper-submenu opened="true"> -->
+                        <!-- <paper-menu class="menu-content" multi="true"> -->
+                                <template is="dom-repeat" items="{{availableInitiatorList}}" as="j">
+                                    <paper-item style="margin-left:2em">
+                                        <!-- <paper-checkbox id="initiatorCheckBox-{{i.img}}-{{i.pool}}-{{j}}" on-change="imgInitiatorCheckboxChanged" checked$="{{_isInitiatorSelected(i, j)}}">{{j}}</paper-checkbox> -->
+                                        <paper-checkbox id="{{_initiatorCheckboxIDGen(i, j)}}" on-change="imgInitiatorCheckboxChanged" checked$="{{_isInitiatorSelected(i, j)}}">{{j}}</paper-checkbox>
+                                    </paper-item>
+                                </template>
+                                <!-- </paper-menu> -->
+                            <!-- </paper-submenu> -->
+                    </template>
+                </div>
+            </paper-dropdown-menu>
+
+            <br>
+            <br>
+
+            <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedIntfListHidden}}">
+                <span class="title">Selected Nodes</span>
+                <template is="dom-repeat" items="{{selectedIntfList}}" as="i">
+                    <paper-item>{{i.node}} : {{i.addr}}</paper-item>
+                </template>
+            </paper-listbox>
+
+            <paper-listbox class="dropdown-content" selected="0" style="float:left" hidden$="{{selectedImgListHidden}}">
+                <span class="title">Selected Images</span>
+                <template is="dom-repeat" items="{{selectedImgList}}" as="i">
+                    <paper-item>{{i.img}} : {{i.pool}}</paper-item>
+                    <template is="dom-repeat" items="{{i.initiatorList}}" as="initiator">
+                        <paper-item style="margin-left:2em">{{initiator}}</paper-item>
+                    </template>
+                </template>
+            </paper-listbox>
+        </div>
+    </template>
+
+    <script>
+
+     class Image {
+         constructor(img, pool) {
+             this.img = img ? img : "undefined";
+             this.pool = pool ? pool : "undefined";
+             /* Always start with an empty initiatorList. */
+             this.initiatorList = [];
+         }
+     }
+
+     class Interface {
+         constructor(node, addr) {
+             this.node = node ? node : "undefined";
+             this.addr = addr ? addr : "undefined";
+         }
+     }
+
+     Polymer({
+         is: 'iscsi-target-config',
+         properties: {
+	     /* Follows iscsi-target:availableImgList.  Do not modify here. */
+             availableIntfList: {
+                 type: Array,
+		 notify: true
+             },
+
+             selectedIntfListHidden: {
+                 type: Boolean,
+                 value: true,
+             },
+             
+             selectedIntfList: {
+                 type: Array,
+                 value: function() {
+                     return [];
+                 },
+             },
+
+	     /* Follows iscsi-target:availableImgList.  Do not modify here. */
+             availableImgList: {
+                 type: Array,
+		 notify: true
+             },
+
+             selectedImgListHidden: {
+                 type: Boolean,
+                 value: true,
+             },
+             
+             selectedImgList: {
+                 type: Array,
+                 value: function() {
+                     return [];
+                 },
+             },
+
+             availableInitiatorList: {
+                 type: Array, /* [ Strings ] */
+                 notify: true
+             }
+         },
+
+         observers: [
+	     "_iscsiImagesChanged(availableImgList.splices)",
+	     "_iscsiInterfacesChanged(availableIntfList.splices)",
+             /* "_iscsiSelectedImagesChanged(selectedImgList.splices)",*/
+             "_iscsiSelectedImagesChanged(selectedImgList.*)",
+             "_iscsiSelectedInterfacesChanged(selectedIntfList.splices)",
+             "_iscsiInitiatorsChanged(availableInitiatorList.splices)"
+	 ],
+
+         ready: function() {
+
+         },
+
+         /* Genertes a valid 'id' string which replaces '.' with '-dot-'.
+          * Needed for querySlector*() to function, as dots are interpreted
+          * as css attributes.
+          */
+         _initiatorCheckboxIDGen(i, j) {
+             var imgStr = i.img.replace(/\./g,'-dot-');
+             var poolStr = i.pool.replace(/\./g,'-dot-');
+	     var initiatorStr = j.replace(/\./g,'-dot-').replace(/\:/g,'-col-');
+
+             return "initiatorCheckBox-" + imgStr + "-" + poolStr + "-" + initiatorStr;
+         },
+
+         /* Passed to findIndex().  True if img and pool instance variables are equal. */
+         _imgsEqual: function(elem, index, arr) {
+             return (elem.img === this.img && elem.pool === this.pool);
+         },
+
+         /* Passed to findIndex().  True if node and addr instance variables are equal. */
+         _intfsEqual: function(elem, index, arr) {
+             return (elem.node === this.node && elem.addr === this.addr);
+         },
+
+         /* Returns true if img is in selectedImgList*/
+         _isImgSelected: function(img) {
+             if (this.selectedImgList.findIndex(this._imgsEqual, img) !== -1) {
+                 return true;
+             } else {
+                 return false;
+             }
+         },
+
+	 indexOfSelectedImg: function(img) {
+	     return this.selectedImgList.findIndex(this._imgsEqual, img);
+	 },
+
+	 /* Returns true if initiator is in the img's initiatorList. */
+         _isInitiatorSelected: function(img, initiatorStr) {
+             /* img is from this.availableImageList, but initiators are housed in
+              * this.selectedImgList[x].initiatorList.  Thus, first find img in
+              * this.selectedImgList.
+              */
+             var selectedImgIndex = this.selectedImgList.findIndex(this._imgsEqual, img);
+             if (selectedImgIndex === -1) {
+                 return false; // img not in this.selectedImgList
+             } else {
+                 var selectedImg = this.selectedImgList[selectedImgIndex];
+                 if (selectedImg.initiatorList.indexOf(initiatorStr) === -1) {
+                     return false;
+                 } else {
+                     return true;
+                 }
+             }
+         },
+
+         _iscsiInitiatorsChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updating available initiators for all images.");
+
+             /* When this.availalbeInitiatorList changes, we need to ensure we remove any selected
+              * initiators which are no longer available.
+              */
+             for (var i = 0; i < this.selectedImgList.length; i++) {
+                 var selectedImg = this.selectedImgList[i];
+
+                 var notFound = [];
+                 for (var j = 0; j < selectedImg.initiatorList.length; j++) {
+                     var selectedInitiator = selectedImg.initiatorList[j];
+
+                     /* If the initiator is no longer in the available list, mark it for removal
+                      * from the images initiatorList.  _iscsiSelectedImagesChanged() will handle
+                      * the related checkbox.
+                      */
+                     if (this.availableInitiatorList.indexOf(selectedInitiator) === -1) {
+                         notFound.push(j);
+                     }
+                 }
+
+                 /* Actually do the removal from the end of the array. */
+                 for (var k = notFound.length - 1; k >= 0; k--) {
+                     console.log("Removing " + selectedImg.initiatorList[notFound[k]] + " from " + selectedImg.img + ":" + selectedImg.pool);
+                     this.splice("selectedImgList." + i + ".initiatorList", notFound[k], 1);
+                 }
+             }
+
+         },
+
+         /* Simple helper function that disables all initiator checkboxes for a given image. */
+         _disableAllInitiators: function(img) {
+             for (var i = 0; i < this.availableInitiatorList.length; i++) {
+                 initiator = this.availableInitiatorList[i];
+                 initiatorCheckBoxStr = this._initiatorCheckboxIDGen(img, initiator);
+                 initiatorCheckBox = Polymer.dom(this.root).querySelector("#"+initiatorCheckBoxStr);
+                 if (initiatorCheckBox) {
+                     initiatorCheckBox.checked = false;
+                 } else {
+                     console.error("Unable to uncheck null checkbox: " + initiatorCheckBox);
+                 }
+             }
+         },
+
+         /* On selectedImgList changes, handle checkboxes. */
+         _iscsiSelectedImagesChanged: function(changeRecord) {
+             /* debugger;*/
+             console.log(this.is + ":" + arguments.callee.name + ": updated selected RBD image list");
+
+             if (changeRecord) {
+                 var initiator;
+                 var initiatorCheckBoxStr;
+                 var initiatorCheckBox;
+
+                 /* Grab all imgCheckBox's */
+                 var imgCheckBoxes = Polymer.dom(this.root).querySelectorAll("#imgCheckBox");
+
+                 /* We only care about splices to selectedImgList _and_ to
+                  * selectedImgList[x].initiatorList.
+                  */
+                 var changeSubpath = changeRecord.path.indexOf('.initiatorList.splices');
+
+                 if (changeSubpath !== -1) {
+                     var imgPath = changeRecord.path.substring(0, changeSubpath);
+                     /* console.log("imgPath: " + imgPath);*/
+                     var img = this.get(imgPath);
+                     var index = changeRecord.base.indexOf(img);
+                     console.log('initiatorList modified on selectedImgList at index ' + index + '.  New img is: ');
+
+                     /* Any time we add/remove an initiator from an image, we need to update the
+                      * initiator check boxes for that image.  The current checked check boxes are
+                      * the ones related to the list of initiators in the image's initiatorList array.
+                      */
+                     this._disableAllInitiators(img);
+                     /* Since we disabled all availableInitiatorList checkboxes in the previous loop, enable the
+                      * corresponding checkboxes that are selected.
+                      */
+                     for (var j = 0; j < img.initiatorList.length; j++) {
+                         initiator = img.initiatorList[j];
+
+                         /* If the initiator is in our available list, set the checkbox. */
+                         if (this.availableInitiatorList.indexOf(initiator) !== -1) {
+			     console.log(img);
+			     console.log(initiator);
+                             initiatorCheckBoxStr = this._initiatorCheckboxIDGen(img, initiator);
+			     console.log(initiatorCheckBoxStr);
+                             initiatorCheckBox = Polymer.dom(this.root).querySelector("#" + initiatorCheckBoxStr);
+                             if (initiatorCheckBox) {
+                                 initiatorCheckBox.checked = true;
+                             } else {
+                                 /* Should not get here. */
+                                 console.error("Failed to find initiator check box: " + initiatorCheckBoxStr);
+                             }
+                         } else {
+                             /* Can get here if multiple entries from this.availableInitiatorList were removed at once. */
+                             console.log("Unavailable initiator: " + initiator + " found in selected list for img: " + img);
+                         }
+                     }
+                     /* console.log("initiatorCheckBoxes:");*/
+                     /* console.log(initiatorCheckBoxes);*/
+
+                 } else if (changeRecord.path === "selectedImgList.splices") {
+                     changeRecord.value.indexSplices.forEach(function(s) {
+                         s.removed.forEach(function(img) {
+                             console.log(this.is + ":" + arguments.callee.name + ": " + img.img + ":" + img.pool + " was removed from selected list");
+
+                             /* On removal of img from selectedImgList, un-check all initiators. */
+                             this._disableAllInitiators(img);
+
+                             /* Uncheck corresponding checkbox. */
+                             var i = this.availableImgList.findIndex(this._imgsEqual, img);
+                             if (i != -1 && i < imgCheckBoxes.length) {
+                                 imgCheckBoxes[i].checked = false;
+                             } else {
+                                 console.log(this.is + ":" + arguments.callee.name + ": unable to deselect checkbox at index " + i);
+                             }
+                         }, this);
+                         for (var i = 0; i < s.addedCount; i++) {
+                             var index = s.index + i;
+                             var newImg = s.object[index];
+                             console.log(this.is + ":" + arguments.callee.name + ": " + newImg.img + ":" + newImg.pool + " added at index " + index);
+
+                             /* Check corresponding checkbox. */
+                             var j = this.availableImgList.findIndex(this._imgsEqual, newImg);
+                             if (j !== -1 && j < imgCheckBoxes.length) {
+                                 imgCheckBoxes[j].checked = true;
+                             } else {
+                                 console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + j);
+                             }
+                         }
+                     }, this);
+                 }
+             }
+
+             /* Check if we should hide the selected list */
+             if (this.selectedImgList.length > 0) {
+                 this.selectedImgListHidden = false;
+             } else {
+                 this.selectedImgListHidden = true;
+             }
+         },
+
+         /* Invoked when availableImgList changes. */
+         _iscsiImagesChanged: function(changeRecord) {
+             /* NOTE: changeRecord is always undefined here. */
+             console.log(this.is + ":" + arguments.callee.name + ": updated availalbe RBD image list");
+
+             if (this.selectedImgList.length != 0) {
+                 var notFound = [];
+                 /* Select those that are in selectedImgList but not in availableImgList. */
+                 for (var i = 0; i < this.selectedImgList.length; i++) {
+                     if (this.availableImgList.findIndex(this._imgsEqual, this.selectedImgList[i]) === -1) {
+                         notFound.push(i);
+                     }
+                 }
+
+                 /* Remove notFound images from selectedImgList. */
+                 for (var i = notFound.length -1; i >= 0; i--) {
+                     this.splice("selectedImgList", notFound[i],1);
+                 }
+             }
+         },
+
+         /* Returns true if obj is in selectedIntfList */
+         _isIntfSelected: function(intf) {
+             if (this.selectedIntfList.findIndex(this._intfsEqual, intf) !== -1) {
+                 return true;
+             } else {
+                 return false;
+             }
+         },
+
+         /* On selectedIntfList changes, handle checkboxes. */
+         _iscsiSelectedInterfacesChanged: function(changeRecord) {
+             console.log(this.is + ":" + arguments.callee.name + ": updated selected interfaces list");
+
+             if (changeRecord) {
+                 /* Grab all intfCheckBox's */
+                 var intfCheckBoxes = Polymer.dom(this.root).querySelectorAll("#intfCheckBox");
+
+                 changeRecord.indexSplices.forEach(function(s) {
+                     s.removed.forEach(function(intf) {
+                         console.log(this.is + ":" + arguments.callee.name + ": " + intf.node + ":" + intf.addr + " was removed from selected list");
+
+                         /* Uncheck corresponding checkbox. */
+                         var i = this.availableIntfList.findIndex(this._intfsEqual, intf);
+                         if (i != -1 && i < intfCheckBoxes.length) {
+                             intfCheckBoxes[i].checked = false;
+                         } else {
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to deselect checkbox at index " + i);
+                         }
+                     }, this);
+                     for (var i=0; i<s.addedCount; i++) {
+                         var index = s.index + i;
+                         var newIntf = s.object[index];
+                         console.log(this.is + ":" + arguments.callee.name + ": " + newIntf.node + ":" + newIntf.addr + " added at index " + index);
+
+                         /* Check corresponding checkbox. */
+                         var j = this.availableIntfList.findIndex(this._intfsEqual, newIntf);
+                         if (j != -1 && j < intfCheckBoxes.length) {
+                             intfCheckBoxes[j].checked = true;
+                         } else {
+                             console.log(this.is + ":" + arguments.callee.name + ": unable to select checkbox at index " + j);
+                         }
+                     }
+                 }, this);
+             }
+
+             /* Check if we should hide the selected list */
+             if (this.selectedIntfList.length > 0) {
+                 this.selectedIntfListHidden = false;
+             } else {
+                 this.selectedIntfListHidden = true;
+             }
+         },
+
+         /* Invoked when availableIntfList changes. */
+         _iscsiInterfacesChanged: function(changeRecord) {
+             /* NOTE: changeRecord is always undefined here. */
+             console.log(this.is + ":" + arguments.callee.name + ": updated available interface list");
+
+             if (this.selectedIntfList.length != 0) {
+                 var notFound = [];
+                 /* Select those that are in selectedIntfList but not in availableIntfList. */
+                 for (var i = 0; i < this.selectedIntfList.length; i++) {
+                     if (this.availableIntfList.findIndex(this._intfsEqual, this.selectedIntfList[i]) === -1) {
+                         notFound.push(i);
+                     }
+                 }
+
+                 /* Remove notFound interfaces from selectedIntfList. */
+                 for (var i = notFound.length -1; i >= 0; i--) {
+                     this.splice("selectedIntfList", notFound[i],1);
+                 }
+             }
+         },
+
+         removeConfig: function() {
+             this.fire("removeConfig");
+         },
+
+         nodeCheckboxChanged: function(e) {
+             var intf = e.model.__data__.i;
+             console.log("nodeCheckboxChanged()");
+             if (e.target.checked) {
+                 console.log(intf.node + ":" + intf.addr + " selected - adding to selected list.");
+		 /* TODO: intf -> new Interface(intf.node, intf.addr) */
+                 this.push("selectedIntfList", intf);
+             } else {
+                 var index = this.selectedIntfList.findIndex(this._intfsEqual, intf);
+                 if (index === -1) {
+                     console.error("Checked " + intf.node + ":" + intf.addr + " not found in selected list.");
+                 } else {
+                     console.log(intf.node + ":" + intf.addr + " deselected - removing from selected list.");
+                     this.splice("selectedIntfList", index, 1);
+                 }
+             }
+         },
+
+         imgCheckboxChanged: function(e) {
+             var img = e.model.__data__.i;
+             console.log("imgCheckboxChanged()");
+             console.log(e);
+             if (e.target.checked) {
+                 console.log(img.img + ":" + img.pool + " selected - adding to selected list.");
+                 var newImg = new Image(img.img, img.pool);
+                 console.log(newImg);
+                 this.push("selectedImgList", newImg);
+             } else {
+                 var index = this.selectedImgList.findIndex(this._imgsEqual, img);
+                 if (index === -1) {
+                     console.error("Checked " + img.img + ":" + img.pool + " not found in selected list.");
+                 } else {
+                     console.log(img.img + ":" + img.pool + " deselected - removing from selected list at index " + index);
+                     this.splice("selectedImgList", index, 1);
+                 }
+             }
+         },
+
+         imgInitiatorCheckboxChanged: function(e) {
+             var img = e.model.__data__.i;
+             var initiator = e.model.__data__.j;
+             var index;
+             var newImg;
+
+             /* Add/remove the initiator to img.initiatorList. */
+             if (e.target.checked) {
+                 console.log(initiator + " on " + img.img + ":" + img.pool + " selected - adding to image's initiator list.");
+
+                 /* First, add the image to the selected list */
+                 index = this.selectedImgList.findIndex(this._imgsEqual, img);
+                 if (index === -1) {
+                     console.log(img.img + ":" + img.pool + " not found in selected image liste.  Adding");
+                     var newImg = new Image(img.img, img.pool);
+                     this.push("selectedImgList", newImg);
+                     var newImgIndex = this.selectedImgList.findIndex(this._imgsEqual, newImg);
+                     if (newImgIndex !== -1) {
+                         this.push("selectedImgList." + newImgIndex + ".initiatorList", initiator);
+                     } else {
+                         /* Should not happen! */
+                         console.error("Failed to add " + newImg.img + ":" + newImg.pool + " to selected image list.");
+                     }
+                 } else {
+                     this.push("selectedImgList." + index + ".initiatorList", initiator);
+                 }
+             } else {
+                 /* First, find the image in the selected list. */
+                 index = this.selectedImgList.findIndex(this._imgsEqual, img);
+                 if (index === -1) {
+                     console.error(img.img + " not found in selected image list.");
+                 } else {
+                     var initiatorIndex = this.selectedImgList[index].initiatorList.indexOf(initiator);
+                     if (initiatorIndex === -1) {
+                         console.error(initiator + " not found in " + this.selectedImgList[index].img + "'s initiator list.");
+                     } else {
+                         console.log(initiator + " on " + this.selectedImgList[index].img + ":" + this.selectedImgList[index].pool + " deselected - removing from image's initiator list.");
+                         /* this.selectedImgList[index].initiatorList.splice(initiatorIndex, 1);*/
+                         this.splice("selectedImgList." + index + ".initiatorList", initiatorIndex, 1);
+                     }
+                 }
+             }
+         }
+     });
+    </script>
+</dom-module>

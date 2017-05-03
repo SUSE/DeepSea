@@ -1,0 +1,361 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/app-storage/app-localstorage/app-localstorage-document.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+
+<link rel="import" href="../salt-api/salt-api.html">
+
+<link rel="import" href="wf-auth-style.html">
+
+<dom-module id="wf-auth">
+    <template>
+        <style include="wf-auth-style">
+         :host {
+             display: block;
+
+             padding: 10px;
+         }
+        </style>
+
+        <paper-icon-button icon="communication:vpn-key" title="Authentication" class$="{{authButtonClass}}" on-click="authButtonHandler"></paper-icon-button>
+
+        <app-localstorage-document key="wfauth" data={{wfAuth}} session-only="true"></app-localstorage-document>
+
+        <paper-dialog id='authDialog' class="authdialog" modal="true" on-iron-overlay-opened="patchOverlay">
+            <paper-input id="saltApiNodeInput" label="salt-api Hostname" value="{{saltApiNode}}" required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
+            <paper-input id="saltApiPortInput" label="salt-api Port"     value="{{saltApiPort}}" required auto-validate pattern="[0-9]*" disabled$="{{disableAuthDialogInput}}"></paper-input>
+            <paper-input id="userIdInput"      label="userid"            value="{{userid}}"      required auto-validate disabled$="{{disableAuthDialogInput}}"></paper-input>
+            <paper-input id="passwordInput"    label="password"          value="{{password}}"    required auto-validate type="password" disabled$="{{disableAuthDialogInput}}"></paper-input>
+
+            <div class="buttons">
+                <paper-button raised on-click="login" disabled$="{{disableLoginButton}}">Log In</paper-button>
+                <paper-button raised on-click="logout" disabled$="{{disableLogoutButton}}">Log Out</paper-button>
+            </div>
+        </paper-dialog>
+
+        <!-- Our salt-api auth element. -->
+        <salt-api
+            id="saltapiauth"
+            node="{{saltApiNode}}"
+            port="{{saltApiPort}}"
+            cmd="{{cmd}}"
+            arg=""
+            target=""
+            func=""
+            userid="{{userid}}"
+            password="{{password}}"
+            authtype="{{authType}}">
+        </salt-api>
+
+        <salt-api
+            id="saltapicheckauth"
+            node="{{saltApiNode}}"
+            port="{{saltApiPort}}"
+            cmd=""
+            arg=""
+            target="{{saltApiNode}}"
+            func="test.ping"
+            userid=""
+            password=""
+            authtype="">
+        </salt-api>
+    </template>
+</dom-module>
+
+<script>
+ Polymer({
+     is: 'wf-auth',
+     properties: {
+         authButtonClass: {
+             type: String,
+         },
+
+         cmd: {
+             type: String,
+         },
+
+         userid: {
+             type: String,
+         },
+
+         password: {
+             type: String,
+         },
+
+         saltApiNode: {
+             type: String,
+         },
+
+         saltApiPort: {
+             type: Number,
+         },
+
+         /* TODO: can make this an option in the future (ldap, auto, pam, etc). */
+         authType: {
+             type: String,
+         },
+
+         /* Bound with sessionStorage.wfauth. */
+         wfAuth: {
+             type: Object,
+         },
+
+         disableLoginButton: {
+             type: Boolean,
+         },
+
+         disableLogoutButton: {
+             type: Boolean,
+         },
+
+         disableAuthDialogInput: {
+             type: Boolean,
+         }
+     },
+
+     listeners: {
+         "salt-api-response": "handleAuth200",
+         "salt-api-error": "handleAuthErr",
+         "wf-salt-api-error-401": "handleAuthErr",
+     },
+
+     ready: function() {
+         /* If we've found some state in sessionStorage.wfauth, try to authenticate
+          * on element load.  Now it's possible we have a valid cookie, but have
+          * closed the browser tab, thus clearing sessionStorage.wfauth.  This case
+          * will currently force the user to re-auth, as we don't know the location of
+          * of the salt-api daemon anymore :(
+          * FIXME: fix the above via something like an 'onbeforeunload' signal to trigger
+          * a formal logout and remove the cookie.
+          */
+         if (sessionStorage.wfauth && sessionStorage.wfauth !== "{}") {
+             var wfauth = JSON.parse(sessionStorage.wfauth);
+             this.userid = wfauth.userid;
+             this.saltApiNode = wfauth.node;
+             this.saltApiPort = wfauth.port;
+             this.authType = wfauth.authtype;
+
+             /* Check whether we're already authenticated.  On failure, wfAuth and
+              * sessionStorage.wfauth will be cleared.  On success, they will get re-populated.
+              */
+             this._checkLogin();
+         } else {
+             /* Start with dialog open to allow unauthenticated user to see login dialog. */
+             this.$.authDialog.open();
+             this.setDefaultProperties();
+             this.setWFUnauthenticated();
+         }
+     },
+
+     
+     patchOverlay: function (e) {
+         if (e.target.withBackdrop) {
+             e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
+         }
+     },
+
+     authButtonHandler: function() {
+         this.$.authDialog.open();
+     },
+
+     /* Not the best solution to use test.ping against the salt-api node, but
+      * GET /login _always_ returns 200/OK (whether you have a valid cookie or not).
+      */
+     _checkLogin: function() {
+         console.log("wf-auth:_checkLogin()");
+         /* Disable login button here as well. */
+         this.disableLoginButton = true;
+         this.$.saltapicheckauth.runPost();
+     },
+
+     /* Used to determine if we have some authentication state saved.  If yes, we
+      * check to see if we are authenticated.
+      * Returns false if no state, otherwise true (however, _checkLogin() can still
+      * determine the user is unauthenticated).
+      */
+     checkAuthState: function() {
+         if (!sessionStorage.wfauth || sessionStorage.wfauth === "{}") {
+             console.log("wf-auth:checkAuthState(): no state found.");
+             return false
+         } else {
+             console.log("wf-auth:checkAuthState(): state found.");
+             this._checkLogin();
+         }
+         return true;
+     },
+
+     /* We allow at-will re-auth (login button not greyed out on auth success).
+      * This is a conscious choice.  Should any failure on the salt-api backend
+      * occur, the user has all credentials in place unless specifically cleared
+      * via logout (or when re-loading the page in an unauthenticated state).
+      */
+     login: function() {
+         var validated = true;
+
+         /* Done in this way to validate all input at once.  Stringing together
+          * in an if (... && ... && ...) {} will catch one failure at a time.
+          */
+         if (!this.$.saltApiNodeInput.validate())
+             validated = false;
+         if (!this.$.saltApiPortInput.validate())
+             validated = false;
+         if (!this.$.userIdInput.validate())
+             validated = false;
+         if (!this.$.passwordInput.validate())
+             validated = false;
+
+         if (validated) {
+             console.log("wf-auth:login(): Credentials entered.  Attempting to authenticate with " + this.saltApiNode);
+
+             /* Since we're trying to authenticate or re-authenticate, clear out
+              * wfAuth (and sebsequently sessionStorage.wfauth) and paint auth button
+              * red _before_ trying an auth/re-auth.
+              */
+             this.setWFUnauthenticated();
+
+             /* Disable the login button to prevent issuing multiple requests. 
+              * Since setWFUnathenticated() re-enables the button, we do this
+              * just after that call.
+              */
+             this.disableLoginButton = true;
+
+             /* Attempt to authenticate. */
+             this.authType = "auto";  /* salt-api eauth type we use */
+             /* Redirects to /login against the salt-api url.  Also used in handleAuth200/Err(). */
+             this.cmd = "login";
+             this.$.saltapiauth.runPost();
+         }
+     },
+
+     logout: function() {
+         console.log("wf-auth:logout(): De-authenticating.");
+         this.cmd = "logout";
+         /* Set node and port directly from previously authenticated versions.
+          * If user changed the values in the auth dialog, we may fail to logout.
+          */
+         this.saltApiNode = this.wfAuth.node;
+         this.saltApiPort = this.wfAuth.port;
+         
+         this.$.saltapiauth.runPost();
+     },
+
+     handleAuth200: function(e) {
+         /* curl -sS wolffish-1.lan:8000/run -d client='local' -d tgt='*' -d fun='test.ping' -d username='admin' -d password='restadmin' -d eauth='auto'*/
+
+         /* Clear password from dialog. */
+         this.password = "";
+
+         console.log("wf-auth:handleAuth200(): caught " + e.type);
+         if (this.cmd == "login" || this.cmd == undefined) {
+             this.$.authDialog.close();
+             this.setWFAuthenticated();
+         } else if (this.cmd == "logout") {
+             this.setWFUnauthenticated();
+             this.setDefaultProperties();
+             console.log("wf-auth:handleAuth200(): firing 'wf-auth-logout' event.");
+             this.fire("wf-auth-logout");
+         } else {
+             console.error("wf-auth:handleAuth200(): invalid cmd (" + this.cmd + ")");
+         }
+
+         /* Clear out the cmd after handling. */
+         this.cmd = "";
+     },
+
+     handleAuthErr: function(e) {
+         console.log("wf-auth:handleAuthErr(): caught " + e.type);
+
+         /* Clear password from dialog. */
+         this.password = "";
+
+         this.setWFUnauthenticated();
+
+         if (this.cmd == "login") {
+             if (e.detail.request.status == 401) {
+                 alert("Failed to authenticate.  Invalid userid or password.");
+             } else {
+                 alert("Failed to reach " + this.saltApiNode + ".  If failure persists, check the status of " + this.saltApiNode);
+             }
+         } else if (this.cmd == "logout") {
+             /* TODO: Would be great to clear the cookie on the client side.  But
+              * document.cookie is empty.  Marking for future investigation.  Also,
+              * see the FIXME comment in ready().
+              */
+             this.setDefaultProperties();
+             console.log("wf-auth:handleAuthErr(): firing 'wf-auth-logout' event.");
+             this.fire("wf-auth-logout");
+             alert("Failed to logout.  Credentials will be cleared locally.");
+         }
+
+         /* Clear out the cmd after handling. */
+         this.cmd = "";
+     },
+
+     /* Sets initial property values.  Also used to clear auth dialog when logging out. */
+     setDefaultProperties: function() {
+         console.log("wf-auth:setDefaultProperties(): Setting default auth credentials.");
+         this.userid = "";
+         this.password = "";
+         this.saltApiNode = "";
+         this.saltApiPort = 8000;
+         this.authType = "auto";
+     },
+
+     setWFAuth: function(node, port, userid, authType) {
+         this.set("wfAuth.node", node);
+         this.set("wfAuth.port", port);
+         this.set("wfAuth.userid", userid);
+         this.set("wfAuth.authtype", authType);
+     },
+
+     /* On auth success, store information we care about in sessionStorage.wfauth. */
+     setWFAuthenticated: function() {
+         console.log("wf-auth:setWFAuthenticated(): Authenticated.");
+         this.setWFAuth(this.saltApiNode, this.saltApiPort, this.userid, this.authType);
+         this.authButtonClass = "authenticated";
+         this.disableLoginButton = true;
+         this.disableLogoutButton = false;
+         this.disableAuthDialogInput = true;
+         /* Disable modal attribute so a logged in user can click the auth button without
+          * being locked out of the application :D
+          */
+         this.$.authDialog.modal = false;
+     },
+
+     /* Clears wfAuth along with sessionStorage.wfauth.  Also disables logout button
+      * and paints auth key button red.  However, leaves auth dialog input in-tact for
+      * re-authentication.
+      */
+     setWFUnauthenticated: function() {
+         console.log("wf-auth:setWFUnauthenticated(): Unauthenticated.");
+         /* FIXME: on page reload: ready() -> login() -> setWFUnauthenticated()  However,
+          * sessionStorage.wfauth is not cleared by virtue of setting this.wfAuth={}.
+          * It will be cleared when handleAuthErr() -> setWFUnauthenticated().
+          * Appears to be a timing issue with when app-localstorage-document populates
+          * sessionStorage from a local variable.
+          */
+         this.wfAuth = {};
+         this.authButtonClass = "notauthenticated";
+         this.disableLoginButton = false;
+         this.disableLogoutButton = true;
+         this.disableAuthDialogInput = false;
+
+         /* Temporarily close the authDialog and set it's modal value to true.
+          * When entering the logout success/fail handler, we will re-open the
+          * dialog, causing the modal effect to be properly rendered.
+          */
+         if (this.$.authDialog.opened)
+             this.$.authDialog.close();
+         this.$.authDialog.modal = true;
+
+         this.$.authDialog.open();
+     }
+
+ });
+</script>

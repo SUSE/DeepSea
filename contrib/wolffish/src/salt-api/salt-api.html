@@ -1,0 +1,74 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="salt-api" attributes="node port cmd arg target func data userid password authtype client canned">
+    <template>
+        <iron-ajax
+            id="saltapi"
+            url="http://{{node}}:{{port}}/{{cmd}}/{{arg}}"
+            content-type="{{contentType}}"
+            method="{{method}}"
+            body='{"client":"{{client}}", "tgt":"{{target}}", "fun":"{{func}}", "data":"{{data}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}", "canned":"{{canned}}", "contenttype":"{{contentType}}"}'
+            handle-as="json"
+            on-response="handle200"
+            on-error="handleErr"
+            with-credentials="true">
+        </iron-ajax>
+    </template>
+</dom-module>
+
+<script>
+    Polymer({
+        is: 'salt-api',
+
+        properties: {
+            method: {
+                type: String,
+                value: ""
+            },
+            contentType: {
+                type: String,
+            }
+        },
+
+        ready: function() {
+            if (this.client === undefined) {
+                this.client = "local";
+            }
+        },
+
+        _setContentType: function() {
+            /* The only fully authenticated call we expect is for /login.
+             *   If cmd===login, set content-type to allow POST preflight (ie. OPTIONS).
+             *   If not, leave content-type blank to disable POST preflight and rely on cookie auth.
+             */
+            if (this.cmd === "login")
+                this.contentType="application/json";
+            else
+                this.contentType="";
+        },
+
+        runGet: function() {
+            this._setContentType();
+            this.method = "GET";
+            this.$.saltapi.generateRequest();
+        },
+
+        runPost: function() {
+            this._setContentType();
+            this.method = "POST";
+            this.$.saltapi.generateRequest();
+        },
+
+        handle200: function(e, detail) {
+            console.log("salt-api:handle200(): firing 'salt-api-response' event.");
+            this.fire("salt-api-response", e.detail);
+        },
+
+        handleErr: function(e, detail) {
+            console.log("salt-api:handleErr(): firing 'salt-api-error' event.");
+            this.fire("salt-api-error", e.detail);
+        },
+    });
+</script>
