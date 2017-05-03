@@ -77,4 +77,9 @@ udev settle {{ device }} again:
 
 include:
 - .keyring
+
+save grains:
+  module.run:
+    - name: osd.retain
+
 {% endif %}

@@ -263,6 +263,15 @@ class Validate(object):
         else:
             self.passed['monitors'] = "valid"
 
+    def _has_storage(self, node):
+        """
+        Check original and new data structures
+        """
+        if ('storage' in self.data[node] or
+           ('ceph' in self.data[node] and 'storage' in self.data[node]['ceph'])):
+           return True
+        return False
+
     def storage(self):
         """
         At least four nodes must have the storage role.  All storage nodes
@@ -274,7 +283,7 @@ class Validate(object):
             if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
                 storage.append(node)
-                if not 'storage' in self.data[node]:
+                if not self._has_storage(node):
                     missing.append(node)
 
         if len(storage) < 4 and not self.in_dev_env:
