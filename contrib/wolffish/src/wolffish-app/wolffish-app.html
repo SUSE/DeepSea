@@ -13,6 +13,7 @@
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 
 <link rel="import" href="../wf-auth/wf-auth.html">
+<link rel="import" href="../salt-events/salt-events.html">
 
 <dom-module id="wolffish-app">
     <template>
@@ -61,6 +62,12 @@
              --iron-icon-width: 96px;
          }
         </style>
+
+        <!-- Salt events bus interface.  Template for this element is empty.
+             Placed globally within the application to be manipulated by
+             <wf-auth> during login/logout.
+           -->
+        <salt-events></salt-events>
 
         <app-location route="{{route}}" use-hash-as-path></app-location>
         <app-route
