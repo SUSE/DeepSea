@@ -247,6 +247,12 @@ def images(**kwargs):
 
 
 def status():
+    """
+    Status of iSCSI gateways deployment
+
+    Returns:
+        bool: True if all iSCSI gateways are deployed, False otherwise.
+    """
     local = salt.client.LocalClient()
     status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
     result = True
@@ -256,12 +262,24 @@ def status():
 
 
 def deploy():
+    """
+    Deploys iSCSI gateways
+
+    Returns:
+        bool: True if deployment was successful, False otherwise
+    """
     runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
     result = runner.cmd('state.orch', ['ceph.stage.iscsi'], print_event=False)
     return result['data']['retcode'] == 0
 
 
 def undeploy():
+    """
+    Undeploys iSCSI gateways
+
+    Returns:
+        bool: True if undeployment was successful, False otherwise
+    """
     local = salt.client.LocalClient()
     results = local.cmd('I@roles:igw', 'service.stop', ['lrbd'], expr_form='compound')
     result = True
