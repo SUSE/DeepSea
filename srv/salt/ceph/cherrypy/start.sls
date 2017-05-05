@@ -1,9 +1,8 @@
 
 
 enable salt-api:
-  service.running:
+  service.enabled:
     - name: salt-api
-    - enable: True
 
 restart salt-master:
   module.run:
