@@ -153,7 +153,6 @@
          }
      },
 
-     
      patchOverlay: function (e) {
          if (e.target.withBackdrop) {
              e.target.parentNode.insertBefore(e.target.backdropElement, e.target);
@@ -314,6 +313,21 @@
          this.set("wfAuth.authtype", authType);
      },
 
+     _saltEventsErrHandler: function(e) {
+         console.log("wf-auth: caught " + e.type, e.detail);
+         alert("Error encountered with Salt events bus - disconnecting.");
+         var saltEvBus = document.querySelector("salt-events");
+         if (saltEvBus) {
+             saltEvBus.close();
+         } else {
+             console.error("wf-auth: salt-events element not found!");
+         }
+     },
+
+     _saltEventsCloseHandler: function(e) {
+         console.log("wf-auth: caught " + e.type, e.detail);
+     },
+
      /* On auth success, store information we care about in sessionStorage.wfauth. */
      setWFAuthenticated: function() {
          console.log("wf-auth:setWFAuthenticated(): Authenticated.");
@@ -326,6 +340,16 @@
           * being locked out of the application :D
           */
          this.$.authDialog.modal = false;
+
+         // Connect to salt events bus
+         var saltEvBus = document.querySelector("salt-events");
+         if (saltEvBus) {
+             document.addEventListener('salt-events-close', this._saltEventsCloseHandler);
+             document.addEventListener('salt-events-err', this._saltEventsErrHandler);
+             saltEvBus.connect(this.saltApiNode, this.saltApiPort, false);
+         } else {
+             console.error(this.is + ": salt-events element not found!");
+         }
      },
 
      /* Clears wfAuth along with sessionStorage.wfauth.  Also disables logout button
@@ -353,6 +377,12 @@
          if (this.$.authDialog.opened)
              this.$.authDialog.close();
          this.$.authDialog.modal = true;
+
+         // Disconnect from salt events bus
+         var saltEvBus = document.querySelector("salt-events");
+         if (saltEvBus) {
+             saltEvBus.close();
+         }
 
          this.$.authDialog.open();
      }
