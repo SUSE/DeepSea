@@ -223,6 +223,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/remove/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/remove/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage
 	install -m 644 srv/salt/ceph/remove/storage/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/openattic
+	install -m 644 srv/salt/ceph/remove/openattic/*.sls $(DESTDIR)/srv/salt/ceph/remove/openattic/
 	# state files - rescind
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
@@ -268,6 +270,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/storage/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage/keyring
 	install -m 644 srv/salt/ceph/rescind/storage/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic
+	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring
+	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
@@ -385,7 +391,7 @@ rpm: tarball test
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
-tarball: 
+tarball:
 	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
 	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.gz HEAD
 
