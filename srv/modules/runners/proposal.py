@@ -123,9 +123,11 @@ def _choose_proposal(node, proposal, args):
             return _propose(node, proposal[conf], args)
 
 
-def peek(help_=False, **kwargs):
-    if help_:
-        print(usage)
+def help():
+    print(usage)
+
+
+def peek(**kwargs):
     args = _parse_args(kwargs)
 
     local_client = salt.client.LocalClient()
@@ -190,9 +192,7 @@ def _record_filter(args, base_dir):
         yaml.dump(current_filter, f, default_flow_style=False)
 
 
-def populate(help_=False, **kwargs):
-    if help_:
-        print(usage)
+def populate(**kwargs):
     args = _parse_args(kwargs)
 
     local_client = salt.client.LocalClient()
