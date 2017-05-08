@@ -333,6 +333,12 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/storage/keyring/*.sls
 %config /srv/salt/ceph/reset/*.sls
 %config /srv/salt/ceph/restart/*.sls
+%config /srv/salt/ceph/restart/osd/*.sls
+%config /srv/salt/ceph/restart/mon/*.sls
+%config /srv/salt/ceph/restart/mds/*.sls
+%config /srv/salt/ceph/restart/rgw/*.sls
+%config /srv/salt/ceph/restart/igw/*.sls
+%config /srv/salt/ceph/restart/ganesha/*.sls
 %config /srv/salt/ceph/rgw/*.sls
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/key/*.sls
