@@ -136,10 +136,10 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart
 	install -m 644 srv/salt/ceph/mds/restart/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart
 	# state files - salt-api
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cherrypy
-	install -m 644 srv/salt/ceph/cherrypy/*.sls $(DESTDIR)/srv/salt/ceph/cherrypy
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cherrypy/files
-	install -m 644 srv/salt/ceph/cherrypy/files/*.conf* $(DESTDIR)/srv/salt/ceph/cherrypy/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api
+	install -m 644 srv/salt/ceph/salt-api/*.sls $(DESTDIR)/srv/salt/ceph/salt-api
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api/files
+	install -m 644 srv/salt/ceph/salt-api/files/*.conf* $(DESTDIR)/srv/salt/ceph/salt-api/files
 
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
