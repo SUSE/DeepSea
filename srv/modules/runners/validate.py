@@ -576,7 +576,7 @@ class Validate(object):
         """
         JEWEL_VERSION="10.2"
         local = salt.client.LocalClient()
-        contents = local.cmd('*' , 'cmd.run', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
+        contents = local.cmd('*' , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
 
         for minion in contents.keys():
             m = re.search(r'Version: (\S+)', contents[minion])
