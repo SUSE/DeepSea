@@ -1,5 +1,5 @@
 
-cherrypy:
+salt-api:
   pkg.installed:
     - pkgs:
       - salt-api

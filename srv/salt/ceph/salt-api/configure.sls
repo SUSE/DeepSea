@@ -1,8 +1,8 @@
 
-/etc/salt/master.d/cherrypy.conf:
+/etc/salt/master.d/salt-api.conf:
   file.managed:
     - source: 
-      - salt://ceph/cherrypy/files/cherrypy.conf.j2
+      - salt://ceph/salt-api/files/salt-api.conf.j2
     - template: jinja
     - user: salt
     - group: salt
@@ -11,7 +11,7 @@
 /etc/salt/master.d/eauth.conf:
   file.managed:
     - source: 
-      - salt://ceph/cherrypy/files/eauth.conf
+      - salt://ceph/salt-api/files/eauth.conf
     - user: salt
     - group: salt
     - mode: 600

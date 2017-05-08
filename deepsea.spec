@@ -82,8 +82,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/cephfs
 %dir /srv/salt/ceph/cephfs/benchmarks
 %dir /srv/salt/ceph/cephfs/benchmarks/files
-%dir /srv/salt/ceph/cherrypy
-%dir /srv/salt/ceph/cherrypy/files
+%dir /srv/salt/ceph/salt-api
+%dir /srv/salt/ceph/salt-api/files
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/check
@@ -240,8 +240,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/files/fio.service
-%config /srv/salt/ceph/cherrypy/*.sls
-%config /srv/salt/ceph/cherrypy/files/*.conf*
+%config /srv/salt/ceph/salt-api/*.sls
+%config /srv/salt/ceph/salt-api/files/*.conf*
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
