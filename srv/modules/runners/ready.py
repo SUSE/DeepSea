@@ -54,7 +54,7 @@ class Checks(object):
         Scan all minions for the default firewall settings.  Set warnings
         for any differences.
         """
-        contents = self.local.cmd(self.search , 'cmd.run', [ '/usr/sbin/iptables -S' ], expr_form="compound")
+        contents = self.local.cmd(self.search , 'cmd.shell', [ '/usr/sbin/iptables -S' ], expr_form="compound")
         for minion in contents.keys():
             if contents[minion] != "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT":
                 msg = "enabled on minion {}".format(minion)
