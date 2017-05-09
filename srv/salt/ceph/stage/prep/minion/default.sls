@@ -1,9 +1,3 @@
-
-mines:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.mines
-
 sync:
   salt.state:
     - tgt: '*'
@@ -18,6 +12,11 @@ common packages:
   salt.state:
     - tgt: '*'
     - sls: ceph.packages.common
+
+mines:
+  salt.state:
+    - tgt: '*'
+    - sls: ceph.mines
 
 {% if salt['saltutil.runner']('cephprocesses.mon') == True %}
 
