@@ -522,12 +522,12 @@ class Validate(object):
         Check that time server is available
         """
         time_server = self.data[self.data.keys()[0]].get("time_server", "")
-        time_service = self.data[self.data.keys()[0]].get("time_service", "")
-        if time_service == 'disabled':
+        time_init = self.data[self.data.keys()[0]].get("time_init", "")
+        if time_init == 'disabled':
             self.passed['time_server'] = "disabled"
             return
 
-        if (time_service == 'ntp' and os.path.isfile('/usr/sbin/sntp')):
+        if (time_init == 'ntp' and os.path.isfile('/usr/sbin/sntp')):
             self._ntp_check(time_server)
         else:
             self._ping_check(time_server)
@@ -576,7 +576,7 @@ class Validate(object):
         """
         JEWEL_VERSION="10.2"
         local = salt.client.LocalClient()
-        contents = local.cmd('*' , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
+        contents = local.cmd('*' , 'cmd.run', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
 
         for minion in contents.keys():
             m = re.search(r'Version: (\S+)', contents[minion])
