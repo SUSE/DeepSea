@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_build:
+	# deepsea has no build step
+	true
+
+override_dh_auto_test:
+	# `make test` needs tox, which somehow tries to install mock, pytest,
+	# salt, ipaddress, salttesting and pyfakefs during build, which is not
+	# going to work.  Not sure if these can be added as proper build deps
+	# to solve the problem, so in the meantime let's just skip the whole
+	# thing...
+	true
+
+override_dh_auto_install:
+	# want make install to only copy files, not do the extra `sed` and
+	# `systemctl restart` deepsea's install target does
+	$(MAKE) DESTDIR=$$(pwd)/debian/deepsea copy-files

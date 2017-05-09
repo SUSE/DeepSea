@@ -1,0 +1,12 @@
+Source: deepsea
+Section: admin
+Priority: optional
+Maintainer: Tim Serong <tserong@suse.com>
+Build-Depends: debhelper (>= 9), salt-master
+
+Package: deepsea
+Architecture: all
+Depends: ${shlibs:Depends}, salt-master, salt-minion, python-ipaddress, python-netaddr
+Description: Salt solution for deploying and managing Ceph
+ A collection of Salt files providing a deployment of Ceph as
+ a series of stages.
