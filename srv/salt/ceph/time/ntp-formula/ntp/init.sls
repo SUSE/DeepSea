@@ -32,4 +32,19 @@ ntp_running:
     - enable: True
     - watch:
       - file: {{ ntp.ntp_conf }}
+
+openntp_disabled:
+  service.dead:
+    - name: openntpd
+    - enable: False
+
+timesyncd_disabled:
+  service.dead:
+    - name: systemd-timesyncd
+    - enable: False
+
+chrony_disabled:
+  service.dead:
+    - name: chronyd
+    - enable: False
 {% endif -%}
