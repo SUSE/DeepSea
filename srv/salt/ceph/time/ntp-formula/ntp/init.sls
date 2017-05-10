@@ -22,6 +22,7 @@ ntp_conf:
     - source: {{ ntp_conf_src }}
     - require:
       - pkg: {{ ntp.client }}
+    - backup: minion
 {% endif %}
 
 {% if ntp.ntp_conf -%}
