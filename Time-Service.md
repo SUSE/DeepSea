@@ -51,11 +51,11 @@ This setting provides an explicit means of enabling/disabling DeepSea's time ser
 This setting determines which server (if any) to configure as an NTP server. By default, this value is set such that DeepSea will configure the DeepSea (Salt) master as an NTP server. This value may be changed to the Salt minion ID of any single node managed by DeepSea, which DeepSea will configure as the NTP server instead. If the key is removed entirely, DeepSea will not configure any node as an NTP server.
 
 #### `higher_stratum_servers`
-This setting determines which higher stratum servers to use as master time servers for the cluster. By default, this value is set to the first 4 NTP servers from `pool.ntp.org`. If this section is deleted, these 4 NTP servers will be used as reasonable defaults. The user may specify, in YAML list format, as many (or as few as one) NTP servers as they wish. This setting has two basic modes of operation:
+This setting determines which higher stratum servers to use as master time servers for the cluster. By default, this value is set to the first 4 NTP servers from `pool.ntp.org`. If this section is deleted, these 4 NTP servers will be used as reasonable defaults. The user may specify, in YAML list format, as many (or as few as one) NTP servers as they wish. As an example, the user can specify an in-house NTP server or server pool to use as a master reference. This setting has two basic modes of operation:
 
 __DeepSea is managing an NTP server as configured by `ntp_server`__
 
-In this mode, the NTP server will reference the servers defined by `higher_stratum_servers`, and all other DeepSea nodes will reference the NTP server. The server will reference its own system clock if these servers are not reachable.
+In this mode, the NTP server will reference the servers defined by `higher_stratum_servers`, and all other DeepSea nodes will reference the NTP server. The server will reference its own system clock if these servers are not reachable. 
 
 __DeepSea is not managing an NTP server as configured by `ntp_server`__
 
