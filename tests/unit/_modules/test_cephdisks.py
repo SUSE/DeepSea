@@ -1,7 +1,7 @@
 import pytest
 from srv.salt._modules import cephdisks
 from mock import MagicMock, patch, mock_open, mock
-from helpers import OutputHelper
+from tests.unit.helper.output import OutputHelper
 
 
 class TestHardwareDetections():
