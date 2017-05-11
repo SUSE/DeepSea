@@ -4,4 +4,4 @@
 # - NIV_DEBUG
 # - NIV_FULL_DEBUG
 
-OPTIONS= -L /var/log/ganesha.log -N NIV_CRIT
+OPTIONS= "-L /var/log/ganesha.log -N NIV_CRIT"
