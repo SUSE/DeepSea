@@ -8,6 +8,7 @@ stage prep dependencies suse:
       - lsscsi
       - pciutils
       - gptfdisk
+      - iperf
     - fire_event: True
 
 {% elif os == 'Ubuntu' %}
@@ -18,6 +19,7 @@ stage prep dependencies ubuntu:
       - lsscsi
       - pciutils
       - gdisk
+      - iperf
     - fire_event: True
 
 {% else %}
