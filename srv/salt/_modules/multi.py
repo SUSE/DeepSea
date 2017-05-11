@@ -8,6 +8,17 @@ from subprocess import check_call, Popen, PIPE, CalledProcessError
 
 log = logging.getLogger(__name__)
 
+try:
+    from salt.utils import which
+except:
+    from distutils.spawn import which
+
+iperf_path = which('iperf3')
+
+if iperf_path is None:
+    log.error("Error: could not find iperf3 on path")
+    sys.exit(2)
+
 '''
 multi is the module to call subprocess in minion host
 
