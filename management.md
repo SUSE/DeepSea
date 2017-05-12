@@ -108,6 +108,33 @@ To remove roles from minions, run
 
 This stage will normally take several seconds.  The notable exception is when a storage node is decommisioned.  The OSDs gracefully empty before completing their removal.  Between cluster activity, available network bandwidth and the number of PGs to migrate, this operation can take considerably longer.
 
+
+## Restarting Services
+
+If you wish to restart services you can run.
+
+```
+# salt-run state.orch ceph.restart
+```
+
+This orchestrator will iterate through all your configured roles(respecting the recommended order) and restart them.
+
+_Note: Nodes will only be restarted if the:_
+
+* the service is actually running
+* The cluster is not in HEALTH_ERR for more than 300 seconds.
+
+# Note: The process might take a while
+
+If you wish to restart a specific service you can run.
+
+```
+# salt-run state.orch ceph.restart.<role name>
+```
+
+# If the timout is exceeded the process will stop.
+
+
 ## Automated Installation
 
 The installation can be automated by using the Salt reactor.  For virtual environments or consistent hardware environments, this configuration will allow the creation of a Ceph cluster with the specified behavior.
@@ -142,4 +169,5 @@ When a role is removed from a minion, the objective is to undo all changes relat
 With regards to storage nodes, a removed OSD will appear as blank drive.  The related tasks overwrite the beginning of the filesystems and remove backup partitions in addition to wiping the partition tables.  
 
 Disk drives previously configured by other methods, such as ceph-deploy, may still contain partitions.  DeepSea will not automatically destroy these.  Currently, the administrator must reclaim these drives.
+
 
