@@ -9,7 +9,7 @@
             url="http://{{node}}:{{port}}/{{cmd}}/{{arg}}"
             content-type="{{contentType}}"
             method="{{method}}"
-            body='{"client":"{{client}}", "tgt":"{{target}}", "fun":"{{func}}", "data":"{{data}}", "username":"{{userid}}", "password":"{{password}}", "eauth":"{{authtype}}", "canned":"{{canned}}", "contenttype":"{{contentType}}"}'
+            body="{{ajaxRequestBody}}"
             handle-as="json"
             on-response="handle200"
             on-error="handleErr"
@@ -29,6 +29,9 @@
             },
             contentType: {
                 type: String,
+            },
+            ajaxRequestBody: {
+                type: String
             }
         },
 
@@ -49,14 +52,33 @@
                 this.contentType="";
         },
 
+        _setBody: function() {
+            var ajaxRequestBody = {"client": this.client,
+                                   "tgt": this.target,
+                                   "fun": this.func,
+                                   "data": this.data,
+                                   "username": this.userid,
+                                   "password": this.password,
+                                   "eauth": this.authtype,
+                                   "contenttype": this.contentType};
+
+            if (this.canned) {
+                ajaxRequestBody["canned"] = this.canned;
+            }
+
+            this.ajaxRequestBody = JSON.stringify(ajaxRequestBody);
+        },
+
         runGet: function() {
             this._setContentType();
+            this._setBody();
             this.method = "GET";
             this.$.saltapi.generateRequest();
         },
 
         runPost: function() {
             this._setContentType();
+            this._setBody();
             this.method = "POST";
             this.$.saltapi.generateRequest();
         },
