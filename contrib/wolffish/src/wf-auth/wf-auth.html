@@ -60,7 +60,7 @@
             cmd=""
             arg=""
             target="{{saltApiNode}}"
-            func="test.ping"
+            func="{{loginCheckFunc}}"
             userid=""
             password=""
             authtype="">
@@ -116,6 +116,11 @@
 
          disableAuthDialogInput: {
              type: Boolean,
+         },
+
+         loginCheckFunc: {
+             type: String,
+             value: "test.ping"
          }
      },
 
