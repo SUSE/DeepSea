@@ -16,7 +16,7 @@
             userid=""
             password=""
             authtype=""
-            client="runner"
+            client="{{client}}"
             canned="{{canned}}">
         </salt-api>
     </template>
@@ -39,6 +39,10 @@
             },
             contentType: {
                 type: String,
+            },
+            client: {
+                type: String,
+                value: "runner"
             }
         },
 
