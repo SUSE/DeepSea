@@ -218,7 +218,7 @@ def save(**kwargs):
     return iscsi.save(**kwargs)
 
 
-def config():
+def config(**kwargs):
     """
     Return the iSCSI configuration
     """
@@ -246,7 +246,7 @@ def images(**kwargs):
     return iscsi.images(wrapped=False)
 
 
-def status():
+def status(**kwargs):
     local = salt.client.LocalClient()
     status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
     result = True
@@ -255,13 +255,13 @@ def status():
     return result
 
 
-def deploy():
+def deploy(**kwargs):
     runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
     result = runner.cmd('state.orch', ['ceph.stage.iscsi'], print_event=False)
     return result['data']['retcode'] == 0
 
 
-def undeploy():
+def undeploy(**kwargs):
     local = salt.client.LocalClient()
     results = local.cmd('I@roles:igw', 'service.stop', ['lrbd'], expr_form='compound')
     result = True
