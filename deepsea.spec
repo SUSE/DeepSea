@@ -180,6 +180,12 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/openattic
 %dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/restart
+%dir /srv/salt/ceph/restart/osd
+%dir /srv/salt/ceph/restart/mon
+%dir /srv/salt/ceph/restart/rgw
+%dir /srv/salt/ceph/restart/igw
+%dir /srv/salt/ceph/restart/mds
+%dir /srv/salt/ceph/restart/ganesha
 %dir /srv/salt/ceph/rgw
 %dir /srv/salt/ceph/rgw/files
 %dir /srv/salt/ceph/rgw/key
