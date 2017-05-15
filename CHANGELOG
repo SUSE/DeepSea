@@ -1,4 +1,10 @@
 
+- Version 0.7.8 
+- salt-api fix
+- Updated README
+
+-------------------------------------------------------------------
+
 - Version 0.7.7 0da31f0266b033fa6c17c76641ac99ed3aa76fc4
 - Support restarting single services
 - Added openATTIC role
@@ -6,7 +12,6 @@
 - Add Wolffish to contrib
 - Additions to ui_iscsi api
 - Fix ganesha service file
-- Updated README
 
 -------------------------------------------------------------------
 
