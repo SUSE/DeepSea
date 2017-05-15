@@ -1,11 +1,12 @@
 
-- Version 0.7.7
+- Version 0.7.7 
 - Support restarting single services
 - Added openATTIC role
 - Rename cherrypy to salt-api
 - Add Wolffish to contrib
 - Additions to ui_iscsi api
 - Fix ganesha service file
+- Updated README
 
 -------------------------------------------------------------------
 
