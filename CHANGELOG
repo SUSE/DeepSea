@@ -1,5 +1,5 @@
 
-- Version 0.7.7 
+- Version 0.7.7 0da31f0266b033fa6c17c76641ac99ed3aa76fc4
 - Support restarting single services
 - Added openATTIC role
 - Rename cherrypy to salt-api
