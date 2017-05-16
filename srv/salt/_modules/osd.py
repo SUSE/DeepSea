@@ -983,6 +983,7 @@ class OSDConfig(object):
 
     def __init__(self, device, **kwargs):
         filters = kwargs.get('filters', None)
+        # top_level_identifiier
         self.tli = __pillar__['ceph']['storage']['osds']
         self.device = device
         self.capacity = self.set_capacaity()
@@ -1002,7 +1003,7 @@ class OSDConfig(object):
             if disk['Device File'] == self.device:
                 return disk['Bytes']
 
-    def set_capacaity(self):
+    def set_capacity(self):
         disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
         for disk in disks[__grains__['id']]:
             if disk['Device File'] == self.device:
@@ -1044,33 +1045,30 @@ class OSDConfig(object):
                     log.info("Couldn't find a jornal for {}".format(device))
                     return default
 
+    def _check_existence(self, key, ident, device, default=None):
+        if key in ident[device]:
+            return ident[ident][key]
+        return default
+
     def set_wal_size(self, default='200M'):
         if self._config_version() == NEW_FORMAT:
-            if 'wal_size' in self.tli[self.device]:
-                return self.tli[self.device]['wal_size']
-            return default
+            return self._check_existence('wal_size', self.tli, device, default=default):
 
     def set_wal(self):
         if self._config_version() == NEW_FORMAT:
-            if 'wal' in self.tli[self.device]:
-                return self.tli[self.device]['wal']
+            return self._check_existence('wal', self.tli, device):
 
     def set_db_size(self, default='200M'):
         if self._config_version() == NEW_FORMAT:
-            if 'db_size' in self.tli[self.device]:
-                return self.tli[self.device]['db_size']
-            return default
+            return self._check_existence('db_size', self.tli, device, default=default):
 
     def set_db(self):
         if self._config_version() == NEW_FORMAT:
-            if 'db' in self.tli[self.device]:
-                return self.tli[self.device]['db']
+            return self._check_existence('db', self.tli, device):
 
     def set_encryption(self, default=False):
         if self._config_version() == NEW_FORMAT:
-            if 'encryption' in self.tli[self.device]:
-                return self.tli[self.device]['encryption']
-            return default
+            return self._check_existence('db', self.tli, device, default):
 
 def prepare(device):
     """
