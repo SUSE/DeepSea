@@ -1,0 +1,14 @@
+ceph:
+
+  # Refer to https://github.com/SUSE/DeepSea/wiki/Time-Service for detailed
+  # usage of the `time_service` section of this configuration file.
+  time_service:
+    manage: true
+    ntp_server: {{ pillar.get('master_minion') }}
+    higher_stratum_servers:
+      - '0.pool.ntp.org'
+      - '1.pool.ntp.org'
+      - '2.pool.ntp.org'
+      - '3.pool.ntp.org'
+    ntp_server_conf: ntp-server-default.conf
+    ntp_client_conf: ntp-client-default.conf

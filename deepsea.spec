@@ -210,8 +210,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
 %dir /srv/salt/ceph/sync
-%dir /srv/salt/ceph/time
-%dir /srv/salt/ceph/time/ntp
+%dir /srv/salt/ceph/time/
+%dir /srv/salt/ceph/time/ntp-formula
+%dir /srv/salt/ceph/time/ntp-formula/ntp
 %dir /srv/salt/ceph/maintenance
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/maintenance/noout
@@ -239,6 +240,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/pillar/ceph/benchmark/templates/*.j2
 %config(noreplace) /srv/pillar/ceph/master_minion.sls
 %config /srv/pillar/ceph/stack/stack.cfg
+%config(noreplace) /srv/pillar/ceph/stack/global.yml
 %config /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
@@ -381,7 +383,10 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/services/*.sls
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/time/*.sls
-%config /srv/salt/ceph/time/ntp/*.sls
+/srv/salt/ceph/time/ntp-formula/LICENSE
+%config /srv/salt/ceph/time/ntp-formula/ntp/*.sls
+%config /srv/salt/ceph/time/ntp-formula/ntp/*.jinja
+%config /srv/salt/ceph/time/ntp-formula/ntp/*.conf
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls

@@ -42,6 +42,7 @@ copy-files:
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
+	install -m 644 srv/pillar/ceph/stack/global.yml $(DESTDIR)/srv/pillar/ceph/stack/global.yml
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
@@ -377,8 +378,11 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time
 	install -m 644 srv/salt/ceph/time/default.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -m 644 srv/salt/ceph/time/init.sls $(DESTDIR)/srv/salt/ceph/time/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp
-	install -m 644 srv/salt/ceph/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/time/ntp/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp-formula
+	# Install all files recursively under srv/salt/ceph/time/ntp-formula
+	for file in $(shell find srv/salt/ceph/time/ntp-formula/ -type f); do \
+		install -D -m 644 "$$file" $(DESTDIR)/"$$file"; \
+	done
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/

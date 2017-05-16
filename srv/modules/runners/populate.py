@@ -745,8 +745,6 @@ class CephCluster(object):
         Create cluster assignment for every cluster and unassigned
         """
         self._assignments()
-        self._global()
-
 
     def _assignments(self):
         """
@@ -763,19 +761,6 @@ class CephCluster(object):
 
                 self.writer.write(filename, contents)
 
-    def _global(self):
-        """
-        Specify global options for all clusters
-        """
-        stack_dir = "{}/config/stack/default".format(self.root_dir)
-        if not os.path.isdir(stack_dir):
-             _create_dirs(stack_dir, self.root_dir)
-        filename = "{}/global.yml".format(stack_dir)
-        contents = {}
-        contents['time_server'] = '{{ pillar.get("master_minion") }}'
-        contents['time_service'] = 'ntp'
-
-        self.writer.write(filename, contents)
 
 def _create_dirs(path, root):
     try:
