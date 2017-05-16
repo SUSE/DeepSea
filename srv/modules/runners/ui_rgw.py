@@ -29,12 +29,14 @@ class Radosgw(object):
         Initialize and call routines
         """
         if canned:
-            self._canned(canned)
+            self._canned(int(canned))
         else:
             self.cluster = cluster
             self.credentials = {'access_key': None,
                                 'secret_key': None,
-                                'urls': []}
+                                'urls': [],
+                                'success': False}
+
             self.pathname = pathname
             self._admin()
             self._urls()
@@ -76,6 +78,7 @@ class Radosgw(object):
                 return
         self.credentials['access_key'] = user['keys'][0]['access_key']
         self.credentials['secret_key'] = user['keys'][0]['secret_key']
+        self.credentials['success'] = True
 
     def _urls(self):
         """
@@ -94,29 +97,31 @@ class Radosgw(object):
                 return
 
         for client_file in glob.glob("{}/client.*".format(self.pathname)):
-            port = None
+            port = '7480' # civetweb default port
+            ssl = ''
             with open(client_file, 'r') as rgw_file:
                 for line in rgw_file:
                     if 'port=' in line:
-                        match = re.search(r'port=(\d+)', line)
+                        match = re.search(r'port=(\d+)(s?)', line)
                         port = match.group(1)
+                        ssl = match.group(2)
             parts = client_file.split('.')
-            resource = None
+            resource = ''
             # dedicated keys - use host part
             if len(parts) == 4:
                 resource = parts[2]
             # shared keys - use role part
             if len(parts) == 3:
                 resource = parts[1]
-            if port:
+            if resource and port:
                 resource += ":{}".format(port)
             if resource:
-                self.credentials['urls'].append("http://{}".format(resource))
+                self.credentials['urls'].append("http{}://{}".format(ssl, resource))
 
 
 def credentials(canned=None):
     """
     Return the administrative credentials for the RadosGW
     """
-    radosgw = Radosgw(int(canned))
+    radosgw = Radosgw(canned)
     return radosgw.credentials
