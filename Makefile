@@ -190,8 +190,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/osd/auth/*.sls $(DESTDIR)/srv/salt/ceph/osd/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/keyring
 	install -m 644 srv/salt/ceph/osd/keyring/*.sls $(DESTDIR)/srv/salt/ceph/osd/keyring/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/partition
-	install -m 644 srv/salt/ceph/osd/partition/*.sls $(DESTDIR)/srv/salt/ceph/osd/partition/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/scheduler
 	install -m 644 srv/salt/ceph/osd/scheduler/*.sls $(DESTDIR)/srv/salt/ceph/osd/scheduler/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/files
