@@ -86,6 +86,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/salt-api/files
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
+%dir /srv/salt/ceph/configuration/files/ceph.conf.d
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/events

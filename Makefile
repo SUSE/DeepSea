@@ -68,6 +68,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/check/*.sls $(DESTDIR)/srv/salt/ceph/configuration/check/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf* $(DESTDIR)/srv/salt/ceph/configuration/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/events
 	install -m 644 srv/salt/ceph/events/*.sls $(DESTDIR)/srv/salt/ceph/events/
 	# state files - diagnose
