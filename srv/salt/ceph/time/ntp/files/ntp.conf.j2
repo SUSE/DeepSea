@@ -35,7 +35,7 @@
 ##
 # server 127.127.1.0		# local clock (LCL)
 # fudge  127.127.1.0 stratum 10	# LCL is unsynchronized
-server {{ salt['pillar.get']('time_server') }}
+server {{ salt['pillar.get']('time_server') }}  burst iburst
 
 ##
 ## Add external Servers using

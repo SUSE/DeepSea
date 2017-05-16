@@ -1,4 +1,10 @@
 
+{% if salt['service.status']('ntpd') == False %}
+sync time:
+  cmd.run:
+    - name: "sntp -S -c {{ salt['pillar.get']('time_server') }}"
+{% endif %}
+
 ntp:
   pkg.installed:
     - pkgs:
@@ -15,6 +21,7 @@ ntp:
     - group: root
     - mode: 644
     - makedirs: True
+    - backup: minion
     - fire_event: True
 
 start ntp:
@@ -23,6 +30,3 @@ start ntp:
     - enable: True
 {% endif %}
 
-sync time:
-  cmd.run:
-    - name: "sntp -S -c {{ salt['pillar.get']('time_server') }}"
