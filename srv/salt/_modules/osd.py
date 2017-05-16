@@ -1068,7 +1068,7 @@ class OSDConfig(object):
 
     def set_encryption(self, default=False):
         if self._config_version() == NEW_FORMAT:
-            return self._check_existence('encryption', self.tli, device, default):
+            return self._check_existence('encryption', self.tli, device, default=default):
 
 def prepare(device):
     """
