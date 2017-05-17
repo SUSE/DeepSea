@@ -1,0 +1,2 @@
+monitoring nop:
+  test.nop
