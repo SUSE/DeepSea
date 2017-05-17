@@ -14,7 +14,7 @@ class Minion {
     constructor(id, isMaster = false, isMember = true) {
         this.id = String(id);
         this.isMaster = isMaster;
-        this.isMemeber = isMember;
+        this.isMember = isMember;
     }
 
     // Compare yourself to another minion based on id.  Returns -1 if less than,
@@ -149,6 +149,18 @@ class Role {
 
         // Return true/false.
         return ret;
+    }
+
+    // Check if minionRef is contained within our availalbeMinions array.  Return
+    // true/false;
+    isMinionAvailable(minionRef) {
+        return this.availableMinions.findIndex(this._findMinion, minionRef) !== -1;
+    }
+
+    // Check if minionRef is contained within our selectedMinions array.  Return
+    // true/false;
+    isMinionSelected(minionRef) {
+        return this.selectedMinions.findIndex(this._findMinion, minionRef) !== -1;
     }
 
     // Compare yourself to another role based on name.  Returns -1 if less than,

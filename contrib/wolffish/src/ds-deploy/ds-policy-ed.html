@@ -1,30 +1,68 @@
 <!------------------------------------------------------------------------------
-    ds-policy-ed.html
+     ds-policy-ed.html
 
-    DeepSea policy.cfg editor element.
-------------------------------------------------------------------------------->
+     DeepSea policy.cfg editor element.
+   ------------------------------------------------------------------------------->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../../bower_components/s-table/s-table.html">
+<link rel="import" href="../../bower_components/s-table/s-table-lite.html">
+<link rel="import" href="../../bower_components/s-table/s-tbody.html">
+<link rel="import" href="../../bower_components/s-table/s-tr.html">
 
 <link rel="import" href="../wf-styles/wf-styles.html">
 
 <dom-module id="ds-policy-ed">
     <template>
         <style include="wf-styles">
-         :host {
-             display: block;
+            :host {
+            display: block;
 
-             padding: 10px 20px;
-         }
+            padding: 10px 20px;
+            }
         </style>
         <div class="wf-card">
             <paper-toolbar class="wf-card-toolbar">
                 <span class="title">DeepSea policy.cfg Editor</span>
             </paper-toolbar>
+
+            <table is="s-table" fixed-column>
+                <thead>
+                    <tr>
+                        <th><paper-checkbox id="minion-all" on-change="minionChecked"></paper-checkbox>Minion</th>
+                        <template is="dom-repeat" items="{{roles}}" as="role">
+                            <th><paper-checkbox id="role-all" on-change="rollChecked"></paper-checkbox>{{role.name}}</th>
+                        </template>
+                        <template is="dom-repeat" items="{{profiles}}" as="profile">
+                            <th><paper-checkbox id="profile-all" on-change="profileChecked"></paper-checkbox>{{profile.name}}</th>
+                        </template>
+                    </tr>
+                </thead>
+                <tbody is="s-tbody" multi>
+                    <template is="dom-repeat" items="{{minions}}" as="minion">
+                        <tr>
+                            <td><paper-checkbox id="minion-{{minion.id}}" on-change="minionChecked" checked$="{{minion.isMember}}">{{minion.id}}</td>
+                            <template is="dom-repeat" items="{{roles}}" as="role">
+                                <td><paper-checkbox id="{{role.name}}-{{minion.id}}" on-change="rollChecked"></td>
+                            </template>
+                            <template is="dom-repeat" items="{{profiles}}" as="profile">
+                                <template is="dom-if" if="{{isMinionAvailableForProfile(profile, minion)}}">
+                                    <td><paper-checkbox id="{{profile.name}}-{{minion.id}}" on-change="profileChecked"></td>
+                                </template>
+                                <template is="dom-if" if="{{!isMinionAvailableForProfile(profile, minion)}}">
+                                    <td></td>
+                                </template>
+                            </template>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </div>
     </template>
 </dom-module>
 
 <script src="ds-policy-ed.js"></script>
+<script src="ds-policy.js"></script>

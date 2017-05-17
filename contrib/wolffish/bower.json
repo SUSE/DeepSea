@@ -27,7 +27,8 @@
     "paper-listbox": "PolymerElements/paper-listbox",
     "paper-menu": "PolymerElements/paper-menu#^1.2.2",
     "paper-toolbar": "PolymerElements/paper-toolbar",
-    "paper-spinner": "PolymerElements/paper-spinner#^1.2.1"
+    "paper-spinner": "PolymerElements/paper-spinner#^1.2.1",
+    "s-table": "^0.2.2"
   },
   "devDependencies": {},
   "private": true
