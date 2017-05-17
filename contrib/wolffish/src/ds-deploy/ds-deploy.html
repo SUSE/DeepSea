@@ -1,0 +1,41 @@
+<!------------------------------------------------------------------------------
+     ds-deploy.html
+
+     For now, a cluster deployment stub page.
+------------------------------------------------------------------------------->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../wf-styles/wf-styles.html">
+
+<link rel="import" href="ds-policy-ed.html">
+
+<dom-module id="ds-deploy">
+    <template>
+        <style>
+         :host {
+             display: block;
+
+             padding: 10px 20px;
+         }
+        </style>
+        <h1 align="center">DeepSea Deployment</h1>
+        <pre align="center">
+
+      o                                  
+o WIP o      ______/~/~/~/__           /((
+        o  // __            ====__    /_((
+       o  //  @))       ))))      ===/__((
+          ))           )))))))        __((
+          \\     \)     ))))    __===\ _((
+           \\_______________====      \_((
+                                       \((
+        </pre>
+        <!-- TODO: ds-policy-ed should ultimately be added programatically
+             when the appropriate stages have been run.
+           -->
+        <ds-policy-ed></ds-policy-ed>
+    </template>
+</dom-module>
+
+<script src="ds-deploy.js"></script>
