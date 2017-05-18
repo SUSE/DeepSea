@@ -1,0 +1,10 @@
+Setup ntp to manage system time
+
+Ceph relies on loosely synchronized clocks. DeepSea will by default start an ntp
+client on each client and point to the salt master as their ntp server if and
+only if the ntpd.service is not yet running.
+If you want DeepSea to overwrite and existing ntp configuration set "time_init:
+ntp" in the pillar.
+To disable all ntp management set "time_init: disabled" in the pillar. Note that
+the admin should have some for of time synchronisation set up in this case.
+Otherwise Ceph might not function reliably.
