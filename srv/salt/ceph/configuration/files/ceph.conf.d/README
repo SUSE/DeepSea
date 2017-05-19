@@ -1,0 +1,42 @@
+Custom Configuration
+
+The default ceph.conf template
+(<salt_dir>/ceph/configuration/files/ceph.conf.j2) includes the content of five
+files from the <salt_dir>/ceph/configuration/files/ceph.conf.d directory. These
+files are [global,mon,mds,osd,client].conf and are meant for user
+customizsations of ceph.conf.
+
+The five files correspond to the different sections the Ceph configuration file
+accepts (see also
+http://docs.ceph.com/docs/jewel/rados/configuration/ceph-conf/#config-sections).
+Putting a configuration fragment in the correct file enables DeepSea to place it
+into the correct section. A user does not have to add any of the five section
+headers.
+A user can however add daemon specific headers. If any configuration options
+should only be applied to specific instances of a daemon a header like
+[osd.1] can be added. The following configuration options will only be applied
+to the OSD daemon with the id 1.
+
+Later statements in a particular section will overwrite earlier ones. Thus it is
+possible to override the default configuration as specified in
+<salt_dir>/ceph/configuration/files/ceph.conf.j2.
+For example to turn off cephx authentication, add the following three lines to
+<salt_dir>/ceph/configuration/files/ceph.conf.d/global.conf:
+auth cluster required = none
+auth service required = none
+auth client required = none
+
+If a lot of custom configurations should be applied a user is free to use jinja
+include statements within the custom configuration files to make file management
+easier. For example the osd.conf file could look like this:
+[osd.1]
+{% include "ceph/configuration/files/ceph.conf.d/osd1.conf" ignore missing %}
+[osd.2]
+{% include "ceph/configuration/files/ceph.conf.d/osd2.conf" ignore missing %}
+[osd.3]
+{% include "ceph/configuration/files/ceph.conf.d/osd3.conf" ignore missing %}
+[osd.4]
+{% include "ceph/configuration/files/ceph.conf.d/osd4.conf" ignore missing %}
+
+Where the osd[1,2,3,4].conf files contain the OSD specific configuration
+options.
