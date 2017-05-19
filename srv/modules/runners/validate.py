@@ -277,7 +277,7 @@ class Validate(object):
                 if not 'storage' in self.data[node]:
                     missing.append(node)
 
-        if len(storage) < 4 and not self.in_dev_env:
+        if (not self.in_dev_env and len(storage) < 4) or (self.in_dev_env and len(storage) < 1):
             msg = "Too few storage nodes {}".format(",".join(storage))
             self.errors['storage'] = [ msg ]
         else:
