@@ -594,10 +594,10 @@ class Validate(object):
 
         self._set_pass_status('ceph_version')
 
-    def _lint_yaml_files(self):
-	filename = '/srv/pillar/ceph/proposals/policy.cfg'
+    def _accumulate_files_from(self, filename):
+        accumulated_files = []
 	proposals_dir = "/srv/pillar/ceph/proposals" 
-        common = {}
+        
         with open(filename, "r") as policy:
             for line in policy:
                 # strip comments from the end of the line
@@ -615,14 +615,54 @@ class Validate(object):
                     if os.stat(filename).st_size == 0:
                         log.warning("Skipping empty file {}".format(filename))
                         continue
-		    with open(filename, 'r') as stream:
-		      try:
-		        log.debug(yaml.load(stream))
-		      except yaml.YAMLError as exc:
-		        pm = exc.problem_mark
-		        message = "syntax error in {} on line {} at position {}".format(pm.name, pm.line, pm.column)
-                        self.errors.setdefault('yaml_syntax', []).append(message)
+                    accumulated_files.append(filename)
+	return accumulated_files
+   
+    def _stack_files(self, stack_dir, filetype='yml'):
+	"""
+	Lists all files under stack_dir
+	"""
+	stack_files = []
+	for drn, drns, fn in os.walk(stack_dir):
+	   for filename in fn:
+	     if filename.split('.')[-1] == filetype:
+	       stack_files.append((os.path.join(drn, filename)))
+	return stack_files
+
+    def _profiles_populated(self):
+	policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+	accum_files = self._accumulate_files_from(policy_file)
+	profiles = [ prf  for prf in accum_files if 'profile' in prf ]
+	if not profiles:
+	    message = "There are no files under the profiles directory. Probably an issue with the discovery stage."
+	    self.errors.setdefault('profiles_populated', []).append(message)
+        self._set_pass_status('profiles_populated')
+
+    def _lint_yaml_files(self):
+	"""
+	Scans for sanity of yaml files
+	"""
+	policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+	stack_dir = '/srv/pillar/ceph/stack'
+
+	stack_dir_files = self._stack_files(stack_dir, filetype='yml')
+	accum_files = self._accumulate_files_from(policy_file)
+	
+	files = stack_dir_files + accum_files
+
+	for filename in files:
+	    if os.stat(filename).st_size == 0:
+		log.warning("Skipping empty file {}".format(filename))
+		continue
+	    with open(filename, 'r') as stream:
+	      try:
+		log.debug(yaml.load(stream))
+	      except yaml.YAMLError as exc:
+		pm = exc.problem_mark
+		message = "syntax error in {} on line {} at position {}".format(pm.name, pm.line, pm.column)
+		self.errors.setdefault('yaml_syntax', []).append(message)
         self._set_pass_status('yaml_syntax')
+
 
     def _parse(self, line):
         """
@@ -691,6 +731,7 @@ def discovery(cluster=None, printer=None, **kwargs):
 
     v = Validate(cluster, data=pillar_data, printer=printer)
     v._lint_yaml_files()
+    v._profiles_populated()
     v.report()
 
     if not has_printer:
