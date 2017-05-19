@@ -8,5 +8,9 @@ drain osd.{{ id }}:
     - name: osd.zero_weight
     - id: {{ id }}
 
+set osd {{ id }} out:
+  cmd.run:
+    - name: "ceph osd out {{ id }}"
+
 {% endfor %}
 

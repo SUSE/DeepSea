@@ -24,17 +24,17 @@ terminate ceph osds:
     - tgt_type: compound
     - sls: ceph.rescind.storage.terminate
 
-remove ganesha:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.remove.ganesha
-
 cleanup osds:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.remove.storage
+
+remove ganesha:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.remove.ganesha
 
 rescind roles:
   salt.state:

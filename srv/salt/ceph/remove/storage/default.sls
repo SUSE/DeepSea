@@ -4,11 +4,6 @@ reweight nop:
 
 {% for id in salt.saltutil.runner('rescinded.ids', cluster='ceph') %}
 
-down id {{ id }}:
-  module.run:
-    - name: osd.down
-    - id: {{ id }}
-
 remove osd.{{ id }}:
   cmd.run:
     - name: "ceph osd crush remove osd.{{ id }}"
