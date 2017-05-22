@@ -123,6 +123,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mon/files
 %dir /srv/salt/ceph/mon/key
 %dir /srv/salt/ceph/mon/restart
+%dir /srv/salt/ceph/monitoring
+%dir /srv/salt/ceph/monitoring/prometheus
 %dir /srv/salt/ceph/noout
 %dir /srv/salt/ceph/noout/set
 %dir /srv/salt/ceph/noout/unset
@@ -292,6 +294,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/files/*.j2
 %config /srv/salt/ceph/mon/key/*.sls
 %config /srv/salt/ceph/mon/restart/*.sls
+%config /srv/salt/ceph/monitoring/*.sls
+%config /srv/salt/ceph/monitoring/prometheus/*.sls
 %config /srv/salt/ceph/noout/set/*.sls
 %config /srv/salt/ceph/noout/unset/*.sls
 %config /srv/salt/ceph/openattic/*.sls

@@ -156,6 +156,11 @@ copy-files:
 	install -m 644 srv/salt/ceph/mon/files/*.j2 $(DESTDIR)/srv/salt/ceph/mon/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart
 	install -m 644 srv/salt/ceph/mon/restart/*.sls $(DESTDIR)/srv/salt/ceph/mon/restart
+	# state files - monitoring
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring
+	install -m 644 srv/salt/ceph/monitoring/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
+	install -m 644 srv/salt/ceph/monitoring/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	# state files - noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/set
