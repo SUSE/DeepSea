@@ -66,6 +66,22 @@ class Checks(object):
             self.passed['firewall'] = "disabled"
 
 
+    def apparmor(self):
+        """
+        Scan minions for apparmor settings.  
+        """
+        contents = self.local.cmd(self.search , 'cmd.shell', [ '/usr/sbin/apparmor_status --enabled 2>/dev/null; echo $?' ], expr_form="compound")
+        for minion in contents:
+            if contents[minion] == 0:
+                msg = "enabled on minion {}".format(minion)
+                if 'apparmor' in self.warnings:
+                    self.warnings['apparmor'].append(msg)
+                else:
+                    self.warnings['apparmor'] = [ msg ]
+        if 'apparmor' not in self.warnings:
+            self.passed['apparmor'] = "disabled"
+
+
     def report(self):
         """
         Produce nicely colored output
@@ -89,6 +105,7 @@ def check(cluster, fail_on_warning=True, **kwargs):
 
     c = Checks(search)
     c.firewall()
+    c.apparmor()
     c.report()
 
     if c.warnings and fail_on_warning:
