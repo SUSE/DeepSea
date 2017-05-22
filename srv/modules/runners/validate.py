@@ -12,6 +12,7 @@ import re
 import sys
 from subprocess import call, Popen, PIPE
 from os.path import dirname
+import glob
 
 from collections import OrderedDict
 
@@ -129,12 +130,13 @@ class Util(object):
         return [elem.strip() for elem in list_str.split(delim) if elem.strip()]
 
 
+
 class Validate(object):
     """
     Perform checks on pillar and grain data
     """
 
-    def __init__(self, name, data, grains, printer):
+    def __init__(self, name, data=None, grains=None, printer=None):
         """
         Query the cluster assignment and remove unassigned
         """
@@ -156,6 +158,7 @@ class Validate(object):
             if 'DEV_ENV' in self.data[any_minion]:
                 return self.data[any_minion]['DEV_ENV']
         return False
+
 
     def _minion_check(self):
         """
@@ -591,13 +594,103 @@ class Validate(object):
 
         self._set_pass_status('ceph_version')
 
+    def _accumulate_files_from(self, filename):
+        accumulated_files = []
+	proposals_dir = "/srv/pillar/ceph/proposals" 
+        
+        with open(filename, "r") as policy:
+            for line in policy:
+                # strip comments from the end of the line
+                line = re.sub('\s+#.*$', '', line)
+                line = line.rstrip()
+                if (line.startswith('#') or not line):
+                    log.debug("Ignoring '{}'".format(line))
+                    continue
+                files = self._parse(proposals_dir + "/" + line)
+                if not files:
+                    log.warning("{} matched no files".format(line))
+                log.debug(line)
+                log.debug(files)
+                for filename in files:
+                    if os.stat(filename).st_size == 0:
+                        log.warning("Skipping empty file {}".format(filename))
+                        continue
+                    accumulated_files.append(filename)
+	return accumulated_files
+   
+    def _stack_files(self, stack_dir, filetype='yml'):
+	"""
+	Lists all files under stack_dir
+	"""
+	stack_files = []
+	for drn, drns, fn in os.walk(stack_dir):
+	   for filename in fn:
+	     if filename.split('.')[-1] == filetype:
+	       stack_files.append((os.path.join(drn, filename)))
+	return stack_files
+
+    def _profiles_populated(self):
+	policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+	accum_files = self._accumulate_files_from(policy_file)
+	profiles = [ prf  for prf in accum_files if 'profile' in prf ]
+	if not profiles:
+	    message = "There are no files under the profiles directory. Probably an issue with the discovery stage."
+	    self.errors.setdefault('profiles_populated', []).append(message)
+        self._set_pass_status('profiles_populated')
+
+    def _lint_yaml_files(self):
+	"""
+	Scans for sanity of yaml files
+	"""
+	policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+	stack_dir = '/srv/pillar/ceph/stack'
+
+	stack_dir_files = self._stack_files(stack_dir, filetype='yml')
+	accum_files = self._accumulate_files_from(policy_file)
+	
+	files = stack_dir_files + accum_files
+
+	for filename in files:
+	    if os.stat(filename).st_size == 0:
+		log.warning("Skipping empty file {}".format(filename))
+		continue
+	    with open(filename, 'r') as stream:
+	      try:
+		log.debug(yaml.load(stream))
+	      except yaml.YAMLError as exc:
+		pm = exc.problem_mark
+		message = "syntax error in {} on line {} at position {}".format(pm.name, pm.line, pm.column)
+		self.errors.setdefault('yaml_syntax', []).append(message)
+        self._set_pass_status('yaml_syntax')
+
+
+    def _parse(self, line):
+        """
+        Return globbed files constrained by optional slices or regexes.
+        """
+        if " " in line:
+            parts = re.split('\s+', line)
+            files = sorted(glob.glob(parts[0]))
+            for kv in parts[1:]:
+                k, v = kv.split('=')
+                if k == "re":
+                    regex = re.compile(v)
+                    files = [m.group(0) for l in files for m in [regex.search(l)] if m]
+                elif k == "slice":
+                    files = eval("files{}".format(v))
+                else:
+                    log.warning("keyword {} unsupported", k)
+
+        else:
+            files = glob.glob(line)
+        return files
+
     def report(self):
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
 
-def usage():
-    print "salt-run validate.pillar cluster_name"
-    print "salt-run validate.pillar cluster=cluster_name"
-    print "salt-run validate.pillars"
+def usage(func='None'):
+    print "salt-run validate.{} cluster_name".format(func)
+    print "salt-run validate.{} cluster=cluster_name".format(func)
 
 
 def pillars(**kwargs):
@@ -614,6 +707,41 @@ def pillars(**kwargs):
 
     printer.print_result()
 
+def discovery(cluster=None, printer=None, **kwargs):
+    """
+    Check that the pillar for each cluster meets the requirements to install
+    a Ceph cluster.
+    """
+
+    has_printer = printer is not None
+    if not has_printer:
+        printer = get_printer(**kwargs)
+
+    if not cluster:
+        usage(func='discovery')
+        exit(1)
+
+    local = salt.client.LocalClient()
+
+    # Restrict search to this cluster
+    search = "I@cluster:{}".format(cluster)
+
+    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
+    grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
+
+    v = Validate(cluster, data=pillar_data, printer=printer)
+    v._lint_yaml_files()
+    v._profiles_populated()
+    v.report()
+
+    if not has_printer:
+        printer.print_result()
+
+    if v.errors:
+        return False
+
+    return True
+
 
 def pillar(cluster = None, printer=None, **kwargs):
     """
@@ -626,7 +754,7 @@ def pillar(cluster = None, printer=None, **kwargs):
         printer = get_printer(**kwargs)
 
     if not cluster:
-        usage()
+        usage(func='pillar')
         exit(1)
 
     local = salt.client.LocalClient()
