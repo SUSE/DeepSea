@@ -1,7 +1,0 @@
-#Possible log levels in order of verbosity
-# - NIV_CRIT
-# - NIV_WARN
-# - NIV_DEBUG
-# - NIV_FULL_DEBUG
-
-OPTIONS= "-L /var/log/ganesha.log -N NIV_CRIT"
