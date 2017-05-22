@@ -724,7 +724,10 @@ def discovery(cluster=None, printer=None, **kwargs):
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster
-    search = "I@cluster:{}".format(cluster)
+    search = "*"
+    if 'cluster' in __pillar__:
+        if __pillar__['cluster']:
+            search = "I@cluster:{}".format(cluster)
 
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
