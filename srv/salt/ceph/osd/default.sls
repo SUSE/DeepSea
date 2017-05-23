@@ -23,13 +23,13 @@ activate {{ device }}:
 prepare {{ data }}:
   cmd.run:
     - name: "ceph-disk -v prepare --fs-type xfs --data-dev --journal-dev --cluster {{ salt['pillar.get']('cluster') }} --cluster-uuid {{ salt['pillar.get']('fsid') }} {{ data }} {{ journal }}"
-    - unless: "fsck {{ data }}"
+    - unless: "fsck {{ data }}1"
     - fire_event: True
 
 activate {{ data }}:
   cmd.run:
     - name: "ceph-disk -v activate --mark-init systemd --mount {{ data }}"
-    - unless: "grep -q ^{{ data }} /proc/mounts"
+    - unless: "grep -q ^{{ data }}1 /proc/mounts"
     - fire_event: True
 
 {% endfor %}
