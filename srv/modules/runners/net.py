@@ -20,13 +20,11 @@ def get_cpu_count(server):
     cpu_core = result.values()[0]['num_cpus']
     return cpu_core
 
-def iperf(cluster = None, exclude = None, **kwargs):
+def iperf(cluster = None, exclude = None, output = None, **kwargs):
     """
     iperf server created from the each minions and then clients are created 
     base on the server's cpu count and request that number of other minions
     as client to hit the server and report the total bendwidth. 
-
-    TODO: Convert commented out print statements to log.debug
 
     CLI Example: (Before DeepSea with a cluster configuration)
     .. code-block:: bash
@@ -39,7 +37,9 @@ def iperf(cluster = None, exclude = None, **kwargs):
     (After DeepSea with a cluster configuration)
     .. code-block:: bash
         sudo salt-run net.iperf cluster=ceph
-        sudo salt-run net.iperf ceph
+
+    To get all host iperf result
+        sudo salt-run net.iperf cluster=ceph output=full
 
     """
     exclude_string = exclude_iplist = None
@@ -55,14 +55,37 @@ def iperf(cluster = None, exclude = None, **kwargs):
             search += " and not ( " + exclude_string + " )"
             log.debug( "iperf: search {} ".format(search))
 
-        networks = local.cmd(search , 'pillar.item', [ 'cluster_network', 'public_network' ], expr_form="compound")
+        public_networks = local.cmd(search , 'pillar.item', [ 'public_network' ], expr_form="compound")
+        log.debug( "iperf: public_network {} ".format(public_networks))
+        cluster_networks = local.cmd(search , 'pillar.item', [ 'cluster_network' ], expr_form="compound")
+        log.debug( "iperf: cluster_network {} ".format(cluster_networks))
         total = local.cmd(search , 'grains.get', [ 'ipv4' ], expr_form="compound")
-        addresses = []
+        log.debug( "iperf: total grains.get {} ".format(total))
+        public_addresses = []
+        cluster_addresses = []
         for host in sorted(total.iterkeys()):
-            if 'cluster_network' in networks[host]:
-                addresses.extend(_address(total[host], networks[host]['cluster_network']))
-            if 'public_network' in networks[host]:
-                addresses.extend(_address(total[host], networks[host]['public_network']))
+            if 'public_network' in public_networks[host]:
+                public_addresses.extend(_address(total[host], public_networks[host]['public_network']))
+            if 'cluster_network' in cluster_networks[host]:
+                cluster_addresses.extend(_address(total[host], cluster_networks[host]['cluster_network']))
+            log.debug( "iperf: public_network {} ".format(public_addresses))
+            log.debug( "iperf: cluster_network {} ".format(cluster_addresses))
+        result = {}
+        _create_server(public_addresses)
+        p_result = _create_client(public_addresses)
+        _create_server(cluster_addresses)
+        c_result = _create_client(cluster_addresses)
+
+        if output:
+            result.update({'Public Network':p_result})
+            result.update({'Cluster Network':c_result})
+            return result
+        else:
+            sort_result = sorted(p_result.items(), key=operator.itemgetter(1))
+            result.update({'Public Network':{ "Slowest 2 hosts" : dict(sort_result[:2]), "Fastest 2 hosts" : dict(sort_result[-2:]) }})
+            sort_result = sorted(c_result.items(), key=operator.itemgetter(1))
+            result.update({'Cluster Network':{ "Slowest 2 hosts" : dict(sort_result[:2]), "Fastest 2 hosts" : dict(sort_result[-2:]) }})
+            return result
     else:
         search = "*"
         if exclude_string:
@@ -81,31 +104,45 @@ def iperf(cluster = None, exclude = None, **kwargs):
         except ValueError:
             log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
             pass
-    #print addresses
+        #print addresses
+        _create_server(addresses)
+        result = _create_client(addresses)
+        #log.debug( "Sorted {} ".format( sorted( server_results.items(), key=operator.itemgetter(1))))
+        if output:
+            return result
+        else:
+            sort_result = sorted(result.items(), key=operator.itemgetter(1))
+            return { "Slowest 2 hosts" : dict(sort_result[:2]), "Fastest 2 hosts" : dict(sort_result[-2:]) }
+
+def _create_server(addresses):
     start_service = []
-    results = []
-    jid = []
-    log.debug( "iperf: minions list {} ".format(addresses) )
+    local = salt.client.LocalClient()
+    log.debug( "net.iperf._create_server: address list {} ".format(addresses) )
     for server in addresses:
         cpu_core = get_cpu_count(server)
-        log.debug( "iperf: server {} cpu count {} ".format(server, cpu_core) )
+        log.debug( "net.iperf._create_server: server {} cpu count {} ".format(server, cpu_core) )
         for x in range(cpu_core):
-            log.debug( "iperf: create server {} count {} port {} ".format(server, x, 5800+x ) )
-            start_service.append( local.cmd( "S@"+server, 'multi.iperf_server_cmd', [ x, 5800+x ], expr_form="compound"))
+            log.debug( "net.iperf._create_server: server {} count {} port {} ".format(server, x, 5200+x ) )
+            start_service.append( local.cmd( "S@"+server, 'multi.iperf_server_cmd', [ x, 5200+x ], expr_form="compound"))
 
+def _create_client(addresses):
+    results = []
+    jid = []
+    local = salt.client.LocalClient()
     for server in addresses: 
         cpu_core = get_cpu_count(server)
-        log.debug( "iperf: server {} cpu count {} ".format(server, cpu_core) )
+        log.debug( "net.iperf._create_client: server {} cpu count {} ".format(server, cpu_core) )
         clients = list(addresses)
         clients.remove(server)
         clients_size = len(clients)
         for x in xrange(0, cpu_core, clients_size):
             for y, client in enumerate(clients):
-                log.debug( "iperf: server port num {}, num {} client {} to server {}".format(5800+x+y,x/clients_size, client, server) )
+                log.debug( "net.iperf._create_client: server port num {}, num {} client {} to server {}".format(5200+x+y,x/clients_size, client, server) )
                 if( x+y < cpu_core ):
-    	            jid.append( local.cmd_async("S@"+client, 'multi.iperf', [server, x/clients_size, 5800+x+y ], expr_form="compound"))
-                    log.debug( "iperf: actually called from {} to server {} with cpu {} port {} ".format(client, server, x/clients_size, 5800+x+y) )
-        log.debug( "iperf: Server {} async iperf client count {}".format(server, len(jid)) )
+    	            jid.append( local.cmd_async("S@"+client, 'multi.iperf', [server, x/clients_size, 5200+x+y ], expr_form="compound"))
+                    log.debug( "net.iperf._create_client: actually called from {} to server {} with cpu {} port {} ".format(client, server, x/clients_size, 5200+x+y) )
+        log.debug( "net.iperf._create_client: Server {} async iperf client count {}".format(server, len(jid)) )
+        time.sleep(8)
 
     log.debug( "iperf: All Async iperf client count {}".format(len(jid)) )
     not_done = True
@@ -118,14 +155,8 @@ def iperf(cluster = None, exclude = None, **kwargs):
                 not_done = True
     results = []
     for job in jid:
-            #results.update( __salt__['jobs.lookup_jid'](job) )
             results.append( __salt__['jobs.lookup_jid'](job) )
-            #results.append( job )
-    
-    # return results
     return _summarize_iperf( results ) 
-    #return "Done" 
-    #_summarize(len(addresses), results)
 
 def ping(cluster = None, exclude = None, **kwargs):
     """
@@ -232,6 +263,7 @@ def _address(addresses, network):
     """
     matched = []
     for address in addresses:
+        log.debug( "_address: ip {} in network {} ".format(address, network))
         if IPAddress(address) in IPNetwork(network):
             matched.append(address)
     return matched
@@ -363,9 +395,14 @@ def _summarize_iperf(results):
             for v in speed:
                 total += float(v.strip())
             server_results[key] = str(total) + " Mbits/sec"
+            #server_results[key] = str(total)
         except ValueError:
             continue 
+    #log.debug( "Sorted {} ".format( sorted( server_results.items(), key=operator.itemgetter(1))))
+    #return dict(sorted(server_results.items(), key=operator.itemgetter(1)))
     return server_results
+
+    #return server_results
 
 def _skip_dunder(settings):
     """
