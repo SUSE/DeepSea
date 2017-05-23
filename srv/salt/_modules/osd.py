@@ -626,24 +626,28 @@ class OSDPartitions(object):
                 if self.osd.wal_size:
                     # Create wal of wal_size on wal device
                     # Create db on wal device
+                    log.warn("Setting db to same device {} as wal".format(self.osd.wal))
                     self.create(self.osd.wal, [('wal', self.osd.wal_size), 
                                              ('db', self._halve(self.osd.wal_size))])
             else:
                 if self.osd.wal_size:
                     # Create wal of wal_size on device
                     # Create db on device
+                    log.warn("Setting db to same device {} as wal".format(self.osd.wal))
                     self.create(self.osd.device, [('wal', self.osd.wal_size), 
                                          ('db', self._halve(self.osd.wal_size))])
             if self.osd.db:
                 if self.osd.db_size:
                     # Create db of db_size on db device
                     # Create wal on db device
+                    log.warn("Setting wal to same device {} as db".format(self.osd.db))
                     self.create(self.osd.db, [('wal', self._double(self.osd.db_size)), 
                                             ('db', self.osd.db_size)])
             else:
                 if self.osd.db_size:
                     # Create db of db_size on device
                     # Create wal on device
+                    log.warn("Setting wal to same device {} as db".format(self.osd.db))
                     self.create(self.osd.device, [('wal', self._double(self.osd.db_size)), 
                                          ('db', self.osd.db_size)])
 
@@ -983,7 +987,7 @@ class OSDCommands(object):
         cmd = ""
         if self.osd.device:
             if self.osd.encryption == 'dmcrypt':
-                cmd = "# activated during prepare"
+                cmd = "/bin/true activated during prepare"
             else:
                 cmd = "ceph-disk -v activate --mark-init systemd --mount "
                 cmd += "{}{}".format(self.osd.device, self.osd_partition())
