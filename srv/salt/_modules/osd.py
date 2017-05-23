@@ -452,7 +452,7 @@ class OSDConfig(object):
         if self.journal:
             disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
             if disks:
-                for disk in self.disks[__grains__['id']]:
+                for disk in disks[__grains__['id']]:
                     # Check size of journal disk
                     if disk['Device File'] == self.journal:
                         if int(disk['Bytes']) < 10000000000000: # 10GB
