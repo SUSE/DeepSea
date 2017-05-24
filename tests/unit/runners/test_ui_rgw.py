@@ -81,10 +81,11 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
-    def test_urls_dedicated_node(self, masterpillarutil):
+    def test_urls_dedicated_node(self, masterpillarutil, config):
         result = {'urls': ["http://rgw1:7480"],
                   'access_key': None, 
                   'secret_key': None,
@@ -98,10 +99,11 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
-    def test_urls_dedicated_node_with_ssl(self, masterpillarutil):
+    def test_urls_dedicated_node_with_ssl(self, masterpillarutil, config):
         result = {'urls': ["https://rgw1:443"],
                   'access_key': None, 
                   'secret_key': None,
@@ -115,10 +117,11 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
-    def test_urls_shared_node(self, masterpillarutil):
+    def test_urls_shared_node(self, masterpillarutil, config):
         result = {'urls': ["http://rgw:7480"],
                   'access_key': None, 
                   'secret_key': None,
@@ -132,10 +135,11 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
-    def test_urls_shared_node_with_ssl(self, masterpillarutil):
+    def test_urls_shared_node_with_ssl(self, masterpillarutil, config):
         result = {'urls': ["https://rgw:443"],
                   'access_key': None, 
                   'secret_key': None,
@@ -149,10 +153,11 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
-    def test_urls_malformed(self, masterpillarutil):
+    def test_urls_malformed(self, masterpillarutil, config):
         result = {'urls': [],
                   'access_key': None, 
                   'secret_key': None,
@@ -166,10 +171,11 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
-    def test_urls_endpoint_defined(self, masterpillarutil):
+    def test_urls_endpoint_defined(self, masterpillarutil, config):
         result = {'urls': ["http://abc.def"],
                   'access_key': None, 
                   'secret_key': None,
