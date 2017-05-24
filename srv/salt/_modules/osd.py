@@ -193,10 +193,13 @@ class OSDWeight(object):
             'conf': "/etc/ceph/ceph.conf" ,
             'filename': '/var/run/ceph/osd.{}-weight'.format(id),
             'timeout': 3600,
+            'keyring': '/etc/ceph/ceph.client.admin.keyring',
+            'client': 'client.admin',
             'delay': 6
         }
         self.settings.update(kwargs)
-        self.cluster=rados.Rados(conffile=self.settings['conf'])
+        #self.cluster=rados.Rados(conffile=self.settings['conf'])
+        self.cluster=rados.Rados(conffile=self.settings['conf'], conf=dict(keyring=self.settings['keyring']), name=self.settings['client'])
         self.cluster.connect()
 
     def save(self):
@@ -1044,35 +1047,294 @@ class OSDCommands(object):
             with open(filename, 'r') as osd_type:
                 return osd_type.read().rstrip()
 
+class OSDRemove(object):
+
+    def __init__(self, osd_id, weight, grains):
+        """
+        Initialize settings
+        """
+        self._id = osd_id
+        self._weight = weight
+        self._grains = grains
+
+    def remove(self):
+        """
+        """
+        #Empty
+        self.empty()
+
+        #Terminate
+        self.terminate()
+
+        #Find partitions, use grains if necessary
+        self.partitions()
+
+        #Unmount filesystems
+        self.unmount()
+
+        #Remove dm maps
+        self.unmap()
+
+        #Wipe partitions
+        self.wipe()
+
+        #Destroy partitions
+        self.destroy()
+
+    def empty(self):
+        """
+        """
+        self._weight.save()
+        self._weight.reweight('0.0')
+        self._weight.wait()
+
+
+    def terminate(self):
+        """
+        Stop the ceph-osd without error
+        """
+        # Check weight is zero
+        cmd = "systemctl disable ceph-osd@{}".format(self._id)
+        self._run(cmd)
+        # How long with this hang on a broken OSD
+        cmd = "systemctl stop ceph-osd@{}".format(self._id)
+        self._run(cmd)
+        cmd = "pkill -f ceph-osd.*{}\ --".format(self._id)
+        self._run(cmd)
+        time.sleep(1)
+        cmd = "pkill -9 -f ceph-osd.*{}\ --".format(self._id)
+        self._run(cmd)
+        return ""
+
+    def partitions(self):
+        """
+        """
+        self._partitions = self._grains.partitions(self._id)
+        if not self._partitions:
+            log.debug("grains: \n{}".format(pprint.pformat(__grains__['ceph'])))
+            self._partitions = __grains__['ceph'][str(self._id)]
+        log.debug("partitions: \n{}".format(pprint.pformat(self._partitions)))
+
+
+    def unmount(self):
+        """
+        """
+        self._grains._osd_fsid()
+        with open("/proc/mounts", "r") as mounts:
+            for line in mounts:
+                entry = line.split()
+                if entry[0] in self._mounted():
+                    cmd = "umount {}".format(entry[0])
+                    self._run(cmd)
+        if self._grains.osd_fsid:
+            log.info("osd fsid: {}".format(self._grains.osd_fsid))
+            cmd = "dmsetup remove {}".format(self._grains.osd_fsid)
+            self._run(cmd)
+        return ""
+
+    def _mounted(self):
+        devices = []
+        for attr in ['osd', 'lockbox']:
+            if attr in self._partitions:
+                devices.append(self._partitions[attr])
+        return devices
+
+    def wipe(self):
+        """
+        """
+        for partition in self._partitions:
+            if os.path.exists(partition):
+                cmd = "dd if=/dev/zero of={} bs=4096 count=1 oflag=direct".format(self._partitions[partition])
+                self._run(cmd)
+
+    def destroy(self):
+        """
+        Destroy the osd disk and any partitions on other disks
+        """
+        self.osd_disk = self._osd_disk()
+        self._delete_partitions()
+        if '/dev/mapper' in self.osd_disk:
+            log.debug("skipping OSD {}".format(self.osd_disk))
+            return ""
+        self._delete_osd()
+        self._wipe_gpt_backups()
+        self._settle()
+        return ""
+
+    def _osd_disk(self):
+        """
+        """
+        if 'lockbox' in self._partitions:
+            partition = self._partitions['lockbox']
+        else:
+            partition = self._partitions['osd']
+        disk, partition = self._split_partition(partition)
+        return disk
+
+    def _delete_partitions(self):
+        """
+        """
+        for attr in self._partitions:
+            if '/dev/mapper' in self._partitions[attr]:
+                log.debug("skipping {}".format(self._partitions[attr]))
+            elif (os.path.exists(self._partitions[attr]) and
+               self.osd_disk not in self._partitions[attr]):
+                log.debug("using {}".format(self._partitions[attr]))
+                disk, partition = self._split_partition(self._partitions[attr])
+                if os.path.exists(disk):
+                    cmd = "sgdisk -d {} {}".format(partition, disk)
+                    self._run(cmd)
+                else:
+                    log.info("Skip wiping {}".format(self._partitions[attr]))
+
+
+    def _delete_osd(self):
+        cmd = "sgdisk -Z --clear -g {}".format(self.osd_disk)
+        self._run(cmd)
+
+    def _split_partition(self, partition):
+        """
+        """
+        log.debug("splitting partition {}".format(partition))
+        m = re.match("(\D+)(\d+)", partition)
+        return m.group(1), m.group(2)
+
+    def _wipe_gpt_backups(self, osd_disk):
+        """
+        """
+        cmd = "blockdev --getsz {}".format(self.osd_disk)
+        end_of_disk = int(self._run(cmd))
+        seek_position = int(end_of_disk/4096 - 33)
+        cmd = "dd if=/dev/zero of={} bs=4096 count=33 seek={} oflag=direct".format(self.osd_disk, seek_position)
+        self._run(cmd)
+
+    def _settle(self):
+        """
+        """
+        for cmd in ['udevadm settle --timeout=20',
+                    'partprobe',
+                    'udevadm settle --timeout=20']:
+            self._run(cmd)
+
+    def _run(self, cmd):
+        """
+        """
+        log.info("running {}".format(cmd))
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        proc.wait()
+        result = proc.stdout.read().rstrip()
+        log.debug(pprint.pformat(result))
+        log.debug(pprint.pformat(proc.stderr.read()))
+        return result
+
+def remove(osd_id, **kwargs):
+    """
+    """
+    settings = {
+        'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
+        'client': 'client.bootstrap-osd'
+    }
+    settings.update(kwargs)
+    osdw = OSDWeight(osd_id, **settings)
+    osdg = OSDGrains()
+
+    osdr = OSDRemove(osd_id, osdw, osdg)
+    return osdr.remove()
+
+def empty(osd_id, **kwargs):
+    """
+    """
+    settings = {
+        'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
+        'client': 'client.bootstrap-osd'
+    }
+    settings.update(kwargs)
+    osdw = OSDWeight(osd_id, **settings)
+
+    osdr = OSDRemove(osd_id, osdw, None)
+    return osdr.empty()
+
+def terminate(osd_id):
+    """
+    """
+    osdr = OSDRemove(osd_id, None, None)
+    return osdr.terminate()
+
+def unmount(osd_id):
+    """
+    """
+    osdg = OSDGrains()
+    osdr = OSDRemove(osd_id, None, osdg)
+    osdr.partitions()
+    return osdr.unmount()
+
+def wipe(osd_id):
+    """
+    """
+    osdg = OSDGrains()
+    osdr = OSDRemove(osd_id, None, osdg)
+    osdr.partitions()
+    return osdr.wipe()
+
+def destroy(osd_id):
+    """
+    """
+    osdg = OSDGrains()
+    osdr = OSDRemove(osd_id, None, osdg)
+    osdr.partitions()
+    return osdr.destroy()
+
 class OSDGrains(object):
     """
     """
 
-    def __init__(self):
+    def __init__(self, pathname="/var/lib/ceph/osd"):
         """
         Initialize settings
         """
-        pass
+        self.pathname = pathname
+        self.osd_fsid = None
 
-    def partitions(self, osd_id, pathname="/var/lib/ceph/osd"):
+    def partitions(self, osd_id):
         """
         Returns the partitions of the OSD
         """
+        self.osd_id = osd_id
         partitions = {}
-        mount_dir = "{}/ceph-{}".format(pathname, osd_id)
+        mount_dir = "{}/ceph-{}".format(self.pathname, self.osd_id)
+        lockbox_dir = self._lockbox_dir()
         log.info("Checking /proc/mounts for {}".format(mount_dir))
         with open("/proc/mounts", "r") as mounts:
             for line in mounts:
                 entry = line.split()
                 if entry[1] == mount_dir:
-                    log.info("line: {}".format(line))
+                    log.info("osd: {}".format(line))
                     partitions['osd'] = entry[0]
+                if entry[1] == lockbox_dir:
+                    log.info("lockbox: {}".format(line))
+                    partitions['lockbox'] = entry[0]
 
-        for device_type in ['journal', 'block', 'block.db', 'block.wal']:
+        for device_type in ['journal', 'block', 'block.db', 'block.wal', 'block_dmcrypt']:
             result = self._real_devices(mount_dir, device_type)
             if result:
                 partitions[device_type] = result
         return partitions
+
+    def _lockbox_dir(self):
+        self._osd_fsid()
+        return "{}-lockbox/{}".format(self.pathname, self.osd_fsid)
+
+    def _osd_fsid(self):
+        """
+        Read the fsid (not the Ceph fsid) and return the lockbox directory
+        name.
+        """
+        filename = "{}/ceph-{}/fsid".format(self.pathname, self.osd_id)
+        if os.path.exists(filename):
+            with open(filename, 'r') as fsid:
+                self.osd_fsid = fsid.read().rstrip()
+        else:
+            log.error("file {} is missing".format(filename))
 
     def _real_devices(self, mount_dir, device_type):
         """
@@ -1232,9 +1494,8 @@ def detect(osd_id):
 def partitions(osd_id):
     """
     """
-    config = OSDConfig(device)
-    osdc = OSDCommands(config)
-    return osdc.partitions(osd_id)
+    osdg = OSDGrains()
+    return osdg.partitions(osd_id)
 
 def retain():
     """
