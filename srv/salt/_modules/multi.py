@@ -195,6 +195,33 @@ def ping_cmd(host):
     proc.wait()
     return host, proc.returncode, proc.stdout.read(), proc.stderr.read()
 
+def jumbo_ping(*hosts):
+    '''
+    Ping a list of hosts and summarize the results
+
+    CLI Example:
+    .. code-block:: bash
+        sudo salt 'node' multi.ping <hostname>|<ip> <hostname>|<ip>....
+    '''
+    # I should be filter all the localhost here? 
+    log.debug('jumbo_ping hostlist={}'.format(list(hosts)))
+    results = _all(jumbo_ping_cmd, list(hosts))
+    return _summarize_ping(results)
+
+def jumbo_ping_cmd(host):
+    '''
+    Ping a host with 1 packet and return the result
+
+    CLI Example:
+    .. code-block:: bash
+        sudo salt 'node' multi.ping_cmd <hostname>|<ip>
+    '''
+    cmd = [ "/usr/bin/ping", "-Mdo", "-s8972", "-c1", "-q", "-W1", host ]
+    log.debug('ping_cmd hostname={}'.format(host))
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    proc.wait()
+    return host, proc.returncode, proc.stdout.read(), proc.stderr.read()
+
 def prepare_iperf_server():
     '''
     Create N server base on the total core number of your cpu count

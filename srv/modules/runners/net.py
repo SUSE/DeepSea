@@ -158,7 +158,10 @@ def _create_client(addresses):
             results.append( __salt__['jobs.lookup_jid'](job) )
     return _summarize_iperf( results ) 
 
-def ping(cluster = None, exclude = None, **kwargs):
+def jumbo_ping(cluster = None, exclude = None, **kwargs):
+    ping(cluster, exclude, ping_type="jumbo")
+
+def ping(cluster = None, exclude = None, ping_type = None, **kwargs):
     """
     Ping all addresses from all addresses on all minions.  If cluster is passed,
     restrict addresses to public and cluster networks.
@@ -251,7 +254,10 @@ def ping(cluster = None, exclude = None, **kwargs):
             log.debug( "ping: remove {} ip doesn't exist".format(ex_ip))
             pass
     #print addresses
-    results = local.cmd(search, 'multi.ping', addresses, expr_form="compound")
+    if ping_type is "jumbo":
+        results = local.cmd(search, 'multi.jumbo_ping', addresses, expr_form="compound")
+    else:
+        results = local.cmd(search, 'multi.ping', addresses, expr_form="compound")
     #print results
     _summarize(len(addresses), results)
 
@@ -370,9 +376,10 @@ def _summarize_iperf(results):
     iperf summarize the successes, failures and errors across all minions
     """
     server_results = {}
+    log.debug("Results {} ".format(results))
     for result in results:
         for host in result:
-            #print "Server:\n{}".format(result[host]['server'])
+            log.debug("Server {}".format(result[host]['server']))
 	    if not result[host]['server'] in server_results:
 	        server_results.update( {result[host]['server']:""} )
 	        #server.update( {result[host]['server'],list()} )
