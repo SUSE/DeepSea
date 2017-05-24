@@ -99,6 +99,8 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
@@ -109,11 +111,13 @@ class TestRadosgw():
                   'secret_key': None,
                   'success': False}
 
-        fs.CreateFile('cache/client.rgw.rgw1.json',
+        fs.CreateFile('cache/client.rgw.rgw1.json')
+        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
             contents='''[client.rgw.rgw1]\nrgw_frontends = civetweb port=443s ssl_certificate=/etc/ceph/private/keyandcert.pem\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/client.rgw.rgw1.json')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
         
         assert result == rg.credentials
 
@@ -135,6 +139,8 @@ class TestRadosgw():
         
         assert result == rg.credentials
 
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
@@ -145,11 +151,13 @@ class TestRadosgw():
                   'secret_key': None,
                   'success': False}
 
-        fs.CreateFile('cache/client.rgw.json',
+        fs.CreateFile('cache/client.rgw.json')
+        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
             contents='''[client.rgw.rgw1]\nrgw_frontends = civetweb port=443s ssl_certificate=/etc/ceph/private/keyandcert.pem\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/client.rgw.json')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
         
         assert result == rg.credentials
 
