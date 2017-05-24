@@ -1,0 +1,22 @@
+# Default config for Prometheus.
+
+global:
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+      monitor: 'ses'
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'ceph'
+
+    static_configs:
+      - targets: ['{{ salt['pillar.get']('master_minion') }}:9128']
+
+  - job_name: 'node stats'
+    # If prometheus-node-exporter is installed, grab stats about the local
+    # machine by default.
+    static_configs:
+    {% set minions = salt.saltutil.runner('select.minions', cluster='ceph', host=False) %}
+      - targets: [{{ minions|format('\'%s:9100\'')|join(',') }}]
