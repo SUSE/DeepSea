@@ -86,10 +86,11 @@ class Radosgw(object):
         urls.
         """
         search = "I@cluster:{}".format(self.cluster)
+        __opts__ = salt.config.client_config('/etc/salt/master')
         pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
                                                          use_cached_grains=True,
                                                          grains_fallback=False,
-                                                         opts='__opts__')
+                                                         opts=__opts__)
         cached = pillar_util.get_minion_pillar()
         for minion in cached:
             if 'rgw_endpoint' in cached[minion]:
@@ -119,7 +120,7 @@ class Radosgw(object):
                 self.credentials['urls'].append("http{}://{}".format(ssl, resource))
 
 
-def credentials(canned=None):
+def credentials(canned=None, **kwargs):
     """
     Return the administrative credentials for the RadosGW
     """
