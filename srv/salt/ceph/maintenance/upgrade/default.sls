@@ -1,3 +1,4 @@
 include:
   - .master
   - .minion
+  - .report
