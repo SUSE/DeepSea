@@ -15,7 +15,7 @@ def _get_data(cluster_name='ceph'):
 
     return os_codename, salt_version, ceph_version
 
-def report(cluster_name='ceph'):
+def report(cluster_name='ceph', stdout=True, return_data=False ):
     """
     Creates a report that tries to find the most common versions from:
       * OS Version and Codename
@@ -45,12 +45,16 @@ def report(cluster_name='ceph'):
     for minion_data in [('os', os_codename), ('ceph', ceph_version), ('salt', salt_version)]:
         _organize(minion_data)
         
-    for key in common_keys:
-        print "  {}: {}".format(key, common_keys[key])
-    print
-    if unsynced_nodes['out of sync']:
-        for node in unsynced_nodes['out of sync']:
-            print "  {}:".format(node)
-            for key in unsynced_nodes['out of sync'][node]:
-                print "    {}: {}".format(key, unsynced_nodes['out of sync'][node][key])
-    return ""
+    if stdout:
+        for key in common_keys:
+            print "  {}: {}".format(key, common_keys[key])
+        print
+        if unsynced_nodes['out of sync']:
+            for node in unsynced_nodes['out of sync']:
+                print "  {}:".format(node)
+                for key in unsynced_nodes['out of sync'][node]:
+                    print "    {}: {}".format(key, unsynced_nodes['out of sync'][node][key])
+    if return_data:
+        return {'statusreport': [common_keys, unsynced_nodes]}
+    else:
+        return ""

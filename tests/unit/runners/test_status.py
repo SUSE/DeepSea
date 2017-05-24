@@ -75,7 +75,7 @@ class TestStatusReport():
 
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['common_version']
@@ -96,7 +96,7 @@ class TestStatusReport():
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=3)
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['common_version']
@@ -117,7 +117,7 @@ class TestStatusReport():
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=1)
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['common_version']
@@ -138,7 +138,7 @@ class TestStatusReport():
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=0)
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['common_version']
@@ -163,7 +163,7 @@ class TestStatusReport():
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=4, reverse=True)
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['old_version']
@@ -188,7 +188,7 @@ class TestStatusReport():
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=3, reverse=True)
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['old_version']
@@ -213,7 +213,7 @@ class TestStatusReport():
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=0, reverse=True)
         
         data.return_value = os_codenames, salt_versions, ceph_versions
-        return_data = status.report()
+        return_data = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
             assert return_data['statusreport'][0][ident] == self.versions()[ident]['old_version']
