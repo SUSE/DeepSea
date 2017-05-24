@@ -97,15 +97,23 @@ class Radosgw(object):
                 self.credentials['urls'].append(cached[minion]['rgw_endpoint'])
                 return
 
+        port = '7480'  # civetweb default port
+        ssl = ''
+        found = False
+        for rgw_conf_file_path in glob.glob("/srv/salt/ceph/configuration/files/ceph.conf.*"):
+            if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
+                with open(rgw_conf_file_path) as rgw_conf_file:
+                    for line in rgw_conf_file:
+                        if line:
+                            match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
+                            if match:
+                                port = match.group(1)
+                                ssl = match.group(2)
+                                found = True
+            if found:
+                break
+
         for client_file in glob.glob("{}/client.*".format(self.pathname)):
-            port = '7480' # civetweb default port
-            ssl = ''
-            with open(client_file, 'r') as rgw_file:
-                for line in rgw_file:
-                    if 'port=' in line:
-                        match = re.search(r'port=(\d+)(s?)', line)
-                        port = match.group(1)
-                        ssl = match.group(2)
             parts = client_file.split('.')
             resource = ''
             # dedicated keys - use host part
