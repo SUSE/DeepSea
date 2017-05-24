@@ -19,4 +19,4 @@ scrape_configs:
     # machine by default.
     static_configs:
     {% set minions = salt.saltutil.runner('select.minions', cluster='ceph', host=False) %}
-      - targets: [{{ minions|format('\'%s:9100\'')|join(',') }}]
+      - targets: ['{{ minions|join(':9100\',\'') }}:9100']
