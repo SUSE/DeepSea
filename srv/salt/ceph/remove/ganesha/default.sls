@@ -1,3 +1,8 @@
+remove ganesha nop:
+  test.nop
+
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') == [] %}
+
 {% for role in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
 {% set keyring = "client." + role + "." + host %}
@@ -8,3 +13,4 @@ auth {{ keyring }}:
 
 {% endfor %}
 {% endfor %}
+{% endif %}

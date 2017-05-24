@@ -1,5 +1,5 @@
 
-remove mon nop:
+remove mds nop:
   test.nop
 
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') == [] %}
