@@ -1,5 +1,22 @@
 
-- Version 0.7.8 
+- Version 0.7.9
+- Automatically include custom files from ceph.conf.d
+- Enable client ntp configuration
+- Add ui_rgw runner for RadosGW credentials 
+- Add prometheus exporters (prometheus, itself is in progress)
+- Add validation to discovery stage, linter for yaml, check profiles
+- Ensure at least one storage in DEV_ENV mode
+- Fix storage removal order
+- Warn if apparmor is enabled
+- Enable bluestore, sizes for journal, wal and db
+- Remove ganesha /etc/sysconfig/ganesha (moved to rpm)
+- Initial dmcrypt support (removal in incomplete)
+- Add status.report runner, display after upgrade
+- Misc. fixes to READMEs, radosgw rescind 
+
+-------------------------------------------------------------------
+
+- Version 0.7.8 93ec5f36f4a8c27cc1fac0c841ccf45bab6841bb
 - salt-api fix
 - Updated README
 
