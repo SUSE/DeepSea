@@ -277,7 +277,7 @@ class Validate(object):
             if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
                 storage.append(node)
-                if not 'storage' in self.data[node]:
+                if not self._has_storage(node):
                     missing.append(node)
 
         if (not self.in_dev_env and len(storage) < 4) or (self.in_dev_env and len(storage) < 1):
@@ -292,6 +292,16 @@ class Validate(object):
                 self.errors['storage'] = [ err + check ]
             else:
                 self.passed['storage'] = "valid"
+
+    def _has_storage(self, node):
+        """
+        """
+        if ('storage' in self.data[node] or
+           ('ceph' in self.data[node] and
+           'storage' in self.data[node]['ceph'])):
+            return True
+        return False
+
 
     def ganesha(self):
         """
