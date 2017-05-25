@@ -2,7 +2,8 @@
 rgw nop:
   test.nop
 
-{% if 'rgw' not in salt['pillar.get']('roles') %}
+{% if 'master' not in salt['pillar.get']('roles') and
+      'rgw' not in salt['pillar.get']('roles') %}
 stop ceph-radosgw:
   service.dead:
     - name: ceph-radosgw@rgw.*
