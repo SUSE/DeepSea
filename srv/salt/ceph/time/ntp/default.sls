@@ -1,14 +1,14 @@
 
+ntp:
+  pkg.installed:
+    - pkgs:
+      - ntp
+
 {% if salt['service.status']('ntpd') == False %}
 sync time:
   cmd.run:
     - name: "sntp -S -c {{ salt['pillar.get']('time_server') }}"
 {% endif %}
-
-ntp:
-  pkg.installed:
-    - pkgs:
-      - ntp
 
 {% if grains['id'] != salt['pillar.get']('time_server') %}
 /etc/ntp.conf:
