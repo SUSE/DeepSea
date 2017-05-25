@@ -1,6 +1,9 @@
 ganesha nop:
   test.nop
 
+/srv/salt/ceph/ganesha/cache/:
+    file.absent
+
 {% for role in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
 
 /var/lib/ceph/radosgw/ceph-{{role}}.{{ grains['host'] }}:

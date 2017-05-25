@@ -2,6 +2,9 @@
 rgw nop:
   test.nop
 
+/srv/salt/ceph/rgw/cache/:
+    file.absent
+
 {% if 'rgw' not in salt['pillar.get']('roles') %}
 stop ceph-radosgw:
   service.dead:
