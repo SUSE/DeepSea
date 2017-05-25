@@ -9,6 +9,9 @@ def secret(filename):
     """
     Read the filename and return the key value.  If it does not exist,
     generate one.
+
+    Note that if used on a file that contains multiple keys, this will
+    always return the first key.
     """
     if os.path.exists(filename):
         with open(filename, 'r') as keyring:
