@@ -852,3 +852,86 @@ def proposals(**kwargs):
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
     return [ True ]
+
+def engulf_existing_cluster(**kwargs):
+    """
+    Assuming proposals() has already been run to collect hardware profiles and
+    all possible role assignments and common configuration, this will generate
+    a policy.cfg with roles and assignments reflecting whatever cluster is
+    currently deployed.  It will also suck in all the keyrings so that they're
+    present when the configure stage is run.
+
+    This assumes your cluster is named "ceph".  If it's not, things will break.
+    """
+
+    # TODO:
+    # - verify the cluster is actually healthy and everything is running first
+    # - /srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml:
+    #   - need to inject fsid from existing cluster
+    #   - likewise cluster_network and public_network need to be set from
+    #     actual cluster (might not be what deepsea thinks from proposals?)
+    #   - public addresses for individual MONs might be similarly wrong
+    # - get any extra custom config from ceph.conf
+    # - generate hardware proposals based on actual deployed OSDs (which again
+    #   might not be what deepsea thinks from the proposals it came up with)
+
+    policy_cfg = []
+
+    local = salt.client.LocalClient()
+
+    # TODO: if local.cmd fails, we'll get back something nasty which isn't handled
+    for minion, info in local.cmd("*", "cephinspector.inspect").items():
+
+        is_admin = len(info["ceph_keys"]["ceph.client.admin"]) > 0
+
+        if not info["running_services"].keys() and not is_admin:
+            # No ceph services running, no admin key, don't assign it
+            # to the cluster
+            continue
+
+        policy_cfg.append("cluster-ceph/cluster/" + minion + ".sls")
+
+        if is_admin:
+            policy_cfg.append("role-admin/cluster/" + minion + ".sls")
+
+        if "ceph-mon" in info["running_services"].keys():
+            policy_cfg.append("role-mon/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
+
+        if "ceph-osd" in info["running_services"].keys():
+            # Needs a storage profile assigned (which may be different
+            # than the proposals deepsea has come up with, depending on
+            # how things were deployed)
+            pass
+
+        if "ceph-mds" in info["running_services"].keys():
+            policy_cfg.append("role-mds/cluster/" + minion + ".sls")
+            pass
+
+        if "ceph-radosgw" in info["running_services"].keys():
+            policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
+            pass
+
+        # TODO: somewhere in here, take info["ceph_keys"] and write the keys to:
+        # - /srv/salt/ceph/admin/cache/ceph.client.admin.keyring
+        # - /srv/salt/ceph/mon/cache/mon.keyring
+        # - /srv/salt/ceph/osd/cache/bootstrap.keyring
+        # - /srv/salt/ceph/mds/cache/$name.keyring
+        # - /srv/salt/ceph/rgw/cache/$name.keyring
+
+    # Now policy_cfg reflects the current deployment, make it a bit legible...
+    policy_cfg.sort()
+
+    # ...but inject the unassigned line first so it takes precendence,
+    # along with the global config bits (because they're prettier early)...
+    policy_cfg = [
+        "cluster-unassigned/cluster/*.sls",
+        "config/stack/default/ceph/cluster.yml",
+        "config/stack/default/global.yml" ] + policy_cfg
+
+    # ...and write it out (this will fail with EPERM if someone's already
+    # created a policy.cfg as root, BTW)
+    with open("/srv/pillar/ceph/proposals/policy.cfg", 'w') as policy:
+        policy.write("\n".join(policy_cfg) + "\n")
+
+    return [ True ]
