@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: ts=8 et sw=4 sts=4
 
 import salt.client
 import salt.key
@@ -880,6 +881,8 @@ def engulf_existing_cluster(**kwargs):
     local = salt.client.LocalClient()
 
     # TODO: if local.cmd fails, we'll get back something nasty which isn't handled
+    # (info might end up being a string containing a stack trace, for example,
+    # which will cause a TypeError trying to set is_admin below)
     for minion, info in local.cmd("*", "cephinspector.inspect").items():
 
         is_admin = len(info["ceph_keys"]["ceph.client.admin"]) > 0
@@ -912,12 +915,22 @@ def engulf_existing_cluster(**kwargs):
             policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
             pass
 
-        # TODO: somewhere in here, take info["ceph_keys"] and write the keys to:
-        # - /srv/salt/ceph/admin/cache/ceph.client.admin.keyring
+        admin_key = info["ceph_keys"].get("ceph.client.admin")
+        if admin_key:
+            # Now I've go the admin key, how the hell do I inject it into
+            # /srv/salt/ceph/admin/cache/ceph.client.admin.keyring?  Or
+            # should I somehow be doing this piece with salt states as
+            # the configure stage does?
+            pass
+
+        # Likewise for:
         # - /srv/salt/ceph/mon/cache/mon.keyring
         # - /srv/salt/ceph/osd/cache/bootstrap.keyring
         # - /srv/salt/ceph/mds/cache/$name.keyring
         # - /srv/salt/ceph/rgw/cache/$name.keyring
+
+        # TODO: what else to do for rgw?  Do we need to do something to
+        # populate rgw_configurations in pillar data?
 
     # Now policy_cfg reflects the current deployment, make it a bit legible...
     policy_cfg.sort()

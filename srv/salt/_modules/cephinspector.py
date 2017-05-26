@@ -13,7 +13,11 @@ def _extract_key(filename):
     return ""
 
 def inspect(**kwargs):
+    # This will *ONLY* work on a cluster named "ceph".  It won't help with
+    # clusters with other names.
+
     # deliberately only looking for things ceph-deploy can deploy
+    # TODO: do we need more than this?
     ceph_services = ['ceph-mon', 'ceph-osd', 'ceph-mds', 'ceph-radosgw']
 
     #
@@ -38,13 +42,25 @@ def inspect(**kwargs):
     ceph_keys["bootstrap-osd"] = _extract_key("/var/lib/ceph/bootstrap-osd/ceph.keyring")
 
     if "ceph-mon" in running_services.keys():
+        # Theoretically it's possible to run more than one MON per node, but
+        # Nobody Will Ever Do That[TM], and in any case, all MONs share the same
+        # key, so just grab the first (hopefully only) one.
         ceph_keys["mon"] = _extract_key("/var/lib/ceph/mon/ceph-" + running_services["ceph-mon"][0] + "/keyring")
 
-    # TODO: something similar to the above for MDS and RGW keys (but be aware
-    # there might be multiple instances.  Hell, there could be multiple instances
-    # for MONs too on one host, if someone has set up something really weird...
+    if "ceph-mds" in running_services.keys():
+        ceph_keys["mds"] = {}
+        for instance in running_services["ceph-mds"]:
+            ceph_keys["mds"][instance] = _extract_key("/var/lib/ceph/mds/ceph-" + instance + "/keyring")
 
-    # note that some keys will be empty strings if not present
+    if "ceph-radosgw" in running_services.keys():
+        ceph_keys["rgw"] = {}
+        for instance in running_services["ceph-radosgw"]:
+            ceph_keys["rgw"][instance] = _extract_key("/var/lib/ceph/radosgw/ceph-" + instance + "/keyring")
+
+    # note that some keys will be empty strings if not present, e.g. it's
+    # possible to have ceph_keys['ceph.client.admin'] == '', so don't just
+    # rely on ceph.client.admin being present in the dict, check its value
+    # before using it.
     return {
         "running_services": running_services,
         "ceph_keys": ceph_keys
