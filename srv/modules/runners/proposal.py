@@ -85,6 +85,8 @@ std_args = {
     'format': 'bluestore',
     'encryption': '',
     'journal-size': 5,
+    'db-size': 1,
+    'wal-size': 1,
 }
 
 base_dir = '/srv/pillar/ceph/proposals'
@@ -105,7 +107,7 @@ def _propose(node, proposal, args):
         dev_par['journal'] = v
         dev_par['format'] = args.get('format')
         dev_par['encryption'] = args.get('encryption')
-        dev_par['journal-size'] = args.get('journal-size')
+        dev_par['journal_size'] = args.get('journal-size')
         profile[k] = dev_par
 
     return {node: profile}
