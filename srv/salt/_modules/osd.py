@@ -315,7 +315,7 @@ class OSDConfig(object):
         # top_level_identifiier
         self.tli = self._set_tli()
         self.device = self.set_device(device)
-	self.by_id_path = device 
+        self.by_id_path = device 
         self.capacity = self.set_capacity()
         self.size = self.set_bytes()
         self.small = self._set_small()
