@@ -379,7 +379,7 @@ class OSDConfig(object):
         """
         Check disk is less than 10GB, useful in VM environments
         """
-        return self.size < 10000000000000 # 10GB
+        return self.size < 10000000000 # 10GB
 
     def _config_version(self):
         """
