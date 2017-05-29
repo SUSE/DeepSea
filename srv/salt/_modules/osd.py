@@ -86,16 +86,8 @@ def configured(**kwargs):
         if 'format' in kwargs and kwargs['format'] != 'filestore':
             return []
     log.debug("devices: {}".format(devices))
-    for device in devices:
-        # find real device
-        cmd = "readlink -f {}".format(device)
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        proc.wait()
-        result = proc.stdout.read().rstrip()
-        osds.append(result)
-        log.debug(pprint.pformat(result))
-        log.debug(pprint.pformat(proc.stderr.read()))
-    return osds
+
+    return devices
 
 def list():
     """
@@ -322,7 +314,8 @@ class OSDConfig(object):
         filters = kwargs.get('filters', None)
         # top_level_identifiier
         self.tli = self._set_tli()
-        self.device = device
+        self.device = self.set_device(device)
+	self.by_id_path = device 
         self.capacity = self.set_capacity()
         self.size = self.set_bytes()
         self.small = self._set_small()
@@ -360,6 +353,18 @@ class OSDConfig(object):
             error = "Mine on {} for cephdisks.list".format(__grains__['id'])
             log.error(error)
             raise RuntimeError(error)
+
+    def set_device(self, device):
+        """
+        Return the short symlink for a by-id device path
+        """
+        cmd = "readlink -f {}".format(device)
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        proc.wait()
+        result = proc.stdout.read().rstrip()
+        log.debug(pprint.pformat(result))
+        log.debug(pprint.pformat(proc.stderr.read()))
+        return result
 
     def set_capacity(self):
         """
@@ -741,7 +746,9 @@ class OSDCommands(object):
         TODO: dmcrypt
         """
         device = self.osd.device
-        if 'osds' in self.settings and device in self.settings['osds']:
+        internal_ident = self.osd.by_id_path	
+        # self.settings['osds'] holds the pillardata, hence the by-id path
+        if 'osds' in self.settings and internal_ident in self.settings['osds']:
             if self.osd.disk_format == 'filestore':
                 if self.osd.journal:
                     # Journal on separate device
