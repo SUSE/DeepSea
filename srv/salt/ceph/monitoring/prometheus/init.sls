@@ -1,6 +1,5 @@
-prometheus package:
+golang-github-prometheus-prometheus:
   pkg.installed:
-    - name: golang-github-prometheus-prometheus
     - fire_event: True
 
 /etc/prometheus/prometheus.yml:
@@ -14,7 +13,6 @@ prometheus package:
     - mode: 644
     - makedirs: True
     - fire_event: True
-
 
 start prometheus:
   service.running:
