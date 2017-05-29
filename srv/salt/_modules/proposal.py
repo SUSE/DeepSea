@@ -64,7 +64,7 @@ class Proposal(object):
             self.wal_min = int(wal_filter)
             self.wal_max = 0
 
-        self.add_leftover_as_standalone = kwargs.get('standalone-leftovers',
+        self.add_leftover_as_standalone = kwargs.get('standalone_leftovers',
                                                      False)
 
     # TODO better name
