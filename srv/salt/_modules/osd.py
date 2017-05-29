@@ -315,7 +315,7 @@ class OSDConfig(object):
         # top_level_identifiier
         self.tli = self._set_tli()
         self.device = self.set_device(device)
-        self.by_id_path = device 
+        self.by_id_path = device
         self.capacity = self.set_capacity()
         self.size = self.set_bytes()
         self.small = self._set_small()
@@ -746,7 +746,7 @@ class OSDCommands(object):
         TODO: dmcrypt
         """
         device = self.osd.device
-        internal_ident = self.osd.by_id_path	
+        internal_ident = self.osd.by_id_path
         # self.settings['osds'] holds the pillardata, hence the by-id path
         if 'osds' in self.settings and internal_ident in self.settings['osds']:
             if self.osd.disk_format == 'filestore':
