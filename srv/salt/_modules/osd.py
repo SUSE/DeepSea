@@ -540,20 +540,6 @@ class OSDPartitions(object):
             self._bluestore_partitions(self.osd.device)
         return 0
 
-    #def _journal_default(self, device):
-    #    """
-    #    Return a default journal size when one is not provided.  Use 5G unless
-    #    the drive is under 10G, then use 10%.
-    #    """
-    #    
-    #    for disk in self.disks[__grains__['id']]:
-    #        if disk['Device File'] == device:
-    #            if int(disk['Bytes']) < 10000000000000: # 10GB
-    #                return "{}K".format(int(int(disk['Bytes']) * 0.0001))
-    #            else:
-    #                return "5242880K"
-    #    return 0
-
     def _xfs_partitions(self, device, disk_size):
         """
         Create partitions when journal_size is specified, use a default when
@@ -674,7 +660,8 @@ class OSDPartitions(object):
         types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
                  'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
                  'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
-                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876'}
+                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
+                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
 
         last_partition = self._last_partition(device)
         index = 1
@@ -698,7 +685,7 @@ class OSDPartitions(object):
         pathnames = glob.glob("{}?*".format(device))
         if pathnames:
             partitions = sorted([ p.replace(device, "") for p in pathnames ], key=int)
-            last_part = int(pathnames[-1].replace(device, ""))
+            last_part = int(partitions[-1].replace(device, ""))
             return last_part
         return 0
 
@@ -776,10 +763,12 @@ class OSDCommands(object):
         """
         Check partition type
         """
-        types = { 'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
-                  'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
-                  'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
-                  'db': '30CD0809-C2B2-499C-8879-2D6B78529876'}
+        types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
+                 'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
+                 'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
+                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
+                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
+
         cmd = "/usr/sbin/sgdisk -i {} {}".format(partition, device)
         log.info(cmd)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
