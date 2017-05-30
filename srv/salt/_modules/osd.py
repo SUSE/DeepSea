@@ -83,6 +83,7 @@ def configured(**kwargs):
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
         devices = _filter_devices(devices, **kwargs)
+        devices = devices.keys()
     if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
         devices = __pillar__['storage']['osds']
         log.debug("devices: {}".format(devices))
@@ -470,7 +471,7 @@ class OSDConfig(object):
                 for disk in disks[__grains__['id']]:
                     # Check size of journal disk
                     if disk['Device File'] == self.journal:
-                        if int(disk['Bytes']) < 10000000000000: # 10GB
+                        if int(disk['Bytes']) < 10000000000: # 10GB
                             return "{}K".format(int(int(disk['Bytes']) * 0.0001))
                         else:
                             return "5242880K"
