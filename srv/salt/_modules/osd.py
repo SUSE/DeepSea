@@ -1126,7 +1126,7 @@ def is_prepared(device):
         log.error("Do not know which partition to check on {}".format(device))
         return "/bin/false"
 
-    if osdc.is_partition('osd', device, partition) and _fsck(device, partition):
+    if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
         return "/bin/true"
     else:
         return "/bin/false"
@@ -1151,7 +1151,7 @@ def is_activated(device):
     config = OSDConfig(device)
     osdc = OSDCommands(config)
     partition = osdc.osd_partition()
-    pathname = "{}{}".format(device, partition)
+    pathname = "{}{}".format(config.device, partition)
     log.info("Checking /proc/mounts for {}".format(pathname))
     with open("/proc/mounts", "r") as mounts:
         for line in mounts:
