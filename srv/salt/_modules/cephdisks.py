@@ -319,12 +319,19 @@ class HardwareDetections(object):
         # TODO: Search for all possible codes:
         data = "Partition GUID code: 45B0969E-9B03-4F30-B4C6-B4B80CEFF106"
         journal = "Partition GUID code: 4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D"
+        db = "Partition GUID code: 30CD0809-C2B2-499C-8879-2D6B78529876"
+        wal = "Partition GUID code: 5CE17FCE-4087-4169-B7FF-056CC58473F9"
+        osd_lockbox = "Partition GUID code: FB3AABF9-D25F-47CC-BF5E-721D1816496B"
         sgdisk_path = self._which('sgdisk')
         for partition_id in ids:
             cmd = "{} -i {} {}".format(sgdisk_path, partition_id, device)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             for line in proc.stdout:
-                if (line.startswith(data) or line.startswith(journal)):
+                if line.startswith(data) or \
+                   line.startswith(journal) or \
+                   line.startswith(db) or \
+                   line.startswith(wal) or \
+                   line.startswith(osd_lockbox):
                     return True
             for line in proc.stderr:
                 log.error(line)
