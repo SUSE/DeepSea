@@ -76,6 +76,9 @@ def configured(**kwargs):
     """
     osds = []
     devices = []
+    # That doesn't allow mixed configurations
+    # storage[osds] OR storage[data+journals]
+    # TODO: append devices from one config version
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
@@ -85,6 +88,8 @@ def configured(**kwargs):
         log.debug("devices: {}".format(devices))
         if 'format' in kwargs and kwargs['format'] != 'filestore':
             return []
+    if 'storage' in __pillar__ and 'data+journals' in __pillar__['storage']:
+        [devices.append(x.keys()[0]) for x in __pillar__['storage']['data+journals']]
     log.debug("devices: {}".format(devices))
 
     return devices
@@ -419,12 +424,17 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V1:
             struct = __pillar__['storage']['data+journals']
-            if self.device in __pillar__['storage']['data+journals']:
-                return journal
+            # struct is a list of dicts
+            base_devices = [osddata.keys()[0] for osddata in struct]
+            # to use 'in' reduce to list of strs
+            if self.device in base_devices:
+                # find value in in original struct
+                journal = [x[self.device] for x in struct if self.device in x]
+                return journal[0]
             else:
                 log.info("No journal specified for {}".format(self.device))
         if self._config_version() == OSDConfig.V2:
-            if (self.device in self.tli and 
+            if (self.device in self.tli and
                'journal' in self.tli[self.device]):
                 return self.tli[self.device]['journal']
             else:
@@ -729,12 +739,13 @@ class OSDCommands(object):
                 storage['osds'][device]['journal'] = ''
                 storage['osds'][device]['journal_size'] = ''
                 storage['osds'][device]['encryption'] = ''
-            for device, journal in __pillar__['storage']['data+journals']:
-                storage['osds'][device] = {}
-                storage['osds'][device]['format'] = 'filestore'
-                storage['osds'][device]['journal'] = journal
-                storage['osds'][device]['journal_size'] = ''
-                storage['osds'][device]['encryption'] = ''
+            for osdconfig in __pillar__['storage']['data+journals']:
+                for device, journal in osdconfig.iteritems():
+                    storage['osds'][device] = {}
+                    storage['osds'][device]['format'] = 'filestore'
+                    storage['osds'][device]['journal'] = journal
+                    storage['osds'][device]['journal_size'] = ''
+                    storage['osds'][device]['encryption'] = ''
         if 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
             storage = __pillar__['ceph']['storage']
         return storage
