@@ -51,8 +51,10 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
 
 %post
-# Initialize to most likely value
-sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+if [ $1 -eq 1 ] ; then
+  # Initialize to most likely value
+  sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+fi
 # change owner to salt, so deepsea can create proposals
 chown -R salt /srv/pillar/ceph
 # Restart salt-master if it's running, so it picks up
