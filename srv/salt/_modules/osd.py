@@ -76,10 +76,6 @@ def configured(**kwargs):
     """
     osds = []
     devices = []
-    # That doesn't allow mixed configurations
-    # storage[osds] OR storage[data+journals]
-    # TODO: append devices from one config version
-    # See https://github.com/SUSE/DeepSea/issues/295
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
