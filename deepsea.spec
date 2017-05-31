@@ -411,5 +411,3 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 
 
 %changelog
-* Thu Sep  8 2016 Eric Jackson
--
