@@ -79,6 +79,7 @@ def configured(**kwargs):
     # That doesn't allow mixed configurations
     # storage[osds] OR storage[data+journals]
     # TODO: append devices from one config version
+    # See https://github.com/SUSE/DeepSea/issues/295
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
@@ -888,6 +889,7 @@ class OSDCommands(object):
         """
         args = ""
         if self.osd.wal and self.osd.db:
+            # redundant check
             if self.osd.wal:
                 if self.is_partitioned(self.osd.wal):
                     partition = self._highest_partition(self.osd.wal, 'wal')
@@ -899,6 +901,7 @@ class OSDCommands(object):
                     args = "--block.wal {} ".format(self.osd.wal)
 
             if self.osd.db:
+            # redundant check
                 if self.is_partitioned(self.osd.db):
                     partition = self._highest_partition(self.osd.db, 'db')
                     if partition:
@@ -936,6 +939,9 @@ class OSDCommands(object):
                 else:
                     args += "--block.db {} ".format(self.osd.db)
 
+        # if the device is already partitioned
+        # but the partitionnumber is not 1
+        # this will fail
         if self.is_partitioned(self.osd.device):
             args += "{}1".format(self.osd.device)
         else:
