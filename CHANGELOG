@@ -1,3 +1,15 @@
+- Version 0.7.10 8173ccabc62729981ccc876966231aee0ba4b9d4
+- Fix is_activate and is_prepared with by-id devices
+- Wal and db partuuid awareness
+- Fix osds+journal deployments
+
+-------------------------------------------------------------------
+
+- Version 0.7.9.1 48c933d0e9405198fe8873e7fe3a61d8cd54fa73
+- Fixed bug in osd module internal targeting
+- Fixed conversion of bytes to gigabytes for disk size detection
+
+-------------------------------------------------------------------1
 
 - Version 0.7.9
 - Automatically include custom files from ceph.conf.d
