@@ -52,8 +52,10 @@ def pairs():
         for line in mounts:
             partition, path = line.split()[:2]
             if path in paths:
-                m = re.match(r'([a-z/]+).*', partition)
+                m = re.match(r'^(.+)\d+$', partition)
                 device = m.group(1)
+                if 'nvme' in device:
+                    device = device[:-1]
                 pairs.append([ device, path ])
 
     return pairs
