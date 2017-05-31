@@ -60,7 +60,7 @@ def pairs():
 
 def _filter_devices(devices, **kwargs):
     """
-    Filter devices if provided.  
+    Filter devices if provided.
 
     Only supporting format currently.
     """
@@ -72,10 +72,13 @@ def _filter_devices(devices, **kwargs):
 def configured(**kwargs):
     """
     Return the osds from the ceph namespace or original namespace, optionally
-    filtered by attributes. 
+    filtered by attributes.
     """
     osds = []
     devices = []
+    # That doesn't allow mixed configurations
+    # storage[osds] OR storage[data+journals]
+    # TODO: append devices from one config version
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
@@ -540,8 +543,8 @@ class OSDPartitions(object):
     def _xfs_partitions(self, device, disk_size):
         """
         Create partitions when journal_size is specified, use a default when
-        journal_size is not specified and do nothing when neither journal nor 
-        journal_size are specified. 
+        journal_size is not specified and do nothing when neither journal nor
+        journal_size are specified.
         """
         log.debug("xfs_paritions: {} {}".format(device, disk_size))
         if self.osd.journal:
@@ -557,7 +560,7 @@ class OSDPartitions(object):
             else:
                 if self.osd.journal == self.osd.device:
                     # Create journal, data as remainder
-                    self.create(self.osd.device, [('journal', self.osd.journal_size), 
+                    self.create(self.osd.device, [('journal', self.osd.journal_size),
                                                  ('osd', None)])
                 else:
                     # Create journal on journal device
@@ -571,14 +574,14 @@ class OSDPartitions(object):
                 self.create(self.osd.device, [('journal', self.osd.journal_size), ('osd', None)])
             elif self.osd.small:
                 # Create journal, data as remainder
-                self.create(self.osd.device, [('journal', self.osd.journal_size), 
+                self.create(self.osd.device, [('journal', self.osd.journal_size),
                                               ('osd', None)])
 
         log.debug("xfs_paritions: leaving")
 
     def _double(self, size):
         """
-        Double the value of numeral 
+        Double the value of numeral
         """
         log.info("double {}".format(size))
         numeral = int(size[0:-1])
@@ -599,6 +602,11 @@ class OSDPartitions(object):
         """
         Create partitions when wal_size and/or db_size is specified
         """
+        if (self.osd.device == self.osd.wal or
+           self.osd.device == self.osd.db):
+            # Create OSD first, if necessary
+            self.create(self.osd.device, [('osd', '100M')])
+
         if self.osd.wal and self.osd.db:
             if self.osd.wal:
                 if self.osd.wal_size:
@@ -619,35 +627,35 @@ class OSDPartitions(object):
                     self.create(self.osd.device, [('db', self.osd.db_size)])
         else:
             # This situation seems unintentional - use faster media for
-            # the wal or db but not the other.  Help newbies out by 
+            # the wal or db but not the other.  Help newbies out by
             # putting wal and db on same device
             if self.osd.wal:
                 if self.osd.wal_size:
                     # Create wal of wal_size on wal device
                     # Create db on wal device
                     log.warn("Setting db to same device {} as wal".format(self.osd.wal))
-                    self.create(self.osd.wal, [('wal', self.osd.wal_size), 
+                    self.create(self.osd.wal, [('wal', self.osd.wal_size),
                                              ('db', self._halve(self.osd.wal_size))])
             else:
                 if self.osd.wal_size:
                     # Create wal of wal_size on device
                     # Create db on device
                     log.warn("Setting db to same device {} as wal".format(self.osd.wal))
-                    self.create(self.osd.device, [('wal', self.osd.wal_size), 
+                    self.create(self.osd.device, [('wal', self.osd.wal_size),
                                          ('db', self._halve(self.osd.wal_size))])
             if self.osd.db:
                 if self.osd.db_size:
                     # Create db of db_size on db device
                     # Create wal on db device
                     log.warn("Setting wal to same device {} as db".format(self.osd.db))
-                    self.create(self.osd.db, [('wal', self._double(self.osd.db_size)), 
+                    self.create(self.osd.db, [('wal', self._double(self.osd.db_size)),
                                             ('db', self.osd.db_size)])
             else:
                 if self.osd.db_size:
                     # Create db of db_size on device
                     # Create wal on device
                     log.warn("Setting wal to same device {} as db".format(self.osd.db))
-                    self.create(self.osd.device, [('wal', self._double(self.osd.db_size)), 
+                    self.create(self.osd.device, [('wal', self._double(self.osd.db_size)),
                                          ('db', self.osd.db_size)])
 
     def create(self, device, partitions):
@@ -661,9 +669,11 @@ class OSDPartitions(object):
                  'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
 
         last_partition = self._last_partition(device)
+        log.warning("last partition: {}".format(last_partition))
+
         index = 1
         for partition_type, size in partitions:
-            number = last_partition + index
+            number = self._increment(last_partition, index)
             if size:
                 cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, types[partition_type], device)
             else:
@@ -678,13 +688,40 @@ class OSDPartitions(object):
 
     def _last_partition(self, device):
         """
+        Return the last partition.  NVMe partitions are p1, p2 ...
         """
+        nvme = False
+        # Valid test?
+        if 'nvme' in device:
+            nvme = True
+
         pathnames = glob.glob("{}?*".format(device))
         if pathnames:
-            partitions = sorted([ p.replace(device, "") for p in pathnames ], key=int)
+            partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
             last_part = int(partitions[-1].replace(device, ""))
+
+            if nvme:
+                last_part = "p{}".format(last_part)
+
             return last_part
+
+        if nvme:
+            return 'p0'
         return 0
+
+    def _increment(self, partition, index):
+        """
+        Return the sum.  If an NVMe partition, jump through hoops.
+        """
+        if isinstance(partition, int):
+            number = partition + index
+            log.warning("increment: {}".format(number))
+            return partition + index
+
+        if 'p' in partition:
+            number = int(partition.replace('p', '')) + index
+            log.warning("increment: p{}".format(number))
+            return "p{}".format(int(number) + index)
 
 
 
@@ -707,6 +744,7 @@ class OSDCommands(object):
         """
         self.osd = config
         self.settings = {}
+        self.error = None
         self.settings.update(self._storage())
         log.debug(pprint.pformat(self.settings))
 
@@ -737,24 +775,10 @@ class OSDCommands(object):
 
     def osd_partition(self):
         """
-        Find the data partition based on settings.
-
-        TODO: dmcrypt
+        Find the OSD partition
         """
         device = self.osd.device
-        internal_ident = self.osd.by_id_path
-        # self.settings['osds'] holds the pillardata, hence the by-id path
-        if 'osds' in self.settings and internal_ident in self.settings['osds']:
-            if self.osd.disk_format == 'filestore':
-                if self.osd.journal:
-                    # Journal on separate device
-                    return 1
-                else:
-                    # Journal on same device
-                    return 2
-            if self.osd.disk_format == 'bluestore':
-                return 1
-        return 0
+        return self._highest_partition(device, 'osd')
 
     def is_partition(self, partition_type, device, partition):
         """
@@ -776,36 +800,27 @@ class OSDCommands(object):
         id = "Partition GUID code: {}".format(types[partition_type])
         return id in result
 
-    def _journal_pathname(self):
-        """
-        Return the highest created Journal pathname
-        """
-        if self.osd.journal:
-            log.debug("journal device: {}".format(self.osd.journal))
-            pathnames = glob.glob("{}?*".format(self.osd.journal))
-            partitions = sorted([ p.replace(self.osd.journal, "") for p in pathnames ], key=int, reverse=True)
-            log.debug("partitions: {}".format(partitions))
-            for partition in partitions:
-                log.debug("checking {}{}".format(self.osd.journal, partition))
-                if self.is_partition('journal', self.osd.journal, partition):
-                    log.debug("found {}{}".format(self.osd.journal, partition))
-                    return "{}{}".format(self.osd.journal, partition)
-        return "{}0".format(self.osd.journal)
-
     def _highest_partition(self, device, partition_type):
         """
         Return the highest created partition of partition type
         """
         if device:
+            prefix = ""
+            if 'nvme' in device:
+                prefix = 'p'
             log.debug("{} device: {}".format(partition_type, device))
             pathnames = glob.glob("{}?*".format(device))
-            partitions = sorted([ p.replace(device, "") for p in pathnames ], key=int, reverse=True)
+            partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
             log.debug("partitions: {}".format(partitions))
             for partition in partitions:
                 log.debug("checking {}{}".format(device, partition))
+                # Not confusing at all - use digit for NVMe too
                 if self.is_partition(partition_type, device, partition):
                     log.debug("found {}{}".format(device, partition))
+                    partition = "{}{}".format(prefix, partition)
                     return "{}".format(partition)
+        self.error = "Partition type {} not found on {}".format(partition_type, device)
+        log.error(self.error)
         return 0
 
     def _cluster_name(self):
@@ -834,7 +849,7 @@ class OSDCommands(object):
         """
         Return whether the device is already partitioned
         """
-        result = glob.glob("{}?*".format(device)) 
+        result = glob.glob("{}?*".format(device))
         log.debug("Found {} partitions on {}".format(result, device))
         return result != []
 
@@ -849,9 +864,9 @@ class OSDCommands(object):
         if self.is_partitioned(device):
             # Prepartitioned OSD
             if self.osd.journal:
-                args = "{}{} {}".format(device, self.osd_partition(), self._journal_pathname())
+                args = "{}{} {}{}".format(device, self._highest_partition(device, 'osd'), self.osd.journal, self._highest_partition(self.osd.journal, 'journal'))
             else:
-                args = "{}{} {}{}".format(device, self.osd_partition(), device, 1)
+                args = "{}{} {}{}".format(device, self._highest_partition(device, 'osd'), device, self._highest_partition(self.osd.device, 'journal'))
         else:
             # Raw
             if self.osd.journal:
@@ -985,6 +1000,10 @@ class OSDCommands(object):
 
             cmd += "--data-dev --journal-dev --cluster {} --cluster-uuid {} ".format(self._cluster_name(), self._fsid())
             cmd += args
+
+        if self.error:
+           cmd = "/bin/false # {}".format(self.error)
+
         log.info("prepare: {}".format(cmd))
         return cmd
 
@@ -1000,7 +1019,11 @@ class OSDCommands(object):
                 cmd = "/bin/true activated during prepare"
             else:
                 cmd = "ceph-disk -v activate --mark-init systemd --mount "
-                cmd += "{}{}".format(self.osd.device, self.osd_partition())
+                cmd += "{}{}".format(self.osd.device, self._highest_partition(self.osd.device, 'osd'))
+
+        if self.error:
+           cmd = "/bin/false # {}".format(self.error)
+
         log.info("activate: {}".format(cmd))
         return cmd
 
@@ -1008,8 +1031,8 @@ class OSDCommands(object):
         """
         Return the osd type
         """
-        filename = "{}/ceph-{}/type".format(pathname, osd_id) 
-        if os.path.exists(filename): 
+        filename = "{}/ceph-{}/type".format(pathname, osd_id)
+        if os.path.exists(filename):
             with open(filename, 'r') as osd_type:
                 return osd_type.read().rstrip()
 
@@ -1101,7 +1124,7 @@ class OSDGrains(object):
         friendly_dumper.ignore_aliases = lambda self, data: True
 
         with open(filename, 'w') as minion_grains:
-            minion_grains.write(yaml.dump(content, 
+            minion_grains.write(yaml.dump(content,
                                           Dumper=friendly_dumper,
                                           default_flow_style=False))
         log.info("Syncing grains")
