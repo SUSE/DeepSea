@@ -14,6 +14,12 @@ reset master configuration:
     - tgt_type: compound
     - sls: ceph.reset
 
+terminate ceph osds:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.rescind.storage.terminate
+
 rescind roles:
   salt.state:
     - tgt: 'I@cluster:ceph'
