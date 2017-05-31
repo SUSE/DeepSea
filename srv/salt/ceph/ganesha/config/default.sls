@@ -24,9 +24,9 @@ check {{ role }}:
       - salt://ceph/ganesha/files/{{ role }}.conf.j2
     - template: jinja
     - makedirs: True
-    - user: root
-    - group: root
-    - mode: 644
+    - user: salt
+    - group: salt
+    - mode: 600
     - context:
       role: {{ salt['rgw.configuration'](role) }}
       user_id: {{ user_id }}
