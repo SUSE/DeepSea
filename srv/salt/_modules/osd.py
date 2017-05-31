@@ -323,7 +323,6 @@ class OSDConfig(object):
         # top_level_identifiier
         self.tli = self._set_tli()
         self.device = self.set_device(device)
-        self.by_id_path = device
         self.capacity = self.set_capacity()
         self.size = self.set_bytes()
         self.small = self._set_small()
@@ -336,6 +335,7 @@ class OSDConfig(object):
         self.db = self.set_db()
         # default for encryption can be retrieved from the global pillar
         self.encryption = self.set_encryption()
+        self.types = self.set_types()
         log.debug("OSD config: \n{}".format(pprint.pformat(vars(self))))
 
     def _set_tli(self):
@@ -345,8 +345,24 @@ class OSDConfig(object):
         if ('ceph' in __pillar__ and
            'storage' in __pillar__['ceph'] and
            'osds' in __pillar__['ceph']['storage']):
-            return __pillar__['ceph']['storage']['osds']
+
+            return self._convert_tli(__pillar__['ceph']['storage']['osds'])
         return None
+
+    def _convert_tli(self, osds):
+        """
+        Simplify names to short devices
+        """
+        result = {}
+        for osd in osds:
+            short_osd = self.set_device(osd)
+            result[short_osd] = {}
+            for attr in osds[osd]:
+                if (attr == 'journal' or attr == 'wal' or attr == 'db'):
+                    result[short_osd][attr] = self.set_device(osds[osd][attr])
+                else:
+                    result[short_osd][attr] = osds[osd][attr]
+        return result
 
     def set_bytes(self):
         """
@@ -416,7 +432,7 @@ class OSDConfig(object):
             return OSDConfig.DEFAULT_FORMAT_FOR_V1
         if self._config_version() == OSDConfig.V2:
             if 'format' in self.tli[self.device]:
-                return __pillar__['ceph']['storage']['osds'][self.device]['format']
+                return self.tli[self.device]['format']
             return OSDConfig.DEFAULT_FORMAT_FOR_V2
 
         raise("Probably a parsing Error or something not written to the pillar yet..")
@@ -426,14 +442,10 @@ class OSDConfig(object):
         Return the journal device, if defined
         """
         if self._config_version() == OSDConfig.V1:
-            struct = __pillar__['storage']['data+journals']
-            # struct is a list of dicts
-            base_devices = [osddata.keys()[0] for osddata in struct]
-            # to use 'in' reduce to list of strs
-            if self.device in base_devices:
-                # find value in in original struct
-                journal = [x[self.device] for x in struct if self.device in x]
-                return journal[0]
+            struct = self._convert_data_journals(__pillar__['storage']['data+journals'])
+            log.debug("struct: \n{}".format(pprint.pformat(struct)))
+            if self.device in struct:
+                return struct[self.device]
             else:
                 log.info("No journal specified for {}".format(self.device))
         if self._config_version() == OSDConfig.V2:
@@ -444,6 +456,15 @@ class OSDConfig(object):
                 log.info("No journal specified for {}".format(self.device))
         return default
 
+    def _convert_data_journals(self, struct):
+        """
+        Create new structure with short device names
+        """
+        result = {}
+        for pair in struct:
+            for osd, journal in pair.iteritems():
+                result[self.set_device(osd)] = self.set_device(journal)
+        return result
 
     def _check_existence(self, key, ident, device, default=None):
         """
@@ -466,6 +487,7 @@ class OSDConfig(object):
 
     def _journal_default(self):
         """
+        Return the size of the journal.  Account for small disks.
         """
         if self.journal:
             disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
@@ -522,19 +544,35 @@ class OSDConfig(object):
         if self._config_version() == OSDConfig.V2:
             return self._check_existence('encryption', self.tli, self.device, default=default)
 
+    def set_types(self):
+        """
+        Return the Ceph disk type mapping to partition UUID
+        """
+        types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
+                 'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
+                 'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
+                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
+                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
+        return types
+
 class OSDPartitions(object):
     """
     Manage the creation/deletion of partitions related to OSDs
+
+    Generally, partitions are created on devices other than the OSD.  Not 
+    creating partitions is fine.
     """
 
     def __init__(self, config):
         """
+        Initialize configuration, disks from mine
         """
         self.osd = config
         self.disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
 
     def partition(self):
         """
+        Create partitions for supported formats
         """
         if self.osd.disk_format == 'filestore':
             self._xfs_partitions(self.osd.device, self.osd.size)
@@ -579,7 +617,6 @@ class OSDPartitions(object):
                 self.create(self.osd.device, [('journal', self.osd.journal_size),
                                               ('osd', None)])
 
-        log.debug("xfs_paritions: leaving")
 
     def _double(self, size):
         """
@@ -603,83 +640,88 @@ class OSDPartitions(object):
     def _bluestore_partitions(self, device):
         """
         Create partitions when wal_size and/or db_size is specified
+
+        Note: The unsupported combinations fallback to creating an OSD as
+        though the size or device had not been specified. The current issue
+        is
+
+        - ceph-disk does not support a --block option
+        - ceph-disk creates an additional partition when --block.wal is the 
+          same as the OSD
+
+        When these get resolved, change the logic
         """
-        if (self.osd.device == self.osd.wal or
-           self.osd.device == self.osd.db):
-            # Create OSD first, if necessary
-            self.create(self.osd.device, [('osd', '100M')])
 
         if self.osd.wal and self.osd.db:
-            if self.osd.wal:
-                if self.osd.wal_size:
+            if self.osd.wal_size:
+                if self.osd.wal == self.osd.device:
+                    log.warn("WAL size is unsupported for same device of {}".self.osd.device)
+                else:
                     # Create wal of wal_size on wal device
                     self.create(self.osd.wal, [('wal', self.osd.wal_size)])
             else:
-                if self.osd.wal_size:
-                    # Create wal of wal_size on device
-                    self.create(self.osd.device, [('wal', self.osd.wal_size)])
+                log.error("No size specified for wal {}".format(self.osd.wal))
 
-            if self.osd.db:
-                if self.osd.db_size:
+            if self.osd.db_size:
+                if self.osd.wal == self.osd.device:
+                    log.warn("DB size is unsupported for same device of {}".self.osd.device)
+                else:
                     # Create db of db_size on db device
                     self.create(self.osd.db, [('db', self.osd.db_size)])
             else:
-                if self.osd.db_size:
-                    # Create db of db_size on device
-                    self.create(self.osd.device, [('db', self.osd.db_size)])
+                log.error("No size specified for db {}".format(self.osd.db))
         else:
             # This situation seems unintentional - use faster media for
             # the wal or db but not the other.  Help newbies out by
             # putting wal and db on same device
             if self.osd.wal:
                 if self.osd.wal_size:
-                    # Create wal of wal_size on wal device
-                    # Create db on wal device
-                    log.warn("Setting db to same device {} as wal".format(self.osd.wal))
-                    self.create(self.osd.wal, [('wal', self.osd.wal_size),
-                                             ('db', self._halve(self.osd.wal_size))])
+                    if self.osd.wal == self.osd.device:
+                        log.warn("WAL size is unsupported for same device of {}".self.osd.device)
+                    else:
+                        log.warn("Setting db to same device {} as wal".format(self.osd.wal))
+                        # Create wal of wal_size on wal device
+                        # Create db on wal device
+                        self.create(self.osd.wal, [('wal', self.osd.wal_size),
+                                                 ('db', self._halve(self.osd.wal_size))])
             else:
                 if self.osd.wal_size:
-                    # Create wal of wal_size on device
-                    # Create db on device
-                    log.warn("Setting db to same device {} as wal".format(self.osd.wal))
-                    self.create(self.osd.device, [('wal', self.osd.wal_size),
-                                         ('db', self._halve(self.osd.wal_size))])
+                    log.warn("WAL size is unsupported for same device of {}".format(self.osd.device))
+
             if self.osd.db:
                 if self.osd.db_size:
-                    # Create db of db_size on db device
-                    # Create wal on db device
-                    log.warn("Setting wal to same device {} as db".format(self.osd.db))
-                    self.create(self.osd.db, [('wal', self._double(self.osd.db_size)),
-                                            ('db', self.osd.db_size)])
+                    if self.osd.wal == self.osd.device:
+                        log.warn("DB size is unsupported for same device of {}".self.osd.device)
+                    else:
+                        log.warn("Setting wal to same device {} as db".format(self.osd.db))
+                        # Create db of db_size on db device
+                        # Create wal on db device
+                        self.create(self.osd.db, [('wal', self._double(self.osd.db_size)),
+                                                ('db', self.osd.db_size)])
             else:
                 if self.osd.db_size:
-                    # Create db of db_size on device
-                    # Create wal on device
-                    log.warn("Setting wal to same device {} as db".format(self.osd.db))
-                    self.create(self.osd.device, [('wal', self._double(self.osd.db_size)),
-                                         ('db', self.osd.db_size)])
+                    log.warn("DB size is unsupported for same device of {}".format(self.osd.device))
 
     def create(self, device, partitions):
         """
         Create a partition
         """
-        types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
-                 'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
-                 'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
-                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
-                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
+        #types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
+        #         'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
+        #         'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
+        #         'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
+        #         'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
 
         last_partition = self._last_partition(device)
-        log.warning("last partition: {}".format(last_partition))
+        log.debug("last partition: {}".format(last_partition))
 
         index = 1
         for partition_type, size in partitions:
-            number = self._increment(last_partition, index)
+            number = last_partition + index
             if size:
-                cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, types[partition_type], device)
+                cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, self.osd.types[partition_type], device)
             else:
-                cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, types[partition_type], device)
+                cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, self.osd.types[partition_type], device)
             log.info(cmd)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             proc.wait()
@@ -690,42 +732,15 @@ class OSDPartitions(object):
 
     def _last_partition(self, device):
         """
-        Return the last partition.  NVMe partitions are p1, p2 ...
+        Return the last partition. Only the number is needed for the sgdisk
+        command.
         """
-        nvme = False
-        # Valid test?
-        if 'nvme' in device:
-            nvme = True
-
         pathnames = glob.glob("{}?*".format(device))
         if pathnames:
-            partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
-            last_part = int(partitions[-1].replace(device, ""))
-
-            if nvme:
-                last_part = "p{}".format(last_part)
-
-            return last_part
-
-        if nvme:
-            return 'p0'
+            partitions = sorted([re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
+            last_part = partitions[-1]
+            return int(last_part)
         return 0
-
-    def _increment(self, partition, index):
-        """
-        Return the sum.  If an NVMe partition, jump through hoops.
-        """
-        if isinstance(partition, int):
-            number = partition + index
-            log.warning("increment: {}".format(number))
-            return partition + index
-
-        if 'p' in partition:
-            number = int(partition.replace('p', '')) + index
-            log.warning("increment: p{}".format(number))
-            return "p{}".format(int(number) + index)
-
-
 
 def partition(device):
     """
@@ -747,51 +762,31 @@ class OSDCommands(object):
         self.osd = config
         self.settings = {}
         self.error = None
-        self.settings.update(self._storage())
-        log.debug(pprint.pformat(self.settings))
-
-    def _storage(self):
-        """
-        Original structure vs. extendable structure
-        """
-        storage = {}
-        if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
-            storage['osds'] = {}
-            # convert old structure
-            for device in __pillar__['storage']['osds']:
-                storage['osds'][device] = {}
-                storage['osds'][device]['format'] = 'filestore'
-                storage['osds'][device]['journal'] = ''
-                storage['osds'][device]['journal_size'] = ''
-                storage['osds'][device]['encryption'] = ''
-            for osdconfig in __pillar__['storage']['data+journals']:
-                for device, journal in osdconfig.iteritems():
-                    storage['osds'][device] = {}
-                    storage['osds'][device]['format'] = 'filestore'
-                    storage['osds'][device]['journal'] = journal
-                    storage['osds'][device]['journal_size'] = ''
-                    storage['osds'][device]['encryption'] = ''
-        if 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
-            storage = __pillar__['ceph']['storage']
-        return storage
 
     def osd_partition(self):
         """
         Find the OSD partition
+
+        Note: Do not remove the logic with the hardcoded values until
+        the evaluation of activate command is resolved
         """
-        device = self.osd.device
-        return self._highest_partition(device, 'osd')
+        log.debug("format: {}".format(self.osd.disk_format))
+        if self.osd.disk_format:
+              if self.osd.disk_format == 'filestore':
+                  if self.osd.journal and self.osd.journal != self.osd.device:
+                      # Journal on separate device
+                      return 1
+                  else:
+                      # Journal on same device
+                      return 2
+              if self.osd.disk_format == 'bluestore':
+                  return 1
+        return self._highest_partition(self.osd.device, 'osd')
 
     def is_partition(self, partition_type, device, partition):
         """
         Check partition type
         """
-        types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
-                 'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
-                 'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
-                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
-                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
-
         cmd = "/usr/sbin/sgdisk -i {} {}".format(partition, device)
         log.info(cmd)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -799,7 +794,7 @@ class OSDCommands(object):
         result = proc.stdout.read()
         log.debug(pprint.pformat(result))
         log.debug(pprint.pformat(proc.stderr.read()))
-        id = "Partition GUID code: {}".format(types[partition_type])
+        id = "Partition GUID code: {}".format(self.osd.types[partition_type])
         return id in result
 
     def _highest_partition(self, device, partition_type):
@@ -807,9 +802,6 @@ class OSDCommands(object):
         Return the highest created partition of partition type
         """
         if device:
-            prefix = ""
-            if 'nvme' in device:
-                prefix = 'p'
             log.debug("{} device: {}".format(partition_type, device))
             pathnames = glob.glob("{}?*".format(device))
             partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
@@ -819,7 +811,8 @@ class OSDCommands(object):
                 # Not confusing at all - use digit for NVMe too
                 if self.is_partition(partition_type, device, partition):
                     log.debug("found {}{}".format(device, partition))
-                    partition = "{}{}".format(prefix, partition)
+                    if 'nvme' in device:
+                        partition = "p{}".format(partition)
                     return "{}".format(partition)
         self.error = "Partition type {} not found on {}".format(partition_type, device)
         log.error(self.error)
@@ -902,41 +895,45 @@ class OSDCommands(object):
         """
         args = ""
         if self.osd.wal and self.osd.db:
-            # redundant check
-            if self.osd.wal:
-                if self.is_partitioned(self.osd.wal):
-                    partition = self._highest_partition(self.osd.wal, 'wal')
-                    if partition:
-                        args = "--block.wal {}{} ".format(self.osd.wal, partition)
-                    else:
-                        args = "--block.wal {} ".format(self.osd.wal)
+            if self.is_partitioned(self.osd.wal):
+                partition = self._highest_partition(self.osd.wal, 'wal')
+                if partition:
+                    args = "--block.wal {}{} ".format(self.osd.wal, partition)
                 else:
                     args = "--block.wal {} ".format(self.osd.wal)
+            else:
+                args = "--block.wal {} ".format(self.osd.wal)
 
-            if self.osd.db:
-            # redundant check
-                if self.is_partitioned(self.osd.db):
-                    partition = self._highest_partition(self.osd.db, 'db')
-                    if partition:
-                        args += "--block.db {}{} ".format(self.osd.db, partition)
-                    else:
-                        args += "--block.db {} ".format(self.osd.db)
+            if self.is_partitioned(self.osd.db):
+                partition = self._highest_partition(self.osd.db, 'db')
+                if partition:
+                    args += "--block.db {}{} ".format(self.osd.db, partition)
                 else:
                     args += "--block.db {} ".format(self.osd.db)
+            else:
+                args += "--block.db {} ".format(self.osd.db)
         else:
             if self.osd.wal:
+                log.debug("wal: {}".format(self.osd.wal))
                 if self.is_partitioned(self.osd.wal):
                     partition = self._highest_partition(self.osd.wal, 'wal')
                     if partition:
                         args += "--block.wal {}{} ".format(self.osd.wal, partition)
                     else:
                         args += "--block.wal {} ".format(self.osd.wal)
+                    log.debug("args: {}".format(args))
 
                     partition = self._highest_partition(self.osd.wal, 'db')
                     if partition:
                         args += "--block.db {}{} ".format(self.osd.wal, partition)
+                    else:
+                        args += "--block.db {} ".format(self.osd.wal)
+                    log.debug("args: {}".format(args))
                 else:
-                    args += "--block.wal {} ".format(self.osd.wal)
+                    if self.osd.wal == self.osd.device:
+                        log.warn("Separate wal partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.wal))
+                    else:
+                        args += "--block.wal {} --block.db {} ".format(self.osd.wal, self.osd.wal)
 
             if self.osd.db:
                 if self.is_partitioned(self.osd.db):
@@ -950,13 +947,22 @@ class OSDCommands(object):
                     if partition:
                         args += "--block.wal {}{} ".format(self.osd.db, partition)
                 else:
-                    args += "--block.db {} ".format(self.osd.db)
+                    if self.osd.db == self.osd.device:
+                        log.warn("Separate db partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.db))
+                    else:
+                        args += "--block.wal {} --block.db {} ".format(self.osd.db, self.osd.db)
 
         # if the device is already partitioned
         # but the partitionnumber is not 1
         # this will fail
+        #
+        # Bluestore OSDs set the first partition to Ceph OSD
+        # Supporting unconventional Bluestore OSDs feels unwise
         if self.is_partitioned(self.osd.device):
-            args += "{}1".format(self.osd.device)
+            if 'nvme' in self.osd.device:
+                args += "{}p1".format(self.osd.device)
+            else:
+                args += "{}1".format(self.osd.device)
         else:
             args += "{}".format(self.osd.device)
         return args
@@ -1020,11 +1026,11 @@ class OSDCommands(object):
             if self.osd.encryption == 'dmcrypt':
                 cmd = "/bin/true activated during prepare"
             else:
+                prefix = ''
+                if 'nvme' in self.osd.device:
+                    prefix = 'p'
                 cmd = "ceph-disk -v activate --mark-init systemd --mount "
-                cmd += "{}{}".format(self.osd.device, self._highest_partition(self.osd.device, 'osd'))
-
-        if self.error:
-           cmd = "/bin/false # {}".format(self.error)
+                cmd += "{}{}{}".format(self.osd.device, prefix, self.osd_partition())
 
         log.info("activate: {}".format(cmd))
         return cmd
@@ -1136,16 +1142,18 @@ def is_partitioned(device):
     """
     Check if device is partitioned
     """
-    osdc = OSDCommands()
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
     return osdc.is_partitioned(device)
 
 def is_prepared(device):
     """
     Check if the device has already been prepared.  Return shell command.
 
-    Note: the alternate strategy to running is_prepared as part of an unless is
-    to create a state module.  However, will the admin be able to debug that
-    configuration without reading python?  This task is left for later...
+    Note: the alternate strategy to running is_prepared as part of an unless in
+    an sls file is to create a state module.  However, will the admin be able 
+    to debug that configuration without reading python?  This task is left for 
+    later...
     """
     config = OSDConfig(device)
     osdc = OSDCommands(config)
@@ -1154,6 +1162,7 @@ def is_prepared(device):
         log.error("Do not know which partition to check on {}".format(device))
         return "/bin/false"
 
+    log.debug("Checking partition {} on device {}".format(partition, device))
     if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
         return "/bin/true"
     else:
@@ -1163,7 +1172,10 @@ def _fsck(device, partition):
     """
     Check filesystem on partition
     """
-    cmd = "/sbin/fsck -n {}{}".format(device, partition)
+    prefix = ''
+    if 'nvme' in device:
+        prefix = 'p'
+    cmd = "/sbin/fsck -n {}{}{}".format(device, prefix, partition)
     log.info(cmd)
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     proc.wait()
@@ -1184,8 +1196,8 @@ def is_activated(device):
     with open("/proc/mounts", "r") as mounts:
         for line in mounts:
             if line.startswith(pathname):
-                return True
-    return False
+                return "/bin/true"
+    return "/bin/false"
 
 def prepare(device):
     """
