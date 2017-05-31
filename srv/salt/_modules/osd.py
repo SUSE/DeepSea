@@ -80,11 +80,14 @@ def configured(**kwargs):
         and 'osds' in __pillar__['ceph']['storage']):
         devices = __pillar__['ceph']['storage']['osds']
         devices = _filter_devices(devices, **kwargs)
+        devices = devices.keys()
     if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
         devices = __pillar__['storage']['osds']
         log.debug("devices: {}".format(devices))
         if 'format' in kwargs and kwargs['format'] != 'filestore':
             return []
+    if 'storage' in __pillar__ and 'data+journals' in __pillar__['storage']:
+        [devices.append(x.keys()[0]) for x in __pillar__['storage']['data+journals']]
     log.debug("devices: {}".format(devices))
 
     return devices
@@ -419,12 +422,17 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V1:
             struct = __pillar__['storage']['data+journals']
-            if self.device in __pillar__['storage']['data+journals']:
-                return journal
+            # struct is a list of dicts
+            base_devices = [osddata.keys()[0] for osddata in struct]
+            # to use 'in' reduce to list of strs
+            if self.device in base_devices:
+                # find value in in original struct
+                journal = [x[self.device] for x in struct if self.device in x]
+                return journal[0]
             else:
                 log.info("No journal specified for {}".format(self.device))
         if self._config_version() == OSDConfig.V2:
-            if (self.device in self.tli and 
+            if (self.device in self.tli and
                'journal' in self.tli[self.device]):
                 return self.tli[self.device]['journal']
             else:
@@ -460,7 +468,7 @@ class OSDConfig(object):
                 for disk in disks[__grains__['id']]:
                     # Check size of journal disk
                     if disk['Device File'] == self.journal:
-                        if int(disk['Bytes']) < 10000000000000: # 10GB
+                        if int(disk['Bytes']) < 10000000000: # 10GB
                             return "{}K".format(int(int(disk['Bytes']) * 0.0001))
                         else:
                             return "5242880K"
@@ -528,20 +536,6 @@ class OSDPartitions(object):
         if self.osd.disk_format == 'bluestore':
             self._bluestore_partitions(self.osd.device)
         return 0
-
-    #def _journal_default(self, device):
-    #    """
-    #    Return a default journal size when one is not provided.  Use 5G unless
-    #    the drive is under 10G, then use 10%.
-    #    """
-    #    
-    #    for disk in self.disks[__grains__['id']]:
-    #        if disk['Device File'] == device:
-    #            if int(disk['Bytes']) < 10000000000000: # 10GB
-    #                return "{}K".format(int(int(disk['Bytes']) * 0.0001))
-    #            else:
-    #                return "5242880K"
-    #    return 0
 
     def _xfs_partitions(self, device, disk_size):
         """
@@ -663,7 +657,8 @@ class OSDPartitions(object):
         types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
                  'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
                  'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
-                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876'}
+                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
+                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
 
         last_partition = self._last_partition(device)
         index = 1
@@ -687,7 +682,7 @@ class OSDPartitions(object):
         pathnames = glob.glob("{}?*".format(device))
         if pathnames:
             partitions = sorted([ p.replace(device, "") for p in pathnames ], key=int)
-            last_part = int(pathnames[-1].replace(device, ""))
+            last_part = int(partitions[-1].replace(device, ""))
             return last_part
         return 0
 
@@ -729,12 +724,13 @@ class OSDCommands(object):
                 storage['osds'][device]['journal'] = ''
                 storage['osds'][device]['journal_size'] = ''
                 storage['osds'][device]['encryption'] = ''
-            for device, journal in __pillar__['storage']['data+journals']:
-                storage['osds'][device] = {}
-                storage['osds'][device]['format'] = 'filestore'
-                storage['osds'][device]['journal'] = journal
-                storage['osds'][device]['journal_size'] = ''
-                storage['osds'][device]['encryption'] = ''
+            for osdconfig in __pillar__['storage']['data+journals']:
+                for device, journal in osdconfig.iteritems():
+                    storage['osds'][device] = {}
+                    storage['osds'][device]['format'] = 'filestore'
+                    storage['osds'][device]['journal'] = journal
+                    storage['osds'][device]['journal_size'] = ''
+                    storage['osds'][device]['encryption'] = ''
         if 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
             storage = __pillar__['ceph']['storage']
         return storage
@@ -764,10 +760,12 @@ class OSDCommands(object):
         """
         Check partition type
         """
-        types = { 'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
-                  'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
-                  'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
-                  'db': '30CD0809-C2B2-499C-8879-2D6B78529876'}
+        types = {'osd': '4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D',
+                 'journal': '45B0969E-9B03-4F30-B4C6-B4B80CEFF106',
+                 'wal': '5CE17FCE-4087-4169-B7FF-056CC58473F9',
+                 'db': '30CD0809-C2B2-499C-8879-2D6B78529876',
+                 'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
+
         cmd = "/usr/sbin/sgdisk -i {} {}".format(partition, device)
         log.info(cmd)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -887,6 +885,7 @@ class OSDCommands(object):
         """
         args = ""
         if self.osd.wal and self.osd.db:
+            # redundant check
             if self.osd.wal:
                 if self.is_partitioned(self.osd.wal):
                     partition = self._highest_partition(self.osd.wal, 'wal')
@@ -898,6 +897,7 @@ class OSDCommands(object):
                     args = "--block.wal {} ".format(self.osd.wal)
 
             if self.osd.db:
+            # redundant check
                 if self.is_partitioned(self.osd.db):
                     partition = self._highest_partition(self.osd.db, 'db')
                     if partition:
@@ -935,6 +935,9 @@ class OSDCommands(object):
                 else:
                     args += "--block.db {} ".format(self.osd.db)
 
+        # if the device is already partitioned
+        # but the partitionnumber is not 1
+        # this will fail
         if self.is_partitioned(self.osd.device):
             args += "{}1".format(self.osd.device)
         else:
@@ -1126,7 +1129,7 @@ def is_prepared(device):
         log.error("Do not know which partition to check on {}".format(device))
         return "/bin/false"
 
-    if osdc.is_partition('osd', device, partition) and _fsck(device, partition):
+    if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
         return "/bin/true"
     else:
         return "/bin/false"
@@ -1151,7 +1154,7 @@ def is_activated(device):
     config = OSDConfig(device)
     osdc = OSDCommands(config)
     partition = osdc.osd_partition()
-    pathname = "{}{}".format(device, partition)
+    pathname = "{}{}".format(config.device, partition)
     log.info("Checking /proc/mounts for {}".format(pathname))
     with open("/proc/mounts", "r") as mounts:
         for line in mounts:
