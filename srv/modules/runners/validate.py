@@ -260,7 +260,7 @@ class Validate(object):
                 'mon' in self.data[node]['roles']):
                 monitors.append(node)
 
-        if len(monitors) < 3:
+        if (not self.in_dev_env and len(monitors) < 3) or (self.in_dev_env and len(monitors) < 1):
             msg = "Too few monitors {}".format(",".join(monitors))
             self.errors['monitors'] = [ msg ]
         else:
@@ -413,8 +413,11 @@ class Validate(object):
             self.errors.setdefault(name, []).append(msg)
         elif same_hosts:
             count = len(same_hosts.keys()[0].split(","))
-            if count < 3:
-                msg = "Must have at least three entries"
+            if (not self.in_dev_env and count < 3) or (self.in_dev_env and count < 1):
+                if self.in_dev_env:
+                    msg = "Must have at least one monitor"
+                else:
+                    msg = "Must have at least three monitors"
                 self.errors[name] = [ msg ]
         else:
             msg = "Missing {}".format(name)
