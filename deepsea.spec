@@ -126,6 +126,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mon/key
 %dir /srv/salt/ceph/mon/restart
 %dir /srv/salt/ceph/monitoring
+%dir /srv/salt/ceph/monitoring/grafana
 %dir /srv/salt/ceph/monitoring/prometheus
 %dir /srv/salt/ceph/monitoring/prometheus/exporters
 %dir /srv/salt/ceph/monitoring/prometheus/files
@@ -300,6 +301,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/key/*.sls
 %config /srv/salt/ceph/mon/restart/*.sls
 %config /srv/salt/ceph/monitoring/*.sls
+%config /srv/salt/ceph/monitoring/grafana/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/files/*.j2
