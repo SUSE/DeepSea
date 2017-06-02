@@ -17,8 +17,5 @@ scrape_configs:
       - targets: ['{{ salt['pillar.get']('master_minion') }}:9128']
 
   - job_name: 'node stats'
-    # If prometheus-node-exporter is installed, grab stats about the local
-    # machine by default.
-    static_configs:
-    {% set minions = salt.saltutil.runner('select.minions', cluster='ceph', host=False) %}
-      - targets: ['{{ minions|join(':9100\',\'') }}:9100']
+    file_sd_configs:
+      - files: [ '/etc/prometheus/ses_nodes/*.yml' ]

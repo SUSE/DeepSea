@@ -5,8 +5,7 @@ golang-github-prometheus-prometheus:
 /etc/prometheus/prometheus.yml:
   file:
     - managed
-    - source:
-        - salt://ceph/monitoring/prometheus/files/prometheus.yml.j2
+    - source: salt://ceph/monitoring/prometheus/files/prometheus.yml.j2
     - template: jinja
     - user: root
     - group: root
