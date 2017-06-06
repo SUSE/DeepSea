@@ -74,13 +74,16 @@ List of recognized parameters and their defaults:
 std_args = {
     'standalone-leftovers': False,
     'standalone': False,
+    'nvme-ssd-spinner': False,
     'nvme-ssd': False,
     'nvme-spinner': False,
     'ssd-spinner': False,
     'ratio': 5,
+    'db-ratio': 5,
     'target': '*',
     'data': 0,
     'journal': 0,
+    'db': 0,
     'name': 'default',
     'format': 'bluestore',
     'encryption': '',
@@ -114,7 +117,7 @@ def _propose(node, proposal, args):
 
 
 def _choose_proposal(node, proposal, args):
-    confs = ['nvme-ssd', 'nvme-spinner', 'ssd-spinner', 'standalone']
+    confs = ['nvme-ssd-spinner', 'nvme-spinner', 'ssd-spinner', 'standalone']
     # propose according to flags if present
     for conf in confs:
         if args[conf]:
@@ -127,6 +130,21 @@ def _choose_proposal(node, proposal, args):
 
 def help():
     print(usage)
+
+
+def test(**kwargs):
+    args = _parse_args(kwargs)
+
+    local_client = salt.client.LocalClient()
+
+    proposals = local_client.cmd(args['target'], 'proposal.test',
+                                 expr_form='compound', kwarg=args)
+
+    # determine which proposal to choose
+    for node, proposal in proposals.items():
+        p = _choose_proposal(node, proposal, args)
+        if p:
+            pprint.pprint(p)
 
 
 def peek(**kwargs):
