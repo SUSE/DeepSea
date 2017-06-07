@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def osd(id_, drain=True):
-    runner_cli = salt.runner.RunnerClient()
+    runner_cli = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
 
     if not runner_cli.cmd('disengage.check'):
         log.error(('Safety is not disengaged...refusing to remove OSD\nrun',
