@@ -55,8 +55,6 @@ if [ $1 -eq 1 ] ; then
   # Initialize to most likely value
   sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
 fi
-# change owner to salt, so deepsea can create proposals
-chown -R salt /srv/pillar/ceph
 # Restart salt-master if it's running, so it picks up
 # the config changes in /etc/salt/master.d/modules.conf
 systemctl try-restart salt-master > /dev/null 2>&1 || :
@@ -237,15 +235,15 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/processes
 %config(noreplace) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
-%config /srv/pillar/top.sls
-%config /srv/pillar/ceph/init.sls
-%config /srv/pillar/ceph/benchmark/config.yml
-%config /srv/pillar/ceph/benchmark/benchmark.cfg
-%config /srv/pillar/ceph/benchmark/collections/*.yml
-%config /srv/pillar/ceph/benchmark/fio/*.yml
-%config /srv/pillar/ceph/benchmark/templates/*.j2
-%config(noreplace) /srv/pillar/ceph/master_minion.sls
-%config /srv/pillar/ceph/stack/stack.cfg
+%config %attr(-, salt, salt) /srv/pillar/top.sls
+%config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/config.yml
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/benchmark.cfg
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/collections/*.yml
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/fio/*.yml
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/templates/*.j2
+%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
+%config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 %config /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
@@ -408,11 +406,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/processes/*.sls
-%doc
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 
 
 %changelog
-* Thu Sep  8 2016 Eric Jackson
--
