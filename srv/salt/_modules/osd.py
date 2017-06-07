@@ -768,13 +768,11 @@ class OSDPartitions(object):
                 cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, self.osd.types[partition_type], device)
             _run(cmd)
             partprobe_cmd = "/usr/sbin/partprobe {}".format(device)
-            _run(cmd)
-            #log.info(cmd)
-            #proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-            #proc.wait()
-            #result = proc.stdout.read()
-            #log.debug(pprint.pformat(result))
-            #log.debug(pprint.pformat(proc.stderr.read()))
+            _run(partprobe_cmd)
+            # Seems odd to wipe a just created partition ; however, ghost
+            # filesystems on reused disks seem to be an issue
+            wipe_cmd = "dd if=/dev/zero of={}{} bs=4096 count=1 oflag=direct".format(device, number)
+            _run(wipe_cmd)
             index += 1
 
     def _part_probe(self, device):
@@ -1200,6 +1198,8 @@ class OSDRemove(object):
                         msg = "Unmount failed - check for processes on {}".format(entry[0])
                         log.error(msg)
                         return msg
+                    os.rmdir(entry[1])
+
         #if self.osd_fsid(self.osd_id):
         #    log.info("osd fsid: {}".format(self.osd_fsid(osd_id)))
         #    cmd = "dmsetup remove {}".format(self.osd_fsid(osd_id))
@@ -1527,6 +1527,40 @@ def is_partitioned(device):
     osdc = OSDCommands(config)
     return osdc.is_partitioned(device)
 
+def deploy():
+    """
+    Partition, prepare and activate an OSD.
+
+    Note: This cannot be done in a single state file.  This cannot be done in
+    multiple state files through orchestration.
+
+    In a single state file, the prepare and activate commands are evaluated
+    prior to the running a partition module command.
+
+    Calling the partition command as part of the prepare causes a bug of 
+    creating additional partitions since re-evaluations of the prepare command
+    cause the partitions to be created.
+
+    Separating the steps into two state files requires two for loops.  This breaks
+    the current logic since the prepare and activate commands find the last
+    partitions created.  No mapping exists between an OSD and partitions until
+    the partition is created.
+
+    Another strategy could be converting the prepare and activate to a module
+    but that serves little purpose.  The admin will still not see the commands.
+
+    The last idea is converting all of this into a state module that returns
+    all the commands in the comment.
+    """
+    for device in configured():
+        if not is_prepared(device):
+            config = OSDConfig(device)
+            osdp = OSDPartitions(config)
+            osdp.partition()
+            osdc = OSDCommands(config)
+            _run(osdc.prepare())
+            _run(osdc.activate())
+
 def is_prepared(device):
     """
     Check if the device has already been prepared.  Return shell command.
@@ -1541,13 +1575,13 @@ def is_prepared(device):
     partition = osdc.osd_partition()
     if partition == 0:
         log.error("Do not know which partition to check on {}".format(device))
-        return "/bin/false"
+        return False
 
     log.debug("Checking partition {} on device {}".format(partition, device))
     if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
-        return "/bin/true"
+        return True
     else:
-        return "/bin/false"
+        return False
 
 def _fsck(device, partition):
     """
@@ -1589,8 +1623,6 @@ def prepare(device):
     the partition check) occurs prior to creating the partitions
     """
     config = OSDConfig(device)
-    osdp = OSDPartitions(config)
-    osdp.partition()
     osdc = OSDCommands(config)
     return osdc.prepare()
 
