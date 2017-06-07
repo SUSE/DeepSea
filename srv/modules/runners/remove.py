@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import salt.client
 import salt.runner
 
 """
@@ -10,7 +11,7 @@ Runner to remove a single osd
 log = logging.getLogger(__name__)
 
 
-def osd(id_, drain=True):
+def osd(id_, drain=False):
     runner_cli = salt.runner.RunnerClient(
         salt.config.client_config('/etc/salt/master'))
 
@@ -47,21 +48,22 @@ def osd(id_, drain=True):
 
     log.info('Setting OSD {} out'.format(id_))
 
-    ret = local_cli.cmd(master_minion, 'cmd.run', ['ceph', 'osd', 'out', id_])
+    ret = local_cli.cmd(master_minion, 'cmd.run',
+                        ['ceph osd out {}'.format(id_)])
 
     log.info('Stoping and wiping OSD {} now'.format(id_))
 
     ret = local_cli.cmd(host, 'osd.remove', [id_])
-
-    if ret is not "":
-        log.error('osd.remove returned {}'.format(ret))
-        return False
+    log.info(ret)
 
     ret = local_cli.cmd(master_minion, 'cmd.run',
-                        ['ceph', 'osd', 'crush', 'remove',
-                         'osd.{}'.format(id_)])
+                        ['ceph osd crush remove osd.{}'.format(id_)])
+    log.info(ret)
     ret = local_cli.cmd(master_minion, 'cmd.run',
-                        ['ceph', 'auth', 'del', 'osd.{}'.format(id_)])
-    ret = local_cli.cmd(master_minion, 'cmd.run', ['ceph', 'osd', 'rm', id_])
+                        ['ceph auth del osd.{}'.format(id_)])
+    log.info(ret)
+    ret = local_cli.cmd(master_minion, 'cmd.run',
+                        ['ceph osd rm {}'.format(id_)])
+    log.info(ret)
 
     return True
