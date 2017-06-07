@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from subprocess import check_output
 import salt.runner
 
 """
@@ -12,12 +11,13 @@ log = logging.getLogger(__name__)
 
 
 def osd(id_, drain=True):
-    runner_cli = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
+    runner_cli = salt.runner.RunnerClient(
+        salt.config.client_config('/etc/salt/master'))
 
     if not runner_cli.cmd('disengage.check'):
-        log.error(('Safety is not disengaged...refusing to remove OSD\nrun',
-                  '"salt-run disengage.safety" first'
-                   'THIS WILL CAUSE DATA LOSS.'))
+        log.error(('Safety is not disengaged...refusing to remove OSD',
+                  ' run "salt-run disengage.safety" first'
+                   ' THIS WILL CAUSE DATA LOSS.'))
         return False
 
     if id_ < 0:
@@ -30,12 +30,16 @@ def osd(id_, drain=True):
 
     host = ''
     for osd in osds:
-        if id_ in osds[osd]:
+        if '{}'.format(id_) in osds[osd]:
             host = osd
             break
     else:
         log.error('No OSD with ID {} found...giving up'.format(id_))
         return False
+
+    master_minion = local_cli.cmd('I@roles:master', 'pillar.get',
+                                  ['master_minion'],
+                                  expr_form='compound').items()[0][1]
 
     if drain:
         log.info('Draining OSD {} now'.format(id_))
@@ -43,7 +47,7 @@ def osd(id_, drain=True):
 
     log.info('Setting OSD {} out'.format(id_))
 
-    check_output(['ceph', 'osd', 'rm', '{}'.format(id_)])
+    ret = local_cli.cmd(master_minion, 'cmd.run', ['ceph', 'osd', 'out', id_])
 
     log.info('Stoping and wiping OSD {} now'.format(id_))
 
@@ -53,8 +57,11 @@ def osd(id_, drain=True):
         log.error('osd.remove returned {}'.format(ret))
         return False
 
-    check_output(['ceph', 'osd', 'crush', 'remove', 'osd.{}'.format(id_)])
-    check_output(['ceph', 'auth', 'del', 'osd.{}'.format(id_)])
-    check_output(['ceph', 'osd', 'rm', '{}'.format(id_)])
+    ret = local_cli.cmd(master_minion, 'cmd.run',
+                        ['ceph', 'osd', 'crush', 'remove',
+                         'osd.{}'.format(id_)])
+    ret = local_cli.cmd(master_minion, 'cmd.run',
+                        ['ceph', 'auth', 'del', 'osd.{}'.format(id_)])
+    ret = local_cli.cmd(master_minion, 'cmd.run', ['ceph', 'osd', 'rm', id_])
 
     return True
