@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
 import glob
-import rados
+import os
 import json
 import logging
 import time
@@ -13,6 +12,12 @@ import salt.client
 from subprocess import call, Popen, PIPE
 
 log = logging.getLogger(__name__)
+
+# For Travis -> there is available pip package for rados
+try:
+    import rados
+except:
+    log.error("Rados could not be loaded")
 
 """
 The first functions are different queries for osds.  These can be combined.
@@ -381,10 +386,9 @@ class OSDConfig(object):
         Set attributes for an OSD
         """
         filters = kwargs.get('filters', None)
+        self.device = readlink(device)
         # top_level_identifiier
         self.tli = self._set_tli()
-        #self.device = self.set_device(device)
-        self.device = readlink(device)
         self.capacity = self.set_capacity()
         self.size = self.set_bytes()
         self.small = self._set_small()
@@ -664,8 +668,8 @@ class OSDPartitions(object):
                 self.create(self.osd.device, [('journal', self.osd.journal_size), ('osd', None)])
             elif self.osd.small:
                 # Create journal, data as remainder
-                self.create(self.osd.device, [('journal', self.osd.journal_size),
-                                              ('osd', None)])
+                self.create(self.osd.device, [('journal', self.osd.journal_size), ('osd', None)])
+                #FIXME: The calls in the conditionals are the same.
 
 
     def _double(self, size):
@@ -996,6 +1000,8 @@ class OSDCommands(object):
                     partition = self._highest_partition(self.osd.db, 'wal')
                     if partition:
                         args += "--block.wal {}{} ".format(self.osd.db, partition)
+                    else:
+                        args += "--block.wal {} ".format(self.osd.db)
                 else:
                     if self.osd.db == self.osd.device:
                         log.warn("Separate db partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.db))
