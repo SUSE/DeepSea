@@ -5,4 +5,3 @@ load modules:
     - refresh: True
     - fire_event: True
 
-
