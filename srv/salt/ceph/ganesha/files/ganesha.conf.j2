@@ -51,3 +51,11 @@ RGW {
 
 
 {% endif %}
+
+#NFS-Ganesha is compiled with kerberos support.
+#Set this value to true to use kerberos support.
+#Refer to man page "ganesha-core-config"
+NFS_KRB5
+{
+	Active_krb5 = false;
+}
