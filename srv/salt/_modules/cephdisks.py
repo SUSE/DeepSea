@@ -316,6 +316,7 @@ class HardwareDetections(object):
         """
         Search for Ceph Data and Journal partitions
         """
+        log.debug("Checking partitions {} on device {}".format(ids, device))
         # TODO: Search for all possible codes:
         data = "Partition GUID code: 45B0969E-9B03-4F30-B4C6-B4B80CEFF106"
         journal = "Partition GUID code: 4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D"
@@ -397,7 +398,7 @@ class HardwareDetections(object):
 
     def _preflight_check(self, hardware_dict):
         """
-        Check if lshw or hwinfo actually returned the 
+        Check if lshw or hwinfo actually returned the
         needed fields of 'Capacity', 'Model', 'Device File',
         'device', 'rotational' and 'Driver'.
         If they don't exist and hwdict gets passed to populate.py
@@ -424,6 +425,7 @@ class HardwareDetections(object):
         raid_ctrl = self._detect_raidctrl()
         hw = self.detection_method()
         for path in glob('/sys/block/*/device'):
+            log.debug("path: {}".format(path))
             base = os.path.dirname(path)
             device = os.path.basename(base)
             # Check this on a per disk basis
@@ -431,7 +433,10 @@ class HardwareDetections(object):
             partitions = glob(base + "/" + device + "*")
             if partitions:
                 for p in partitions:
-                    ids = [re.sub('\D+', '', p) for p in partitions]
+                    if 'nvme' in device:
+                        ids = [re.sub('.+p(\d+)', r'\1', p) for p in partitions]
+                    else:
+                        ids = [re.sub('\D+', '', p) for p in partitions]
                 if not self._osd("/dev/" + device, ids):
                     continue
 

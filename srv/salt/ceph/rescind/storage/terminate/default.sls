@@ -4,24 +4,13 @@ storage nop:
 
 {% if 'storage' not in salt['pillar.get']('roles') %}
 
-# systemctl stop ceph-osd@id can hang
-stop osds:
-  cmd.run:
-    - name: "systemctl stop ceph-osd.target"
+{% for id in salt['osd.list']() %}
 
-terminate osds:
-  cmd.run:
-    - name: "pkill ceph-osd"
-    - onlyif: "pgrep ceph-osd"
-
-sleep 3 seconds:
+removing {{ id }}:
   module.run:
-    - name: test.sleep
-    - length: 3
+    - name: osd.terminate
+    - osd_id: {{ id }}
 
-kill osds:
-  cmd.run:
-    - name: "pkill -9 ceph-osd"
-    - onlyif: "pgrep ceph-osd"
+{% endfor %}
 
 {% endif %}
