@@ -11,19 +11,13 @@ grafana-server:
 add prometheus ds:
   cmd.run:
     - name: |
-      curl -s -H "Content-Type: application/json" \
-        -XPOST http://admin:admin@localhost:3000/api/datasources \
-        -d @- <<EOF
-      {
-          "name": "Prometheus",
-          "type": "prometheus",
-          "access": "proxy",
-          "url": "http://localhost:9090",
-          "isDefault": true
-      }
-      EOF
-      touch /etc/grafana/ds_prometheus_added
-      creates:
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/datasources \
+          -d @- <<EOF
+          { "name": "Prometheus", "type": "prometheus", "access": "proxy", "url": "http://localhost:9090", "isDefault": true }
+        EOF
+        touch /etc/grafana/ds_prometheus_added;
+    - creates:
         - /etc/grafana/ds_prometheus_added
 
 grafana-dashboards-ceph:
