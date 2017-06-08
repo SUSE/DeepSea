@@ -2,6 +2,48 @@
 # vim: ts=8 et sw=4 sts=4
 
 import os
+import socket
+from subprocess import Popen, PIPE
+import json
+
+def _append_to_ceph_disk(ceph_disks, partition, journal_dev):
+    """
+    Populate ceph_disks dictionary with data and journal partitions.
+    """
+    try:
+	ceph_disks["ceph"]["storage"]["osds"][partition]
+    except KeyError, e:
+	ceph_disks["ceph"]["storage"]["osds"][partition] = {}
+    finally:
+	ceph_disks["ceph"]["storage"]["osds"][partition]["format"] = "filestore"
+	ceph_disks["ceph"]["storage"]["osds"][partition]["journal"] = journal_dev.rstrip("1234567890")
+
+def get_ceph_disks_yml(**kwargs):
+    """
+    Generates yml representation of Ceph filestores on a given node.
+    Returns something like: {"ceph": {"storage": {"osds": {"/dev/foo":
+							    {"format": "filestore",
+							     "journal": "/dev/bar"}}}}}
+    """
+    ceph_disk_list = Popen("ceph-disk list --format=json", stdout=PIPE, stderr=PIPE, shell=True)
+    out, err = ceph_disk_list.communicate()
+    ceph_disks = {"ceph":
+		  {"storage":
+		   {"osds": {} }}}
+
+    # Failed `ceph-disk list`
+    if err: return None
+
+    out_list = json.loads(out)
+    # [ { 'path': '/dev/foo', 'partitions': [ {...}, ... ], ... }, ... ]
+    # The partitions list has all the goodies.
+    for part_dict in out_list:
+	path = part_dict['path']
+	for p in part_dict['partitions']:
+	    if p['type'] == 'data':
+		_append_to_ceph_disk(ceph_disks, path, p['journal_dev'])
+
+    return ceph_disks
 
 def _extract_key(filename):
     # This is pretty similar to keyring.secret()...
