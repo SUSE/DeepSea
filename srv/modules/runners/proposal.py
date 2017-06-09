@@ -83,7 +83,7 @@ std_args = {
     'target': '*',
     'data': 0,
     'journal': 0,
-    'db': 0,
+    'wal': 0,
     'name': 'default',
     'format': 'bluestore',
     'encryption': '',
