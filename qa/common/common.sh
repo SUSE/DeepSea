@@ -83,17 +83,14 @@ role-mon/stack/default/ceph/minions/*.yml slice=[:3]
 EOF
 }
 
-function gen_policy_cfg_client {
-  cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - client (last test node)
-role-client/cluster/*.sls slice=[-1:]
-EOF
-}
-
 function gen_policy_cfg_mds {
-  cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - MDS (all but the last test node)
 role-mds/cluster/*.sls slice=[:-1]
 EOF
+}
+
+function cat_policy_cfg {
+  cat /srv/pillar/ceph/proposals/policy.cfg
 }
 

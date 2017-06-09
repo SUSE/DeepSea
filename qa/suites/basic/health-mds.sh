@@ -1,15 +1,15 @@
 #!/bin/bash -ex
 #
-# DeepSea integration test "suites/basic/health-ok.sh"
+# DeepSea integration test "suites/basic/health-mds.sh"
 #
-# This script runs DeepSea stages 0-3 to deploy a Ceph cluster on all the nodes
-# that have at least one external disk drive. After stage 3 completes, the
-# script checks for HEALTH_OK.
+# This script runs DeepSea stages 0-4 to deploy a Ceph cluster with MDS.
+# After stage 4 completes, it mounts the cephfs on the client node,
+# touches a file, and asserts that it exists.
 #
 # The script makes no assumptions beyond those listed in qa/README.
 #
-# On success (HEALTH_OK is reached), the script returns 0. On failure, for
-# whatever reason, the script returns non-zero.
+# On success, the script returns 0. On failure, for whatever reason, the script
+# returns non-zero.
 #
 # The script produces verbose output on stdout, which can be captured for later
 # forensic analysis.
@@ -25,6 +25,7 @@ source $BASEDIR/common/common.sh
 run_stage_0
 run_stage_1
 gen_policy_cfg
+gen_policy_cfg_mds
 cat_policy_cfg
 run_stage_2
 run_stage_3
@@ -34,5 +35,7 @@ if [[ ! $? == 0 ]]; then
   echo "Ceph cluster is not healthy!"
   ceph -s
 fi
+
+run_stage_4
 
 echo "OK"
