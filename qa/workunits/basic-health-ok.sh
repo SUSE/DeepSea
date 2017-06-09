@@ -19,71 +19,14 @@
 #   outcome it should tolerate is clock skew. (We will need a special ceph.conf
 #   for two-node clusters.)
 
-SALT_MASTER=`cat /srv/pillar/ceph/master_minion.sls | \
-             sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
-             grep -v '^$'`
+BASEDIR=$(pwd)
+source $BASEDIR/common/common.sh
 
-MINIONS_LIST=`salt-key -L -l acc | grep -v '^Accepted Keys' | grep -v $SALT_MASTER`
-
-export DEV_ENV='true'
-
-function run_stage {
-  local stage_num=$1
-
-  echo ""
-  echo "*********************************************"
-  echo "********** Running DeepSea Stage $stage_num **********"
-  echo "*********************************************"
-  echo ""
-
-  salt-run --no-color state.orch ceph.stage.${stage_num} | tee /tmp/stage.${stage_num}.log
-  STAGE_FINISHED=`fgrep 'Total states run' /tmp/stage.${stage_num}.log`
-
-  if [[ ! -z $STAGE_FINISHED ]]; then
-    FAILED=`fgrep 'Failed: ' /tmp/stage.${stage_num}.log | sed 's/.*Failed:\s*//g' | head -1`
-    if [[ "$FAILED" -gt "0" ]]; then
-      echo "********** Stage $stage_num failed with $FAILED failures **********"
-      echo "Check /tmp/stage.${stage_num}.log for details"
-      exit 1
-    fi
-    echo "********** Stage $stage_num completed successefully **********"
-  else
-    echo "********** Stage $stage_num failed with $FAILED failures **********"
-    echo "Check /tmp/stage.${stage_num}.log for details"
-    exit 1
-  fi
-}
-
-function gen_policy_cfg {
-
-  cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
-# Cluster assignment
-cluster-ceph/cluster/*.sls
-# Hardware Profile
-profile-*-1/cluster/*.sls
-profile-*-1/stack/default/ceph/minions/*yml
-# Common configuration
-config/stack/default/global.yml
-config/stack/default/ceph/cluster.yml
-# Role assignment
-role-master/cluster/${SALT_MASTER}*.sls
-EOF
-
-  for minion in $MINIONS_LIST; do
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-role-mon/cluster/${minion}*.sls
-role-mon/stack/default/ceph/minions/${minion}*.yml
-role-admin/cluster/${minion}*.sls
-EOF
-  done
-
-}
-
-run_stage 0
-run_stage 1
+run_stage_0
+run_stage_1
 gen_policy_cfg
-run_stage 2
-run_stage 3
+run_stage_2
+run_stage_3
 
 ceph -s | tee /dev/stderr | grep -q 'HEALTH_OK\|HEALTH_WARN'
 if [[ ! $? == 0 ]]; then
