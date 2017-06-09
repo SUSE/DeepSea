@@ -16,11 +16,11 @@ def _preserve_order_sorted(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def unique(cluster='ceph', exclude=[]):
-    """ 
+def unique(cluster='ceph', exclude=None):
+    """
     Assembling a list of nodes.
-    Ordered(MON, OSD, MDS, RGW, IGW)  
-    """ 
+    Ordered(MON, OSD, MDS, RGW, IGW)
+    """
     all_clients = []
 
     client = salt.client.LocalClient(__opts__['conf_file'])
@@ -28,7 +28,7 @@ def unique(cluster='ceph', exclude=[]):
     cluster_assignment = "I@cluster:{}".format(cluster)
     roles = ['mon', 'storage', 'mds', 'rgw', 'igw', 'ganesha']
     # Adding an exclude param here to allow skipping of individual
-    # roles. 
+    # roles.
     # Usecase: If an admin wants to have manual control over the upgrade
     # process in missioncritical connections like iscsi where one needs
     # to be sure that the MPIO successfully failed over before re booting/starting
@@ -38,6 +38,7 @@ def unique(cluster='ceph', exclude=[]):
     _stdout = sys.stdout
     sys.stdout = open(os.devnull, 'w')
 
+    exclude = exclude or []
     roles = [role for role in roles if role not in exclude]
     for role in roles:
         nodes = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
