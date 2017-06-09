@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 #
-# DeepSea integration test workunit "basic-health-ok.sh"
+# DeepSea integration test "suites/basic/health-ok.sh"
 #
 # This script runs DeepSea stages 0-3 to deploy a Ceph cluster on all the nodes
 # that have at least one external disk drive. After stage 3 completes, the
@@ -35,4 +35,3 @@ if [[ ! $? == 0 ]]; then
 fi 
 
 echo "OK"
-
