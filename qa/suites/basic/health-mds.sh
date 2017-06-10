@@ -31,6 +31,7 @@ run_stage_2
 run_stage_3
 ceph_health_test
 run_stage_4
+sleep 10
 cephfs_mount_and_sanity_test
 
 echo "OK"
