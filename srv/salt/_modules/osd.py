@@ -485,6 +485,8 @@ class OSDConfig(object):
             # OR the old version..
             return OSDConfig.DEFAULT_FORMAT_FOR_V1
         if self._config_version() == OSDConfig.V2:
+            if self.device not in self.tli:
+                raise RuntimeError("Device {} is not defined in pillar".format(self.device))
             if 'format' in self.tli[self.device]:
                 return self.tli[self.device]['format']
             return OSDConfig.DEFAULT_FORMAT_FOR_V2
@@ -770,13 +772,16 @@ class OSDPartitions(object):
                 cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, self.osd.types[partition_type], device)
             else:
                 cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, self.osd.types[partition_type], device)
-            _run(cmd)
-            partprobe_cmd = "/usr/sbin/partprobe {}{}".format(device, number)
+            rc, _stdout, _stderr = _run(cmd)
+            if rc != 0:
+                raise RuntimeError("{} failed".format(cmd))
+            partprobe_cmd = "/usr/sbin/partprobe {}".format(device)
             _run(partprobe_cmd)
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
-            wipe_cmd = "dd if=/dev/zero of={}{} bs=4096 count=1 oflag=direct".format(device, number)
-            _run(wipe_cmd)
+            if os.path.exists("{}{}".format(device, number)):
+                wipe_cmd = "dd if=/dev/zero of={}{} bs=4096 count=1 oflag=direct".format(device, number)
+                _run(wipe_cmd)
             index += 1
 
     def _part_probe(self, device):
@@ -1094,6 +1099,73 @@ class OSDCommands(object):
         if os.path.exists(filename):
             with open(filename, 'r') as osd_type:
                 return osd_type.read().rstrip()
+
+    def is_incorrect(self):
+        """
+        Check that an OSD is configured properly.  Compare formats, separate
+        partitions and size of partitions.
+        """
+        if self.osd.encryption:
+            log.warn("Encrypted OSDs not supported")
+            return False
+
+        pathname = None
+        with open("/proc/mounts", "r") as mounts:
+            for line in mounts:
+                entry = line.split()
+                if entry[0].startswith(self.osd.device):
+                    pathname = entry[1]
+                    break
+
+        if pathname:
+            filename = "{}/type".format(pathname)
+            if os.path.exists(filename):
+                with open(filename, 'r') as osd_type:
+                    osd_format = osd_type.read().rstrip()
+                if osd_format != self.osd.disk_format:
+                    log.info("OSD {} does not match format {}".format(pathname, self.osd.disk_format))
+                    return True
+
+            if self.osd.disk_format == 'filestore' and self.osd.journal:
+                result = self._check_device(pathname, 'journal', self.osd.journal, self.osd.journal_size)
+                if result:
+                    return True
+
+            if self.osd.disk_format == 'bluestore':
+                if self.osd.wal:
+                    result = self._check_device(pathname, 'block.wal', self.osd.wal, self.osd.wal_size)
+                    if result:
+                        return True
+                if self.osd.db:
+                    result = self._check_device(pathname, 'block.db', self.osd.db, self.osd.db_size)
+                    if result:
+                        return True
+
+        return False
+
+    def _check_device(self, pathname, attr, device, size):
+        """
+        """
+        devicename = readlink("{}/{}".format(pathname, attr))
+        if device and  not devicename.startswith(device):
+            log.info("OSD {} {} does not match {}".format(attr, devicename, device))
+            return True
+        cmd = "blockdev --getsize64 {}".format(devicename)
+        rc, _stdout, _stderr = _run(cmd)
+        bsize = int(_stdout)
+        _bytes = self._convert(size)
+        if size and _bytes != bsize:
+            log.info("OSD {} size {} does not match {} ({})".format(attr, bsize, size, _bytes))
+            return True
+
+    def _convert(self, size):
+        """
+        """
+        suffixes = { 'K': 2**10, 'M': 2**20, 'G': 2**30, 'T': 2**40 }
+        suffix = size[-1:]
+        bsize = int(size[:-1]) * suffixes[suffix]
+        log.debug("suffix: {} bsize: {}".format(suffix, bsize))
+        return bsize
 
 class OSDRemove(object):
     """
@@ -1540,7 +1612,7 @@ def deploy():
     In a single state file, the prepare and activate commands are evaluated
     prior to the running a partition module command.
 
-    Calling the partition command as part of the prepare causes a bug of 
+    Calling the partition command as part of the prepare causes a bug of
     creating additional partitions since re-evaluations of the prepare command
     cause the partitions to be created.
 
@@ -1644,6 +1716,12 @@ def detect(osd_id):
     osdc = OSDCommands(config)
     return osdc.detect(osd_id)
 
+def is_incorrect(device):
+    """
+    """
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    return osdc.is_incorrect()
 
 def partitions(osd_id):
     """
@@ -1658,6 +1736,46 @@ def retain():
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
     return osdg.retain()
+
+def report(failhard=False):
+    """
+    Display the difference between the pillar and grains for the OSDs
+
+    Note: this needs more bullet proofing
+    """
+    active = []
+    for _id in __grains__['ceph']:
+        active.append(__grains__['ceph'][_id]['partitions']['osd'][:-1])
+        if 'lockbox' in __grains__['ceph'][_id]['partitions']:
+            active.append(__grains__['ceph'][_id]['partitions']['lockbox'][:-1])
+
+    log.debug("active: {}".format(active))
+
+    if 'ceph' in __pillar__:
+        configured = __pillar__['ceph']['storage']['osds'].keys()
+        for osd in __pillar__['ceph']['storage']['osds'].keys():
+            if osd in active:
+                configured.remove(osd)
+
+    if 'storage' in __pillar__:
+        configured = __pillar__['storage']['osds']
+        for dj in __pillar__['storage']['data+journals']:
+            configured.append(*dj.keys())
+        log.info("configured: {}".format(configured))
+        osds = list(configured)
+        for osd in osds:
+            if osd in active:
+                configured.remove(osd)
+
+    if configured:
+        msg = "No OSD configured for {}".format(" ".join(configured))
+        if failhard:
+            raise RuntimeError(msg)
+        else:
+            return msg
+    else:
+        return "All configured OSDs are active"
+
 
 __func_alias__ = {
                 'list_': 'list',
