@@ -29,13 +29,8 @@ gen_policy_cfg_mds
 cat_policy_cfg
 run_stage_2
 run_stage_3
-
-ceph -s | tee /dev/stderr | grep -q 'HEALTH_OK\|HEALTH_WARN'
-if [[ ! $? == 0 ]]; then
-  echo "Ceph cluster is not healthy!"
-  ceph -s
-fi
-
+ceph_health_test
 run_stage_4
+cephfs_mount_and_sanity_test
 
 echo "OK"

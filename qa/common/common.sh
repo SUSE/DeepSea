@@ -94,3 +94,25 @@ function cat_policy_cfg {
   cat /srv/pillar/ceph/proposals/policy.cfg
 }
 
+function ceph_health_test {
+  ceph -s | tee /dev/stderr | grep -q 'HEALTH_OK\|HEALTH_WARN'
+}
+
+function cephfs_mount_and_sanity_test {
+  #
+  # mounts cephfs in /mnt, touches a file, asserts that it exists
+  #
+  local mons=$(ceph-conf --lookup 'mon_initial_members' | tr -d '[:space:]')
+  local secr=$(grep 'key =' /etc/ceph/ceph.client.admin.keyring | awk '{print $NF}')
+  #sleep 10
+  echo "Running as: $(whoami)"
+  echo "Mounting cephfs"
+  echo "MONs: $mons"
+  echo "admin secret: $secr"
+  test -d /mnt
+  mount -t ceph ${mons}:/ /mnt -o name=admin,secret="$secr"
+  touch /mnt/bubba
+  test -f /mnt/bubba
+  umount /mnt
+}
+
