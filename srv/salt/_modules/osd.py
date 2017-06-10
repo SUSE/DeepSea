@@ -1191,8 +1191,12 @@ class OSDRemove(object):
         with open("/proc/mounts", "r") as mounts:
             for line in mounts:
                 entry = line.split()
-                if entry[0] in mounted:
-                    cmd = "umount {}".format(entry[0])
+                if '/dev/mapper' in entry[0]:
+                    mount = readlink(entry[0])
+                else:
+                    mount = entry[0]
+                if mount in mounted:
+                    cmd = "umount {}".format(mount)
                     rc, _stdout, _stderr = _run(cmd)
                     log.debug("returncode: {}".format(rc))
                     if rc != 0:
@@ -1201,10 +1205,9 @@ class OSDRemove(object):
                         return msg
                     os.rmdir(entry[1])
 
-        #if self.osd_fsid(self.osd_id):
-        #    log.info("osd fsid: {}".format(self.osd_fsid(osd_id)))
-        #    cmd = "dmsetup remove {}".format(self.osd_fsid(osd_id))
-        #    _run(cmd)
+        if '/dev/dm' in self.partitions['osd']:
+            cmd = "dmsetup remove {}".format(self.partitions['osd'])
+            _run(cmd)
         return ""
 
     def _mounted(self):
@@ -1214,7 +1217,8 @@ class OSDRemove(object):
         devices = []
         for attr in ['osd', 'lockbox']:
             if attr in self.partitions:
-                devices.append(readlink(self.partitions[attr]))
+                devices.append(self.partitions[attr])
+        log.debug("mounted: {}".format(devices))
         return devices
 
     def wipe(self):
@@ -1238,9 +1242,6 @@ class OSDRemove(object):
         """
         self.osd_disk = self._osd_disk()
         self._delete_partitions()
-        if self.osd_disk and '/dev/mapper' in self.osd_disk:
-            log.debug("skipping OSD {}".format(self.osd_disk))
-            return ""
         self._wipe_gpt_backups()
         self._delete_osd()
         self._settle()
@@ -1261,10 +1262,12 @@ class OSDRemove(object):
         """
         for attr in self.partitions:
             log.debug("Checking attr {}".format(attr))
-            short_name = readlink(self.partitions[attr])
-            if '/dev/mapper' in short_name:
-                log.debug("skipping {}".format(self.partitions[attr]))
+            if '/dev/dm' in self.partitions[attr]:
+                cmd = "dmsetup remove {}".format(self.partitions[attr])
+                _run(cmd)
                 continue
+
+            short_name = readlink(self.partitions[attr])
 
             if os.path.exists(short_name):
                 if self.osd_disk and self.osd_disk in short_name:
@@ -1439,16 +1442,15 @@ class OSDDevices(object):
         """
         Return the uuid device
         """
-        if os.path.exists(pathname):
-            cmd = "find -L {} -samefile {} \( -name ata* -o -name nvme* \)".format(pathname, device)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-            proc.wait()
-            result = proc.stdout.read().rstrip()
-            log.debug(pprint.pformat(result))
-            log.debug(pprint.pformat(proc.stderr.read()))
-            return result
-        else:
-            if os.path.exists(device):
+        if os.path.exists(device):
+            if os.path.exists(pathname):
+                cmd = "find -L {} -samefile {} \( -name ata* -o -name nvme* \)".format(pathname, device)
+                rc, _stdout, _stderr = _run(cmd)
+                if _stdout:
+                    return _stdout
+                else:
+                    return readlink(device)
+            else:
                 return readlink(device)
 
 class OSDGrains(object):
