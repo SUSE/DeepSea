@@ -14,10 +14,6 @@
 # The script produces verbose output on stdout, which can be captured for later
 # forensic analysis.
 #
-# FIXME:
-# - script currently tolerates HEALTH_WARN -> not good. The only HEALTH_WARN
-#   outcome it should tolerate is clock skew. (We will need a special ceph.conf
-#   for two-node clusters.)
 
 set -ex
 BASEDIR=$(pwd)

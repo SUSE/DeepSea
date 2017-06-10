@@ -9,7 +9,7 @@ function json_total_nodes {
 
 function _json_nodes_of_role_x {
   local ROLE=$1
-  salt --static --out json "$SALT_MASTER" test.ping | jq '. | length'
+  salt --static --out json -C "I@roles:$ROLE" test.ping | jq '. | length'
 }
 
 function json_storage_nodes {

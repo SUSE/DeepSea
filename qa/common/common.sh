@@ -76,14 +76,25 @@ function run_stage_5 {
 
 function ceph_conf {
   local STORAGENODES=$(json_storage_nodes)
-  echo "Assert that STORAGENODES is defined..."
   test ! -z "$STORAGENODES"
-  if [[ "$STORAGENODES" -lt "3" ]] ; then
+  if [ "x$STORAGENODES" = "x1" ] ; then
+    # 1 node, 2 OSDs
+    echo "Adjusting ceph.conf for operation with 1 storage node"
     cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
-mon pg warn min per osd = 2
+mon pg warn min per osd = 16
 osd pool default size = 2
 osd crush chooseleaf type = 0 # failure domain == osd
 EOF
+  elif [ "x$STORAGENODES" = "x2" ] ; then
+    # 2 nodes, 4 OSDs
+    echo "Adjusting ceph.conf for operation with 2 storage nodes"
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+mon pg warn min per osd = 8
+osd pool default size = 2
+EOF
+  else
+    echo "Three or more storage nodes; not adjusting ceph.conf"
+    # TODO: look up default value of "mon pg warn min per osd"
   fi
 }
 
@@ -131,6 +142,13 @@ role-mds/cluster/*.sls slice=[:-1]
 EOF
 }
 
+function policy_cfg_nfs_ganesha {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - NFS-Ganesha (first node)
+role-ganesha/cluster/*.sls slice=[:1]
+EOF
+}
+
 function cat_policy_cfg {
   cat /srv/pillar/ceph/proposals/policy.cfg
 }
@@ -158,8 +176,24 @@ function _client_node {
   salt --no-color -C 'not I@roles:storage' test.ping | grep -o -P '^\S+(?=:)' | head -1
 }
 
-function _mds_node {
-  salt --no-color -C 'I@roles:mds' test.ping | grep -o -P '^\S+(?=:)' | head -1
+function _first_x_node {
+  local ROLE=$1
+  salt --no-color -C "I@roles:$ROLE" test.ping | grep -o -P '^\S+(?=:)' | head -1
+}
+
+function _run_test_script_on_node {
+  local TESTSCRIPT=$1
+  local TESTNODE=$2
+  local ASUSER=$3
+  salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT
+  local LOGFILE=/tmp/test_script.log
+  if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
+    salt $TESTNODE cmd.run "sh $TESTSCRIPT" | tee $LOGFILE
+  else
+    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"sh $TESTSCRIPT\"" | tee $LOGFILE
+  fi
+  local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
+  test "x$RESULT" = "xOK"
 }
 
 function cephfs_mount_and_sanity_test {
@@ -168,6 +202,7 @@ function cephfs_mount_and_sanity_test {
   # mounts cephfs in /mnt, touches a file, asserts that it exists
   #
   local TESTSCRIPT=/tmp/cephfs_test.sh
+  local CLIENTNODE=$(_client_node)
   cat << 'EOF' > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
@@ -183,12 +218,7 @@ test -f /mnt/bubba
 umount /mnt
 echo "Result: OK"
 EOF
-  local CLIENTNODE=$(_client_node)
   # FIXME: assert no MDS running on $CLIENTNODE
-  salt-cp $CLIENTNODE $TESTSCRIPT $TESTSCRIPT
-  local LOGFILE=/tmp/cephfs_test.log
-  salt $CLIENTNODE cmd.run "sh $TESTSCRIPT" | tee $LOGFILE
-  local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
-  test "x$RESULT" = "xOK"
+  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
