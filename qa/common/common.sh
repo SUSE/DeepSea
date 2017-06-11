@@ -62,30 +62,42 @@ function run_stage_5 {
   _run_stage 5 "$@"
 }
 
-
-function gen_policy_cfg {
+function gen_policy_cfg_base {
   cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
 # Cluster assignment
 cluster-ceph/cluster/*.sls
-# All nodes get the admin keyring
-role-admin/cluster/*.sls
-# Hardware Profile - no OSDs on the last node
-profile-*-1/cluster/*.sls slice=[:-1]
-profile-*-1/stack/default/ceph/minions/*yml slice=[:-1]
 # Common configuration
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
 # Role assignment - master
 role-master/cluster/${SALT_MASTER}*.sls
-# Role assignment - mon (just one, on the first node)
+# Role assignment - admin
+role-admin/cluster/*.sls
+# Role assignment - mon
 role-mon/cluster/*.sls slice=[:1]
 role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }
 
+function gen_policy_cfg_no_client {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Hardware Profile
+profile-*-1/cluster/*.sls
+profile-*-1/stack/default/ceph/minions/*yml
+EOF
+}
+
+function gen_policy_cfg_client {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Hardware Profile
+profile-*-1/cluster/*.sls slice=[:-1]
+profile-*-1/stack/default/ceph/minions/*yml slice=[:-1]
+EOF
+}
+
 function gen_policy_cfg_mds {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - MDS (all but the last test node)
+# Role assignment - mds
 role-mds/cluster/*.sls slice=[:-1]
 EOF
 }
