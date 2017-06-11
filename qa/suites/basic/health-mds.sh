@@ -18,10 +18,6 @@
 # - script currently tolerates HEALTH_WARN -> not good. The only HEALTH_WARN
 #   outcome it should tolerate is clock skew. (We will need a special ceph.conf
 #   for two-node clusters.)
-# - In its present form, the test mounts the cephfs on the master node, which
-#   is suboptimal because the master node might be running an MDS daemon.
-#   The test should be refactored to do the mount on a "client" (non-MDS) node
-#   (salt -C 'not I@roles:mds' cmd.run ...)
 
 BASEDIR=$(pwd)
 source $BASEDIR/common/common.sh
