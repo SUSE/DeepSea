@@ -879,6 +879,22 @@ def engulf_existing_cluster(**kwargs):
     policy_cfg = []
 
     local = salt.client.LocalClient()
+    settings = Settings()
+    salt_writer = SaltWriter(**kwargs)
+
+    # First, hand apply select Stage 0 functions
+    local.cmd("*", "saltutil.sync_all")
+    local.cmd("*", "state.apply", ["ceph.mines"], expr_form="compound")
+
+    # Run proposals gathering directly.  Note that this really isn't needed,
+    # but it may be useful for the admin to have the populated proposal tree
+    # for future reference
+    # TODO: minions.ready() needed?
+    proposals()
+
+    # Our imported hardware profile proposal path
+    imported_profile = "profile-import"
+    imported_profile_path = settings.root_dir + "/" + imported_profile
 
     ceph_conf = None
     previous_minion = None
@@ -918,6 +934,25 @@ def engulf_existing_cluster(**kwargs):
             # Needs a storage profile assigned (which may be different
             # than the proposals deepsea has come up with, depending on
             # how things were deployed)
+	    ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml")
+	    if not ceph_disks:
+                log.error("Failed to get list of Ceph OSD disks.")
+                return [ False ]
+
+	    for minion, store in ceph_disks.items():
+		minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
+		minion_yml_path = minion_yml_dir + "/" + minion + ".yml"
+		_create_dirs(minion_yml_dir, "")
+		salt_writer.write(minion_yml_path, store)
+
+		minion_sls_data = { "roles": [ "storage" ] }
+		minion_sls_dir = imported_profile_path + "/cluster"
+		minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
+		_create_dirs(minion_sls_dir, "")
+		salt_writer.write(minion_sls_path, minion_sls_data)
+
+		policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
+		policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
             pass
 
         if "ceph-mds" in info["running_services"].keys():
