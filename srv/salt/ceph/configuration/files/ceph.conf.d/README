@@ -4,7 +4,7 @@ The default ceph.conf template
 (<salt_dir>/ceph/configuration/files/ceph.conf.j2) includes the content of five
 files from the <salt_dir>/ceph/configuration/files/ceph.conf.d directory. These
 files are [global,mon,mds,osd,client].conf and are meant for user
-customizsations of ceph.conf.
+customisations of ceph.conf.
 
 The five files correspond to the different sections the Ceph configuration file
 accepts (see also
