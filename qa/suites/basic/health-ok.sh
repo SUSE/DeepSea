@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 #
-# DeepSea integration test workunit "basic-health-ok.sh"
+# DeepSea integration test "suites/basic/health-ok.sh"
 #
 # This script runs DeepSea stages 0-3 to deploy a Ceph cluster on all the nodes
 # that have at least one external disk drive. After stage 3 completes, the
@@ -24,15 +24,11 @@ source $BASEDIR/common/common.sh
 
 run_stage_0
 run_stage_1
-gen_policy_cfg
+gen_policy_cfg_base
+gen_policy_cfg_no_client
+cat_policy_cfg
 run_stage_2
 run_stage_3
-
-ceph -s | tee /dev/stderr | grep -q 'HEALTH_OK\|HEALTH_WARN'
-if [[ ! $? == 0 ]]; then
-  echo "Ceph cluster is not healthy!"
-  ceph -s
-fi 
+ceph_health_test
 
 echo "OK"
-
