@@ -32,6 +32,6 @@ policy_cfg_mds
 cat_policy_cfg
 run_stage_2
 run_stage_3
-ceph_health_test
 run_stage_4
+ceph_health_test
 cephfs_mount_and_sanity_test
