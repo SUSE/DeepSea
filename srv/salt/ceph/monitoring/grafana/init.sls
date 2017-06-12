@@ -33,4 +33,4 @@ grafana-dashboards-ceph:
     - repl: |
         [dashboards.json]
         enabled = true
-        path = /var/lib/grafana/dashboards
+        path = /var/lib/grafana-dashboards-ceph
