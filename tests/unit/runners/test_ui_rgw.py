@@ -21,6 +21,7 @@ class TestRadosgw():
         result = {'urls': [],
                   'access_key': '12345', 
                   'secret_key': 'abcdef',
+                  'user_id': 'admin',
                   'success': True}
 
         fs.CreateFile('cache/user.admin.json',
@@ -38,6 +39,7 @@ class TestRadosgw():
         result = {'urls': [],
                   'access_key': '12345', 
                   'secret_key': 'abcdef',
+                  'user_id': 'jdoe',
                   'success': True}
 
         fs.CreateFile('cache/user.jdoe.json',
@@ -55,6 +57,7 @@ class TestRadosgw():
         result = {'urls': [],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/user.jdoe.json',
@@ -72,6 +75,7 @@ class TestRadosgw():
         result = {'urls': [],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/user.jdoe.json',
@@ -89,6 +93,7 @@ class TestRadosgw():
         result = {'urls': ["http://rgw1:7480"],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/client.rgw.rgw1.json',
@@ -109,6 +114,7 @@ class TestRadosgw():
         result = {'urls': ["https://rgw1:443"],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/client.rgw.rgw1.json')
@@ -129,6 +135,7 @@ class TestRadosgw():
         result = {'urls': ["http://rgw:7480"],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/client.rgw.json',
@@ -149,6 +156,7 @@ class TestRadosgw():
         result = {'urls': ["https://rgw:443"],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/client.rgw.json')
@@ -169,6 +177,7 @@ class TestRadosgw():
         result = {'urls': [],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         fs.CreateFile('cache/client.rgw.abc.def.json',
@@ -187,6 +196,7 @@ class TestRadosgw():
         result = {'urls': ["http://abc.def"],
                   'access_key': None, 
                   'secret_key': None,
+                  'user_id': None,
                   'success': False}
 
         mpu = masterpillarutil.return_value 

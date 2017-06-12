@@ -34,6 +34,7 @@ class Radosgw(object):
             self.cluster = cluster
             self.credentials = {'access_key': None,
                                 'secret_key': None,
+                                'user_id': None,
                                 'urls': [],
                                 'success': False}
 
@@ -78,6 +79,7 @@ class Radosgw(object):
                 return
         self.credentials['access_key'] = user['keys'][0]['access_key']
         self.credentials['secret_key'] = user['keys'][0]['secret_key']
+        self.credentials['user_id'] = user['keys'][0]['user']
         self.credentials['success'] = True
 
     def _urls(self):
