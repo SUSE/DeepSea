@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash
 #
 # DeepSea integration test "suites/basic/health-mds.sh"
 #
@@ -19,9 +19,11 @@
 #   outcome it should tolerate is clock skew. (We will need a special ceph.conf
 #   for two-node clusters.)
 
+set -ex
 BASEDIR=$(pwd)
 source $BASEDIR/common/common.sh
 
+ceph_conf
 run_stage_0
 run_stage_1
 policy_cfg_base
@@ -34,5 +36,3 @@ ceph_health_test
 run_stage_4
 sleep 10
 cephfs_mount_and_sanity_test
-
-echo "OK"
