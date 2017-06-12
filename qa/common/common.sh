@@ -62,7 +62,7 @@ function run_stage_5 {
   _run_stage 5 "$@"
 }
 
-function gen_policy_cfg_base {
+function policy_cfg_base {
   cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
 # Cluster assignment
 cluster-ceph/cluster/*.sls
@@ -79,7 +79,7 @@ role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }
 
-function gen_policy_cfg_no_client {
+function policy_cfg_no_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-*-1/cluster/*.sls
@@ -87,7 +87,7 @@ profile-*-1/stack/default/ceph/minions/*yml
 EOF
 }
 
-function gen_policy_cfg_client {
+function policy_cfg_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-*-1/cluster/*.sls slice=[:-1]
@@ -95,7 +95,7 @@ profile-*-1/stack/default/ceph/minions/*yml slice=[:-1]
 EOF
 }
 
-function gen_policy_cfg_mds {
+function policy_cfg_mds {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - mds
 role-mds/cluster/*.sls slice=[:-1]

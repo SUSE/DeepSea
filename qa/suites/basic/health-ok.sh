@@ -24,8 +24,8 @@ source $BASEDIR/common/common.sh
 
 run_stage_0
 run_stage_1
-gen_policy_cfg_base
-gen_policy_cfg_no_client
+policy_cfg_base
+policy_cfg_no_client
 cat_policy_cfg
 run_stage_2
 run_stage_3
