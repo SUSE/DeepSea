@@ -2,7 +2,18 @@ DeepSea integration test suite
 ==============================
 
 The DeepSea integration suite residing in qa/ consists of a number of
-executable files (bash scripts), all of which make the following assumptions:
+executable files (bash scripts), which can be classified as follows:
+
+qa/common/ -> scripts that are sourced by the test scripts
+qa/suites/ -> test scripts
+
+The test scripts are designed to be run from the qa/ directory. Please
+study carefully this README and the comments at the top of the test script
+before trying to run any of the test scripts.
+
+
+Assumptions made by all test scripts
+------------------------------------
 
 1. there are at least two test nodes (VMs or physical machines) that are
    running the same OS (e.g. Leap 42.3) and can see eachother over the network. 
@@ -16,5 +27,15 @@ executable files (bash scripts), all of which make the following assumptions:
 5. the DeepSea code under test has already been installed (git clone ; make
    install) on the master node
 6. the integration test script (this script) is run from the qa/ subdirectory
-   of the DeepSea repo clone
+   of the DeepSea repo clone.
+
+
+The following section is WIP - do not use!
+------------------------------------------
+
+7. a file called 'deepsea-qa-cluster-layout' (working name) has optionally been
+   created inside the same directory where the DeepSea repo was cloned. If it
+   exists, this file is expected to contain data points describing the cluster
+   layout (e.g. which nodes are storage nodes, which are client nodes, etc.).
+   If it is not present, the test script will try to do without it.
 
