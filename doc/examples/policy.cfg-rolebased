@@ -1,16 +1,32 @@
-# Cluster assignment
+## Cluster Assignment
 cluster-ceph/cluster/*.sls
-# Hardware Profile
-profile-*-1/cluster/*.sls
-profile-*-1/stack/default/ceph/minions/*.yml
-# Common configuration
+
+## Roles
+# ADMIN
+role-master/cluster/admin*.sls
+role-admin/cluster/admin*.sls
+
+# MON
+role-mon/stack/default/ceph/minions/mon*.yml
+role-mon/cluster/mon*.sls
+
+# MDS
+role-mds/cluster/mds*.sls
+
+# IGW
+role-igw/stack/default/ceph/minions/igw*.yml
+role-igw/cluster/igw*.sls
+
+# RGW
+role-rgw/cluster/rgw*.sls
+
+# openATTIC
+role-openattic/cluster/openattic*.sls
+
+# COMMON
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
-# Role assignment
-role-master/cluster/admin*.sls
-role-igw/cluster/igw*.sls
-role-rgw/cluster/rgw*.sls
-role-mon/cluster/mon*.sls
-role-mds/cluster/mon[12]*.sls
-role-mon/stack/default/ceph/minions/mon*.yml
-role-igw/stack/default/ceph/minions/igw*.yml
+
+## Profiles
+profile-*-1/cluster/*.sls
+profile-*-1/stack/default/ceph/minions/*.yml
