@@ -1,15 +1,22 @@
-#!/bin/bash -ex
 #
 # This file is part of the DeepSea integration test suite
 #
+
+BASEDIR=$(pwd)
+source $BASEDIR/common/json.sh
 
 SALT_MASTER=$(cat /srv/pillar/ceph/master_minion.sls | \
              sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
              grep -v '^$')
 
+
 MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
 
 export DEV_ENV='true'
+
+#
+# stages
+#
 
 function _run_stage {
   local stage_num=$1
@@ -62,7 +69,29 @@ function run_stage_5 {
   _run_stage 5 "$@"
 }
 
-function gen_policy_cfg_base {
+#
+# custom configuration (ceph.conf)
+# see https://github.com/SUSE/DeepSea/tree/master/srv/salt/ceph/configuration/files/ceph.conf.d
+#
+
+function ceph_conf {
+  local STORAGENODES=$(json_storage_nodes)
+  echo "Assert that STORAGENODES is defined..."
+  test ! -z "$STORAGENODES"
+  if [[ "$STORAGENODES" -lt "3" ]] ; then
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+mon pg warn min per osd = 2
+osd pool default size = 2
+osd crush chooseleaf type = 0 # failure domain == osd
+EOF
+  fi
+}
+
+#
+# policy.cfg
+#
+
+function policy_cfg_base {
   cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
 # Cluster assignment
 cluster-ceph/cluster/*.sls
@@ -79,7 +108,7 @@ role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }
 
-function gen_policy_cfg_no_client {
+function policy_cfg_no_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-*-1/cluster/*.sls
@@ -87,7 +116,7 @@ profile-*-1/stack/default/ceph/minions/*yml
 EOF
 }
 
-function gen_policy_cfg_client {
+function policy_cfg_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-*-1/cluster/*.sls slice=[:-1]
@@ -95,7 +124,7 @@ profile-*-1/stack/default/ceph/minions/*yml slice=[:-1]
 EOF
 }
 
-function gen_policy_cfg_mds {
+function policy_cfg_mds {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - mds
 role-mds/cluster/*.sls slice=[:-1]
@@ -106,8 +135,20 @@ function cat_policy_cfg {
   cat /srv/pillar/ceph/proposals/policy.cfg
 }
 
+#
+# validation tests
+#
+
 function ceph_health_test {
-  ceph -s | tee /dev/stderr | grep -q 'HEALTH_OK\|HEALTH_WARN'
+  local LOGFILE=/tmp/ceph_health_test.log
+  cat /etc/ceph/ceph.conf
+  ceph osd tree
+  ceph osd lspools
+  ceph -s
+  echo "Waiting for HEALTH_OK..."
+  salt -C 'I@roles:master' wait.until status=HEALTH_OK | tee $LOGFILE
+  grep -q 'Timeout expired' $LOGFILE && exit 1
+  ceph -s | tee /dev/stderr | grep -q HEALTH_OK
 }
 
 function _client_node {
