@@ -854,6 +854,64 @@ def proposals(**kwargs):
         ceph_roles.igw_members()
     return [ True ]
 
+def _get_fsid_from_existing_cluster():
+    """
+    Return the fsid of the existing cluster, or None on error.
+    """
+    local = salt.client.LocalClient()
+
+    # Grab the master from all minions.
+    masters = local.cmd("*", "pillar.get", ["master_minion"])
+    if not masters: return None
+
+    # Grab the first master entry, we assume they are all the same.
+    master = masters.iteritems().next()[1]
+    if not master or master == "_REPLACE_ME_":
+	log.error("Salt master node not set.  Ensure master_minion node is set in /srv/pillar/ceph/master_minion.sls.")
+	return None
+
+    # Run fsid detection on master node only.
+    fsid_out = local.cmd(master, "cephinspector.get_cluster_fsid")
+    if not fsid_out: return None
+
+    return fsid_out.iteritems().next()[1]
+
+def _replace_fsid_with_existing_cluster():
+    """
+    Replace proposed fsid entry in
+    /srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml with fsid
+    of existing cluster.
+    Returns True/False.
+    """
+    filename = "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"
+
+    fsid = _get_fsid_from_existing_cluster()
+    if not fsid: return False
+
+    # Read in cluster.yml
+    try:
+	with open(filename) as f:
+	    cluster_yml = f.readlines()
+	    f.close()
+    except:
+	log.error("Failed to open {} for reading.".format(filename))
+	return False
+
+    # Replace the old fsid entry.
+    cluster_yml = [ "fsid: " + fsid if "fsid:" in line else line.strip() for line in cluster_yml ]
+
+    # Write out the new version.
+    try:
+	with open(filename, "w") as f:
+	    for line in cluster_yml:
+		print >> f, line
+	    f.close()
+    except:
+	log.error("Failed to open {} for writing.".format(filename))
+	return False
+
+    return True
+
 def engulf_existing_cluster(**kwargs):
     """
     Assuming proposals() has already been run to collect hardware profiles and
@@ -894,6 +952,11 @@ def engulf_existing_cluster(**kwargs):
 
     # Check cluster health... do we want to do this?
     local.cmd("*", "wait.wait")
+
+    if not _replace_fsid_with_existing_cluster():
+	log.error("Failed to replace derived fsid with fsid of existing cluster.")
+	return [ False ]
+
     # Our imported hardware profile proposal path
     imported_profile = "profile-import"
     imported_profile_path = settings.root_dir + "/" + imported_profile
