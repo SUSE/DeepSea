@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # vim: ts=8 et sw=4 sts=4
 
+import rados
+
 import os
 import socket
 from subprocess import Popen, PIPE
@@ -44,6 +46,11 @@ def get_ceph_disks_yml(**kwargs):
 		_append_to_ceph_disk(ceph_disks, path, p['journal_dev'])
 
     return ceph_disks
+
+def get_cluster_fsid():
+    cluster=rados.Rados(conffile="/etc/ceph/ceph.conf")
+    cluster.connect()
+    return cluster.get_fsid()
 
 def _extract_key(filename):
     # This is pretty similar to keyring.secret()...
