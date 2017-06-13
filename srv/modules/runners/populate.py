@@ -854,6 +854,71 @@ def proposals(**kwargs):
         ceph_roles.igw_members()
     return [ True ]
 
+def _get_fsid_from_existing_cluster(ceph_conf):
+    """
+    Parse ceph.conf and get the fsid of the existing cluster, or None on error.
+    """
+    fsid = None
+
+    # First let's split on newline delimeters and examine the file line by line.
+    ceph_conf_arr = ceph_conf.split("\n")
+
+    for line in ceph_conf_arr:
+        # Grab the first fsid entry encountered.
+        if not fsid:
+            # Strip all leading and trailing whitespace.
+            stripped_line = line.strip()
+            # Skip comment lines and blank lines.
+            if stripped_line and stripped_line.startswith("fsid"):
+                # Now split our fsid string on "=".
+                fsid_arr = stripped_line.split("=")
+                try:
+                    if fsid_arr[1]:
+                        # Remove leading whitespace on fsid string.
+                        fsid = fsid_arr[1].strip()
+                    else:
+                        log.error("Empty fsid entry detected.")
+                except:
+                    log.error("Invalid fsid entry detected.")
+
+    return fsid
+
+def _replace_fsid_with_existing_cluster(ceph_conf):
+    """
+    Replace proposed fsid entry in
+    /srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml with fsid
+    of existing cluster.
+    Returns True/False.
+    """
+    filename = "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"
+
+    fsid = _get_fsid_from_existing_cluster(ceph_conf)
+    if not fsid: return False
+
+    # Read in cluster.yml
+    try:
+	with open(filename) as f:
+	    cluster_yml = f.readlines()
+	    f.close()
+    except:
+	log.error("Failed to open {} for reading.".format(filename))
+	return False
+
+    # Replace the old fsid entry.
+    cluster_yml = [ "fsid: " + fsid if "fsid:" in line else line.strip() for line in cluster_yml ]
+
+    # Write out the new version.
+    try:
+	with open(filename, "w") as f:
+	    for line in cluster_yml:
+		print >> f, line
+	    f.close()
+    except:
+	log.error("Failed to open {} for writing.".format(filename))
+	return False
+
+    return True
+
 def engulf_existing_cluster(**kwargs):
     """
     Assuming proposals() has already been run to collect hardware profiles and
@@ -979,6 +1044,12 @@ def engulf_existing_cluster(**kwargs):
 
         # TODO: what else to do for rgw?  Do we need to do something to
         # populate rgw_configurations in pillar data?
+
+    # Pass the last ceph_conf entry dervived and verified above to obtain the
+    # existing cluster fsid.
+    if not _replace_fsid_with_existing_cluster(ceph_conf):
+        log.error("Failed to replace derived fsid with fsid of existing cluster.")
+        return [ False ]
 
     # Now policy_cfg reflects the current deployment, make it a bit legible...
     policy_cfg.sort()
