@@ -892,6 +892,8 @@ def engulf_existing_cluster(**kwargs):
     # TODO: minions.ready() needed?
     proposals()
 
+    # Check cluster health... do we want to do this?
+    local.cmd("*", "wait.wait")
     # Our imported hardware profile proposal path
     imported_profile = "profile-import"
     imported_profile_path = settings.root_dir + "/" + imported_profile
