@@ -767,7 +767,7 @@ class OSDPartitions(object):
             else:
                 cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, self.osd.types[partition_type], device)
             _run(cmd)
-            partprobe_cmd = "/usr/sbin/partprobe {}".format(device)
+            partprobe_cmd = "/usr/sbin/partprobe {}{}".format(device, number)
             _run(partprobe_cmd)
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
