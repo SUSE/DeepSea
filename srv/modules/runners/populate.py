@@ -880,10 +880,23 @@ def engulf_existing_cluster(**kwargs):
 
     local = salt.client.LocalClient()
 
+    ceph_conf = None
+    previous_minion = None
+
     # TODO: if local.cmd fails, we'll get back something nasty which isn't handled
     # (info might end up being a string containing a stack trace, for example,
     # which will cause a TypeError trying to set is_admin below)
     for minion, info in local.cmd("*", "cephinspector.inspect").items():
+
+        if info["ceph_conf"] is not None:
+            if ceph_conf is None:
+                ceph_conf = info["ceph_conf"]
+            else:
+                if info["ceph_conf"] != ceph_conf:
+                    # TODO: what's the best way to report errors from a runner?
+                    print("ceph.conf on %s doesn't match ceph.conf on %s" % (minion, previous_minion))
+                    return False
+            previous_minion = minion
 
         is_admin = len(info["ceph_keys"]["ceph.client.admin"]) > 0
 

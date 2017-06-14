@@ -57,11 +57,19 @@ def inspect(**kwargs):
         for instance in running_services["ceph-radosgw"]:
             ceph_keys["rgw"][instance] = _extract_key("/var/lib/ceph/radosgw/ceph-" + instance + "/keyring")
 
+    ceph_conf = None
+    try:
+        with open("/etc/ceph/ceph.conf", "r") as conf:
+            ceph_conf = conf.read()
+    except:
+        pass
+
     # note that some keys will be empty strings if not present, e.g. it's
     # possible to have ceph_keys['ceph.client.admin'] == '', so don't just
     # rely on ceph.client.admin being present in the dict, check its value
     # before using it.
     return {
         "running_services": running_services,
-        "ceph_keys": ceph_keys
+        "ceph_keys": ceph_keys,
+        "ceph_conf": ceph_conf
     }
