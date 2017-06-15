@@ -775,8 +775,13 @@ class OSDPartitions(object):
             rc, _stdout, _stderr = _run(cmd)
             if rc != 0:
                 raise RuntimeError("{} failed".format(cmd))
-            partprobe_cmd = "/usr/sbin/partprobe {}{}".format(device, number)
-            _run(partprobe_cmd)
+            log.info("partprobe disk")
+            self._part_probe(device)
+            log.info("partprobe partition")
+            if 'nvme' in device:
+                self._part_probe("{}p{}".format(device, number))
+            else:
+                self._part_probe("{}{}".format(device, number))
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
             if os.path.exists("{}{}".format(device, number)):
@@ -787,6 +792,15 @@ class OSDPartitions(object):
     def _part_probe(self, device):
         """
         """
+        wait_time = 1
+        retries = 5
+        cmd = "/usr/sbin/partprobe {}".format(device)
+        for attempt in range(1, retries + 1):
+            rc, _stdout, _stderr = _run(cmd)
+            if rc == 0:
+                return
+            time.sleep(wait_time)
+        raise RuntimeError("{} failed".format(cmd))
 
     def _last_partition(self, device):
         """
