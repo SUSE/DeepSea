@@ -1167,6 +1167,21 @@ class OSDCommands(object):
         log.debug("suffix: {} bsize: {}".format(suffix, bsize))
         return bsize
 
+def split_partition(partition):
+    """
+    Return the device and partition
+    """
+    part = readlink(partition)
+    if os.path.exists(part):
+        log.debug("splitting partition {}".format(part))
+        m = re.match("(.+\D)(\d+)", part)
+        disk = m.group(1)
+        if 'nvme' in disk:
+            disk = disk[:-1]
+            log.debug("Truncating p {}".format(disk))
+        return disk, m.group(2)
+    return None, None
+
 class OSDRemove(object):
     """
     Manage the graceful removal of an OSD
@@ -1326,7 +1341,7 @@ class OSDRemove(object):
             partition = self.partitions['lockbox']
         else:
             partition = self.partitions['osd']
-        disk, partition = self._split_partition(partition)
+        disk, partition = split_partition(partition)
         return disk
 
     def _delete_partitions(self):
@@ -1345,7 +1360,7 @@ class OSDRemove(object):
                 if self.osd_disk and self.osd_disk in short_name:
                     log.info("No need to delete {}".format(short_name))
                 else:
-                    disk, partition = self._split_partition(self.partitions[attr])
+                    disk, partition = split_partition(self.partitions[attr])
                     if disk:
                         log.debug("disk: {} partition: {}".format(disk, partition))
                         cmd = "sgdisk -d {} {}".format(partition, disk)
@@ -1354,20 +1369,20 @@ class OSDRemove(object):
                 log.error("Partition {} does not exist".format(short_name))
 
 
-    def _split_partition(self, partition):
-        """
-        Return the device and partition
-        """
-        part = readlink(partition)
-        if os.path.exists(part):
-            log.debug("splitting partition {}".format(part))
-            m = re.match("(.+\D)(\d+)", part)
-            disk = m.group(1)
-            if 'nvme' in disk:
-                disk = disk[:-1]
-                log.debug("Truncating p {}".format(disk))
-            return disk, m.group(2)
-        return None, None
+    #def _split_partition(self, partition):
+    #    """
+    #    Return the device and partition
+    #    """
+    #    part = readlink(partition)
+    #    if os.path.exists(part):
+    #        log.debug("splitting partition {}".format(part))
+    #        m = re.match("(.+\D)(\d+)", part)
+    #        disk = m.group(1)
+    #        if 'nvme' in disk:
+    #            disk = disk[:-1]
+    #            log.debug("Truncating p {}".format(disk))
+    #        return disk, m.group(2)
+    #    return None, None
 
     def _wipe_gpt_backups(self):
         """
@@ -1665,7 +1680,7 @@ def _fsck(device, partition):
     prefix = ''
     if 'nvme' in device:
         prefix = 'p'
-    cmd = "/sbin/fsck -n {}{}{}".format(device, prefix, partition)
+    cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
     log.info(cmd)
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     proc.wait()
@@ -1743,18 +1758,24 @@ def report(failhard=False):
 
     Note: this needs more bullet proofing
     """
+    if 'ceph' not in __grains__:
+        return "No ceph grain available.  Run osd.retain"
     active = []
     for _id in __grains__['ceph']:
-        active.append(__grains__['ceph'][_id]['partitions']['osd'][:-1])
+        partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
+        disk, part = split_partition(partition)
+        active.append(disk)
         if 'lockbox' in __grains__['ceph'][_id]['partitions']:
-            active.append(__grains__['ceph'][_id]['partitions']['lockbox'][:-1])
+            partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
+            disk, part = split_partition(partition)
+            active.append(disk)
 
     log.debug("active: {}".format(active))
 
     if 'ceph' in __pillar__:
         configured = __pillar__['ceph']['storage']['osds'].keys()
         for osd in __pillar__['ceph']['storage']['osds'].keys():
-            if osd in active:
+            if readlink(osd) in active:
                 configured.remove(osd)
 
     if 'storage' in __pillar__:
@@ -1764,11 +1785,11 @@ def report(failhard=False):
         log.info("configured: {}".format(configured))
         osds = list(configured)
         for osd in osds:
-            if osd in active:
+            if readlink(osd) in active:
                 configured.remove(osd)
 
     if configured:
-        msg = "No OSD configured for {}".format(" ".join(configured))
+        msg = "No OSD configured for \n{}".format("\n".join(configured))
         if failhard:
             raise RuntimeError(msg)
         else:
