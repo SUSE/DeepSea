@@ -775,7 +775,7 @@ class OSDPartitions(object):
             rc, _stdout, _stderr = _run(cmd)
             if rc != 0:
                 raise RuntimeError("{} failed".format(cmd))
-            partprobe_cmd = "/usr/sbin/partprobe {}".format(device)
+            partprobe_cmd = "/usr/sbin/partprobe {}{}".format(device, number)
             _run(partprobe_cmd)
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
