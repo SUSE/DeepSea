@@ -6,17 +6,41 @@ import socket
 from subprocess import Popen, PIPE
 import json
 
+def _get_disk_id(partition):
+    """
+    Return the disk id of a partition/device, or an empty string if not available.
+    """
+    disk_id_cmd = Popen("find -L /dev/disk/by-id -samefile " + partition + " \( -name ata* -o -name nvme* \)", stdout=PIPE, stderr=PIPE, shell=True)
+    out, err = disk_id_cmd.communicate()
+
+    # TODO: any chance out can contain more than 1 entry?
+    return out.rstrip()
+
+
 def _append_to_ceph_disk(ceph_disks, partition, journal_dev):
     """
     Populate ceph_disks dictionary with data and journal partitions.
     """
+
+    # partition should come as the block device, but strip any trailing partition numbers anyway.
+    partition = partition.rstrip("1234567890")
+    # We don't care about the trailing number on journal_dev.
+    journal_dev = journal_dev.rstrip("1234567890")
+
+    # Try to obtain disk id's for data partition (device) and journal partition.
+    partition_id = _get_disk_id(partition)
+    journal_dev_id = _get_disk_id(journal_dev)
+
+    partition = partition_id if partition_id else partition
+    journal_dev = journal_dev_id if journal_dev_id else journal_dev
+
     try:
 	ceph_disks["ceph"]["storage"]["osds"][partition]
     except KeyError, e:
 	ceph_disks["ceph"]["storage"]["osds"][partition] = {}
     finally:
 	ceph_disks["ceph"]["storage"]["osds"][partition]["format"] = "filestore"
-	ceph_disks["ceph"]["storage"]["osds"][partition]["journal"] = journal_dev.rstrip("1234567890")
+	ceph_disks["ceph"]["storage"]["osds"][partition]["journal"] = journal_dev
 
 def get_ceph_disks_yml(**kwargs):
     """
