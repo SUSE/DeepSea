@@ -1318,7 +1318,7 @@ class OSDRemove(object):
         devices = []
         for attr in ['osd', 'lockbox']:
             if attr in self.partitions:
-                devices.append(self.partitions[attr])
+                devices.append(readlink(self.partitions[attr]))
         log.debug("mounted: {}".format(devices))
         return devices
 
