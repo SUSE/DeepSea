@@ -107,10 +107,23 @@ def _propose(node, proposal, args):
     for device in proposal:
         k, v = device.items()[0]
         dev_par = {}
-        dev_par['journal'] = v
-        dev_par['format'] = args.get('format')
-        dev_par['encryption'] = args.get('encryption')
-        dev_par['journal_size'] = args.get('journal-size')
+        format_ = args.get('format')
+        if type(v) is dict:
+            assert format_ is 'bluestore'
+            wal, db = v.items()[0]
+            dev_par['wal'] = wal
+            dev_par['db'] = db
+        elif type(v) is str:
+            if format_ is 'bluestore':
+                dev_par['wal'] = v
+                dev_par['db'] = v
+                dev_par['wal_size'] = args.get('wal-size')
+                dev_par['db_size'] = args.get('db-size')
+            else:
+                dev_par['journal'] = v
+                dev_par['journal_size'] = args.get('journal-size')
+            dev_par['format'] = format_
+            dev_par['encryption'] = args.get('encryption')
         profile[k] = dev_par
 
     return {node: profile}
