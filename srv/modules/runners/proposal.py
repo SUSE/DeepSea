@@ -113,6 +113,8 @@ def _propose(node, proposal, args):
             wal, db = v.items()[0]
             dev_par['wal'] = wal
             dev_par['db'] = db
+            dev_par['wal_size'] = args.get('wal-size')
+            dev_par['db_size'] = args.get('db-size')
         elif type(v) is str:
             if format_ is 'bluestore':
                 dev_par['wal'] = v
@@ -122,8 +124,8 @@ def _propose(node, proposal, args):
             else:
                 dev_par['journal'] = v
                 dev_par['journal_size'] = args.get('journal-size')
-            dev_par['format'] = format_
-            dev_par['encryption'] = args.get('encryption')
+        dev_par['format'] = format_
+        dev_par['encryption'] = args.get('encryption')
         profile[k] = dev_par
 
     return {node: profile}
