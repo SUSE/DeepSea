@@ -964,10 +964,11 @@ def engulf_existing_cluster(**kwargs):
     ceph_conf = None
     previous_minion = None
 
-    # TODO: if local.cmd fails, we'll get back something nasty which isn't handled
-    # (info might end up being a string containing a stack trace, for example,
-    # which will cause a TypeError trying to set is_admin below)
     for minion, info in local.cmd("*", "cephinspector.inspect").items():
+
+        if type(info) is not dict:
+            print("cephinspector.inspect failed on %s: %s" % (minion, info))
+            return False
 
         if info["ceph_conf"] is not None:
             if ceph_conf is None:
