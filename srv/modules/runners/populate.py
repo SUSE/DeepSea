@@ -26,6 +26,12 @@ import logging
 
 import sys
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+from cStringIO import StringIO
+
 """
 WHY THIS RUNNER EXISTS:
 
@@ -854,29 +860,7 @@ def proposals(**kwargs):
         ceph_roles.igw_members()
     return [ True ]
 
-def _get_fsid_from_existing_cluster():
-    """
-    Return the fsid of the existing cluster, or None on error.
-    """
-    local = salt.client.LocalClient()
-
-    # Grab the master from all minions.
-    masters = local.cmd("*", "pillar.get", ["master_minion"])
-    if not masters: return None
-
-    # Grab the first master entry, we assume they are all the same.
-    master = masters.iteritems().next()[1]
-    if not master or master == "_REPLACE_ME_":
-	log.error("Salt master node not set.  Ensure master_minion node is set in /srv/pillar/ceph/master_minion.sls.")
-	return None
-
-    # Run fsid detection on master node only.
-    fsid_out = local.cmd(master, "cephinspector.get_cluster_fsid")
-    if not fsid_out: return None
-
-    return fsid_out.iteritems().next()[1]
-
-def _replace_fsid_with_existing_cluster():
+def _replace_fsid_with_existing_cluster(fsid):
     """
     Replace proposed fsid entry in
     /srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml with fsid
@@ -884,9 +868,6 @@ def _replace_fsid_with_existing_cluster():
     Returns True/False.
     """
     filename = "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"
-
-    fsid = _get_fsid_from_existing_cluster()
-    if not fsid: return False
 
     # Read in cluster.yml
     try:
@@ -952,10 +933,6 @@ def engulf_existing_cluster(**kwargs):
 
     # Check cluster health... do we want to do this?
     local.cmd("*", "wait.wait")
-
-    if not _replace_fsid_with_existing_cluster():
-	log.error("Failed to replace derived fsid with fsid of existing cluster.")
-	return [ False ]
 
     # Our imported hardware profile proposal path
     imported_profile = "profile-import"
@@ -1060,5 +1037,23 @@ def engulf_existing_cluster(**kwargs):
     # created a policy.cfg as root, BTW)
     with open("/srv/pillar/ceph/proposals/policy.cfg", 'w') as policy:
         policy.write("\n".join(policy_cfg) + "\n")
+
+    # We've also got a ceph.conf to play with
+    cp = configparser.RawConfigParser()
+    # This little bit of natiness strips whitespace from all the lines, as
+    # Python's configparser interprets leading whitespace as a line continuation,
+    # whereas ceph itself is happy to have leading whitespace.
+    cp.readfp(StringIO("\n".join([line.strip() for line in ceph_conf.split("\n")])))
+
+    if not cp.has_section("global"):
+        print("ceph.conf is missing [global] section")
+        return False
+    if not cp.has_option("global", "fsid"):
+        print("ceph.conf is missing fsid")
+        return False
+
+    if not _replace_fsid_with_existing_cluster(cp.get("global", "fsid")):
+	log.error("Failed to replace derived fsid with fsid of existing cluster.")
+	return [ False ]
 
     return [ True ]
