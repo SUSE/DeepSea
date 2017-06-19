@@ -142,6 +142,14 @@ role-mds/cluster/*.sls slice=[:-1]
 EOF
 }
 
+# NOTE: RGW does not coexist well with openATTIC
+function policy_cfg_rgw {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - rgw (first node)
+role-rgw/cluster/*.sls slice=[:1]
+EOF
+}
+
 function policy_cfg_nfs_ganesha {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - NFS-Ganesha (first node)
