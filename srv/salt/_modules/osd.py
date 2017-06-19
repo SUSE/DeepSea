@@ -740,7 +740,7 @@ class OSDPartitions(object):
 
             if self.osd.db:
                 if self.osd.db_size:
-                    if self.osd.wal == self.osd.device:
+                    if self.osd.db == self.osd.device:
                         log.warn("DB size is unsupported for same device of {}".format(self.osd.device))
                     else:
                         log.warn("Setting wal to same device {} as db".format(self.osd.db))
