@@ -212,19 +212,19 @@ class Ganesha(object):
         minion with the "ganesha" role.
         """
         local = salt.client.LocalClient()
-        ganesha_hosts = Ganesha.call_salt_module(local, 'ganesha', 'grains.get', ['id'])
+        ganesha_hosts = Ganesha.call_salt_module(local, 'ganesha', 'grains.item', ['host', 'id'])
         result = []
-        for host in ganesha_hosts:
-            filename = "/srv/salt/ceph/ganesha/cache/ganesha.{}.conf".format(host)
+        for host_id in ganesha_hosts:
+            filename = "/srv/salt/ceph/ganesha/cache/ganesha.{}.conf".format(host_id['host'])
             if os.path.exists(filename):
                 parser = GaneshaConfParser(filename)
                 result.append({
-                    'host': host,
+                    'host': host_id['id'],
                     'exports': Ganesha._process_ganesha_conf(parser.parse())
                 })
             else:
                 result.append({
-                    'host': host,
+                    'host': host_id['id'],
                     'exports': []
                 })
         return result
@@ -237,6 +237,8 @@ class Ganesha(object):
                 return {'success': False, 'message': 'Bad format: host identifier is missing'}
             if 'exports' not in host_exports:
                 return {'success': False, 'message': 'Bad format: host "exports" list is missing'}
+            short_host = Ganesha.call_salt_module(local_client, host_exports['host'],
+                                                  'grains.get', ['host'], minion=True)
             for export in host_exports['exports']:
                 export['block_name'] = 'EXPORT'
                 if 'fsal' not in export:
@@ -246,7 +248,7 @@ class Ganesha(object):
                 if 'name' not in fsal:
                     return {'success': False, 'message': 'Bad format: FSAL "name" is missing'}
                 if fsal['name'] == 'CEPH':
-                    fsal['user_id'] = 'ganesha.{}'.format(host_exports['host'])
+                    fsal['user_id'] = 'ganesha.{}'.format(short_host)
                     keyring_filename = Ganesha.call_salt_module(local_client, 'master',
                                                                 'keyring.file',
                                                                 ['ganesha',
@@ -280,7 +282,7 @@ class Ganesha(object):
                 host_exports['exports'].append({
                     'block_name': 'RGW',
                     'ceph_conf': '/etc/ceph/ceph.conf',
-                    'name': 'client.ganesha.{}'.format(host_exports['host']),
+                    'name': 'client.ganesha.{}'.format(short_host),
                     'cluster': 'ceph'
                 })
         return {'success': True}
@@ -341,7 +343,10 @@ class Ganesha(object):
         for host_exports in exports:
             host = host_exports['host']
             try:
-                with open("/srv/salt/ceph/ganesha/cache/ganesha.{}.conf".format(host), 'w') as conf:
+                short_host = Ganesha.call_salt_module(local, host, 'grains.get', ['host'],
+                                                      minion=True)
+                with open("/srv/salt/ceph/ganesha/cache/ganesha.{}.conf"
+                          .format(short_host), 'w') as conf:
                     conf.write(GaneshaConfParser.write_conf(host_exports['exports']))
             except IOError as ex:
                 return {'success': False, 'message': str(ex)}
