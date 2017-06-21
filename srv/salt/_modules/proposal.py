@@ -32,7 +32,7 @@ class Proposal(object):
         self.data_r = kwargs.get('ratio', self.DEFAULT_DATA_R)
         assert type(self.data_r) is int and self.data_r >= 1
 
-        self.db_r = kwargs.get('db-ratio', self.DEFAULT_DB_R)
+        self.db_r = kwargs.get('db-ratio', kwargs.get('db_ratio',self.DEFAULT_DB_R))
         assert type(self.db_r) is int and self.db_r >= 1
 
         data_filter = kwargs.get('data', '0')
@@ -64,7 +64,7 @@ class Proposal(object):
             self.wal_min = int(wal_filter)
             self.wal_max = 0
 
-        self.add_leftover_as_standalone = kwargs.get('standalone_leftovers',
+        self.add_leftover_as_standalone = kwargs.get('leftovers',
                                                      False)
 
     # TODO better name

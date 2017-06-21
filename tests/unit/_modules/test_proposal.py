@@ -84,7 +84,7 @@ class TestProposal(object):
 
         r = 4
         p = proposal.Proposal(output_helper.cephdisks_output, ratio=r,
-                              standalone_leftovers=True)
+                              leftovers=True)
         expected_len = r + (len(p.ssd) - r)
         prop = p._propose(p.ssd, p.nvme)
         assert len(prop) is expected_len

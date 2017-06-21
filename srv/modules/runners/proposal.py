@@ -35,7 +35,7 @@ this fails standalone OSDs will be proposed.
 By default a 5 to 1 data device to journal device ratio will be proposed. This
 can be changed (to say 7 to 1) by passing 'ratio=7'. Drives that are leftover
 after proposing external journal OSDs will not be included unless
-'standalone-leftovers=True' is passed.
+'leftovers=True' is passed.
 
 To limit which drives will be considered as data or journal drives the 'data='
 and 'journal=' parameters can be specified. Both will take either a number or a
@@ -48,7 +48,7 @@ minions fitting the specified glob. For example 'target="data1*"' will
 only query minions whose minion id starts with 'data1'.
 
 List of recognized parameters and their defaults:
-    standalone-leftovers=False - Set to True topropose leftover drives as
+    leftovers=False - Set to True topropose leftover drives as
                                  standalone OSDs.
     standalone=False
     nvme-ssd=False
@@ -72,7 +72,7 @@ List of recognized parameters and their defaults:
 '''
 
 std_args = {
-    'standalone-leftovers': False,
+    'leftovers': False,
     'standalone': False,
     'nvme-ssd-spinner': False,
     'nvme-ssd': False,
