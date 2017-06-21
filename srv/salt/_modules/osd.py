@@ -863,7 +863,7 @@ class OSDCommands(object):
                     log.debug("found partition {} on device {}".format(partition, device))
                     if 'nvme' in device:
                         partition = "p{}".format(partition)
-                    return "{}".format(partition)
+                    return partition
         self.error = "Partition type {} not found on {}".format(partition_type, device)
         log.error(self.error)
         return 0
