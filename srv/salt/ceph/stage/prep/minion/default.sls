@@ -31,7 +31,7 @@ mines:
 starting {{ host }}:
   salt.runner:
     - name: minions.message
-    - content: "Starting host {{ host }}"
+    - content: "Processing host {{ host }}"
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
@@ -87,7 +87,7 @@ unset noout after final iteration:
 starting remaining minions:
   salt.runner:
     - name: minions.message
-    - content: "Starting minions without roles"
+    - content: "Processing minions without roles"
 
 updating minions without roles:
   salt.state:
