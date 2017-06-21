@@ -100,6 +100,13 @@ class Iscsi(object):
         """
         if os.path.exists(filename):
             return json.loads(open(filename).read())
+        else:
+            return {
+                'auth': [],
+                'targets': [],
+                'portals': [],
+                'pools': []
+            }
 
     def save(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf", **kwargs):
         """
