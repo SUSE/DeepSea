@@ -746,8 +746,10 @@ def discovery(cluster=None, printer=None, **kwargs):
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
 
     v = Validate(cluster, data=pillar_data, printer=printer)
+
     v._lint_yaml_files()
-    v._profiles_populated()
+    if not v.in_dev_env:
+        v._profiles_populated()
     v.report()
 
     if not has_printer:
