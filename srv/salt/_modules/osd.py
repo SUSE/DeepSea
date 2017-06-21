@@ -996,6 +996,8 @@ class OSDCommands(object):
                     partition = self._highest_partition(self.osd.db, 'wal')
                     if partition:
                         args += "--block.wal {}{} ".format(self.osd.db, partition)
+                    else:
+                        args += "--block.wal {} ".format(self.osd.db)
                 else:
                     if self.osd.db == self.osd.device:
                         log.warn("Separate db partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.db))
