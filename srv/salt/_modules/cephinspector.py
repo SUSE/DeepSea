@@ -38,6 +38,9 @@ def get_ceph_disks_yml(**kwargs):
     # [ { 'path': '/dev/foo', 'partitions': [ {...}, ... ], ... }, ... ]
     # The partitions list has all the goodies.
     for part_dict in out_list:
+        if not part_dict.has_key("partitions"):
+            # This can happen if we encounter a CD/DVD (/dev/sr0)
+            continue
 	path = part_dict['path']
 	for p in part_dict['partitions']:
 	    if p['type'] == 'data':
