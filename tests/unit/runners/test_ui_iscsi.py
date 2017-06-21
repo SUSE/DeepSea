@@ -96,7 +96,12 @@ class TestIscsi():
 
         iscsi = ui_iscsi.Iscsi()
         result = iscsi.config()
-        assert result == None
+        assert result == {
+            'auth': [],
+            'targets': [],
+            'portals': [],
+            'pools': [],
+        }
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.ui_iscsi.Iscsi._set_igw_config', autospec=True)
