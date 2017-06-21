@@ -87,7 +87,13 @@ class Radosgw(object):
         Check for user defined endpoint; otherwise, return list of gateways as
         urls.
         """
-        search = "I@cluster:{}".format(self.cluster)
+        for endpoint in Radosgw.endpoints(self.cluster):
+            self.credentials['urls'].append(endpoint['url'])
+
+    @staticmethod
+    def endpoints(cluster='ceph'):
+        result = []
+        search = "I@cluster:{}".format(cluster)
         __opts__ = salt.config.client_config('/etc/salt/master')
         pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
                                                          use_cached_grains=True,
@@ -96,8 +102,22 @@ class Radosgw(object):
         cached = pillar_util.get_minion_pillar()
         for minion in cached:
             if 'rgw_endpoint' in cached[minion]:
-                self.credentials['urls'].append(cached[minion]['rgw_endpoint'])
-                return
+                match = re.search(r'http(s?)://(.+):?(\d*)', cached[minion]['rgw_endpoint'])
+                if match:
+                    result.append({
+                        'host': match.group(2),
+                        'port': int(match.group(3)) if match.group(3) else 7480,
+                        'ssl': match.group(1) == 's',
+                        'url': cached[minion]['rgw_endpoint']
+                    })
+                else:
+                    result.append({
+                        'host': None,
+                        'port': None,
+                        'ssl': None,
+                        'url': cached[minion]['rgw_endpoint']
+                    })
+                return result
 
         port = '7480'  # civetweb default port
         ssl = ''
@@ -109,16 +129,22 @@ class Radosgw(object):
                         if line:
                             match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
                             if match:
-                                port = match.group(1)
+                                port = int(match.group(1))
                                 ssl = match.group(2)
                                 found = True
             if found:
                 break
 
         local = salt.client.LocalClient()
-        result = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
-        for _, grains in result.items():
-            self.credentials['urls'].append("http{}://{}:{}".format(ssl, grains['fqdn'], port))
+        fqdns = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
+        for _, grains in fqdns.items():
+            result.append({
+                'host': grains['fqdn'],
+                'port': port,
+                'ssl': ssl == 's',
+                'url': "http{}://{}:{}".format(ssl, grains['fqdn'], port)
+            })
+        return result
 
 
 def credentials(canned=None, **kwargs):
@@ -127,3 +153,7 @@ def credentials(canned=None, **kwargs):
     """
     radosgw = Radosgw(canned)
     return radosgw.credentials
+
+
+def endpoints(**kwargs):
+    return Radosgw.endpoints()

@@ -1,7 +1,9 @@
 
 install rgw:
   pkg.installed:
-    - name: ceph-radosgw
+    - pkgs:
+      - ceph-radosgw
+      - python-boto
 
 add users:
   module.run:
