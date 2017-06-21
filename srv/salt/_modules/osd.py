@@ -838,12 +838,7 @@ class OSDCommands(object):
         Check partition type
         """
         cmd = "/usr/sbin/sgdisk -i {} {}".format(partition, device)
-        log.info(cmd)
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        proc.wait()
-        result = proc.stdout.read()
-        log.debug(pprint.pformat(result))
-        log.debug(pprint.pformat(proc.stderr.read()))
+        rc, result, stderr = _run(cmd)
         id = "Partition GUID code: {}".format(self.osd.types[partition_type])
         return id in result
 
