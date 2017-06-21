@@ -25,8 +25,6 @@ uninstall openattic:
   pkg.removed:
     - pkgs:
       - openattic
-      - openattic-base
-      - openattic-pgsql
 
 {% for service in salt['pillar.get']('openattic_configurations:stop_services', []) %}
 {% if salt['service.available'](service) %}
