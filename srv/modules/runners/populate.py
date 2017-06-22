@@ -1013,6 +1013,7 @@ def engulf_existing_cluster(**kwargs):
 
     ceph_conf = None
     previous_minion = None
+    admin_minion = None
 
     for minion, info in local.cmd("*", "cephinspector.inspect").items():
 
@@ -1030,7 +1031,11 @@ def engulf_existing_cluster(**kwargs):
                     return False
             previous_minion = minion
 
-        is_admin = len(info["ceph_keys"]["ceph.client.admin"]) > 0
+        is_admin = info["has_admin_keyring"]
+
+        if admin_minion is None and is_admin:
+            # We'll talk to this minion later to obtain keyrings
+            admin_minion = minion
 
         if not info["running_services"].keys() and not is_admin:
             # No ceph services running, no admin key, don't assign it
@@ -1084,22 +1089,43 @@ def engulf_existing_cluster(**kwargs):
             policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
             pass
 
-        admin_key = info["ceph_keys"].get("ceph.client.admin")
-        if admin_key:
-            # Now I've go the admin key, how the hell do I inject it into
-            # /srv/salt/ceph/admin/cache/ceph.client.admin.keyring?  Or
-            # should I somehow be doing this piece with salt states as
-            # the configure stage does?
-            pass
-
-        # Likewise for:
-        # - /srv/salt/ceph/mon/cache/mon.keyring
-        # - /srv/salt/ceph/osd/cache/bootstrap.keyring
-        # - /srv/salt/ceph/mds/cache/$name.keyring
-        # - /srv/salt/ceph/rgw/cache/$name.keyring
-
         # TODO: what else to do for rgw?  Do we need to do something to
         # populate rgw_configurations in pillar data?
+
+    if not admin_minion:
+        print("No nodes found with ceph.client.admin.keyring")
+        return False
+
+    # TODO: this is really not very DRY...
+    admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.admin" ])[admin_minion]
+    if not admin_keyring:
+        print("Could not obtain client.admin keyring")
+        return False
+
+    mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mon." ])[admin_minion]
+    if not mon_keyring:
+        print("Could not obtain mon keyring")
+        return False
+
+    osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.bootstrap-osd" ])[admin_minion]
+    if not osd_bootstrap_keyring:
+        print("Could not obtain osd bootstrap keyring")
+        return False
+
+    with open("/srv/salt/ceph/admin/cache/ceph.client.admin.keyring", 'w') as keyring:
+        keyring.write(admin_keyring)
+
+    with open("/srv/salt/ceph/mon/cache/mon.keyring", 'w') as keyring:
+        # following srv/salt/ceph/mon/files/keyring.j2, this includes both mon
+        # and admin keyrings
+        keyring.write(mon_keyring)
+        keyring.write(admin_keyring)
+
+    with open("/srv/salt/ceph/osd/cache/bootstrap.keyring", 'w') as keyring:
+        keyring.write(osd_bootstrap_keyring)
+
+    # TODO:
+    #   get mds and rgw keyrings
 
     # Now policy_cfg reflects the current deployment, make it a bit legible...
     policy_cfg.sort()

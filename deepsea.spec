@@ -76,6 +76,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/_modules
 %dir %attr(0755, salt, salt) /srv/salt/ceph
 %dir /srv/salt/ceph/admin
+%dir %attr(0700, salt, salt) /srv/salt/ceph/admin/cache
 %dir /srv/salt/ceph/admin/files
 %dir /srv/salt/ceph/admin/key
 %dir /srv/salt/ceph/benchmarks
@@ -92,6 +93,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/events
 %dir /srv/salt/ceph/ganesha
 %dir /srv/salt/ceph/ganesha/auth
+%dir %attr(0700, salt, salt) /srv/salt/ceph/ganesha/cache
 %dir /srv/salt/ceph/ganesha/config
 %dir /srv/salt/ceph/ganesha/configure
 %dir /srv/salt/ceph/ganesha/files
@@ -101,6 +103,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/ganesha/restart
 %dir /srv/salt/ceph/ganesha/service
 %dir /srv/salt/ceph/igw
+%dir %attr(0700, salt, salt) /srv/salt/ceph/igw/cache
 %dir /srv/salt/ceph/igw/config
 %dir /srv/salt/ceph/igw/files
 %dir /srv/salt/ceph/igw/import
@@ -111,6 +114,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/iperf
 %dir /srv/salt/ceph/mds
+%dir %attr(0700, salt, salt) /srv/salt/ceph/mds/cache
 %dir /srv/salt/ceph/mds/files
 %dir /srv/salt/ceph/mds/key
 %dir /srv/salt/ceph/mds/auth
@@ -120,6 +124,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mines
 %dir /srv/salt/ceph/mines/files
 %dir /srv/salt/ceph/mon
+%dir %attr(0700, salt, salt) /srv/salt/ceph/mon/cache
 %dir /srv/salt/ceph/mon/files
 %dir /srv/salt/ceph/mon/key
 %dir /srv/salt/ceph/mon/restart
@@ -133,11 +138,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/noout/unset
 %dir /srv/salt/ceph/openattic
 %dir /srv/salt/ceph/openattic/auth
+%dir %attr(0700, salt, salt) /srv/salt/ceph/openattic/cache
 %dir /srv/salt/ceph/openattic/files
 %dir /srv/salt/ceph/openattic/key
 %dir /srv/salt/ceph/openattic/keyring
 %dir /srv/salt/ceph/openattic/oaconfig
 %dir /srv/salt/ceph/osd
+%dir %attr(0700, salt, salt) /srv/salt/ceph/osd/cache
 %dir /srv/salt/ceph/osd/files
 %dir /srv/salt/ceph/osd/key
 %dir /srv/salt/ceph/osd/auth
@@ -194,6 +201,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/restart/mds
 %dir /srv/salt/ceph/restart/ganesha
 %dir /srv/salt/ceph/rgw
+%dir %attr(0700, salt, salt) /srv/salt/ceph/rgw/cache
 %dir /srv/salt/ceph/rgw/files
 %dir /srv/salt/ceph/rgw/key
 %dir /srv/salt/ceph/rgw/auth
