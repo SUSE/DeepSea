@@ -5,6 +5,46 @@ import os
 import socket
 from subprocess import Popen, PIPE
 import json
+import psutil
+
+def _get_listening_ipaddr(proc_name):
+    """
+    Search for the first instance of proc_name and return the first instance of a
+    listening IP address.  If proc_name or a listening IP are not found, return None.
+    """
+    proc_listening_ip = None
+
+    for proc in psutil.process_iter():
+	# Note that depending on psutil version, there are slight api differences, hence the
+	# try/except blocks below.
+	try:
+	    name = proc.name()
+	except:
+	    name = proc.name
+	if name == proc_name:
+	    try:
+		conns = proc.get_connections(kind="inet")
+	    except:
+		conns = proc.connections(kind="inet")
+	    for con in conns:
+		if con.status == "LISTEN":
+		    proc_listening_ip = con.laddr[0]
+
+    return proc_listening_ip
+
+def get_minion_public_network():
+    """
+    Returns the listening IP of the ceph-mon process encountered first on the system.
+    If ceph-mon is not running/listening, returns None.
+    """
+    return _get_listening_ipaddr("ceph-mon")
+
+def get_minion_cluster_network():
+    """
+    Returns the listening IP of the ceph-osd process encountered first on the system.
+    If ceph-osd is not running/listening, returns None.
+    """
+    return _get_listening_ipaddr("ceph-osd")
 
 def _get_disk_id(partition):
     """
