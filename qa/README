@@ -21,7 +21,8 @@ Assumptions made by all test scripts
    a. one node is configured as both a master and a minion
    b. the remaining nodes are configured as minions only
    c. the master can "salt '*' test.ping" all the minions
-3. the nodes have at least one external drive (>= 10GB) for OSD
+3. the nodes have at least one external drive (>= 10GB) for OSD and there are
+   at least four OSDs, total, in the cluster
 4. the package repos have already been set up so DeepSea can install the RPMs
    it needs
 5. the DeepSea code under test has already been installed (git clone ; make
