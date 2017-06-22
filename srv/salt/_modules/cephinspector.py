@@ -112,15 +112,6 @@ def get_ceph_disks_yml(**kwargs):
 
     return ceph_disks
 
-def _extract_key(filename):
-    # This is pretty similar to keyring.secret()...
-    if os.path.exists(filename):
-        with open(filename, 'r') as keyring:
-            for line in keyring:
-                if "key" in line and " = " in line:
-                    return line.split(" = ")[1].strip()
-    return ""
-
 def inspect(**kwargs):
     # This will *ONLY* work on a cluster named "ceph".  It won't help with
     # clusters with other names.
@@ -145,27 +136,6 @@ def inspect(**kwargs):
                 running_services[instance[0]] = []
             running_services[instance[0]].append(instance[1])
 
-    ceph_keys = {}
-
-    ceph_keys["ceph.client.admin"] = _extract_key("/etc/ceph/ceph.client.admin.keyring")
-    ceph_keys["bootstrap-osd"] = _extract_key("/var/lib/ceph/bootstrap-osd/ceph.keyring")
-
-    if "ceph-mon" in running_services.keys():
-        # Theoretically it's possible to run more than one MON per node, but
-        # Nobody Will Ever Do That[TM], and in any case, all MONs share the same
-        # key, so just grab the first (hopefully only) one.
-        ceph_keys["mon"] = _extract_key("/var/lib/ceph/mon/ceph-" + running_services["ceph-mon"][0] + "/keyring")
-
-    if "ceph-mds" in running_services.keys():
-        ceph_keys["mds"] = {}
-        for instance in running_services["ceph-mds"]:
-            ceph_keys["mds"][instance] = _extract_key("/var/lib/ceph/mds/ceph-" + instance + "/keyring")
-
-    if "ceph-radosgw" in running_services.keys():
-        ceph_keys["rgw"] = {}
-        for instance in running_services["ceph-radosgw"]:
-            ceph_keys["rgw"][instance] = _extract_key("/var/lib/ceph/radosgw/ceph-" + instance + "/keyring")
-
     ceph_conf = None
     try:
         with open("/etc/ceph/ceph.conf", "r") as conf:
@@ -173,12 +143,28 @@ def inspect(**kwargs):
     except:
         pass
 
-    # note that some keys will be empty strings if not present, e.g. it's
-    # possible to have ceph_keys['ceph.client.admin'] == '', so don't just
-    # rely on ceph.client.admin being present in the dict, check its value
-    # before using it.
     return {
         "running_services": running_services,
-        "ceph_keys": ceph_keys,
-        "ceph_conf": ceph_conf
+        "ceph_conf": ceph_conf,
+        "has_admin_keyring": "/etc/ceph/ceph.client.admin.keyring"
     }
+
+def get_keyring(**kwargs):
+    """
+    Retrieve a keyring via `ceph auth get`.  Pass key=NAME_OF_KEY,
+    e.g.: use key=client.admin to get the client admin key.
+
+    Returns either the complete keyring (suitable for use in a ceph keyring
+    file), or None if the key does not exist, or cannot be obtained.
+
+    This needs to be run on a minion with a suitable ceph.conf and client
+    admin keyring, in order for `ceph auth get` to be able to talk to the
+    cluster.
+    """
+    if not "key" in kwargs:
+        return None
+
+    cmd = Popen("ceph auth get " + kwargs["key"], stdout=PIPE, stderr=PIPE, shell=True)
+    out, err = cmd.communicate()
+
+    return out if out else None
