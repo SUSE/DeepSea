@@ -14,9 +14,15 @@ MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
 
 export DEV_ENV='true'
 
-#
-# stages
-#
+function install_deps {
+  echo "Installing dependencies on the Salt Master node"
+  DEPENDENCIES="jq
+  "
+  zypper --non-interactive --no-gpg-checks refresh
+  for d in $DEPENDENCIES ; do
+    zypper --non-interactive install --no-recommends $d
+  done
+}
 
 function _run_stage {
   local stage_num=$1
@@ -238,7 +244,7 @@ trap 'echo "Result: NOT_OK"' ERR
 echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
 RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
 zypper --non-interactive --no-gpg-checks refresh
-zypper --non-interactive install curl libxml2-tools
+zypper --non-interactive install --no-recommends curl libxml2-tools
 RGWXMLOUT=/tmp/rgw_test.xml
 curl $RGWNODE > $RGWXMLOUT
 test -f $RGWXMLOUT
