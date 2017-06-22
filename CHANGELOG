@@ -1,3 +1,25 @@
+- Version 0.7.13
+- Progressing with integration test suite
+- Initial support for importing ceph-deploy clusters
+- Correct rgw endpoints, several ganesha configuration changes
+- Default Grafana desktop fixed
+- Migration by OSD working
+- Many minor fixes 
+
+-------------------------------------------------------------------
+
+- Version 0.7.12
+- fix potential race between partprobe and dd
+- re-enable monitoring deployment
+- add initial functional testing suite
+
+-------------------------------------------------------------------
+
+- Version 0.7.11.1
+- do not deploy any monitoring be default, avoid MON regression in 12.0.2 
+
+-------------------------------------------------------------------
+
 - Version 0.7.11
 - Add prometheus, grafana and basic configuration
 - Improve OSD deployment
