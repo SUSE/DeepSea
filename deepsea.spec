@@ -117,6 +117,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mds/keyring
 %dir /srv/salt/ceph/mds/pools
 %dir /srv/salt/ceph/mds/restart
+%dir /srv/salt/ceph/migrate
+%dir /srv/salt/ceph/migrate/nodes
+%dir /srv/salt/ceph/migrate/osds
 %dir /srv/salt/ceph/mines
 %dir /srv/salt/ceph/mines/files
 %dir /srv/salt/ceph/mon
@@ -151,6 +154,9 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/reactor
 %dir /srv/salt/ceph/refresh
 %dir /srv/salt/ceph/repo
+%dir /srv/salt/ceph/redeploy
+%dir /srv/salt/ceph/redeploy/osds
+%dir /srv/salt/ceph/redeploy/nodes
 %dir /srv/salt/ceph/remove
 %dir /srv/salt/ceph/remove/ganesha
 %dir /srv/salt/ceph/remove/igw
@@ -293,6 +299,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mds/keyring/*.sls
 %config /srv/salt/ceph/mds/pools/*.sls
 %config /srv/salt/ceph/mds/restart/*.sls
+%config /srv/salt/ceph/migrate/nodes/*.sls
+%config /srv/salt/ceph/migrate/osds/*.sls
 %config /srv/salt/ceph/mines/*.sls
 %config /srv/salt/ceph/mines/files/*.conf
 %config /srv/salt/ceph/mon/*.sls
@@ -326,6 +334,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/reactor/*.sls
 %config /srv/salt/ceph/refresh/*.sls
 %config /srv/salt/ceph/repo/*.sls
+%config /srv/salt/ceph/redeploy/nodes/*.sls
+%config /srv/salt/ceph/redeploy/osds/*.sls
 %config /srv/salt/ceph/remove/ganesha/*.sls
 %config /srv/salt/ceph/remove/igw/auth/*.sls
 %config /srv/salt/ceph/remove/mon/*.sls

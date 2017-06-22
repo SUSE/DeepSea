@@ -24,3 +24,14 @@ def ids(cluster, **kwargs):
         ids.extend(data[minion])
     return ids
 
+def osds(cluster='ceph'):
+    """
+    """
+    search = "I@cluster:{} and I@roles:storage".format(cluster)
+
+    local = salt.client.LocalClient()
+    data = local.cmd(search, 'osd.rescinded', [], expr_form="compound")
+    ids = []
+    for minion in data:
+        ids.extend(data[minion])
+    return ids

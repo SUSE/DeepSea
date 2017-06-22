@@ -10,3 +10,7 @@ save grains:
   module.run:
     - name: osd.retain
 
+verify OSDs:
+  module.run:
+    - name: osd.report
+    - failhard: True

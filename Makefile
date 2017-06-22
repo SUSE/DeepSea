@@ -143,6 +143,12 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api/files
 	install -m 644 srv/salt/ceph/salt-api/files/*.conf* $(DESTDIR)/srv/salt/ceph/salt-api/files
 
+	# state files - migrate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/osds
+	install -m 644 srv/salt/ceph/migrate/osds/*.sls $(DESTDIR)/srv/salt/ceph/migrate/osds/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/nodes
+	install -m 644 srv/salt/ceph/migrate/nodes/*.sls $(DESTDIR)/srv/salt/ceph/migrate/nodes/
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
 	install -m 644 srv/salt/ceph/mines/*.sls $(DESTDIR)/srv/salt/ceph/mines/
@@ -220,6 +226,13 @@ copy-files:
 	# state files - refresh
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/refresh
 	install -m 644 srv/salt/ceph/refresh/*.sls $(DESTDIR)/srv/salt/ceph/refresh/
+	# state files - redeploy
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy/osds
+	install -m 644 srv/salt/ceph/redeploy/osds/*.sls $(DESTDIR)/srv/salt/ceph/redeploy/osds/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy/nodes
+	install -m 644 srv/salt/ceph/redeploy/nodes/*.sls $(DESTDIR)/srv/salt/ceph/redeploy/nodes/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy/nodes
 	# state files - remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/igw/auth

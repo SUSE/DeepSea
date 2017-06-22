@@ -123,18 +123,63 @@ def list_():
     Return the array of ids.
     """
     mounted = [ path.split('-')[1][:-5] for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path ]
-    log.info("mounted {}".format(mounted))
+    log.info("mounted osds {}".format(mounted))
     if 'ceph' in __grains__:
         grains = __grains__['ceph'].keys()
     else:
         grains = []
     return list(set(mounted + grains))
 
+def rescinded():
+    """
+    Return the array of ids that are no longer mounted.
+    """
+    mounted = [ int(path.split('-')[1][:-5]) for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path ]
+    log.info("mounted osds {}".format(mounted))
+    #ids = __grains__['ceph'].keys() if 'ceph' in __grains__ else []
+    ids = _children()
+    log.debug("ids: {}".format(ids))
+    for osd in mounted:
+        log.debug("osd: {}".format(osd))
+        if osd in ids:
+            ids.remove(osd)
+    return ids
+
+def _children():
+    """
+    """
+    result = json.loads(tree())
+    for entry in result['nodes']:
+        if entry['name'] == __grains__['host']:
+            return entry['children']
+
 def ids():
     """
     Synonym for list
     """
     return list()
+
+def tree():
+    """
+    Return osd tree
+
+    Note: Currently hardcoded to the bootstrap keyring.  This should work on
+    the master with the admin keyring.  This should also be refactored since
+    overriding the keyring is happening in three places.
+    """
+    settings = {
+        'conf': "/etc/ceph/ceph.conf" ,
+        'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
+        'client': 'client.bootstrap-osd'
+    }
+    #cluster=rados.Rados(conffile=settings['conf'])
+    cluster=rados.Rados(conffile=settings['conf'], conf=dict(keyring=settings['keyring']), name=settings['client'])
+    cluster.connect()
+    cmd = json.dumps({"prefix":"osd tree", "format":"json" })
+    ret,output,err = cluster.mon_command(cmd, b'', timeout=6)
+    log.debug(json.dumps(json.loads(output), indent=4))
+    return json.dumps(json.loads(output), indent=4)
+
 
 class OSDState(object):
     """
@@ -485,6 +530,8 @@ class OSDConfig(object):
             # OR the old version..
             return OSDConfig.DEFAULT_FORMAT_FOR_V1
         if self._config_version() == OSDConfig.V2:
+            if self.device not in self.tli:
+                raise RuntimeError("Device {} is not defined in pillar".format(self.device))
             if 'format' in self.tli[self.device]:
                 return self.tli[self.device]['format']
             return OSDConfig.DEFAULT_FORMAT_FOR_V2
@@ -770,18 +817,35 @@ class OSDPartitions(object):
                 cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, self.osd.types[partition_type], device)
             else:
                 cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, self.osd.types[partition_type], device)
-            _run(cmd)
-            partprobe_cmd = "/usr/sbin/partprobe {}{}".format(device, number)
-            _run(partprobe_cmd)
+            rc, _stdout, _stderr = _run(cmd)
+            if rc != 0:
+                raise RuntimeError("{} failed".format(cmd))
+            log.info("partprobe disk")
+            self._part_probe(device)
+            log.info("partprobe partition")
+            if 'nvme' in device:
+                self._part_probe("{}p{}".format(device, number))
+            else:
+                self._part_probe("{}{}".format(device, number))
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
-            wipe_cmd = "dd if=/dev/zero of={}{} bs=4096 count=1 oflag=direct".format(device, number)
-            _run(wipe_cmd)
+            if os.path.exists("{}{}".format(device, number)):
+                wipe_cmd = "dd if=/dev/zero of={}{} bs=4096 count=1 oflag=direct".format(device, number)
+                _run(wipe_cmd)
             index += 1
 
     def _part_probe(self, device):
         """
         """
+        wait_time = 1
+        retries = 5
+        cmd = "/usr/sbin/partprobe {}".format(device)
+        for attempt in range(1, retries + 1):
+            rc, _stdout, _stderr = _run(cmd)
+            if rc == 0:
+                return
+            time.sleep(wait_time)
+        raise RuntimeError("{} failed".format(cmd))
 
     def _last_partition(self, device):
         """
@@ -1095,6 +1159,91 @@ class OSDCommands(object):
             with open(filename, 'r') as osd_type:
                 return osd_type.read().rstrip()
 
+    def is_incorrect(self):
+        """
+        Check that an OSD is configured properly.  Compare formats, separate
+        partitions and size of partitions.
+        """
+        if self.osd.encryption:
+            log.warn("Encrypted OSDs not supported")
+            return False
+
+        pathname = None
+        with open("/proc/mounts", "r") as mounts:
+            for line in mounts:
+                entry = line.split()
+                if entry[0].startswith(self.osd.device):
+                    pathname = entry[1]
+                    break
+
+        if pathname:
+            filename = "{}/type".format(pathname)
+            if os.path.exists(filename):
+                with open(filename, 'r') as osd_type:
+                    osd_format = osd_type.read().rstrip()
+                if osd_format != self.osd.disk_format:
+                    log.info("OSD {} does not match format {}".format(pathname, self.osd.disk_format))
+                    return True
+
+            if self.osd.disk_format == 'filestore' and self.osd.journal:
+                result = self._check_device(pathname, 'journal', self.osd.journal, self.osd.journal_size)
+                if result:
+                    return True
+
+            if self.osd.disk_format == 'bluestore':
+                if self.osd.wal:
+                    if os.path.exists("{}/block.wal".format(pathname)):
+                        result = self._check_device(pathname, 'block.wal', self.osd.wal, self.osd.wal_size)
+                        if result:
+                            return True
+                if self.osd.db:
+                    if os.path.exists("{}/block.db".format(pathname)):
+                        result = self._check_device(pathname, 'block.db', self.osd.db, self.osd.db_size)
+                        if result:
+                            return True
+
+        return False
+
+    def _check_device(self, pathname, attr, device, size):
+        """
+        """
+        devicename = readlink("{}/{}".format(pathname, attr))
+        if device and  not devicename.startswith(device):
+            log.info("OSD {} {} does not match {}".format(attr, devicename, device))
+            return True
+        if size:
+            cmd = "blockdev --getsize64 {}".format(devicename)
+            rc, _stdout, _stderr = _run(cmd)
+            bsize = int(_stdout)
+            _bytes = self._convert(size)
+            if _bytes != bsize:
+                log.info("OSD {} size {} does not match {} ({})".format(attr, bsize, size, _bytes))
+                return True
+
+    def _convert(self, size):
+        """
+        """
+        suffixes = { 'K': 2**10, 'M': 2**20, 'G': 2**30, 'T': 2**40 }
+        suffix = size[-1:]
+        bsize = int(size[:-1]) * suffixes[suffix]
+        log.debug("suffix: {} bsize: {}".format(suffix, bsize))
+        return bsize
+
+def split_partition(partition):
+    """
+    Return the device and partition
+    """
+    part = readlink(partition)
+    #if os.path.exists(part):
+    log.debug("splitting partition {}".format(part))
+    m = re.match("(.+\D)(\d+)", part)
+    disk = m.group(1)
+    if 'nvme' in disk:
+        disk = disk[:-1]
+        log.debug("Truncating p {}".format(disk))
+    return disk, m.group(2)
+    #return None, None
+
 class OSDRemove(object):
     """
     Manage the graceful removal of an OSD
@@ -1191,8 +1340,12 @@ class OSDRemove(object):
         with open("/proc/mounts", "r") as mounts:
             for line in mounts:
                 entry = line.split()
-                if entry[0] in mounted:
-                    cmd = "umount {}".format(entry[0])
+                if '/dev/mapper' in entry[0]:
+                    mount = readlink(entry[0])
+                else:
+                    mount = entry[0]
+                if mount in mounted:
+                    cmd = "umount {}".format(mount)
                     rc, _stdout, _stderr = _run(cmd)
                     log.debug("returncode: {}".format(rc))
                     if rc != 0:
@@ -1201,10 +1354,9 @@ class OSDRemove(object):
                         return msg
                     os.rmdir(entry[1])
 
-        #if self.osd_fsid(self.osd_id):
-        #    log.info("osd fsid: {}".format(self.osd_fsid(osd_id)))
-        #    cmd = "dmsetup remove {}".format(self.osd_fsid(osd_id))
-        #    _run(cmd)
+        if '/dev/dm' in self.partitions['osd']:
+            cmd = "dmsetup remove {}".format(self.partitions['osd'])
+            _run(cmd)
         return ""
 
     def _mounted(self):
@@ -1215,6 +1367,7 @@ class OSDRemove(object):
         for attr in ['osd', 'lockbox']:
             if attr in self.partitions:
                 devices.append(readlink(self.partitions[attr]))
+        log.debug("mounted: {}".format(devices))
         return devices
 
     def wipe(self):
@@ -1238,9 +1391,6 @@ class OSDRemove(object):
         """
         self.osd_disk = self._osd_disk()
         self._delete_partitions()
-        if self.osd_disk and '/dev/mapper' in self.osd_disk:
-            log.debug("skipping OSD {}".format(self.osd_disk))
-            return ""
         self._wipe_gpt_backups()
         self._delete_osd()
         self._settle()
@@ -1253,7 +1403,7 @@ class OSDRemove(object):
             partition = self.partitions['lockbox']
         else:
             partition = self.partitions['osd']
-        disk, partition = self._split_partition(partition)
+        disk, partition = split_partition(partition)
         return disk
 
     def _delete_partitions(self):
@@ -1261,16 +1411,18 @@ class OSDRemove(object):
         """
         for attr in self.partitions:
             log.debug("Checking attr {}".format(attr))
-            short_name = readlink(self.partitions[attr])
-            if '/dev/mapper' in short_name:
-                log.debug("skipping {}".format(self.partitions[attr]))
+            if '/dev/dm' in self.partitions[attr]:
+                cmd = "dmsetup remove {}".format(self.partitions[attr])
+                _run(cmd)
                 continue
+
+            short_name = readlink(self.partitions[attr])
 
             if os.path.exists(short_name):
                 if self.osd_disk and self.osd_disk in short_name:
                     log.info("No need to delete {}".format(short_name))
                 else:
-                    disk, partition = self._split_partition(self.partitions[attr])
+                    disk, partition = split_partition(self.partitions[attr])
                     if disk:
                         log.debug("disk: {} partition: {}".format(disk, partition))
                         cmd = "sgdisk -d {} {}".format(partition, disk)
@@ -1279,20 +1431,20 @@ class OSDRemove(object):
                 log.error("Partition {} does not exist".format(short_name))
 
 
-    def _split_partition(self, partition):
-        """
-        Return the device and partition
-        """
-        part = readlink(partition)
-        if os.path.exists(part):
-            log.debug("splitting partition {}".format(part))
-            m = re.match("(.+\D)(\d+)", part)
-            disk = m.group(1)
-            if 'nvme' in disk:
-                disk = disk[:-1]
-                log.debug("Truncating p {}".format(disk))
-            return disk, m.group(2)
-        return None, None
+    #def _split_partition(self, partition):
+    #    """
+    #    Return the device and partition
+    #    """
+    #    part = readlink(partition)
+    #    if os.path.exists(part):
+    #        log.debug("splitting partition {}".format(part))
+    #        m = re.match("(.+\D)(\d+)", part)
+    #        disk = m.group(1)
+    #        if 'nvme' in disk:
+    #            disk = disk[:-1]
+    #            log.debug("Truncating p {}".format(disk))
+    #        return disk, m.group(2)
+    #    return None, None
 
     def _wipe_gpt_backups(self):
         """
@@ -1439,16 +1591,15 @@ class OSDDevices(object):
         """
         Return the uuid device
         """
-        if os.path.exists(pathname):
-            cmd = "find -L {} -samefile {} \( -name ata* -o -name nvme* \)".format(pathname, device)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-            proc.wait()
-            result = proc.stdout.read().rstrip()
-            log.debug(pprint.pformat(result))
-            log.debug(pprint.pformat(proc.stderr.read()))
-            return result
-        else:
-            if os.path.exists(device):
+        if os.path.exists(device):
+            if os.path.exists(pathname):
+                cmd = "find -L {} -samefile {} \( -name ata* -o -name nvme* \)".format(pathname, device)
+                rc, _stdout, _stderr = _run(cmd)
+                if _stdout:
+                    return _stdout
+                else:
+                    return readlink(device)
+            else:
                 return readlink(device)
 
 class OSDGrains(object):
@@ -1538,14 +1689,14 @@ def deploy():
     In a single state file, the prepare and activate commands are evaluated
     prior to the running a partition module command.
 
-    Calling the partition command as part of the prepare causes a bug of 
+    Calling the partition command as part of the prepare causes a bug of
     creating additional partitions since re-evaluations of the prepare command
     cause the partitions to be created.
 
-    Separating the steps into two state files requires two for loops.  This breaks
-    the current logic since the prepare and activate commands find the last
-    partitions created.  No mapping exists between an OSD and partitions until
-    the partition is created.
+    Separating the steps into two state files requires two for loops.  This
+    breaks the current logic since the prepare and activate commands find the
+    last partitions created.  No mapping exists between an OSD and partitions
+    until the partition is created.
 
     Another strategy could be converting the prepare and activate to a module
     but that serves little purpose.  The admin will still not see the commands.
@@ -1561,6 +1712,36 @@ def deploy():
             osdc = OSDCommands(config)
             _run(osdc.prepare())
             _run(osdc.activate())
+
+def redeploy(simultaneous=False):
+    """
+    """
+    if simultaneous:
+        for _id in __grains__['ceph']:
+            partition = __grains__['ceph'][_id]['partitions']['osd']
+            disk, part = split_partition(partition)
+            if is_incorrect(disk):
+                log.info("ID: {}".format(_id))
+                #empty(_id)
+    for _id in __grains__['ceph']:
+        if 'lockbox' in __grains__['ceph'][_id]['partitions']:
+            partition = __grains__['ceph'][_id]['partitions']['lockbox']
+        else:
+            partition = __grains__['ceph'][_id]['partitions']['osd']
+        log.info("Partition: {}".format(partition))
+        disk, part = split_partition(partition)
+        log.info("ID: {}".format(_id))
+        log.info("Disk: {}".format(disk))
+        if not os.path.exists(partition) or is_incorrect(disk):
+            remove(_id)
+            config = OSDConfig(disk)
+            osdp = OSDPartitions(config)
+            osdp.partition()
+            osdc = OSDCommands(config)
+            _run(osdc.prepare())
+            _run(osdc.activate())
+
+
 
 def is_prepared(device):
     """
@@ -1591,7 +1772,7 @@ def _fsck(device, partition):
     prefix = ''
     if 'nvme' in device:
         prefix = 'p'
-    cmd = "/sbin/fsck -n {}{}{}".format(device, prefix, partition)
+    cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
     log.info(cmd)
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     proc.wait()
@@ -1642,6 +1823,12 @@ def detect(osd_id):
     osdc = OSDCommands(config)
     return osdc.detect(osd_id)
 
+def is_incorrect(device):
+    """
+    """
+    config = OSDConfig(device)
+    osdc = OSDCommands(config)
+    return osdc.is_incorrect()
 
 def partitions(osd_id):
     """
@@ -1656,6 +1843,74 @@ def retain():
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
     return osdg.retain()
+
+def report(failhard=False):
+    """
+    Display the difference between the pillar and grains for the OSDs
+
+    Note: this needs more bullet proofing
+    """
+    if 'ceph' not in __grains__:
+        return "No ceph grain available.  Run osd.retain"
+    active = []
+    for _id in __grains__['ceph']:
+        partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
+        disk, part = split_partition(partition)
+        active.append(disk)
+        if 'lockbox' in __grains__['ceph'][_id]['partitions']:
+            partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
+            disk, part = split_partition(partition)
+            active.append(disk)
+
+
+    log.debug("active: {}".format(active))
+
+    if 'ceph' in __pillar__:
+        unconfigured = __pillar__['ceph']['storage']['osds'].keys()
+        changed = list(unconfigured)
+        for osd in __pillar__['ceph']['storage']['osds'].keys():
+            if readlink(osd) in active:
+                unconfigured.remove(osd)
+                if not is_incorrect(readlink(osd)):
+                    log.debug("Removed from changed {}".format(osd))
+                    changed.remove(osd)
+            else:
+                log.debug("Removed from changed {}".format(osd))
+                changed.remove(osd)
+
+
+    log.debug("changed: {}".format(active))
+
+    if 'storage' in __pillar__:
+        unconfigured = __pillar__['storage']['osds']
+        for dj in __pillar__['storage']['data+journals']:
+            unconfigured.append(*dj.keys())
+        log.info("unconfigured: {}".format(unconfigured))
+        changed = list(unconfigured)
+        osds = list(unconfigured)
+        for osd in osds:
+            if readlink(osd) in active:
+                unconfigured.remove(osd)
+                if not is_incorrect(readlink(osd)):
+                    log.debug("Removed from changed {}".format(osd))
+                    changed.remove(osd)
+            else:
+                log.debug("Removed from changed {}".format(osd))
+                changed.remove(osd)
+
+    if unconfigured or changed:
+        msg = ""
+        if unconfigured:
+            msg += "No OSD configured for \n{}\n".format("\n".join(unconfigured))
+        if changed:
+            msg += "Different configuration for \n{}\n".format("\n".join(changed))
+        if failhard:
+            raise RuntimeError(msg)
+        else:
+            return msg
+    else:
+        return "All configured OSDs are active"
+
 
 __func_alias__ = {
                 'list_': 'list',

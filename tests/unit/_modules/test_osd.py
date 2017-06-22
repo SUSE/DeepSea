@@ -857,55 +857,150 @@ class TestOSDPartitions():
         mock_log.warn.assert_called_with("DB size is unsupported for same device of /dev/sdx")
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd._run')
-    def test_create(self, run_mock, lp_mock, osdp_o):
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    def test_create(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
         """
-        Set params
-        => (wal, 1000)
-        Expect to go down the `if size` branch
+        Given the device is a NVME
+        And has a size
+        And the RC is 0
+        And the os.path.exists is True
+        Expect to execute:
+        _run 2x
+        sgdisk
+        dd
+        _part_probe 1x
         """
-        lp_mock.return_value = 1
-        osd_config = OSDConfig()
+        kwargs = {'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
+
+        lp_mock.return_value = 1
+        run_mock.return_value = (0, 'stdout', 'stderr')
+        ex_mock.return_value = True
+
         obj.create(osd_config.device,[('wal', 1000)])
+
         lp_mock.assert_called_with(osd_config.device)
-        run_mock.assert_any_call('/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
-        run_mock.assert_any_call('/usr/sbin/partprobe /dev/sdx2')
-        run_mock.assert_any_call('dd if=/dev/zero of=/dev/sdx2 bs=4096 count=1 oflag=direct')
+        pp_mock.assert_called_with('/dev/nvme0n1p2')
+        run_mock.assert_any_call('/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1')
+        run_mock.assert_any_call('dd if=/dev/zero of=/dev/nvme0n12 bs=4096 count=1 oflag=direct')
+        #                                                       ^^ that's wrong imho
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd._run')
-    def test_create_nosize(self, run_mock, lp_mock, osdp_o):
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    def test_create_1(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
         """
-        Set params
-        => (wal, None)
-        Expect to go down the `if no size` branch
+        Given the device is a NVME
+        And has a size
+        And the RC is 0
+        And the os.path.exists is False
+        Expect to execute:
+        _run 1x
+        sgdisk
+        _part_probe 1x
         """
-        lp_mock.return_value = 1
-        osd_config = OSDConfig()
+        kwargs = {'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
+
+        lp_mock.return_value = 1
+        run_mock.return_value = (0, 'stdout', 'stderr')
+        ex_mock.return_value = False
+
+        obj.create(osd_config.device,[('wal', 1000)])
+
+        lp_mock.assert_called_with(osd_config.device)
+        pp_mock.assert_called_with('/dev/nvme0n1p2')
+        run_mock.assert_any_call('/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1')
+
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
+    @mock.patch('srv.salt._modules.osd._run')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    def test_create_2(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+        """
+        Given the device is a NVME
+        And has a size
+        And the RC is 1
+        Expect to execute:
+        _run 1x
+        sgdisk
+        """
+        kwargs = {'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+
+        lp_mock.return_value = 1
+        run_mock.return_value = (99, 'stdout', 'stderr')
+        ex_mock.return_value = False
+
+        with pytest.raises(BaseException) as excinfo:
+            obj.create(osd_config.device,[('wal', 1000)])
+            lp_mock.assert_called_with(osd_config.device)
+            run_mock.assert_any_call('/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1')
+            assert '/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1 failed' in str(excinfo.value)
+
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
+    @mock.patch('srv.salt._modules.osd._run')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    def test_create_3(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+        """
+        Given the device is not a NVME
+        And has a no size
+        And the RC is 0
+        And the os.path.exists is False
+        Expect to execute:
+        _run 1x
+        sgdisk
+        _part_probe 1x
+        """
+        kwargs = {'device': '/dev/sdx'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+
+        lp_mock.return_value = 1
+        run_mock.return_value = (0, 'stdout', 'stderr')
+        ex_mock.return_value = False
+
         obj.create(osd_config.device,[('wal', None)])
+
         lp_mock.assert_called_with(osd_config.device)
+        pp_mock.assert_called_with('/dev/sdx2')
         run_mock.assert_any_call('/usr/sbin/sgdisk -N 2 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
-        run_mock.assert_any_call('/usr/sbin/partprobe /dev/sdx2')
-        run_mock.assert_any_call('dd if=/dev/zero of=/dev/sdx2 bs=4096 count=1 oflag=direct')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd._run')
-    def test_create_4_last_part(self, run_mock, lp_mock, osdp_o):
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    def test_create_4_last_part(self, ex_mock, pp_mock, run_mock, lp_mock, osdp_o):
         """
-        Set params
-        => (wal, 1000)
-        Expect to go down the `if size` branch
+        Given the device is not a NVME
+        And has a no size
+        And the RC is 0
+        And the os.path.exists is False
+        Expect to execute:
+        _run 1x
+        sgdisk
+        _part_probe 1x
+        Partition Param to 4
         """
-        lp_mock.return_value = 4
         osd_config = OSDConfig()
         obj = osdp_o(osd_config)
+
+        lp_mock.return_value = 4
+        ex_mock.return_value = False
+        run_mock.return_value = (0, 'stdout', 'stderr')
+
         obj.create(osd_config.device,[('wal', 1000)])
+
+        pp_mock.assert_called
         lp_mock.assert_called_with(osd_config.device)
         run_mock.assert_any_call('/usr/sbin/sgdisk -n 5:0:+1000 -t 5:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
-        run_mock.assert_any_call('/usr/sbin/partprobe /dev/sdx5')
-        run_mock.assert_any_call('dd if=/dev/zero of=/dev/sdx5 bs=4096 count=1 oflag=direct')
 
     @mock.patch('srv.salt._modules.osd.glob')
     def test__last_partition(self, glob_mock, osdp_o):
