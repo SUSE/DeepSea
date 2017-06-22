@@ -14,9 +14,15 @@ MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
 
 export DEV_ENV='true'
 
-#
-# stages
-#
+function install_deps {
+  echo "Installing dependencies on the Salt Master node"
+  DEPENDENCIES="jq
+  "
+  zypper --non-interactive --no-gpg-checks refresh
+  for d in $DEPENDENCIES ; do
+    zypper --non-interactive install $d
+  done
+}
 
 function _run_stage {
   local stage_num=$1
