@@ -5,7 +5,7 @@ install rgw:
       - python-boto
 
 {% for user in salt['rgw.users']('rgw') %}
-create demo bucket:
+create demo bucket for {{ user }}:
   module.run:
     - name: rgw.create_bucket
     - kwargs:
