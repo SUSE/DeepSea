@@ -115,19 +115,10 @@ class Radosgw(object):
             if found:
                 break
 
-        for client_file in glob.glob("{}/client.*".format(self.pathname)):
-            parts = client_file.split('.')
-            resource = ''
-            # dedicated keys - use host part
-            if len(parts) == 4:
-                resource = parts[2]
-            # shared keys - use role part
-            if len(parts) == 3:
-                resource = parts[1]
-            if resource and port:
-                resource += ":{}".format(port)
-            if resource:
-                self.credentials['urls'].append("http{}://{}".format(ssl, resource))
+        local = salt.client.LocalClient()
+        result = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
+        for _, grains in result.items():
+            self.credentials['urls'].append("http{}://{}:{}".format(ssl, grains['fqdn'], port))
 
 
 def credentials(canned=None, **kwargs):
