@@ -5,6 +5,10 @@ import logging
 from subprocess import call, Popen, PIPE
 import os
 import json
+import boto
+import boto.s3.connection
+import boto.exception
+
 
 log = logging.getLogger(__name__)
 
@@ -104,9 +108,24 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
                 log.info("stderr: {}".format(line))
 
             proc.wait()
-        
-        
-        
+
+
+def create_bucket(**kwargs):
+    s3conn = boto.connect_s3(
+        aws_access_key_id=kwargs['access_key'],
+        aws_secret_access_key=kwargs['secret_key'],
+        host=kwargs['host'],
+        is_secure=kwargs['ssl'],
+        port=kwargs['port'],
+        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+    )
+    try:
+        s3conn.create_bucket(kwargs['bucket_name'])
+    except boto.exception.S3CreateError:
+        return False
+    return True
+
+
 def _key(user, field, pathname):
     """
     Read the filename and return the key value.  

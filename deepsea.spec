@@ -197,6 +197,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/files
 %dir /srv/salt/ceph/rgw/key
 %dir /srv/salt/ceph/rgw/auth
+%dir /srv/salt/ceph/rgw/buckets
 %dir /srv/salt/ceph/rgw/keyring
 %dir /srv/salt/ceph/rgw/restart
 %dir /srv/salt/ceph/rgw/users
@@ -369,6 +370,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/key/*.sls
 %config /srv/salt/ceph/rgw/auth/*.sls
+%config /srv/salt/ceph/rgw/buckets/*.sls
 %config /srv/salt/ceph/rgw/keyring/*.sls
 %config /srv/salt/ceph/rgw/restart/*.sls
 %config /srv/salt/ceph/rgw/users/*.sls

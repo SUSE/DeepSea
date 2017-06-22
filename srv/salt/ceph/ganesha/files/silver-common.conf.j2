@@ -6,9 +6,13 @@ EXPORT
 {
 	Export_ID={{ loop.index }};
 
-	Path = "/";
+	# exporting {{ user }}-demo bucket
+	Path = "{{ user }}-demo";
+	
+	# You can also export the root path / inplace of bucket name
+	# Path = "/"
 
-	Pseudo = "/{{ user }}";
+	Pseudo = "/{{ user }}/{{ user }}-demo";
 
 	Access_Type = RO;
 
