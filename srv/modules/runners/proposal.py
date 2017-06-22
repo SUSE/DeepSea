@@ -132,7 +132,7 @@ def _propose(node, proposal, args):
 
 
 def _choose_proposal(node, proposal, args):
-    confs = ['nvme-ssd-spinner', 'nvme-spinner', 'ssd-spinner', 'standalone']
+    confs = ['nvme-ssd-spinner', 'nvme-ssd', 'nvme-spinner', 'ssd-spinner', 'standalone']
     # propose according to flags if present
     for conf in confs:
         if args[conf]:
