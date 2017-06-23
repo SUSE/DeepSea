@@ -87,9 +87,9 @@ std_args = {
     'name': 'default',
     'format': 'bluestore',
     'encryption': '',
-    'journal-size': 5,
-    'db-size': 1,
-    'wal-size': 1,
+    'journal-size': '5g',
+    'db-size': '500m',
+    'wal-size': '500m',
 }
 
 base_dir = '/srv/pillar/ceph/proposals'
