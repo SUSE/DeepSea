@@ -865,6 +865,7 @@ def _replace_key_in_cluster_yml(key, val):
     Replace proposed key/val in
     /srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml
     Returns True/False.
+    Appends the key/val if it doesn't already exist.
     """
     filename = "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"
 
@@ -883,8 +884,13 @@ def _replace_key_in_cluster_yml(key, val):
     # Write out the new version.
     try:
 	with open(filename, "w") as f:
+            written = False
 	    for line in cluster_yml:
 		print >> f, line
+                if key + ":" in line:
+                    written = True
+            if not written:
+                print >> f, key + ": " + val
 	    f.close()
     except:
 	log.error("Failed to open {} for writing.".format(filename))
@@ -1187,5 +1193,12 @@ def engulf_existing_cluster(**kwargs):
     if not c_net_dict['ret']:
 	log.error("Failed to replace derived cluster_network with cluster_network of existing cluster.")
 	return [ False ]
+
+    # write out the imported ceph.conf
+    with open("/srv/salt/ceph/configuration/files/ceph.conf.import", 'w') as conf:
+        conf.write(ceph_conf)
+
+    # ensure the imported config will be used
+    _replace_key_in_cluster_yml("configuration_init", "default-import")
 
     return [ True ]
