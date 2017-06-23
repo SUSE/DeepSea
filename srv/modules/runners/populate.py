@@ -1015,6 +1015,9 @@ def engulf_existing_cluster(**kwargs):
     previous_minion = None
     admin_minion = None
 
+    mds_instances = []
+    rgw_instances = []
+
     for minion, info in local.cmd("*", "cephinspector.inspect").items():
 
         if type(info) is not dict:
@@ -1083,11 +1086,13 @@ def engulf_existing_cluster(**kwargs):
 
         if "ceph-mds" in info["running_services"].keys():
             policy_cfg.append("role-mds/cluster/" + minion + ".sls")
-            pass
+            for i in info["running_services"]["ceph-mds"]:
+                mds_instances.append(i)
 
         if "ceph-radosgw" in info["running_services"].keys():
             policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
-            pass
+            for i in info["running_services"]["ceph-radosgw"]:
+                rgw_instances.append(i)
 
         # TODO: what else to do for rgw?  Do we need to do something to
         # populate rgw_configurations in pillar data?
@@ -1124,8 +1129,21 @@ def engulf_existing_cluster(**kwargs):
     with open("/srv/salt/ceph/osd/cache/bootstrap.keyring", 'w') as keyring:
         keyring.write(osd_bootstrap_keyring)
 
-    # TODO:
-    #   get mds and rgw keyrings
+    for i in mds_instances:
+        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ])[admin_minion]
+        if not mds_keyring:
+            print("Could not obtain mds." + i + " keyring")
+            return False
+        with open("/srv/salt/ceph/mds/cache/" + i + ".keyring", 'w') as keyring:
+            keyring.write(mds_keyring)
+
+    for i in rgw_instances:
+        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ])[admin_minion]
+        if not rgw_keyring:
+            print("Could not obtain client." + i + " keyring")
+            return False
+        with open("/srv/salt/ceph/rgw/cache/client." + i + ".keyring", 'w') as keyring:
+            keyring.write(rgw_keyring)
 
     # Now policy_cfg reflects the current deployment, make it a bit legible...
     policy_cfg.sort()
