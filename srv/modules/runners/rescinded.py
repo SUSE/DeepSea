@@ -34,4 +34,4 @@ def osds(cluster='ceph'):
     ids = []
     for minion in data:
         ids.extend(data[minion])
-    return ids
+    return list(set(ids))

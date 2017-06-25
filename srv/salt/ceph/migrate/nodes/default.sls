@@ -10,13 +10,13 @@ safety is engaged:
 
 
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='storage') %}
-redeploy osds:
+redeploy {{ host }} osds:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.redeploy.nodes
 
-cleanup osds:
+cleanup {{ host }} osds:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
