@@ -20,7 +20,6 @@ rgw users:
     - sls: ceph.rgw
 
 {% endfor %}
-{% endif %}
 
 {% set endpoint = salt.saltutil.runner('ui_rgw.endpoints')[0] %}
 rgw demo buckets:
@@ -32,4 +31,6 @@ rgw demo buckets:
         'rgw_host': {{ endpoint['host'] }}
         'rgw_port': {{ endpoint['port'] }}
         'rgw_ssl': {{ endpoint['ssl'] }}
+
+{% endif %}
 
