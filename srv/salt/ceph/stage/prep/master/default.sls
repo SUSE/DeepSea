@@ -20,10 +20,16 @@ repo master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.repo
 
+{% if salt['pillar.get']('no_update') != True %}
+
 prepare master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates
+
+{% endif %}
+
+{% if salt['pillar.get']('no_reboot') != True %}
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
@@ -34,10 +40,12 @@ unlock:
     - item: 'lock'
     - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
 
+
 restart master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart
+
 
 complete marker:
   salt.runner:
@@ -45,11 +53,9 @@ complete marker:
     - queue: 'master'
     - item: 'complete'
 
+{% endif %}
+
 ready:
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
-
-
-
-

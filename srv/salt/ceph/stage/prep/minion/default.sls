@@ -18,6 +18,9 @@ mines:
     - tgt: '*'
     - sls: ceph.mines
 
+{% if salt['pillar.get']('no_reboot') != True %}
+{% if salt['pillar.get']('no_update') != True %}
+
 {% if salt['saltutil.runner']('cephprocesses.mon') == True %}
 
 #warning_before:
@@ -131,4 +134,6 @@ restart:
     - tgt: '*'
     - sls: ceph.updates.restart
 
+{% endif %}
+{% endif %}
 {% endif %}
