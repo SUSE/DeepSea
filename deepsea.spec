@@ -145,6 +145,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/osd/key
 %dir /srv/salt/ceph/osd/auth
 %dir /srv/salt/ceph/osd/keyring
+%dir /srv/salt/ceph/osd/partition
 %dir /srv/salt/ceph/osd/restart
 %dir /srv/salt/ceph/osd/scheduler
 %dir /srv/salt/ceph/packages
@@ -325,6 +326,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/osd/key/*.sls
 %config /srv/salt/ceph/osd/auth/*.sls
 %config /srv/salt/ceph/osd/keyring/*.sls
+%config /srv/salt/ceph/osd/partition/*.sls
 %config /srv/salt/ceph/osd/restart/*.sls
 %config /srv/salt/ceph/osd/scheduler/*.sls
 %config /srv/salt/ceph/packages/*.sls
