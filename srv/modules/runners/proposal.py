@@ -87,9 +87,9 @@ std_args = {
     'name': 'default',
     'format': 'bluestore',
     'encryption': '',
-    'journal-size': 5,
-    'db-size': 1,
-    'wal-size': 1,
+    'journal-size': '5g',
+    'db-size': '500m',
+    'wal-size': '500m',
 }
 
 base_dir = '/srv/pillar/ceph/proposals'
@@ -198,7 +198,7 @@ def _write_proposal(p, profile_dir):
 
     # write storage profile
     with open(profile_file, 'w') as outfile:
-        content = {'ceph': {'storage': {'devices': proposal}}}
+        content = {'ceph': {'storage': {'osds': proposal}}}
         # implement merge of existing data
         yaml.dump(content, outfile, default_flow_style=False)
 
@@ -238,12 +238,12 @@ def populate(**kwargs):
     # check if profile of 'name' exists
     profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
     if not isdir(profile_dir):
-        os.makedirs(profile_dir, 755)
+        os.makedirs(profile_dir, 0755)
     # TODO do not hardcode cluster name ceph here
     if not isdir('{}/stack/default/ceph/minions'.format(profile_dir)):
-        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 755)
+        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 0755)
     if not isdir('{}/cluster'.format(profile_dir)):
-        os.makedirs('{}/cluster'.format(profile_dir), 755)
+        os.makedirs('{}/cluster'.format(profile_dir), 0755)
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
