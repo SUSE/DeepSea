@@ -238,12 +238,12 @@ def populate(**kwargs):
     # check if profile of 'name' exists
     profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
     if not isdir(profile_dir):
-        os.makedirs(profile_dir, 755)
+        os.makedirs(profile_dir, 0755)
     # TODO do not hardcode cluster name ceph here
     if not isdir('{}/stack/default/ceph/minions'.format(profile_dir)):
-        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 755)
+        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 0755)
     if not isdir('{}/cluster'.format(profile_dir)):
-        os.makedirs('{}/cluster'.format(profile_dir), 755)
+        os.makedirs('{}/cluster'.format(profile_dir), 0755)
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
