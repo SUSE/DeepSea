@@ -176,6 +176,14 @@ class Zypper(PackageManager):
             log.debug('Executing {}'.format(cmd))
             return False
 
+    def _upgrades_needed(self):
+        """
+        In the upgrade path, always perform a `zypper dup`.  `zypper dup` has no equivalent
+        `zypper lu` check, and performing a `zypper dup --dry-run` followed by a `zypper dup`
+        just adds to wait time for the admin.
+        """
+        return True
+
     def _updates_needed(self):
         """
         Updates that are sourced from all Repos
@@ -242,7 +250,9 @@ class Zypper(PackageManager):
 
         cmd = []
 
-        if strat == 'up' or strat == 'dup':
+        if strat == 'dup':
+            check_method = self._upgrades_needed
+        elif strat == 'up':
             check_method = self._updates_needed
         elif strat == 'patch':
             check_method = self._patches_needed
