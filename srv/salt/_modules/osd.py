@@ -149,9 +149,14 @@ def _children():
     """
     """
     result = json.loads(tree())
+    entries = []
     for entry in result['nodes']:
         if entry['name'] == __grains__['host']:
-            return entry['children']
+            entries.extend(entry['children'])
+    for entry in result['stray']:
+        entries.append(entry['id'])
+    return entries
+
 
 def ids():
     """
@@ -314,7 +319,7 @@ class OSDWeight(object):
         """
         stdout = []
         stderr = []
-        cmd = "ceph osd crush reweight osd.{} {}".format(self.id, weight)
+        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.id, weight)
         return _run(cmd)
 
     def osd_df(self):
@@ -366,16 +371,24 @@ class OSDWeight(object):
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
 
-def zero_weight(id, **kwargs):
+def zero_weight(id, wait=True, **kwargs):
     """
     Set weight to zero and wait until PGs are moved
     """
-    o = OSDWeight(id, **kwargs)
+    settings = {
+            'keyring': '/etc/ceph/ceph.client.storage.keyring',
+            'client': 'client.storage'
+    }
+    settings.update(kwargs)
+    o = OSDWeight(id, **settings)
     o.save()
-    result = o.reweight('0.0')
-    if result != 0:
+    rc, _stdout, _stderr = o.reweight('0.0')
+    if rc != 0:
         return "Reweight failed"
-    return o.wait()
+    if wait:
+        return o.wait()
+    else:
+        return ""
 
 empty = salt.utils.alias_function(zero_weight, 'empty')
 
@@ -383,7 +396,12 @@ def restore_weight(id, **kwargs):
     """
     Restore the previous setting for an OSD if possible
     """
-    o = OSDWeight(id, **kwargs)
+    settings = {
+            'keyring': '/etc/ceph/ceph.client.storage.keyring',
+            'client': 'client.storage'
+    }
+    settings.update(kwargs)
+    o = OSDWeight(id, **settings)
     o.restore()
     return True
 
@@ -1307,7 +1325,7 @@ class OSDRemove(object):
         """
         """
         self._weight.save()
-        rc = self._weight.reweight('0.0')
+        rc, _stdout, _stderr = self._weight.reweight('0.0')
         if rc != 0:
             msg = "Reweight failed"
             log.error(msg)
@@ -1479,9 +1497,9 @@ def remove(osd_id, **kwargs):
     """
     """
     settings = {
-            'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
-            'client': 'client.bootstrap-osd'
-        }
+            'keyring': '/etc/ceph/ceph.client.storage.keyring',
+            'client': 'client.storage'
+    }
     settings.update(kwargs)
     if 'force' in kwargs and kwargs['force']:
         osdw = None
@@ -1500,7 +1518,7 @@ def is_empty(osd_id, **kwargs):
     settings = {
             'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
             'client': 'client.bootstrap-osd'
-        }
+    }
     settings.update(kwargs)
     osdw = OSDWeight(osd_id, **settings)
     return osdw.is_empty()
@@ -1713,16 +1731,9 @@ def deploy():
             _run(osdc.prepare())
             _run(osdc.activate())
 
-def redeploy(simultaneous=False):
+def redeploy():
     """
     """
-    if simultaneous:
-        for _id in __grains__['ceph']:
-            partition = __grains__['ceph'][_id]['partitions']['osd']
-            disk, part = split_partition(partition)
-            if is_incorrect(disk):
-                log.info("ID: {}".format(_id))
-                #empty(_id)
     for _id in __grains__['ceph']:
         if 'lockbox' in __grains__['ceph'][_id]['partitions']:
             partition = __grains__['ceph'][_id]['partitions']['lockbox']
@@ -1740,8 +1751,6 @@ def redeploy(simultaneous=False):
             osdc = OSDCommands(config)
             _run(osdc.prepare())
             _run(osdc.activate())
-
-
 
 def is_prepared(device):
     """
