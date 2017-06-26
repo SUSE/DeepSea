@@ -35,12 +35,13 @@ def report(cluster_name='ceph', stdout=True, return_data=False ):
         counter_obj = Counter(minion_data_dct.values())
         if counter_obj.most_common():
             most_common_item = counter_obj.most_common()[0][0]
-        common_keys.update({key_ident: most_common_item})
-	for node, value in minion_data_dct.iteritems():
-	    if value != most_common_item:
-	        if node not in unsynced_nodes['out of sync'].keys():
-                    unsynced_nodes['out of sync'][node] = {}
-	        unsynced_nodes['out of sync'][node].update({key_ident: value})
+        if most_common_item:
+            common_keys.update({key_ident: most_common_item})
+            for node, value in minion_data_dct.iteritems():
+                if value != most_common_item:
+                    if node not in unsynced_nodes['out of sync'].keys():
+                        unsynced_nodes['out of sync'][node] = {}
+                    unsynced_nodes['out of sync'][node].update({key_ident: value})
 
     for minion_data in [('os', os_codename), ('ceph', ceph_version), ('salt', salt_version)]:
         _organize(minion_data)
