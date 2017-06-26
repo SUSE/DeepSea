@@ -1,3 +1,10 @@
+- Version 0.7.15 8172280bf2ad29584577d0d1ce256a82ff3009cf
+- Fix reweight, remove strays
+- proposal runner fixes
+
+-------------------------------------------------------------------
+
+- Version 0.7.14 fc9b64b6778db158bca08072dde3b8c1df8b01fe
 - Version 0.7.14
 - Fixed bug in RGW deployment
 
