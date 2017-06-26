@@ -1,3 +1,8 @@
+- Version 0.7.14
+- Fixed bug in RGW deployment
+
+-------------------------------------------------------------------
+
 - Version 0.7.13
 - Progressing with integration test suite
 - Initial support for importing ceph-deploy clusters
