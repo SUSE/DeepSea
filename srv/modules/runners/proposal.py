@@ -198,7 +198,7 @@ def _write_proposal(p, profile_dir):
 
     # write storage profile
     with open(profile_file, 'w') as outfile:
-        content = {'ceph': {'storage': {'devices': proposal}}}
+        content = {'ceph': {'storage': {'osds': proposal}}}
         # implement merge of existing data
         yaml.dump(content, outfile, default_flow_style=False)
 
