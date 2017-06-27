@@ -33,6 +33,7 @@ def report(cluster_name='ceph', stdout=True, return_data=False ):
         key_ident = minion_data[0]
         minion_data_dct = minion_data[1]
         counter_obj = Counter(minion_data_dct.values())
+        most_common_item = None
         if counter_obj.most_common():
             most_common_item = counter_obj.most_common()[0][0]
         if most_common_item:
