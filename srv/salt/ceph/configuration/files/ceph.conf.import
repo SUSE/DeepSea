@@ -1,0 +1,2 @@
+# When DeepSea imports an existing cluster, the imported ceph.conf
+# will replace this file.

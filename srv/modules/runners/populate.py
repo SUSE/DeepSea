@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: ts=8 et sw=4 sts=4
 
 import salt.client
 import salt.key
@@ -24,6 +25,12 @@ import ipaddress
 import logging
 
 import sys
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+from cStringIO import StringIO
 
 """
 WHY THIS RUNNER EXISTS:
@@ -852,3 +859,338 @@ def proposals(**kwargs):
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
     return [ True ]
+
+def _replace_key_in_cluster_yml(key, val):
+    """
+    Replace proposed key/val in
+    /srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml
+    Returns True/False.
+    Appends the key/val if it doesn't already exist.
+    """
+    filename = "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"
+
+    # Read in cluster.yml
+    try:
+	with open(filename) as f:
+	    cluster_yml = f.readlines()
+	    f.close()
+    except:
+	log.error("Failed to open {} for reading.".format(filename))
+	return False
+
+    # Replace the old fsid entry.
+    cluster_yml = [ key + ": " + val if key + ":" in line else line.strip() for line in cluster_yml ]
+
+    # Write out the new version.
+    try:
+	with open(filename, "w") as f:
+            written = False
+	    for line in cluster_yml:
+		print >> f, line
+                if key + ":" in line:
+                    written = True
+            if not written:
+                print >> f, key + ": " + val
+	    f.close()
+    except:
+	log.error("Failed to open {} for writing.".format(filename))
+	return False
+
+    return True
+
+def _get_existing_cluster_network(addrs, public_network=None):
+    """
+    Based on the addrs dictionary { minion: ipaddress }, this function
+    returns an address consisting of network prefix followed by the cidr
+    prefix (ie. 10.0.0.0/24).
+    """
+    local = salt.client.LocalClient()
+    minion_networks = []
+
+    # Grab network interfaces from salt.
+    minion_network_interfaces = local.cmd("*", "network.interfaces")
+    # Remove lo.
+    for entry in minion_network_interfaces:
+	try:
+	    del(minion_network_interfaces[entry]["lo"])
+	except:
+	    pass
+
+    for minion, public_ip in addrs.items():
+	# Only continue if public_ip is present.
+	if public_ip:
+	    for intf, data in minion_network_interfaces[minion].items():
+		for inet_data in data["inet"]:
+		    if public_ip == "0.0.0.0":
+			# If running on 0.0.0.0, assume we can use public_network
+			ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(public_ip, inet_data["netmask"]))
+			minion_networks.append(str(ip.network))
+		    elif inet_data["address"] == public_ip:
+			ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
+			minion_networks.append(str(ip.network))
+
+    # Check for consistency across all entries.
+    if len(set(minion_networks)) == 1:
+	# We have equal entries.
+	return minion_networks[0]
+    else:
+	return None
+
+def _replace_fsid_with_existing_cluster(fsid):
+    """
+    Replace proposed fsid with fsid of running cluster.
+    Returns True/False.
+    """
+    return _replace_key_in_cluster_yml("fsid", fsid)
+
+def _replace_public_network_with_existing_cluster(mon_addrs):
+    """
+    Replace proposed public_network with public_network of running cluster.
+    Retruns { 'ret': True/False, 'public_network': string }
+    """
+    public_network = _get_existing_cluster_network(mon_addrs)
+    if not public_network:
+	log.error("Failed to determine cluster public_network.")
+	return { 'ret': False, 'public_network': None }
+    else:
+	return { 'ret': _replace_key_in_cluster_yml("public_network", public_network),
+		 'public_network': public_network }
+
+def _replace_cluster_network_with_existing_cluster(osd_addrs, public_network=None):
+    """
+    Replace proposed cluster_network with cluster_network of running cluster.
+    If a public_network is already provided, pass that along as a fallback for
+    _get_existing_cluster_network() to use when cluster_network is found to
+    be 0.0.0.0.  Retruns { 'ret': True/False, 'cluster_network': string }
+    """
+    cluster_network = _get_existing_cluster_network(osd_addrs, public_network)
+    if not cluster_network:
+	log.error("Failed to determine cluster public_network.")
+	return { 'ret': False, 'cluster_network': None }
+    else:
+	return { 'ret': _replace_key_in_cluster_yml("cluster_network", cluster_network),
+		 'cluster_network': cluster_network }
+
+def engulf_existing_cluster(**kwargs):
+    """
+    Assuming proposals() has already been run to collect hardware profiles and
+    all possible role assignments and common configuration, this will generate
+    a policy.cfg with roles and assignments reflecting whatever cluster is
+    currently deployed.  It will also suck in all the keyrings so that they're
+    present when the configure stage is run.
+
+    This assumes your cluster is named "ceph".  If it's not, things will break.
+    """
+
+    # TODO:
+    # - verify the cluster is actually healthy and everything is running first
+
+    policy_cfg = []
+
+    local = salt.client.LocalClient()
+    settings = Settings()
+    salt_writer = SaltWriter(**kwargs)
+
+    # First, hand apply select Stage 0 functions
+    local.cmd("*", "saltutil.sync_all")
+    local.cmd("*", "state.apply", ["ceph.mines"], expr_form="compound")
+
+    # Run proposals gathering directly.  Note that this really isn't needed,
+    # but it may be useful for the admin to have the populated proposal tree
+    # for future reference
+    # TODO: minions.ready() needed?
+    proposals()
+
+    # Our imported hardware profile proposal path
+    imported_profile = "profile-import"
+    imported_profile_path = settings.root_dir + "/" + imported_profile
+
+    # Used later on to compute cluster and public networks.
+    mon_addrs = {}
+    osd_addrs = {}
+
+    ceph_conf = None
+    previous_minion = None
+    admin_minion = None
+
+    mds_instances = []
+    rgw_instances = []
+
+    for minion, info in local.cmd("*", "cephinspector.inspect").items():
+
+        if type(info) is not dict:
+            print("cephinspector.inspect failed on %s: %s" % (minion, info))
+            return False
+
+        if info["ceph_conf"] is not None:
+            if ceph_conf is None:
+                ceph_conf = info["ceph_conf"]
+            else:
+                if info["ceph_conf"] != ceph_conf:
+                    # TODO: what's the best way to report errors from a runner?
+                    print("ceph.conf on %s doesn't match ceph.conf on %s" % (minion, previous_minion))
+                    return False
+            previous_minion = minion
+
+        is_admin = info["has_admin_keyring"]
+
+        if admin_minion is None and is_admin:
+            # We'll talk to this minion later to obtain keyrings
+            admin_minion = minion
+
+        if not info["running_services"].keys() and not is_admin:
+            # No ceph services running, no admin key, don't assign it
+            # to the cluster
+            continue
+
+        policy_cfg.append("cluster-ceph/cluster/" + minion + ".sls")
+
+        if is_admin:
+            policy_cfg.append("role-admin/cluster/" + minion + ".sls")
+
+        if "ceph-mon" in info["running_services"].keys():
+            policy_cfg.append("role-mon/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
+	    for minion, ipaddr in local.cmd(minion, "cephinspector.get_minion_public_network").items():
+		mon_addrs[minion] = ipaddr
+
+        if "ceph-osd" in info["running_services"].keys():
+            # Needs a storage profile assigned (which may be different
+            # than the proposals deepsea has come up with, depending on
+            # how things were deployed)
+	    ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml")
+	    if not ceph_disks:
+		log.error("Failed to get list of Ceph OSD disks.")
+		return [ False ]
+
+	    for minion, store in ceph_disks.items():
+		minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
+		minion_yml_path = minion_yml_dir + "/" + minion + ".yml"
+		_create_dirs(minion_yml_dir, "")
+		salt_writer.write(minion_yml_path, store)
+
+		minion_sls_data = { "roles": [ "storage" ] }
+		minion_sls_dir = imported_profile_path + "/cluster"
+		minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
+		_create_dirs(minion_sls_dir, "")
+		salt_writer.write(minion_sls_path, minion_sls_data)
+
+		policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
+		policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
+
+	    for minion, ipaddr in local.cmd(minion, "cephinspector.get_minion_cluster_network").items():
+		osd_addrs[minion] = ipaddr
+            pass
+
+        if "ceph-mds" in info["running_services"].keys():
+            policy_cfg.append("role-mds/cluster/" + minion + ".sls")
+            for i in info["running_services"]["ceph-mds"]:
+                mds_instances.append(i)
+
+        if "ceph-radosgw" in info["running_services"].keys():
+            policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
+            for i in info["running_services"]["ceph-radosgw"]:
+                rgw_instances.append(i)
+
+        # TODO: what else to do for rgw?  Do we need to do something to
+        # populate rgw_configurations in pillar data?
+
+    if not admin_minion:
+        print("No nodes found with ceph.client.admin.keyring")
+        return False
+
+    # TODO: this is really not very DRY...
+    admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.admin" ])[admin_minion]
+    if not admin_keyring:
+        print("Could not obtain client.admin keyring")
+        return False
+
+    mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mon." ])[admin_minion]
+    if not mon_keyring:
+        print("Could not obtain mon keyring")
+        return False
+
+    osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.bootstrap-osd" ])[admin_minion]
+    if not osd_bootstrap_keyring:
+        print("Could not obtain osd bootstrap keyring")
+        return False
+
+    with open("/srv/salt/ceph/admin/cache/ceph.client.admin.keyring", 'w') as keyring:
+        keyring.write(admin_keyring)
+
+    with open("/srv/salt/ceph/mon/cache/mon.keyring", 'w') as keyring:
+        # following srv/salt/ceph/mon/files/keyring.j2, this includes both mon
+        # and admin keyrings
+        keyring.write(mon_keyring)
+        keyring.write(admin_keyring)
+
+    with open("/srv/salt/ceph/osd/cache/bootstrap.keyring", 'w') as keyring:
+        keyring.write(osd_bootstrap_keyring)
+
+    for i in mds_instances:
+        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ])[admin_minion]
+        if not mds_keyring:
+            print("Could not obtain mds." + i + " keyring")
+            return False
+        with open("/srv/salt/ceph/mds/cache/" + i + ".keyring", 'w') as keyring:
+            keyring.write(mds_keyring)
+
+    for i in rgw_instances:
+        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ])[admin_minion]
+        if not rgw_keyring:
+            print("Could not obtain client." + i + " keyring")
+            return False
+        with open("/srv/salt/ceph/rgw/cache/client." + i + ".keyring", 'w') as keyring:
+            keyring.write(rgw_keyring)
+
+    # Now policy_cfg reflects the current deployment, make it a bit legible...
+    policy_cfg.sort()
+
+    # ...but inject the unassigned line first so it takes precendence,
+    # along with the global config bits (because they're prettier early)...
+    policy_cfg = [
+        "cluster-unassigned/cluster/*.sls",
+        "config/stack/default/ceph/cluster.yml",
+        "config/stack/default/global.yml" ] + policy_cfg
+
+    # ...and write it out (this will fail with EPERM if someone's already
+    # created a policy.cfg as root, BTW)
+    with open("/srv/pillar/ceph/proposals/policy.cfg", 'w') as policy:
+        policy.write("\n".join(policy_cfg) + "\n")
+
+    # We've also got a ceph.conf to play with
+    cp = configparser.RawConfigParser()
+    # This little bit of natiness strips whitespace from all the lines, as
+    # Python's configparser interprets leading whitespace as a line continuation,
+    # whereas ceph itself is happy to have leading whitespace.
+    cp.readfp(StringIO("\n".join([line.strip() for line in ceph_conf.split("\n")])))
+
+    if not cp.has_section("global"):
+        print("ceph.conf is missing [global] section")
+        return False
+    if not cp.has_option("global", "fsid"):
+        print("ceph.conf is missing fsid")
+        return False
+
+    if not _replace_fsid_with_existing_cluster(cp.get("global", "fsid")):
+	log.error("Failed to replace derived fsid with fsid of existing cluster.")
+	return [ False ]
+
+    p_net_dict = _replace_public_network_with_existing_cluster(mon_addrs)
+    if not p_net_dict['ret']:
+	log.error("Failed to replace derived public_network with public_network of existing cluster.")
+	return [ False ]
+
+    c_net_dict = _replace_cluster_network_with_existing_cluster(osd_addrs, p_net_dict['public_network'])
+    if not c_net_dict['ret']:
+	log.error("Failed to replace derived cluster_network with cluster_network of existing cluster.")
+	return [ False ]
+
+    # write out the imported ceph.conf
+    with open("/srv/salt/ceph/configuration/files/ceph.conf.import", 'w') as conf:
+        conf.write(ceph_conf)
+
+    # ensure the imported config will be used
+    _replace_key_in_cluster_yml("configuration_init", "default-import")
+
+    return True

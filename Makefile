@@ -69,6 +69,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files
 	install -m 644 srv/salt/ceph/configuration/files/*.j2 $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/*.rgw $(DESTDIR)/srv/salt/ceph/configuration/files/
+	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.import $(DESTDIR)/srv/salt/ceph/configuration/files/
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.d/README $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/events
@@ -432,6 +434,28 @@ copy-files:
 	ln -sf deploy		$(DESTDIR)/srv/salt/ceph/stage/3
 	ln -sf services		$(DESTDIR)/srv/salt/ceph/stage/4
 	ln -sf removal		$(DESTDIR)/srv/salt/ceph/stage/5
+
+	# cache directories
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/admin/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/ganesha/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/igw/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mds/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mon/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openattic/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/rgw/cache
+	# At runtime, these need to be owned by salt:salt.  This won't work
+	# in a buildroot on OBS, hence the leading '-' to ignore failures
+	# and '|| true' to suppress some error output, but will work fine
+	# in development when root runs `make install`.
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/admin/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/ganesha/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/igw/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mds/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mon/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openattic/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/osd/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 
 install: copy-files
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
