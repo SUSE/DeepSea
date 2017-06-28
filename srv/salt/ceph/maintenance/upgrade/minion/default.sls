@@ -70,7 +70,7 @@ updating {{ host }}:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound
-    - sls: ceph.updates
+    - sls: ceph.upgrade
     - failhard: True
 
 set noout {{ host }}: 
@@ -111,7 +111,7 @@ unset noout after final iteration:
 updates:
   salt.state:
     - tgt: '*'
-    - sls: ceph.updates
+    - sls: ceph.upgrade
 
 {% endif %}
 
