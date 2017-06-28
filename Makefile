@@ -373,6 +373,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/maintenance/upgrade/master/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/master
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/minion
 	install -m 644 srv/salt/ceph/maintenance/upgrade/minion/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/minion
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/report
+	install -m 644 srv/salt/ceph/maintenance/upgrade/report/*.sls $(DESTDIR)/srv/salt/ceph/maintenance/upgrade/report
 	# state files - orchestrate stages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/all
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
