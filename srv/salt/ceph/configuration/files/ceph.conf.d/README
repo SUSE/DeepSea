@@ -41,9 +41,3 @@ easier. For example the osd.conf file could look like this:
 Where the osd[1,2,3,4].conf files contain the OSD specific configuration
 options.
 
-### Bluestore
-
-At this time, bluestore is considered experimental.  Add the following to the
-<salt_dir>/ceph/configuration/files/ceph.conf.d/global.conf:
-
-enable experimental unrecoverable data corrupting features = bluestore
