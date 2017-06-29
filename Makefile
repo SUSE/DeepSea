@@ -186,6 +186,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/monitoring/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/grafana
 	install -m 644 srv/salt/ceph/monitoring/grafana/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/grafana
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/grafana/files
+	install -m 644 srv/salt/ceph/monitoring/grafana/files/*.json $(DESTDIR)/srv/salt/ceph/monitoring/grafana/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	install -m 644 srv/salt/ceph/monitoring/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
