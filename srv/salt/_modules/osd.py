@@ -1256,7 +1256,7 @@ class OSDCommands(object):
         """
         """
         suffixes = { 'K': 2**10, 'M': 2**20, 'G': 2**30, 'T': 2**40 }
-        suffix = size[-1:]
+        suffix = size[-1:].upper()
         bsize = int(size[:-1]) * suffixes[suffix]
         log.debug("suffix: {} bsize: {}".format(suffix, bsize))
         return bsize
