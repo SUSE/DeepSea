@@ -920,14 +920,15 @@ def _get_existing_cluster_network(addrs, public_network=None):
 	# Only continue if public_ip is present.
 	if public_ip:
 	    for intf, data in minion_network_interfaces[minion].items():
-		for inet_data in data["inet"]:
-		    if public_ip == "0.0.0.0":
-			# If running on 0.0.0.0, assume we can use public_network
-			ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(public_ip, inet_data["netmask"]))
-			minion_networks.append(str(ip.network))
-		    elif inet_data["address"] == public_ip:
-			ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
-			minion_networks.append(str(ip.network))
+                if "inet" in inet_data:
+		    for inet_data in data["inet"]:
+		        if public_ip == "0.0.0.0":
+			    # If running on 0.0.0.0, assume we can use public_network
+			    ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(public_ip, inet_data["netmask"]))
+			    minion_networks.append(str(ip.network))
+		        elif inet_data["address"] == public_ip:
+			    ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
+			    minion_networks.append(str(ip.network))
 
     # Check for consistency across all entries.
     if len(set(minion_networks)) == 1:
