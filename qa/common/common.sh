@@ -4,6 +4,7 @@
 
 BASEDIR=$(pwd)
 source $BASEDIR/common/json.sh
+source $BASEDIR/common/rbd.sh
 
 SALT_MASTER=$(cat /srv/pillar/ceph/master_minion.sls | \
              sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
@@ -102,6 +103,13 @@ EOF
     echo "Three or more storage nodes; not adjusting ceph.conf"
     # TODO: look up default value of "mon pg warn min per osd"
   fi
+}
+
+function ceph_conf_mon_allow_pool_delete {
+    echo "Adjusting ceph.conf to allow pool deletes"
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+mon allow pool delete = true
+EOF
 }
 
 #
