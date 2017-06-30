@@ -39,6 +39,9 @@ def file(component, name=None):
     if component == "mds":
         return "/srv/salt/ceph/mds/cache/" + name + ".keyring"
 
+    if component == "mgr":
+        return "/srv/salt/ceph/mgr/cache/" + name + ".keyring"
+
     if component == "rgw":
         return "/srv/salt/ceph/rgw/cache/" + name + ".keyring"
 

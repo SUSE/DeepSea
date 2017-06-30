@@ -1,5 +1,6 @@
 include:
   - .mon
+  - .mgr
   - .osd
   - .rgw
   - .mds

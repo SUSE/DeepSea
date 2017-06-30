@@ -140,6 +140,19 @@ copy-files:
 	install -m 644 srv/salt/ceph/mds/files/*.j2 $(DESTDIR)/srv/salt/ceph/mds/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart
 	install -m 644 srv/salt/ceph/mds/restart/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart
+	# state files - mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr
+	install -m 644 srv/salt/ceph/mgr/*.sls $(DESTDIR)/srv/salt/ceph/mgr/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/key
+	install -m 644 srv/salt/ceph/mgr/key/*.sls $(DESTDIR)/srv/salt/ceph/mgr/key/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/auth
+	install -m 644 srv/salt/ceph/mgr/auth/*.sls $(DESTDIR)/srv/salt/ceph/mgr/auth/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/keyring
+	install -m 644 srv/salt/ceph/mgr/keyring/*.sls $(DESTDIR)/srv/salt/ceph/mgr/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/files
+	install -m 644 srv/salt/ceph/mgr/files/*.j2 $(DESTDIR)/srv/salt/ceph/mgr/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/restart
+	install -m 644 srv/salt/ceph/mgr/restart/*.sls $(DESTDIR)/srv/salt/ceph/mgr/restart
 	# state files - salt-api
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api
 	install -m 644 srv/salt/ceph/salt-api/*.sls $(DESTDIR)/srv/salt/ceph/salt-api
@@ -283,6 +296,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/mds/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mds/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mds/keyring
 	install -m 644 srv/salt/ceph/rescind/mds/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mds/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mgr
+	install -m 644 srv/salt/ceph/rescind/mgr/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mgr/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mgr/keyring
+	install -m 644 srv/salt/ceph/rescind/mgr/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mgr/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mon
 	install -m 644 srv/salt/ceph/rescind/mon/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mon/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin
@@ -314,6 +331,9 @@ copy-files:
 	# state files - restart - mon
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mon
 	install -m 644 srv/salt/ceph/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/restart/mon
+	# state files - restart - mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mgr
+	install -m 644 srv/salt/ceph/restart/mgr/*.sls $(DESTDIR)/srv/salt/ceph/restart/mgr
 	# state files - restart - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/osd
 	install -m 644 srv/salt/ceph/restart/osd/*.sls $(DESTDIR)/srv/salt/ceph/restart/osd
@@ -443,6 +463,7 @@ copy-files:
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/ganesha/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/igw/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mds/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mgr/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mon/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openattic/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
@@ -455,6 +476,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/ganesha/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/igw/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mds/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mgr/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mon/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openattic/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/osd/cache || true

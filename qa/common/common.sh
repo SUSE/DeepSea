@@ -129,6 +129,7 @@ role-master/cluster/${SALT_MASTER}*.sls
 role-admin/cluster/*.sls
 # Role assignment - mon
 role-mon/cluster/*.sls slice=[:1]
+role-mgr/cluster/*.sls slice=[:1]
 role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }

@@ -19,14 +19,14 @@ def _preserve_order_sorted(seq):
 def unique(cluster='ceph', exclude=[]):
     """ 
     Assembling a list of nodes.
-    Ordered(MON, OSD, MDS, RGW, IGW)  
+    Ordered(MON, MGR, OSD, MDS, RGW, IGW)
     """ 
     all_clients = []
 
     client = salt.client.LocalClient(__opts__['conf_file'])
 
     cluster_assignment = "I@cluster:{}".format(cluster)
-    roles = ['mon', 'storage', 'mds', 'rgw', 'igw', 'ganesha']
+    roles = ['mon', 'mgr', 'storage', 'mds', 'rgw', 'igw', 'ganesha']
     # Adding an exclude param here to allow skipping of individual
     # roles. 
     # Usecase: If an admin wants to have manual control over the upgrade
