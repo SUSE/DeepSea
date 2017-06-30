@@ -902,21 +902,10 @@ class OSDCommands(object):
     def osd_partition(self):
         """
         Find the OSD partition
-
-        Note: Do not remove the logic with the hardcoded values until
-        the evaluation of activate command is resolved
         """
         log.debug("format: {}".format(self.osd.disk_format))
-        if self.osd.disk_format:
-              if self.osd.disk_format == 'filestore':
-                  if self.osd.journal and self.osd.journal != self.osd.device:
-                      # Journal on separate device
-                      return 1
-                  else:
-                      # Journal on same device
-                      return 2
-              if self.osd.disk_format == 'bluestore':
-                  return 1
+        if self.osd.disk_format and self.osd.disk_format == 'bluestore':
+            return 1
         return self._highest_partition(self.osd.device, 'osd')
 
     def is_partition(self, partition_type, device, partition):
