@@ -283,10 +283,13 @@ class Zypper(PackageManager):
 
     def _migrate(self):
         # There is no dryrun or replacefiles or non-interactive
-        strategy_flags = ['--auto-agree-with-licenses']
+        strategy_flags = ['--auto-agree-with-licenses', '--replacefiles']
+        # _NOT_ passing --allow-vendor-change as this should be a user
+        # decision and be targeted prior to the upgrade
         cmd = []
         cmd.extend(self.base_command)
         cmd.extend(['migration'])
+        cmd.extend(self.zypper_flags)
         cmd.extend(strategy_flags)
         log.debug('Executing {}'.format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
