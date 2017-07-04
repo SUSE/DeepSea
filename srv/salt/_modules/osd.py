@@ -1129,7 +1129,7 @@ class OSDCommands(object):
                 cmd += "--dmcrypt "
             # Filestore
             if self.osd.disk_format == 'filestore':
-                cmd += "--fs-type xfs "
+                cmd += "--fs-type xfs --filestore "
                 args = self._filestore_args()
             # Bluestore
             if self.osd.disk_format == 'bluestore':
