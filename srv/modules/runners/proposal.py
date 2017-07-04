@@ -109,14 +109,14 @@ def _propose(node, proposal, args):
         dev_par = {}
         format_ = args.get('format')
         if type(v) is dict:
-            assert format_ is 'bluestore'
+            assert format_ == 'bluestore'
             wal, db = v.items()[0]
             dev_par['wal'] = wal
             dev_par['db'] = db
             dev_par['wal_size'] = args.get('wal-size')
             dev_par['db_size'] = args.get('db-size')
         elif type(v) is str:
-            if format_ is 'bluestore':
+            if format_ == 'bluestore':
                 dev_par['wal'] = v
                 dev_par['db'] = v
                 dev_par['wal_size'] = args.get('wal-size')
