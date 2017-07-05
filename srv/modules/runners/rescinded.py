@@ -2,7 +2,9 @@
 
 import salt.client
 import pprint
+import logging
 
+log = logging.getLogger(__name__)
 
 def ids(cluster, **kwargs):
     """
@@ -33,5 +35,8 @@ def osds(cluster='ceph'):
     data = local.cmd(search, 'osd.rescinded', [], expr_form="compound")
     ids = []
     for minion in data:
-        ids.extend(data[minion])
+        if type(data[minion]) is list:
+            ids.extend(data[minion])
+        else:
+            log.debug(data[minion])
     return list(set(ids))
