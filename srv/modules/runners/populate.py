@@ -920,7 +920,7 @@ def _get_existing_cluster_network(addrs, public_network=None):
 	# Only continue if public_ip is present.
 	if public_ip:
 	    for intf, data in minion_network_interfaces[minion].items():
-                if "inet" in inet_data:
+                if "inet" in data:
 		    for inet_data in data["inet"]:
 		        if public_ip == "0.0.0.0":
 			    # If running on 0.0.0.0, assume we can use public_network
