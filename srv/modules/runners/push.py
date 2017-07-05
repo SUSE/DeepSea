@@ -75,6 +75,26 @@ def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg", dryrun = False)
     pillar_data.output(common)
     return True
 
+def convert(filename = "/srv/pillar/ceph/proposals/policy.cfg"):
+    """
+    Convert the hardware profiles that policy.cfg is using and update
+    the policy.cfg.
+
+    Note: While the call "push.convert" does not make much sense, this
+    runner contained most of the necessary logic
+    """
+    if not os.path.isfile(filename):
+        log.warning("{} is missing - nothing to migrate".format(filename))
+        return ""
+    if os.path.isfile("{}-original".format(filename)):
+        log.error("Already migrated - remove {}-original before rerunning".format(filename))
+        return ""
+    pillar_data = PillarData()
+    common = pillar_data.organize(filename)
+    pillar_data.convert(common)
+    pillar_data.rename(filename)
+    return ""
+
 def _create_dirs(path, root):
     try:
         os.makedirs(path)
@@ -93,7 +113,7 @@ class PillarData(object):
     tree.
     """
 
-    def __init__(self, dryrun):
+    def __init__(self, dryrun = False):
         """
         The source is proposals_dir and the destination is pillar_dir
         """
@@ -131,6 +151,57 @@ class PillarData(object):
                 default_path = re.sub(r'stack/default', "stack", pathname)
                 custom = self.pillar_dir + "/" + default_path
                 self._custom(custom)
+
+    def convert(self, common):
+        """
+        Process all hardware profiles
+        """
+        for pathname in common.keys():
+            for filename in common[pathname]:
+                if 'profile-' in filename:
+                    with open(filename, "r") as yml:
+                        content = yaml.safe_load(yml)
+                    migrated = self._migrate(content, filename)
+                    newfilename = re.sub('profile-', 'migrated-profile-', filename)
+                    path_dir = os.path.dirname(newfilename)
+                    _create_dirs(path_dir, self.pillar_dir)
+                    with open(newfilename, "w") as yml:
+                        yml.write(yaml.dump(migrated, Dumper=self.friendly_dumper,
+                                                  default_flow_style=False))
+
+    def _migrate(self, yaml, filename):
+        """
+        Migrate the original data structure to the ceph namespace data
+        structure
+        """
+        if 'storage' in yaml and 'osds' in yaml['storage']:
+            yaml['ceph'] = {}
+            yaml['ceph']['storage'] = {}
+            yaml['ceph']['storage']['osds'] = {}
+            for osd in yaml['storage']['osds']:
+                yaml['ceph']['storage']['osds'][osd] = { 'format': 'bluestore' }
+            for entry in yaml['storage']['data+journals']:
+                for osd, journal in entry.iteritems(): 
+                    yaml['ceph']['storage']['osds'][osd] = { 'format': 'bluestore', 'wal': journal, 'db': journal }
+            yaml.pop('storage')
+        else:
+            log.info("No migration for {} - copying".format(filename))
+        return yaml
+
+    def rename(self, filename):
+        """
+        Copy the policy.cfg and update the existing file
+        """
+        shutil.copyfile(filename, "{}-original".format(filename))
+        lines = []
+        with open(filename, "r") as policy:
+            for line in policy:
+                if line.startswith('profile-'):
+                    line = "migrated-{}".format(line)
+                lines.append(line)
+        with open(filename, "w") as policy:
+            policy.write("".join(lines))
+
 
     def _clean(self):
         """
@@ -203,8 +274,6 @@ class PillarData(object):
                 content = yaml.safe_load(content)
                 merged = stack._merge_dict(merged, content)
         return merged
-
-
 
     def organize(self, filename):
         """
