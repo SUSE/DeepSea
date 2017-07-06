@@ -19,4 +19,4 @@ configure:
     - shell: /bin/bash
     - require:
       - file: /tmp/lrbd.conf
-
+    - unless: 'cat /tmp/lrbd.conf | grep -q "\"pools\": \[\]$"'
