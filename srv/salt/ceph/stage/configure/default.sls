@@ -42,13 +42,6 @@ refresh_pillar2:
 
 {% endfor %}
 
-igw config:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - tgt_type: compound
-    - sls: ceph.igw.config
-    - failhard: True
-
 setup monitoring:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
