@@ -689,6 +689,20 @@ class OSDPartitions(object):
         self.osd = config
         #self.disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
 
+    def clean(self):
+        """
+        Remove existing partitions from OSD.  Addresses issue of
+        damaged filesystems.
+
+        Note: expected to only run inside of "not is_prepared"
+        """
+        pathnames = glob.glob("{}?*".format(self.osd.device))
+        if pathnames:
+            cmd = "sgdisk -Z --clear -g {}".format(self.osd.device)
+            rc, _stdout, _stderr = _run(cmd)
+            if rc != 0:
+                raise RuntimeError("{} failed".format(cmd))
+
     def partition(self):
         """
         Create partitions for supported formats
@@ -1242,7 +1256,7 @@ class OSDCommands(object):
         """
         """
         suffixes = { 'K': 2**10, 'M': 2**20, 'G': 2**30, 'T': 2**40 }
-        suffix = size[-1:]
+        suffix = size[-1:].upper()
         bsize = int(size[:-1]) * suffixes[suffix]
         log.debug("suffix: {} bsize: {}".format(suffix, bsize))
         return bsize
@@ -1726,19 +1740,31 @@ def deploy():
         if not is_prepared(device):
             config = OSDConfig(device)
             osdp = OSDPartitions(config)
+            osdp.clean()
             osdp.partition()
             osdc = OSDCommands(config)
             _run(osdc.prepare())
             _run(osdc.activate())
 
-def redeploy():
+def redeploy(simultaneous=False):
     """
     """
+    if simultaneous:
+        for _id in __grains__['ceph']:
+            partition = _partition(_id)
+            log.info("Partition: {}".format(partition))
+            disk, part = split_partition(partition)
+            log.info("ID: {}".format(_id))
+            log.info("Disk: {}".format(disk))
+            if is_incorrect(disk):
+                zero_weight(_id, wait=False)
+
     for _id in __grains__['ceph']:
-        if 'lockbox' in __grains__['ceph'][_id]['partitions']:
-            partition = __grains__['ceph'][_id]['partitions']['lockbox']
-        else:
-            partition = __grains__['ceph'][_id]['partitions']['osd']
+        partition = _partition(_id)
+        #if 'lockbox' in __grains__['ceph'][_id]['partitions']:
+        #    partition = __grains__['ceph'][_id]['partitions']['lockbox']
+        #else:
+        #    partition = __grains__['ceph'][_id]['partitions']['osd']
         log.info("Partition: {}".format(partition))
         disk, part = split_partition(partition)
         log.info("ID: {}".format(_id))
@@ -1751,6 +1777,15 @@ def redeploy():
             osdc = OSDCommands(config)
             _run(osdc.prepare())
             _run(osdc.activate())
+          # not is_prepared(disk)):
+
+def _partition(osd_id):
+    """
+    """
+    if 'lockbox' in __grains__['ceph'][osd_id]['partitions']:
+        return __grains__['ceph'][osd_id]['partitions']['lockbox']
+    else:
+        return __grains__['ceph'][osd_id]['partitions']['osd']
 
 def is_prepared(device):
     """
@@ -1777,17 +1812,21 @@ def is_prepared(device):
 def _fsck(device, partition):
     """
     Check filesystem on partition
+
+    Note: xfs_repair returns immediately on success, but takes 3m39s to fail
+    on some broken filesystems.  Not good for automation.
     """
     prefix = ''
     if 'nvme' in device:
         prefix = 'p'
-    cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
+    #cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
+    cmd = "/usr/sbin/xfs_admin -u {}{}{}".format(device, prefix, partition)
     log.info(cmd)
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     proc.wait()
     log.debug(pprint.pformat(proc.stdout.read()))
     log.debug(pprint.pformat(proc.stderr.read()))
-    log.debug("fsck: {}".format(proc.returncode))
+    log.debug("xfs_admin: {}".format(proc.returncode))
     return proc.returncode == 0
 
 def is_activated(device):
@@ -1862,17 +1901,21 @@ def report(failhard=False):
     if 'ceph' not in __grains__:
         return "No ceph grain available.  Run osd.retain"
     active = []
+    unmounted = []
     for _id in __grains__['ceph']:
         partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
         disk, part = split_partition(partition)
         active.append(disk)
+        log.debug("checking /var/lib/ceph/osd/ceph-{}/fsid".format(_id))
+        if not os.path.exists("/var/lib/ceph/osd/ceph-{}/fsid".format(_id)):
+            unmounted.append(disk)
         if 'lockbox' in __grains__['ceph'][_id]['partitions']:
             partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
             disk, part = split_partition(partition)
             active.append(disk)
 
-
     log.debug("active: {}".format(active))
+
 
     if 'ceph' in __pillar__:
         unconfigured = __pillar__['ceph']['storage']['osds'].keys()
@@ -1886,7 +1929,6 @@ def report(failhard=False):
             else:
                 log.debug("Removed from changed {}".format(osd))
                 changed.remove(osd)
-
 
     log.debug("changed: {}".format(active))
 
@@ -1907,12 +1949,14 @@ def report(failhard=False):
                 log.debug("Removed from changed {}".format(osd))
                 changed.remove(osd)
 
-    if unconfigured or changed:
+    if unconfigured or changed or unmounted:
         msg = ""
         if unconfigured:
             msg += "No OSD configured for \n{}\n".format("\n".join(unconfigured))
         if changed:
             msg += "Different configuration for \n{}\n".format("\n".join(changed))
+        if unmounted:
+            msg += "No OSD mounted for \n{}\n".format("\n".join(unmounted))
         if failhard:
             raise RuntimeError(msg)
         else:

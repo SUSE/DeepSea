@@ -442,6 +442,14 @@ copy-files:
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/1hour/until/OK
+	install -m 644 srv/salt/ceph/wait/1hour/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/1hour/until/OK
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/2hours/until/OK
+	install -m 644 srv/salt/ceph/wait/2hours/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/2hours/until/OK
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/4hours/until/OK
+	install -m 644 srv/salt/ceph/wait/4hours/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/4hours/until/OK
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/until/OK
+	install -m 644 srv/salt/ceph/wait/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/until/OK
 	# state files - check processes
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes
 	install -m 644 srv/salt/ceph/processes/*.sls $(DESTDIR)/srv/salt/ceph/processes/
