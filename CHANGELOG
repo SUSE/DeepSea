@@ -1,38 +1,49 @@
+-------------------------------------------------------------------
+Mon Jun 26 13:59:41 UTC 2017 - ejackson@suse.com
+
 - Version 0.7.15 8172280bf2ad29584577d0d1ce256a82ff3009cf
 - Fix reweight, remove strays
 - proposal runner fixes
 
 -------------------------------------------------------------------
+Mon Jun 26 08:24:13 UTC 2017 - ricardo.dias@suse.com
 
 - Version 0.7.14 fc9b64b6778db158bca08072dde3b8c1df8b01fe
-- Version 0.7.14
 - Fixed bug in RGW deployment
 
 -------------------------------------------------------------------
+Thu Jun 22 22:18:19 UTC 2017 - ejackson@suse.com
 
-- Version 0.7.13
+- Version 0.7.13 0e17664447ed75cecbfbc7bf5e7051a957c56fc4
 - Progressing with integration test suite
 - Initial support for importing ceph-deploy clusters
 - Correct rgw endpoints, several ganesha configuration changes
 - Default Grafana desktop fixed
 - Migration by OSD working
-- Many minor fixes 
+- Many minor fixes
 
 -------------------------------------------------------------------
+Wed Jun 14 10:23:37 UTC 2017 - jan.fajerski@suse.com
+
+- fix potential race between partprobe and dd
+
+-------------------------------------------------------------------
+Wed Jun 14 08:04:07 UTC 2017 - jan.fajerski@suse.com
 
 - Version 0.7.12
-- fix potential race between partprobe and dd
 - re-enable monitoring deployment
 - add initial functional testing suite
 
 -------------------------------------------------------------------
+Tue Jun 13 08:16:50 UTC 2017 - jan.fajerski@suse.com
 
 - Version 0.7.11.1
 - do not deploy any monitoring be default, avoid MON regression in 12.0.2 
 
 -------------------------------------------------------------------
+Thu Jun  8 20:40:40 UTC 2017 - ejackson@suse.com
 
-- Version 0.7.11
+- Version 0.7.11 2ffc279ae43724e1b0e349d0a967bf7ee83c39e9
 - Add prometheus, grafana and basic configuration
 - Improve OSD deployment
 - Add remove functionality and single OSD removal command
@@ -40,24 +51,27 @@
 - Various spec file, build environment changes
 
 -------------------------------------------------------------------
+Wed May 31 08:24:16 UTC 2017 - jschmid@suse.com
 
-- Version 0.7.10 8173ccabc62729981ccc876966231aee0ba4b9d4
+- Version 0.7.10 8173ccabc62729981ccc876966231aee0ba4b9d4- 
 - Fix is_activate and is_prepared with by-id devices
 - Wal and db partuuid awareness
 - Fix osds+journal deployments
 
 -------------------------------------------------------------------
+Mon May 29 15:03:51 UTC 2017 - jschmid@suse.com
 
-- Version 0.7.9.1 48c933d0e9405198fe8873e7fe3a61d8cd54fa73
+- Version 0.7.9.1 48c933d0e9405198fe8873e7fe3a61d8cd54fa73- 
 - Fixed bug in osd module internal targeting
 - Fixed conversion of bytes to gigabytes for disk size detection
 
--------------------------------------------------------------------1
+-------------------------------------------------------------------
+Thu May 25 19:18:31 UTC 2017 - ejackson@suse.com
 
-- Version 0.7.9
+- Version 0.7.9 0fbdff9abab508277940d50d775fb01bb515860c
 - Automatically include custom files from ceph.conf.d
 - Enable client ntp configuration
-- Add ui_rgw runner for RadosGW credentials 
+- Add ui_rgw runner for RadosGW credentials
 - Add prometheus exporters (prometheus, itself is in progress)
 - Add validation to discovery stage, linter for yaml, check profiles
 - Ensure at least one storage in DEV_ENV mode
@@ -67,17 +81,19 @@
 - Remove ganesha /etc/sysconfig/ganesha (moved to rpm)
 - Initial dmcrypt support (removal in incomplete)
 - Add status.report runner, display after upgrade
-- Misc. fixes to READMEs, radosgw rescind 
+- Misc. fixes to READMEs, radosgw rescind
 
 -------------------------------------------------------------------
+Mon May 15 19:40:00 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.8 93ec5f36f4a8c27cc1fac0c841ccf45bab6841bb
 - salt-api fix
 - Updated README
 
 -------------------------------------------------------------------
+Mon May 15 11:51:47 UTC 2017 - jschmid@suse.com
 
-- Version 0.7.7 0da31f0266b033fa6c17c76641ac99ed3aa76fc4
+- Version 0.7.7 8f803eabe3294b205af17786417e26b2143e61f1
 - Support restarting single services
 - Added openATTIC role
 - Rename cherrypy to salt-api
@@ -86,6 +102,7 @@
 - Fix ganesha service file
 
 -------------------------------------------------------------------
+Fri Apr 28 04:33:03 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.6 18a3f872ad438332e2aebb130fa5e4a79bcb0bd6
 - Rolling upgrade
@@ -95,6 +112,7 @@
 - Correct package dependencies for Ubuntu
 
 -------------------------------------------------------------------
+Sat Apr  8 11:18:42 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.5 99f5be86c4d5c49c30d29cf68f228beb0adcf5a5
 - Fix bugs for ceph.purge, disengage.safety
@@ -118,11 +136,13 @@
 - Various python improvements, remove unnecessary methods
 
 -------------------------------------------------------------------
+Mon Mar 13 15:20:48 UTC 2017 - ejackson@suse.com
 
 - Version 0.6.13 git 709867f2ac1c55931504fb2eea0fb0a6fcb369fb
 - Enable openattic services (bnc#1027261)
 
 -------------------------------------------------------------------
+Fri Feb 17 19:08:51 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.4 e8559976b5e70dd36e9a98250f795de9f1cc48d4
 - Add ganesha for rgw/cephfs
@@ -130,6 +150,7 @@
 - Add missing import
 
 -------------------------------------------------------------------
+Fri Feb 10 19:38:20 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.3 316c3b9071807a22baa87df5dd1823560c9ef79e
 - Refactoring, code improvements
@@ -139,6 +160,7 @@
 - Add net.ping runner, multi.ping module
 
 -------------------------------------------------------------------
+Wed Feb  1 20:49:54 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.2 0aeeceda3497cd3dad2439954203829ab428f43a
 - Add python-ipaddress dependency
@@ -146,6 +168,7 @@
 - Add warnings to validate
 
 -------------------------------------------------------------------
+Wed Jan 25 13:41:07 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.1 git 2eaa452cbe6f24538a91433575010e7ef9bf1f2f
 - Fix various README typos, add links to documentation
@@ -156,21 +179,25 @@
 - Add disengage.safety, ceph.purge
 
 -------------------------------------------------------------------
+Tue Jan 24 10:45:21 UTC 2017 - ejackson@suse.com
 
 - Version 0.6.12 git a2ac3b3da52068c085159928716d3bbc4e84eb97
 - Do not replace existing /srv/pillar/top.sls (bnc#1020840)
 
 -------------------------------------------------------------------
+Mon Jan  9 14:46:14 UTC 2017 - ejackson@suse.com
 
 - Version 0.6.11 git 3b8e493eac552ee6b3051fb513704aff2fcbd5e8
 - Renamed "name" parameter 
 
 -------------------------------------------------------------------
+Tue Nov 15 20:32:53 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.10 git 73f55a985b62c171ef4d6af29d94dc458cd00733
 - Fix ordering of Storage node removal 
 
 -------------------------------------------------------------------
+Sat Nov  5 13:58:21 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.8 git 56a0dbea92640a0212104099cc3fe09c2e6b64d9
 - Remove extraneous spaces/comments from runners/modules
@@ -182,22 +209,26 @@
 - Change Salt state_output to mixed 
 
 -------------------------------------------------------------------
+Tue Nov  1 14:01:10 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.7 git d4ea8857fffa1a9da4c19285506266d5ea30f3c9
 - Rename custom.sls, add comments and general cleanup 
 
 -------------------------------------------------------------------
+Sun Oct 30 14:30:20 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.6 git f20b1bd040e2f3674c1c255340fa26716cafe972
 - Added baseline benchmarks
 - Fixed proposals for nice ratio and unused OSDs 
 
 -------------------------------------------------------------------
+Thu Oct 27 21:56:50 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.5 git ad8b6991805a6c2037ad90205ae504330cb29b68
 - Add graceful restart functionality 
 
 -------------------------------------------------------------------
+Thu Oct 27 20:12:50 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.4 git f22ee4176ce6b4cb25f33b55fd02df6299f2bddf
 - Renamed rescind directories to match client roles
@@ -206,16 +237,19 @@
 - Migrated install from spec to Makefile 
 
 -------------------------------------------------------------------
+Wed Oct 26 15:27:41 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.2 git da5939238bdd5a807f8400f11152601408ef6d44
 - Proposal corrections for OSDs with separate journals 
 
 -------------------------------------------------------------------
+Tue Oct 25 23:05:13 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.1 git 0dcb54000c874299d0dfbeae0e286595de34c779
 - Rename profile, clients and zypper commands 
 
 -------------------------------------------------------------------
+Thu Oct 20 10:04:43 UTC 2016 - ejackson@suse.com
 
 - Version 0.6 git b5a23522ecf114e90d9fea578e6648b3a04a41f6
 - Rename variables from _method to _init
@@ -223,6 +257,7 @@
 - Add valdiation checks 
 
 -------------------------------------------------------------------
+Mon Oct 17 15:30:30 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.8 git 538dbbdee4b0f16f05ab1ca05087480162595f79
 - Create default iSCSI setup
@@ -230,37 +265,44 @@
 - Add iperf/ping diagnostics 
 
 -------------------------------------------------------------------
+Fri Oct 14 11:04:24 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.7 git dd22795643e4785de7f7e6bfc5a76a8bde39b212
 - Add validate check for no responding minions
 - Finish removal of monitors, iSCSI, CephFS and RGW 
 
 -------------------------------------------------------------------
+Wed Oct 12 15:20:04 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.6 git 7da15965480dcfe901b1814cd077a6e523f8c5ec
 - Automatically install openattic 
 
 -------------------------------------------------------------------
+Tue Oct 11 09:16:18 UTC 2016 - ejackson@suse.com
 
 - Add missing directories to spec file 
 
 -------------------------------------------------------------------
+Tue Oct 11 09:07:10 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.5 git 45e2c13ea7159678f1bbc63efdf6d694824776ea
 - Add rescind functionality 
 
 -------------------------------------------------------------------
+Fri Oct  7 11:33:54 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.4 git 92b8e8b9dda29aa0a0125ae41b88387055f88a9a
 - Correct generation of hardware profiles 
 
 -------------------------------------------------------------------
+Wed Oct  5 19:44:39 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.3 git 3fc096d39d187efd87945cfddd937d561379cdde
 - Generate ceph.conf correctly for custom rgw configurations
 - Auto accept licenses for updates 
 
 -------------------------------------------------------------------
+Sun Oct  2 11:59:56 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.2 git fa140169e6210ce27cb1164386b3e2fa340b4fa0
 - Messages at startup and reboot
@@ -269,61 +311,73 @@
 - Install sgdisk during Stage 0 
 
 -------------------------------------------------------------------
+Wed Sep 28 13:14:57 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.1 git b7465074cb36d304063589db3c9e2b85ebbc0c76
 - Handle unassigned roles 
 
 -------------------------------------------------------------------
+Tue Sep 27 14:06:50 UTC 2016 - ejackson@suse.com
 
 - Version 0.5 git 7d541d14d7c8de5b095977d398ffd1d6ea3284f9
 - Reimplementation of keyrings, secrets are no longer in pillar 
 
 -------------------------------------------------------------------
+Mon Sep 26 13:53:13 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.5 git 92185470ef471eb07b6afc655b43c5928337b0ba
 - Add BuildRequires, remove conflicts 
 
 -------------------------------------------------------------------
+Sun Sep 25 18:28:00 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.4 git 9fffc7e2aa6776c9a7d1bf585fe02f519f1d49a8
 - Restart salt-master during installation 
 
 -------------------------------------------------------------------
+Fri Sep 23 14:31:17 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.3 git 1fc618a8c4af50745f2e52d464b32c3a5cd329d3
 - Fix spec file permissions and globbing 
 
 -------------------------------------------------------------------
+Fri Sep 23 10:30:59 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.2 git 2b0503d67322788e4490f28268025757a6e797be
 - handle missing keys gracefully 
 
 -------------------------------------------------------------------
+Thu Sep 22 21:30:17 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.1 git cfb472439a09ee470b3a95d73d98b952d95e7b3a
 - Validate ceph version in every minion repo
 - extend README, detail policy.cfg 
 
 -------------------------------------------------------------------
+Wed Sep 21 21:26:26 UTC 2016 - ejackson@suse.com
 
 - Version 0.4 git ca66ab6df47e3ec2d5a4715e1517c4eb568ddce9
 - Add validation of master_minion setting in Stage 0 
 
 -------------------------------------------------------------------
+Wed Sep 21 09:57:47 UTC 2016 - ejackson@suse.com
 
 - Version 0.3.1 git 48608e8b6c0fece0c3d1367138c909e1f001ad2d
 - Fixed additional misplaced files 
 
 -------------------------------------------------------------------
+Wed Sep 21 03:15:40 UTC 2016 - ejackson@suse.com
 
 - Version 0.3 git 2dd422ae5ff3fbf289f52c390faaa1ddd5712047
 - Fixed misplaced files 
 
 -------------------------------------------------------------------
+Mon Sep 19 15:57:44 UTC 2016 - ejackson@suse.com
 
 - Correct LICENSE file 
 
 -------------------------------------------------------------------
+Wed Sep 14 11:55:13 UTC 2016 - ejackson@suse.com
 
 - Version 0.2 git 9eaa8484b53ba1cb2514c8edbb25addfd3451891
 - first package 
