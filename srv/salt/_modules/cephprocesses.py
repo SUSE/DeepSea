@@ -19,6 +19,7 @@ def check(**kwargs):
     fail.
     """
     processes = {'mon': ['ceph-mon'],
+                 'mgr': ['ceph-mgr'],
                  'storage': ['ceph-osd'],
                  'mds': ['ceph-mds'],
                  'igw': [],
