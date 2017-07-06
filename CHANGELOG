@@ -1,3 +1,17 @@
+- Version 0.7.16
+- Upgrade fixes
+- Support importing ceph-deploy clusters
+- Bluestore no longer experimental
+- Add mgr role, keyring fixes
+- Add ceph.conf.rbd
+- Add librbd testing
+- Move demo image to iSCSI stage
+- Change Stage 5 default to not remove pools
+- Add alternate Stage 0 states for no reboot/update
+- Improve filestore to bluestore migration, multiple wait states
+- Migrate policy.cfg and hardware profiles 
+- Cleanup, remove unnecessary sls files
+
 -------------------------------------------------------------------
 Mon Jun 26 13:59:41 UTC 2017 - ejackson@suse.com
 
