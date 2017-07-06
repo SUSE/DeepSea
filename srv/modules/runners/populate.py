@@ -6,6 +6,7 @@ import salt.key
 import salt.config
 import salt.utils
 import salt.utils.minions
+import ready
 
 import re
 import pprint
@@ -991,6 +992,10 @@ def engulf_existing_cluster(**kwargs):
     local = salt.client.LocalClient()
     settings = Settings()
     salt_writer = SaltWriter(**kwargs)
+
+    # Check for firewall/apparmor.
+    if not ready.check("ceph"):
+        return False
 
     # First, hand apply select Stage 0 functions
     local.cmd("*", "saltutil.sync_all")
