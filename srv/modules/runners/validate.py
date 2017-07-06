@@ -266,6 +266,23 @@ class Validate(object):
         else:
             self.passed['monitors'] = "valid"
 
+    def mgrs(self):
+        """
+        At least three nodes should have the mgr role
+        """
+        # TODO: Only make this mandatory for Ceph >= Luminous
+        mgrs = []
+        for node in self.data.keys():
+            if ('roles' in self.data[node] and
+                'mgr' in self.data[node]['roles']):
+                mgrs.append(node)
+
+        if (not self.in_dev_env and len(mgrs) < 3) or (self.in_dev_env and len(mgrs) < 1):
+            msg = "Too few mgrs {}".format(",".join(mgrs))
+            self.errors['mgrs'] = [ msg ]
+        else:
+            self.passed['mgrs'] = "valid"
+
     def storage(self):
         """
         At least four nodes must have the storage role.  All storage nodes
@@ -791,6 +808,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.cluster_network()
     v.cluster_interface()
     v.monitors()
+    v.mgrs()
     v.storage()
     v.ganesha()
     v.master_role()

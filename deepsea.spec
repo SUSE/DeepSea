@@ -121,6 +121,13 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mds/keyring
 %dir /srv/salt/ceph/mds/pools
 %dir /srv/salt/ceph/mds/restart
+%dir /srv/salt/ceph/mgr
+%dir %attr(0700, salt, salt) /srv/salt/ceph/mgr/cache
+%dir /srv/salt/ceph/mgr/files
+%dir /srv/salt/ceph/mgr/key
+%dir /srv/salt/ceph/mgr/auth
+%dir /srv/salt/ceph/mgr/keyring
+%dir /srv/salt/ceph/mgr/restart
 %dir /srv/salt/ceph/migrate
 %dir /srv/salt/ceph/migrate/nodes
 %dir /srv/salt/ceph/migrate/osds
@@ -190,6 +197,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/mds-nfs
 %dir /srv/salt/ceph/rescind/mds
 %dir /srv/salt/ceph/rescind/mds/keyring
+%dir /srv/salt/ceph/rescind/mgr
+%dir /srv/salt/ceph/rescind/mgr/keyring
 %dir /srv/salt/ceph/rescind/mon
 %dir /srv/salt/ceph/rescind/rgw-nfs
 %dir /srv/salt/ceph/rescind/rgw
@@ -202,6 +211,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/osd
 %dir /srv/salt/ceph/restart/mon
+%dir /srv/salt/ceph/restart/mgr
 %dir /srv/salt/ceph/restart/rgw
 %dir /srv/salt/ceph/restart/igw
 %dir /srv/salt/ceph/restart/mds
@@ -309,6 +319,12 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mds/keyring/*.sls
 %config /srv/salt/ceph/mds/pools/*.sls
 %config /srv/salt/ceph/mds/restart/*.sls
+%config /srv/salt/ceph/mgr/*.sls
+%config /srv/salt/ceph/mgr/files/*.j2
+%config /srv/salt/ceph/mgr/key/*.sls
+%config /srv/salt/ceph/mgr/auth/*.sls
+%config /srv/salt/ceph/mgr/keyring/*.sls
+%config /srv/salt/ceph/mgr/restart/*.sls
 %config /srv/salt/ceph/migrate/nodes/*.sls
 %config /srv/salt/ceph/migrate/osds/*.sls
 %config /srv/salt/ceph/mines/*.sls
@@ -369,6 +385,8 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/mds-nfs/*.sls
 %config /srv/salt/ceph/rescind/mds/*.sls
 %config /srv/salt/ceph/rescind/mds/keyring/*.sls
+%config /srv/salt/ceph/rescind/mgr/*.sls
+%config /srv/salt/ceph/rescind/mgr/keyring/*.sls
 %config /srv/salt/ceph/rescind/mon/*.sls
 %config /srv/salt/ceph/rescind/rgw-nfs/*.sls
 %config /srv/salt/ceph/rescind/rgw/*.sls
@@ -382,6 +400,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/restart/*.sls
 %config /srv/salt/ceph/restart/osd/*.sls
 %config /srv/salt/ceph/restart/mon/*.sls
+%config /srv/salt/ceph/restart/mgr/*.sls
 %config /srv/salt/ceph/restart/mds/*.sls
 %config /srv/salt/ceph/restart/rgw/*.sls
 %config /srv/salt/ceph/restart/igw/*.sls
