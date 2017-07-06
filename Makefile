@@ -165,6 +165,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/migrate/osds/*.sls $(DESTDIR)/srv/salt/ceph/migrate/osds/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/nodes
 	install -m 644 srv/salt/ceph/migrate/nodes/*.sls $(DESTDIR)/srv/salt/ceph/migrate/nodes/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/policy
+	install -m 644 srv/salt/ceph/migrate/policy/*.sls $(DESTDIR)/srv/salt/ceph/migrate/policy/
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
 	install -m 644 srv/salt/ceph/mines/*.sls $(DESTDIR)/srv/salt/ceph/mines/

@@ -131,6 +131,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/migrate
 %dir /srv/salt/ceph/migrate/nodes
 %dir /srv/salt/ceph/migrate/osds
+%dir /srv/salt/ceph/migrate/policy
 %dir /srv/salt/ceph/mines
 %dir /srv/salt/ceph/mines/files
 %dir /srv/salt/ceph/mon
@@ -327,6 +328,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mgr/restart/*.sls
 %config /srv/salt/ceph/migrate/nodes/*.sls
 %config /srv/salt/ceph/migrate/osds/*.sls
+%config /srv/salt/ceph/migrate/policy/*.sls
 %config /srv/salt/ceph/mines/*.sls
 %config /srv/salt/ceph/mines/files/*.conf
 %config /srv/salt/ceph/mon/*.sls
