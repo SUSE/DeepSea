@@ -249,6 +249,10 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/updates/regular
 %dir /srv/salt/ceph/updates/kernel
 %dir /srv/salt/ceph/wait
+%dir /srv/salt/ceph/wait/1hour/until/OK
+%dir /srv/salt/ceph/wait/2hours/until/OK
+%dir /srv/salt/ceph/wait/4hours/until/OK
+%dir /srv/salt/ceph/wait/until/OK
 %dir /srv/salt/ceph/warning
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
@@ -432,6 +436,10 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %config /srv/salt/ceph/updates/kernel/*.sls
 %config /srv/salt/ceph/updates/regular/*.sls
 %config /srv/salt/ceph/wait/*.sls
+%config /srv/salt/ceph/wait/1hour/until/OK/*.sls
+%config /srv/salt/ceph/wait/2hours/until/OK/*.sls
+%config /srv/salt/ceph/wait/4hours/until/OK/*.sls
+%config /srv/salt/ceph/wait/until/OK/*.sls
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/processes/*.sls
