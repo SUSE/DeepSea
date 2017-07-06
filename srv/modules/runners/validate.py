@@ -648,7 +648,7 @@ class Validate(object):
 	profiles = [ prf  for prf in accum_files if 'profile' in prf ]
 	if not profiles:
 	    message = "There are no files under the profiles directory. Probably an issue with the discovery stage."
-	    self.errors.setdefault('profiles_populated', []).append(message)
+	    self.warnings.setdefault('profiles_populated', []).append(message)
         self._set_pass_status('profiles_populated')
 
     def _lint_yaml_files(self):
