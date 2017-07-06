@@ -1036,37 +1036,50 @@ class TestOSDCommands():
         cnf = osd.OSDCommands
         yield cnf
 
-    def test_osd_partition_1(self, osdc_o):
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_osd_partition_1(self, glob_mock, part_mock, osdc_o):
         """
         Given it's filestore osd+journal, not colocated
         """
         kwargs = {'format': 'filestore',
                   'journal': '/dev/journal'}
+        glob_mock.glob.return_value = [ '/dev/sdx1' ]
+        part_mock.return_value = True
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
         ret = obj.osd_partition()
-        assert ret == 1
+        assert ret == '1'
 
-    def test_osd_partition_2(self, osdc_o):
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_osd_partition_2(self, glob_mock, part_mock, osdc_o):
         """
-        Given it's filestore osd+journal, colocated
+        Given it's filestore osd+journal, colocated, with journal partition first
         """
         kwargs = {'format': 'filestore',
                   'journal': '/dev/sdx'}
+        glob_mock.glob.return_value = [ '/dev/sdx1', '/dev/sdx2' ]
+        part_mock.side_effect = lambda t, d, p: p == '2'
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
         ret = obj.osd_partition()
-        assert ret == 2
+        assert ret == '2'
 
-    def test_osd_partition_3(self, osdc_o):
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_osd_partition_3(self, glob_mock, part_mock, osdc_o):
         """
-        Given it's filestore osd+journal, no journal
+        Given it's filestore osd+journal, colocated, with osd partition first
         """
-        kwargs = {'format': 'filestore'}
+        kwargs = {'format': 'filestore',
+                  'journal': '/dev/sdx'}
+        glob_mock.glob.return_value = [ '/dev/sdx1', '/dev/sdx2' ]
+        part_mock.side_effect = lambda t, d, p: p == '1'
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
         ret = obj.osd_partition()
-        assert ret == 2
+        assert ret == '1'
 
     def test_osd_partition_4(self, osdc_o):
         """
