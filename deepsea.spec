@@ -25,7 +25,7 @@ Summary:        Salt solution for deploying and managing Ceph
 
 License:        GPL-3.0
 Group:          System/Libraries
-Url:            http://bugs.opensuse.org
+Url:            https://github.com/suse/deepsea
 Source0:        %{name}-v%{version}.tar.bz2
 
 BuildRequires:  salt-master
