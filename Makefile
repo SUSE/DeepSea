@@ -503,7 +503,7 @@ rpm: tarball test
 # Removing test dependency until resolved
 tarball:
 	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
-	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.gz HEAD
+	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.bz2 HEAD
 
 test:
 	tox -e py27
