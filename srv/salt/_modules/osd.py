@@ -915,10 +915,12 @@ class OSDCommands(object):
 
     def osd_partition(self):
         """
-        Find the OSD partition
+        Return the OSD partition.  For new devices without any sizes, 
+        partition creation is left to ceph-disk.  This means that there
+        is no partition to find and we rely on convention.
 
-        Note: Do not remove the logic with the hardcoded values until
-        the evaluation of activate command is resolved
+        The final call only applies for some device that is neither
+        filestore nor bluestore which is more of a best effort try.
         """
         log.debug("format: {}".format(self.osd.disk_format))
         if self.osd.disk_format:
@@ -931,7 +933,7 @@ class OSDCommands(object):
                       return 2
               if self.osd.disk_format == 'bluestore':
                   return 1
-        return self._highest_partition(self.osd.device, 'osd')
+        return self.highest_partition(self.osd.device, 'osd')
 
     def is_partition(self, partition_type, device, partition):
         """
@@ -942,7 +944,7 @@ class OSDCommands(object):
         id = "Partition GUID code: {}".format(self.osd.types[partition_type])
         return id in result
 
-    def _highest_partition(self, device, partition_type):
+    def highest_partition(self, device, partition_type):
         """
         Return the highest created partition of partition type
         """
@@ -1004,9 +1006,9 @@ class OSDCommands(object):
         if self.is_partitioned(device):
             # Prepartitioned OSD
             if self.osd.journal:
-                args = "{}{} {}{}".format(device, self._highest_partition(device, 'osd'), self.osd.journal, self._highest_partition(self.osd.journal, 'journal'))
+                args = "{}{} {}{}".format(device, self.highest_partition(device, 'osd'), self.osd.journal, self.highest_partition(self.osd.journal, 'journal'))
             else:
-                args = "{}{} {}{}".format(device, self._highest_partition(device, 'osd'), device, self._highest_partition(self.osd.device, 'journal'))
+                args = "{}{} {}{}".format(device, self.highest_partition(device, 'osd'), device, self.highest_partition(self.osd.device, 'journal'))
         else:
             # Raw
             if self.osd.journal:
@@ -1041,7 +1043,7 @@ class OSDCommands(object):
         args = ""
         if self.osd.wal and self.osd.db:
             if self.is_partitioned(self.osd.wal):
-                partition = self._highest_partition(self.osd.wal, 'wal')
+                partition = self.highest_partition(self.osd.wal, 'wal')
                 if partition:
                     args = "--block.wal {}{} ".format(self.osd.wal, partition)
                 else:
@@ -1050,7 +1052,7 @@ class OSDCommands(object):
                 args = "--block.wal {} ".format(self.osd.wal)
 
             if self.is_partitioned(self.osd.db):
-                partition = self._highest_partition(self.osd.db, 'db')
+                partition = self.highest_partition(self.osd.db, 'db')
                 if partition:
                     args += "--block.db {}{} ".format(self.osd.db, partition)
                 else:
@@ -1061,14 +1063,14 @@ class OSDCommands(object):
             if self.osd.wal:
                 log.debug("wal: {}".format(self.osd.wal))
                 if self.is_partitioned(self.osd.wal):
-                    partition = self._highest_partition(self.osd.wal, 'wal')
+                    partition = self.highest_partition(self.osd.wal, 'wal')
                     if partition:
                         args += "--block.wal {}{} ".format(self.osd.wal, partition)
                     else:
                         args += "--block.wal {} ".format(self.osd.wal)
                     log.debug("args: {}".format(args))
 
-                    partition = self._highest_partition(self.osd.wal, 'db')
+                    partition = self.highest_partition(self.osd.wal, 'db')
                     if partition:
                         args += "--block.db {}{} ".format(self.osd.wal, partition)
                     else:
@@ -1082,13 +1084,13 @@ class OSDCommands(object):
 
             if self.osd.db:
                 if self.is_partitioned(self.osd.db):
-                    partition = self._highest_partition(self.osd.db, 'db')
+                    partition = self.highest_partition(self.osd.db, 'db')
                     if partition:
                         args += "--block.db {}{} ".format(self.osd.db, partition)
                     else:
                         args += "--block.db {} ".format(self.osd.db)
 
-                    partition = self._highest_partition(self.osd.db, 'wal')
+                    partition = self.highest_partition(self.osd.db, 'wal')
                     if partition:
                         args += "--block.wal {}{} ".format(self.osd.db, partition)
                     else:
@@ -1798,7 +1800,7 @@ def is_prepared(device):
     """
     config = OSDConfig(device)
     osdc = OSDCommands(config)
-    partition = osdc.osd_partition()
+    partition = osdc.highest_partition(readlink(device), 'osd')
     if partition == 0:
         log.error("Do not know which partition to check on {}".format(device))
         return False
@@ -1835,7 +1837,7 @@ def is_activated(device):
     """
     config = OSDConfig(device)
     osdc = OSDCommands(config)
-    partition = osdc.osd_partition()
+    partition = osdc.highest_partition(readlink(device), 'osd')
     pathname = "{}{}".format(config.device, partition)
     log.info("Checking /proc/mounts for {}".format(pathname))
     with open("/proc/mounts", "r") as mounts:

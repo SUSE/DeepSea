@@ -1078,7 +1078,7 @@ class TestOSDCommands():
         ret = obj.osd_partition()
         assert ret == 1
 
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_osd_partition_5(self, hp_mock, osdc_o):
         """
         Given there is no disk_format
@@ -1111,7 +1111,7 @@ class TestOSDCommands():
         part_mock.return_value = True
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
-        ret = obj._highest_partition(osd_config.device, 'osd')
+        ret = obj.highest_partition(osd_config.device, 'osd')
         assert ret == 'p2'
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
@@ -1125,7 +1125,7 @@ class TestOSDCommands():
         glob_mock.glob.return_value = []
         osd_config = OSDConfig()
         obj = osdc_o(osd_config)
-        ret = obj._highest_partition(osd_config.device, 'osd')
+        ret = obj.highest_partition(osd_config.device, 'osd')
         assert ret == 0
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
@@ -1142,7 +1142,7 @@ class TestOSDCommands():
         part_mock.return_value = False
         osd_config = OSDConfig()
         obj = osdc_o(osd_config)
-        ret = obj._highest_partition(osd_config.device, 'osd')
+        ret = obj.highest_partition(osd_config.device, 'osd')
         assert ret == 0
         log_mock.error.assert_called_with("Partition type osd not found on /dev/sdx")
     
@@ -1173,7 +1173,7 @@ class TestOSDCommands():
         assert ret is False
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_filestore_args(self, hp_mock, ip_mock, osdc_o):
         """
         Given the disk is partitioned ('/dev/sdx{1,2}')
@@ -1190,7 +1190,7 @@ class TestOSDCommands():
         assert ret == "/dev/sdx2 /dev/journal2"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_filestore_args_1(self, hp_mock, ip_mock, osdc_o):
         """
         Given the disk is partitioned ('/dev/sdx{1,2}')
@@ -1237,7 +1237,7 @@ class TestOSDCommands():
         assert ret == "/dev/sdx"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
@@ -1264,7 +1264,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_1(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
@@ -1291,7 +1291,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb2 /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_2(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
@@ -1318,7 +1318,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_3(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
@@ -1345,7 +1345,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb2 /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_4(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
@@ -1372,7 +1372,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_5(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
@@ -1399,7 +1399,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal2 --block.db /dev/sdwal3 /dev/nvme0n1p1"
     
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_6(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
@@ -1426,7 +1426,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal2 --block.db /dev/sdwal /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_7(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
@@ -1451,7 +1451,7 @@ class TestOSDCommands():
         assert ret == "/dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_8(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
@@ -1474,7 +1474,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal --block.db /dev/sdwal /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_9(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
@@ -1501,7 +1501,7 @@ class TestOSDCommands():
         assert ret == "--block.db /dev/sddb2 --block.wal /dev/sddb3 /dev/nvme0n1p1"
     
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_10(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
@@ -1528,7 +1528,7 @@ class TestOSDCommands():
         assert ret == "--block.db /dev/sddb2 --block.wal /dev/sddb /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_11(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
@@ -1553,7 +1553,7 @@ class TestOSDCommands():
         assert ret == "/dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_12(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
@@ -1578,7 +1578,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sddb --block.db /dev/sddb /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_13(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
@@ -1605,7 +1605,7 @@ class TestOSDCommands():
         assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands._highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_14(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
