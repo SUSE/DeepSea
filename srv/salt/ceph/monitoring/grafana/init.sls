@@ -9,6 +9,9 @@ grafana-server:
       - pkg: grafana
     - watch:
       - file: /etc/grafana/grafana.ini
+  file.exists:
+    - name: /var/lib/grafana
+    - failhard: True
 
 grafana-dashboards-ceph:
   pkg.installed:
