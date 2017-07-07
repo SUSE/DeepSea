@@ -4,6 +4,7 @@ filename_format=f.$filenum
 wait_for_previous
 filesize={{ filesize }}
 numjobs={{ number_of_workers}}
+{{ output_options }}
 
 {% for op in operations %}
 {% for bs in blocksizes %}
