@@ -115,7 +115,7 @@ def _propose(node, proposal, args):
         format_ = args.get('format')
         if type(v) is dict:
             assert format_ == 'bluestore'
-            wal, db = v.items()[0]
+            db, wal = v.items()[0]
             dev_par['wal'] = wal
             dev_par['db'] = db
             dev_par['wal_size'] = args.get('wal-size')
