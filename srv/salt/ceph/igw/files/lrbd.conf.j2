@@ -1,4 +1,4 @@
-{% if salt['cmd.run']('rados lspools | grep -q "^rbd$"') and salt['cmd.run']('rbd --pool rbd ls | grep -q "^demo$"') %}
+{% if not salt['cmd.run']('rados lspools | grep -q "^iscsi-images$"') and not salt['cmd.run']('rbd --pool iscsi-images ls | grep -q "^demo$"') %}
 {
     "auth": [
         {
