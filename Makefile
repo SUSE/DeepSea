@@ -13,6 +13,8 @@ copy-files:
 	install -m 644 etc/salt/master.d/modules.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/reactor.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/output.conf $(DESTDIR)/etc/salt/master.d/
+	install -m 600 etc/salt/master.d/eauth.conf $(DESTDIR)/etc/salt/master.d/
+	install -m 644 etc/salt/master.d/salt-api.conf $(DESTDIR)/etc/salt/master.d/
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
@@ -491,9 +493,14 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 
 install: copy-files
+	install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
+	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
+	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
 	chown -R salt /srv/pillar/ceph
 	systemctl restart salt-master
+	zypper -n install salt-api
+	systemctl restart salt-api
 
 rpm: tarball test
 	rpmbuild -bb deepsea.spec
