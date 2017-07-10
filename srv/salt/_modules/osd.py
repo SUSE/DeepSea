@@ -449,9 +449,23 @@ class OSDConfig(object):
         Set attributes for an OSD
         """
         filters = kwargs.get('filters', None)
+        self.migration = kwargs.get('migration', False)
         self.device = readlink(device)
-        # top_level_identifiier
         self.tli = self._set_tli()
+        if self.migration and self.device not in self.tli:
+            # if migration is set and the device is not in pillar
+            # it's safe to assume that is_incorrect can return True
+            # hence, remove the disk and no need to redeploy it.
+            # BUT we need the disk_format and encryption to remove it properly
+            if kwargs.get('simultaneous', None):
+                self.disk_format = ''
+                self.encryption = ''
+                return
+            raise RuntimeError("""The device {} seems to be absent in the pillar
+                                You are stopped here because you try to do a 
+                                complex change of your cluster layout on
+                                a per OSD level. To do so, please use the
+                                `salt-run state.orch ceph.migrate.nodes` command""".format(self.device))
         self.capacity = self.set_capacity()
         self.size = self.set_bytes()
         self.small = self._set_small()
@@ -1242,6 +1256,7 @@ class OSDCommands(object):
         """
         """
         devicename = readlink("{}/{}".format(pathname, attr))
+        # Pointing to the same device, no dedicated journal/wal/db
         if device and  not devicename.startswith(device):
             log.info("OSD {} {} does not match {}".format(attr, devicename, device))
             return True
@@ -1379,6 +1394,9 @@ class OSDRemove(object):
                 else:
                     mount = entry[0]
                 if mount in mounted:
+                    # maybe use -lf
+                    # -> -lazy, -force
+                    # to prevent any dangling mount pointers from stopping here
                     cmd = "umount {}".format(mount)
                     rc, _stdout, _stderr = _run(cmd)
                     log.debug("returncode: {}".format(rc))
@@ -1386,6 +1404,7 @@ class OSDRemove(object):
                         msg = "Unmount failed - check for processes on {}".format(entry[0])
                         log.error(msg)
                         return msg
+                    # What's that?
                     os.rmdir(entry[1])
 
         if '/dev/dm' in self.partitions['osd']:
@@ -1520,6 +1539,8 @@ def remove(osd_id, **kwargs):
     if 'force' in kwargs and kwargs['force']:
         osdw = None
     else:
+        # The object is created but no actions is taken?
+        # Oh it's passed down to OSDRemove
         osdw = OSDWeight(osd_id, **settings)
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
@@ -1758,8 +1779,20 @@ def redeploy(simultaneous=False):
             disk, part = split_partition(partition)
             log.info("ID: {}".format(_id))
             log.info("Disk: {}".format(disk))
-            if is_incorrect(disk):
+            # or just wipe all?
+            if is_incorrect(disk, migration=True, simultaneous=True):
                 zero_weight(_id, wait=False)
+                remove(_id)
+                # and remove all.
+        # need to support the old format still?
+        for disk in __pillar__['ceph']['storage']['osds'].keys():
+            config = OSDConfig(disk)
+            osdp = OSDPartitions(config)
+            osdp.partition()
+            osdc = OSDCommands(config)
+            _run(osdc.prepare())
+            _run(osdc.activate())
+
 
     for _id in __grains__['ceph']:
         partition = _partition(_id)
@@ -1771,9 +1804,9 @@ def redeploy(simultaneous=False):
         disk, part = split_partition(partition)
         log.info("ID: {}".format(_id))
         log.info("Disk: {}".format(disk))
-        if not os.path.exists(partition) or is_incorrect(disk):
+        if not os.path.exists(partition) or is_incorrect(disk, migration=True):
             remove(_id)
-            config = OSDConfig(disk)
+            config = OSDConfig(disk, migration=True)
             osdp = OSDPartitions(config)
             osdp.partition()
             osdc = OSDCommands(config)
@@ -1873,10 +1906,10 @@ def detect(osd_id):
     osdc = OSDCommands(config)
     return osdc.detect(osd_id)
 
-def is_incorrect(device):
+def is_incorrect(device, migration=False, simultaneous=False):
     """
     """
-    config = OSDConfig(device)
+    config = OSDConfig(device, migration=migration, simultaneous=simultaneous)
     osdc = OSDCommands(config)
     return osdc.is_incorrect()
 
