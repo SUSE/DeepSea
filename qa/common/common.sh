@@ -187,7 +187,7 @@ function ceph_health_test {
   ceph osd lspools
   ceph -s
   echo "Waiting for HEALTH_OK..."
-  salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 | tee $LOGFILE
+  salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
   grep -q 'Timeout expired' $LOGFILE && exit 1
   ceph -s | tee /dev/stderr | grep -q HEALTH_OK
 }
