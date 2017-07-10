@@ -1,8 +1,8 @@
 benchmark:
   # where cephfs will be mounted on the client nodes
-  work-directory: /run/cephfs_bench
+  work-directory: /run/ceph_bench
   # working directory for master, mostly to store jobfiles
-  job-file-directory: /run/cephfs_bench_jobs
+  job-file-directory: /run/ceph_bench_jobs
   # location where run logs end up on the master node
-  log-file-directory: /var/log/cephfs_bench_logs
+  log-file-directory: /var/log/ceph_bench_logs
   default-collection: simple.yml
