@@ -31,6 +31,7 @@ Source0:        %{name}-%{version}.tar.bz2
 BuildRequires:  salt-master
 Requires:       salt-master
 Requires:       salt-minion
+Requires:       salt-api
 Requires:       python-ipaddress
 %if 0%{?sle_version} == 120200 && 0%{?is_opensuse} == 1
 Requires:       python-netaddr
@@ -49,15 +50,19 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
+install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 /etc/salt/master.d/sharedsecret.conf
 
 %post
 if [ $1 -eq 1 ] ; then
   # Initialize to most likely value
   sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+  sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' /etc/salt/master.d/sharedsecret.conf
+  chown salt:salt /etc/salt/master.d/sharedsecret.conf
 fi
 # Restart salt-master if it's running, so it picks up
 # the config changes in /etc/salt/master.d/modules.conf
 systemctl try-restart salt-master > /dev/null 2>&1 || :
+systemctl try-restart salt-api > /dev/null 2>&1 || :
 
 %postun
 
@@ -273,7 +278,7 @@ systemctl try-restart salt-master > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
-%config(noreplace) /etc/salt/master.d/*.conf
+%config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
