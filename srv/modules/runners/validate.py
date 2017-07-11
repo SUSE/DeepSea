@@ -289,22 +289,23 @@ class Validate(object):
 	we intervene as early as possible
         See https://github.com/SUSE/DeepSea/issues/436
 	"""
-        formats = []
+        formats = {}
         for node in self.data.keys():
-            # we can only detect formats in the new format
-            # the old will always be homogenous
+            # we can detect disk-formats only in the new yaml format
             if ('ceph' in self.data[node] and
                 'storage' in self.data[node]['ceph']):
-                hosts = self.data[node]['ceph']['storage']['osds']
-                for device in hosts.keys():
-                    if 'format' in hosts[device]:
-                       formats.append(hosts[device]['format'])
-
-        if len(set(formats)) > 1:
-            msg = "Please don't mix formats. Either use Filestore or Bluestore"
-            self.errors['disk_format'] = [ msg ]
-        else:
-            self.passed['disk_format'] = "valid"
+                devices = self.data[node]['ceph']['storage']['osds']
+                formats[node] = []
+                for dev_name in devices.keys():
+                    if 'format' in devices[dev_name]:
+                       formats[node].append(devices[dev_name]['format'])
+        for node, df in formats.iteritems():
+	    if len(set(formats)) > 1:
+		msg = "Please use uniform Disk Formats across nodes. Either Bluestore or Filestore"
+		self.errors['disk_format'] = [ msg ]
+		break
+	    else:
+		self.passed['disk_format'] = "valid"
 
     def storage(self):
         """
