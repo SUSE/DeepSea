@@ -283,6 +283,29 @@ class Validate(object):
         else:
             self.passed['mgrs'] = "valid"
 
+    def formats(self):
+	"""
+	As ceph-disk does indirectly not support two types of disk formats
+	we intervene as early as possible
+        See https://github.com/SUSE/DeepSea/issues/436
+	"""
+        formats = []
+        for node in self.data.keys():
+            # we can only detect formats in the new format
+            # the old will always be homogenous
+            if ('ceph' in self.data[node] and
+                'storage' in self.data[node]['ceph']):
+                hosts = self.data[node]['ceph']['storage']['osds']
+                for device in hosts.keys():
+                    if 'format' in hosts[device]:
+                       formats.append(hosts[device]['format'])
+
+        if len(set(formats)) > 1:
+            msg = "Please don't mix formats. Either use Filestore or Bluestore"
+            self.errors['disk_format'] = [ msg ]
+        else:
+            self.passed['disk_format'] = "valid"
+
     def storage(self):
         """
         At least four nodes must have the storage role.  All storage nodes
@@ -809,6 +832,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.cluster_interface()
     v.monitors()
     v.mgrs()
+    v.formats()
     v.storage()
     v.ganesha()
     v.master_role()
