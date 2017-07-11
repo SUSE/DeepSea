@@ -50,7 +50,7 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
-install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 /etc/salt/master.d/sharedsecret.conf
+install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 %{buildroot}/etc/salt/master.d/sharedsecret.conf
 
 %post
 if [ $1 -eq 1 ] ; then
