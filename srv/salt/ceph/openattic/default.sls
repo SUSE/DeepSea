@@ -18,3 +18,4 @@ enable openattic-systemd:
         SALT_API_EAUTH="sharedsecret"
         SALT_API_USERNAME="admin"
         SALT_API_SHARED_SECRET="{{ salt['pillar.get']('salt_api_shared_secret') }}"
+        GRAFANA_API_HOST="{{ salt['pillar.get']('master_minion') }}"
