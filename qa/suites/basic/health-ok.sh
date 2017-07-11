@@ -26,6 +26,8 @@ policy_cfg_base
 policy_cfg_no_client
 cat_policy_cfg
 run_stage_2
-ceph_conf
+ceph_conf_small_cluster
+cat_ceph_conf
 run_stage_3
+ceph_cluster_status
 ceph_health_test

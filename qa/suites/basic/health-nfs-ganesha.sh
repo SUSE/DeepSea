@@ -28,8 +28,10 @@ policy_cfg_mds
 policy_cfg_nfs_ganesha
 cat_policy_cfg
 run_stage_2
-ceph_conf
+ceph_conf_small_cluster
+cat_ceph_conf
 run_stage_3
+ceph_cluster_status
 nfs_ganesha_no_root_squash
 run_stage_4
 ceph_health_test

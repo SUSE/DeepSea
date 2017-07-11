@@ -27,8 +27,10 @@ policy_cfg_client
 policy_cfg_mds
 cat_policy_cfg
 run_stage_2
-ceph_conf
+ceph_conf_small_cluster
+cat_ceph_conf
 run_stage_3
+ceph_cluster_status
 run_stage_4
 ceph_health_test
 cephfs_mount_and_sanity_test
