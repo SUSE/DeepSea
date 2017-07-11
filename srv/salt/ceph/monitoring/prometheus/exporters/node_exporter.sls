@@ -12,12 +12,15 @@ set node exporter service args:
               -collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/) \
               -collector.textfile.directory=/var/lib/prometheus/node-exporter"
 
+smartmontools:
+  pkg.installed
+
 smartmon text exporter:
   file.managed:
     - name: /var/lib/prometheus/node-exporter/smartmon.sh
     - user: prometheus
     - group: prometheus
-    - mode: 644
+    - mode: 755
     - source: salt://ceph/monitoring/prometheus/exporters/files/smartmon.sh
     - makedirs: True
 
