@@ -184,7 +184,7 @@ function ceph_health_test {
   local LOGFILE=/tmp/ceph_health_test.log
   cat /etc/ceph/ceph.conf
   ceph osd tree
-  ceph osd lspools
+  ceph osd pool ls detail
   ceph -s
   echo "Waiting for HEALTH_OK..."
   salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
