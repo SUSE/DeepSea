@@ -118,7 +118,7 @@ def inspect(**kwargs):
 
     # deliberately only looking for things ceph-deploy can deploy
     # TODO: do we need more than this?
-    ceph_services = ['ceph-mon', 'ceph-osd', 'ceph-mds', 'ceph-radosgw']
+    ceph_services = ['ceph-mon', 'ceph-osd', 'ceph-mds', 'ceph-mgr', 'ceph-radosgw']
 
     #
     # running_services will be something like:

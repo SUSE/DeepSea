@@ -1019,6 +1019,7 @@ def engulf_existing_cluster(**kwargs):
     previous_minion = None
     admin_minion = None
 
+    mgr_instances = []
     mds_instances = []
     rgw_instances = []
 
@@ -1088,6 +1089,11 @@ def engulf_existing_cluster(**kwargs):
 		osd_addrs[minion] = ipaddr
             pass
 
+        if "ceph-mgr" in info["running_services"].keys():
+            policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
+            for i in info["running_services"]["ceph-mgr"]:
+                mgr_instances.append(i)
+
         if "ceph-mds" in info["running_services"].keys():
             policy_cfg.append("role-mds/cluster/" + minion + ".sls")
             for i in info["running_services"]["ceph-mds"]:
@@ -1132,6 +1138,14 @@ def engulf_existing_cluster(**kwargs):
 
     with open("/srv/salt/ceph/osd/cache/bootstrap.keyring", 'w') as keyring:
         keyring.write(osd_bootstrap_keyring)
+
+    for i in mgr_instances:
+        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ])[admin_minion]
+        if not mgr_keyring:
+            print("Could not obtain mgr." + i + " keyring")
+            return False
+        with open("/srv/salt/ceph/mgr/cache/" + i + ".keyring", 'w') as keyring:
+            keyring.write(mgr_keyring)
 
     for i in mds_instances:
         mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ])[admin_minion]
