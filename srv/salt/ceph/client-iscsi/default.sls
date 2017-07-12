@@ -1,0 +1,5 @@
+
+include:
+  - install
+  - iscsiadm
+  - multipathd
