@@ -36,3 +36,6 @@ start node exporter:
   service.running:
     - name: prometheus-node_exporter
     - enable: True
+    # restart node_exporter if env_args change
+    - watch:
+      - file: /etc/sysconfig/prometheus-node_exporter
