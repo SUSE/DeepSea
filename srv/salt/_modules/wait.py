@@ -51,8 +51,15 @@ class HealthCheck(object):
 
         while i < (self.settings['timeout']/self.settings['delay']):
             ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
-            current_status = json.loads(output)['overall_status']
-            log.debug("status: {}".format(current_status))
+            health = json.loads(output)
+            if 'overall_status' in health:
+                current_status = json.loads(output)['overall_status']
+            if 'status' in health:
+                current_status = json.loads(output)['status']
+            if current_status:
+                log.debug("status: {}".format(current_status))
+            else:
+                raise RuntimeError("Neither status nor overall_status defined in health check")
 
             if self._check_status(current_status, self.settings):
                 check += 1
