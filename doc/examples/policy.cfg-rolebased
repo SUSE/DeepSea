@@ -26,6 +26,9 @@ role-rgw/cluster/rgw*.sls
 # openATTIC
 role-openattic/cluster/openattic*.sls
 
+#ceph-mgr
+role-mgr/cluster/*.sls
+
 # COMMON
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
