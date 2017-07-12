@@ -1,16 +1,16 @@
 Custom Configuration
 
 The default ceph.conf template
-(<salt_dir>/ceph/configuration/files/ceph.conf.j2) includes the content of five
+(<salt_dir>/ceph/configuration/files/ceph.conf.j2) includes the content of six
 files from the <salt_dir>/ceph/configuration/files/ceph.conf.d directory. These
-files are [global,mon,mds,osd,client].conf and are meant for user
+files are [global,mon,mgr,mds,osd,client].conf and are meant for user
 customisations of ceph.conf.
 
-The five files correspond to the different sections the Ceph configuration file
+The six files correspond to the different sections the Ceph configuration file
 accepts (see also
-http://docs.ceph.com/docs/jewel/rados/configuration/ceph-conf/#config-sections).
+http://docs.ceph.com/docs/master/rados/configuration/ceph-conf/#config-sections).
 Putting a configuration fragment in the correct file enables DeepSea to place it
-into the correct section. A user does not have to add any of the five section
+into the correct section. A user does not have to add any of the six section
 headers.
 A user can however add daemon specific headers. If any configuration options
 should only be applied to specific instances of a daemon a header like
