@@ -4,8 +4,21 @@
 # helper functions (not to be called directly from test scripts)
 #
 
+function _report_stage_failure_and_die {
+  local stage_num=$1
+  local stage_log_path=$2
+  local number_of_failures=$3
+
+  test -z $number_of_failures && number_of_failures="unknown number of"
+  echo "********** Stage $stage_num failed with $number_of_failures failures **********"
+  echo "Here comes the log:"
+  cat $stage_log_path
+  exit 1
+}
+
 function _run_stage {
   local stage_num=$1
+  local stage_log_path="/tmp/stage.${stage_num}.log"
 
   echo ""
   echo "*********************************************"
@@ -13,21 +26,18 @@ function _run_stage {
   echo "*********************************************"
   echo ""
 
-  salt-run --no-color state.orch ceph.stage.${stage_num} | tee /tmp/stage.${stage_num}.log
-  STAGE_FINISHED=$(grep -F 'Total states run' /tmp/stage.${stage_num}.log)
+  echo -n "" > $stage_log_path
+  salt-run --no-color state.orch ceph.stage.${stage_num} | tee $stage_log_path
+  STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
 
-  if [[ ! -z $STAGE_FINISHED ]]; then
-    FAILED=$(grep -F 'Failed: ' /tmp/stage.${stage_num}.log | sed 's/.*Failed:\s*//g' | head -1)
+  if [[ "$STAGE_FINISHED" ]]; then
+    FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
     if [[ "$FAILED" -gt "0" ]]; then
-      echo "********** Stage $stage_num failed with $FAILED failures **********"
-      echo "Check /tmp/stage.${stage_num}.log for details"
-      exit 1
+      _report_stage_failure_and_die $stage_num $stage_log_path $FAILED
     fi
     echo "********** Stage $stage_num completed successefully **********"
   else
-    echo "********** Stage $stage_num failed with $FAILED failures **********"
-    echo "Check /tmp/stage.${stage_num}.log for details"
-    exit 1
+    _report_stage_failure_and_die $stage_num $stage_log_path
   fi
 }
 
