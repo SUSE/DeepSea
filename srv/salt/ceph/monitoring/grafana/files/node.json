@@ -617,7 +617,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "node_disk_io_time_ms{instance='$instance',job='node-exporter-exporter'}",
+                "expr": "node_disk_io_time_ms{instance='$instance',job='node-exporter'}",
                 "intervalFactor": 1,
                 "legendFormat": "{{device}}",
                 "refId": "A",
@@ -665,6 +665,250 @@
         "repeatRowId": null,
         "showTitle": false,
         "title": "Dashboard Row",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": 350,
+        "panels": [
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "filterNull": false,
+            "fontSize": "100%",
+            "id": 9,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 0,
+              "desc": false
+            },
+            "span": 4,
+            "styles": [
+              {
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 2,
+                "pattern": "Current",
+                "thresholds": [],
+                "type": "number",
+                "unit": "h"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "smartmon_power_on_hours_raw_value{instance='$instance',job='node-exporter'}",
+                "intervalFactor": 2,
+                "legendFormat": "{{disk}}",
+                "metric": "smartmon_power_on_hours_raw_value",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "title": "Power on hours",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              },
+              {
+                "text": "Max",
+                "value": "max"
+              }
+            ],
+            "filterNull": false,
+            "fontSize": "100%",
+            "id": 10,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 0,
+              "desc": false
+            },
+            "span": 4,
+            "styles": [],
+            "targets": [
+              {
+                "expr": "smartmon_reallocated_sector_ct_raw_value{instance='$instance',job='node-exporter'}",
+                "interval": "1h",
+                "intervalFactor": 2,
+                "legendFormat": "{{disk}}",
+                "metric": "smartmon_reallocated_sector_ct_raw_value",
+                "refId": "A",
+                "step": 7200
+              }
+            ],
+            "title": "Reallocated Sector Count",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              },
+              {
+                "text": "Max",
+                "value": "max"
+              }
+            ],
+            "filterNull": false,
+            "fontSize": "100%",
+            "id": 11,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 0,
+              "desc": false
+            },
+            "span": 4,
+            "styles": [
+              {
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "pattern": "Time",
+                "type": "date"
+              },
+              {
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 2,
+                "pattern": "/.*/",
+                "thresholds": [],
+                "type": "number",
+                "unit": "short"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "smartmon_current_pending_sector_raw_value{instance='$instance',job='node-exporter'}",
+                "intervalFactor": 2,
+                "legendFormat": "{{disk}}",
+                "metric": "smartmon_current_pending_sector_raw_value",
+                "refId": "A",
+                "step": 1800
+              }
+            ],
+            "title": "Current Pending Sectors",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": true,
+        "title": "Smart Stats",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": 350,
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": null,
+            "fill": 1,
+            "id": 12,
+            "legend": {
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "span": 12,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "expr": "smartmon_temperature_celsius_raw_value{instance='$instance',job='node-exporter'}",
+                "intervalFactor": 2,
+                "legendFormat": "{{disk}}",
+                "metric": "smartmon_temperature_celsius_raw_value",
+                "refId": "A",
+                "step": 600
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Disk Temperaturs",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "Smart Stats",
         "titleSize": "h6"
       }
     ],
