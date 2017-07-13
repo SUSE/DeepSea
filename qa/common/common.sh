@@ -97,6 +97,10 @@ mon allow pool delete = true
 EOF
 }
 
+function cat_global_conf {
+  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+}
+
 function cat_ceph_conf {
   cat /etc/ceph/ceph.conf
 }

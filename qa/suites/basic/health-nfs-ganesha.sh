@@ -30,8 +30,9 @@ policy_cfg_nfs_ganesha
 cat_policy_cfg
 run_stage_2
 ceph_conf_small_cluster
-cat_ceph_conf
+cat_global_conf
 run_stage_3
+cat_ceph_conf
 ceph_cluster_status
 nfs_ganesha_no_root_squash
 run_stage_4

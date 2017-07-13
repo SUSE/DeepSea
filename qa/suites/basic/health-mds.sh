@@ -29,8 +29,9 @@ policy_cfg_mds
 cat_policy_cfg
 run_stage_2
 ceph_conf_small_cluster
-cat_ceph_conf
+cat_global_conf
 run_stage_3
+cat_ceph_conf
 ceph_cluster_status
 run_stage_4
 ceph_health_test

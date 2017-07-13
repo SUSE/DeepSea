@@ -31,8 +31,9 @@ run_stage_2
 ceph_conf_small_cluster
 ceph_conf_mon_allow_pool_delete
 ceph_conf_upstream_rbd_default_features
-cat_ceph_conf
+cat_global_conf
 run_stage_3
+cat_ceph_conf
 ceph_cluster_status
 ceph_health_test
 ceph_test_librbd_can_be_run
