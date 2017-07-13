@@ -27,7 +27,7 @@ function _run_stage {
   echo ""
 
   echo -n "" > $stage_log_path
-  salt-run --no-color state.orch ceph.stage.${stage_num} | tee $stage_log_path
+  salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 > $stage_log_path
   STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
 
   if [[ "$STAGE_FINISHED" ]]; then
