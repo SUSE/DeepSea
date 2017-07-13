@@ -50,15 +50,15 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
-install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 %{buildroot}/etc/salt/master.d/sharedsecret.conf
 
 %post
 if [ $1 -eq 1 ] ; then
   # Initialize to most likely value
   sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
-  sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' /etc/salt/master.d/sharedsecret.conf
-  chown salt:salt /etc/salt/master.d/sharedsecret.conf
 fi
+# Initialize the shared secret key
+sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' /etc/salt/master.d/sharedsecret.conf
+chown salt:salt /etc/salt/master.d/sharedsecret.conf
 # Restart salt-master if it's running, so it picks up
 # the config changes in /etc/salt/master.d/modules.conf
 systemctl try-restart salt-master > /dev/null 2>&1 || :
