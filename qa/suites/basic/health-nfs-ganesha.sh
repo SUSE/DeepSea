@@ -36,6 +36,7 @@ cat_ceph_conf
 ceph_cluster_status
 nfs_ganesha_no_root_squash
 run_stage_4
+ceph_cluster_status
 ceph_health_test
 nfs_ganesha_cat_config_file
 nfs_ganesha_debug_log

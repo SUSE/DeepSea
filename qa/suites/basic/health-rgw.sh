@@ -35,5 +35,6 @@ run_stage_3
 cat_ceph_conf
 ceph_cluster_status
 run_stage_4
+ceph_cluster_status
 ceph_health_test
 rgw_curl_test
