@@ -166,6 +166,11 @@ EOF
 # functions that print status information
 #
 
+function cat_salt_config {
+  cat /etc/salt/master
+  cat /etc/salt/minion
+}
+
 function cat_policy_cfg {
   cat /srv/pillar/ceph/proposals/policy.cfg
 }

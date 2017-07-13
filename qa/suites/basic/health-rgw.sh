@@ -21,6 +21,7 @@ BASEDIR=$(pwd)
 source $BASEDIR/common/common.sh
 
 install_deps
+cat_salt_config
 run_stage_0
 run_stage_1
 policy_cfg_base
