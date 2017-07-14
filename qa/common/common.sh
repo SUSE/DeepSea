@@ -3,6 +3,7 @@
 #
 
 BASEDIR=$(pwd)
+source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
 
@@ -15,6 +16,11 @@ MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
 
 export DEV_ENV='true'
 
+
+#
+# functions for setting up the Salt Master node so it can run these tests
+#
+
 function install_deps {
   echo "Installing dependencies on the Salt Master node"
   DEPENDENCIES="jq
@@ -25,32 +31,10 @@ function install_deps {
   done
 }
 
-function _run_stage {
-  local stage_num=$1
 
-  echo ""
-  echo "*********************************************"
-  echo "********** Running DeepSea Stage $stage_num **********"
-  echo "*********************************************"
-  echo ""
-
-  salt-run --no-color state.orch ceph.stage.${stage_num} | tee /tmp/stage.${stage_num}.log
-  STAGE_FINISHED=$(grep -F 'Total states run' /tmp/stage.${stage_num}.log)
-
-  if [[ ! -z $STAGE_FINISHED ]]; then
-    FAILED=$(grep -F 'Failed: ' /tmp/stage.${stage_num}.log | sed 's/.*Failed:\s*//g' | head -1)
-    if [[ "$FAILED" -gt "0" ]]; then
-      echo "********** Stage $stage_num failed with $FAILED failures **********"
-      echo "Check /tmp/stage.${stage_num}.log for details"
-      exit 1
-    fi
-    echo "********** Stage $stage_num completed successefully **********"
-  else
-    echo "********** Stage $stage_num failed with $FAILED failures **********"
-    echo "Check /tmp/stage.${stage_num}.log for details"
-    exit 1
-  fi
-}
+#
+# functions for running the DeepSea stages
+#
 
 function run_stage_0 {
   _run_stage 0 "$@"
@@ -62,10 +46,14 @@ function run_stage_1 {
 
 function run_stage_2 {
   _run_stage 2 "$@"
+  salt_pillar_items
 }
 
 function run_stage_3 {
+  cat_global_conf
   _run_stage 3 "$@"
+  salt_cmd_run_lsblk
+  cat_ceph_conf
 }
 
 function run_stage_4 {
@@ -76,12 +64,13 @@ function run_stage_5 {
   _run_stage 5 "$@"
 }
 
+
 #
-# custom configuration (ceph.conf)
+# functions for generating ceph.conf
 # see https://github.com/SUSE/DeepSea/tree/master/srv/salt/ceph/configuration/files/ceph.conf.d
 #
 
-function ceph_conf {
+function ceph_conf_small_cluster {
   local STORAGENODES=$(json_storage_nodes)
   test ! -z "$STORAGENODES"
   if [ "x$STORAGENODES" = "x1" ] ; then
@@ -112,8 +101,9 @@ mon allow pool delete = true
 EOF
 }
 
+
 #
-# policy.cfg
+# functions for generating policy.cfg
 #
 
 function policy_cfg_base {
@@ -172,51 +162,56 @@ role-ganesha/cluster/*.sls slice=[:1]
 EOF
 }
 
+
+#
+# functions that print status information
+#
+
+function cat_salt_config {
+  cat /etc/salt/master
+  cat /etc/salt/minion
+}
+
 function cat_policy_cfg {
   cat /srv/pillar/ceph/proposals/policy.cfg
 }
 
+function salt_pillar_items {
+  salt '*' pillar.items
+}
+
+function salt_pillar_get_roles {
+  salt '*' pillar.get roles
+}
+
+function salt_cmd_run_lsblk {
+  salt '*' cmd.run lsblk
+}
+
+function cat_global_conf {
+  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+}
+
+function cat_ceph_conf {
+  cat /etc/ceph/ceph.conf
+}
+
+function ceph_cluster_status {
+  ceph osd tree
+  ceph osd pool ls detail
+  ceph -s
+}
+
+
 #
-# validation tests
+# core validation tests
 #
 
 function ceph_health_test {
   local LOGFILE=/tmp/ceph_health_test.log
-  cat /etc/ceph/ceph.conf
-  ceph osd tree
-  ceph osd lspools
-  ceph -s
-  echo "Waiting for HEALTH_OK..."
-  salt -C 'I@roles:master' wait.until status=HEALTH_OK | tee $LOGFILE
-  grep -q 'Timeout expired' $LOGFILE && exit 1
-  ceph -s | tee /dev/stderr | grep -q HEALTH_OK
-}
-
-function _client_node {
-  #
-  # FIXME: migrate this to "salt --static --out json ... | jq ..."
-  #
-  salt --no-color -C 'not I@roles:storage' test.ping | grep -o -P '^\S+(?=:)' | head -1
-}
-
-function _first_x_node {
-  local ROLE=$1
-  salt --no-color -C "I@roles:$ROLE" test.ping | grep -o -P '^\S+(?=:)' | head -1
-}
-
-function _run_test_script_on_node {
-  local TESTSCRIPT=$1
-  local TESTNODE=$2
-  local ASUSER=$3
-  salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT
-  local LOGFILE=/tmp/test_script.log
-  if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
-    salt $TESTNODE cmd.run "sh $TESTSCRIPT" | tee $LOGFILE
-  else
-    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"sh $TESTSCRIPT\"" | tee $LOGFILE
-  fi
-  local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
-  test "x$RESULT" = "xOK"
+  echo "Waiting up to 15 minutes for HEALTH_OK..."
+  salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
+  ! grep -q 'Timeout expired' $LOGFILE
 }
 
 function cephfs_mount_and_sanity_test {

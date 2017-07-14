@@ -20,12 +20,16 @@ BASEDIR=$(pwd)
 source $BASEDIR/common/common.sh
 
 install_deps
+cat_salt_config
 run_stage_0
 run_stage_1
 policy_cfg_base
 policy_cfg_no_client
 cat_policy_cfg
 run_stage_2
-ceph_conf
+ceph_conf_small_cluster
 run_stage_3
+ceph_cluster_status
 ceph_health_test
+
+echo "OK"

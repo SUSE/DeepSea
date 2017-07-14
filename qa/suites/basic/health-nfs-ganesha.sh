@@ -20,6 +20,7 @@ source $BASEDIR/common/common.sh
 source $BASEDIR/common/nfs-ganesha.sh
 
 install_deps
+cat_salt_config
 run_stage_0
 run_stage_1
 policy_cfg_base
@@ -28,10 +29,12 @@ policy_cfg_mds
 policy_cfg_nfs_ganesha
 cat_policy_cfg
 run_stage_2
-ceph_conf
+ceph_conf_small_cluster
 run_stage_3
+ceph_cluster_status
 nfs_ganesha_no_root_squash
 run_stage_4
+ceph_cluster_status
 ceph_health_test
 nfs_ganesha_cat_config_file
 nfs_ganesha_debug_log
