@@ -33,9 +33,7 @@ Requires:       salt-master
 Requires:       salt-minion
 Requires:       salt-api
 Requires:       python-ipaddress
-%if 0%{?sle_version} == 120200 && 0%{?is_opensuse} == 1
 Requires:       python-netaddr
-%endif
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
