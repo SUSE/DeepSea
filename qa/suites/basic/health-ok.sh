@@ -27,11 +27,8 @@ policy_cfg_base
 policy_cfg_no_client
 cat_policy_cfg
 run_stage_2
-salt_pillar_items
 ceph_conf_small_cluster
-cat_global_conf
 run_stage_3
-cat_ceph_conf
 ceph_cluster_status
 ceph_health_test
 

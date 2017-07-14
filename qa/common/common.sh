@@ -46,10 +46,14 @@ function run_stage_1 {
 
 function run_stage_2 {
   _run_stage 2 "$@"
+  salt_pillar_items
 }
 
 function run_stage_3 {
+  cat_global_conf
   _run_stage 3 "$@"
+  salt_cmd_run_lsblk
+  cat_ceph_conf
 }
 
 function run_stage_4 {
@@ -174,6 +178,14 @@ function cat_policy_cfg {
 
 function salt_pillar_items {
   salt '*' pillar.items
+}
+
+function salt_pillar_get_roles {
+  salt '*' pillar.get roles
+}
+
+function salt_cmd_run_lsblk {
+  salt '*' cmd.run lsblk
 }
 
 function cat_global_conf {
