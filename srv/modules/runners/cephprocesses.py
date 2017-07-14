@@ -18,7 +18,7 @@ A secondary purpose is a utility to check the current state of all processes.
 """
 
 
-def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
+def check(cluster='ceph', roles=None, tolerate_down=0, verbose=True):
     """
     Query the status of running processes for each role.  Also, verify that
     all minions assigned roles do respond.  Return False if any fail.
@@ -68,6 +68,7 @@ def _status(search, roles, verbose):
 
     status = {}
     local = salt.client.LocalClient()
+    roles = roles or []
 
     for role in roles:
         role_search = search + " and I@roles:{}".format(role)
