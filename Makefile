@@ -31,16 +31,15 @@ copy-files:
 	install -m 644 srv/modules/runners/*.py $(DESTDIR)/srv/modules/runners/
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
-	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark
-	install -m 644 srv/pillar/ceph/benchmark/config.yml $(DESTDIR)/srv/pillar/ceph/benchmark/config.yml
-	install -m 644 srv/pillar/ceph/benchmark/benchmark.cfg $(DESTDIR)/srv/pillar/ceph/benchmark/benchmark.cfg
-	install -m 644 srv/pillar/ceph/benchmark/benchmark.cfg $(DESTDIR)/srv/pillar/ceph/benchmark/benchmark.cfg
-	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/collections
-	install -m 644 srv/pillar/ceph/benchmark/collections/*.yml $(DESTDIR)/srv/pillar/ceph/benchmark/collections
-	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/fio
-	install -m 644 srv/pillar/ceph/benchmark/fio/*.yml $(DESTDIR)/srv/pillar/ceph/benchmark/fio/
-	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmark/templates
-	install -m 644 srv/pillar/ceph/benchmark/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmark/templates/
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks
+	install -m 644 srv/pillar/ceph/benchmarks/config.yml $(DESTDIR)/srv/pillar/ceph/benchmarks/config.yml
+	install -m 644 srv/pillar/ceph/benchmarks/benchmark.cfg $(DESTDIR)/srv/pillar/ceph/benchmarks/benchmark.cfg
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks/collections
+	install -m 644 srv/pillar/ceph/benchmarks/collections/*.yml $(DESTDIR)/srv/pillar/ceph/benchmarks/collections
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks/fio
+	install -m 644 srv/pillar/ceph/benchmarks/fio/*.yml $(DESTDIR)/srv/pillar/ceph/benchmarks/fio/
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates
+	install -m 644 srv/pillar/ceph/benchmarks/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
@@ -64,7 +63,14 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks
 	install -m 644 srv/salt/ceph/cephfs/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
-	install -m 644 srv/salt/ceph/cephfs/benchmarks/files/fio.service $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
+	install -m 644 srv/salt/ceph/cephfs/benchmarks/files/keyring.j2 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files/
+	# state files tools
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tools/fio
+	install -m 644 srv/salt/ceph/tools/fio/*.sls $(DESTDIR)/srv/salt/ceph/tools/fio
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tools/fio/files
+	install -m 644 srv/salt/ceph/tools/fio/files/fio.service $(DESTDIR)/srv/salt/ceph/tools/fio/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tools/benchmarks
+	install -m 644 srv/salt/ceph/tools/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/tools/benchmarks
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration
 	install -m 644 srv/salt/ceph/configuration/*.sls $(DESTDIR)/srv/salt/ceph/configuration/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/check
@@ -239,6 +245,12 @@ copy-files:
 	# state files - purge
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/purge
 	install -m 644 srv/salt/ceph/purge/*.sls $(DESTDIR)/srv/salt/ceph/purge/
+	# state files - rbd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rbd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rbd/benchmarks
+	install -m 644 srv/salt/ceph/rbd/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/rbd/benchmarks/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rbd/benchmarks/files
+	install -m 644 srv/salt/ceph/rbd/benchmarks/files/keyring.j2 $(DESTDIR)/srv/salt/ceph/rbd/benchmarks/files/
 	# state files - reactor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reactor
 	install -m 644 srv/salt/ceph/reactor/*.sls $(DESTDIR)/srv/salt/ceph/reactor/

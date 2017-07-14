@@ -70,10 +70,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/modules/runners
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/stack
-%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmark
-%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmark/collections
-%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmark/fio
-%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmark/templates
+%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks
+%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/collections
+%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/fio
+%dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
 %dir /srv/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
@@ -168,6 +168,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/packages/common
 %dir /srv/salt/ceph/pool
 %dir /srv/salt/ceph/purge
+%dir /srv/salt/ceph/rbd
+%dir /srv/salt/ceph/rbd/benchmarks
+%dir /srv/salt/ceph/rbd/benchmarks/files
 %dir /srv/salt/ceph/reactor
 %dir /srv/salt/ceph/refresh
 %dir /srv/salt/ceph/repo
@@ -244,6 +247,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
+%dir /srv/salt/ceph/tools/benchmarks
+%dir /srv/salt/ceph/tools/fio
+%dir /srv/salt/ceph/tools/fio/files
 %dir /srv/salt/ceph/sync
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
@@ -293,9 +299,12 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/admin/key/*.sls
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
-%config /srv/salt/ceph/cephfs/benchmarks/files/fio.service
+%config /srv/salt/ceph/cephfs/benchmarks/files/keyring.j2
 %config /srv/salt/ceph/salt-api/*.sls
 %config /srv/salt/ceph/salt-api/files/*.conf*
+%config /srv/salt/ceph/tools/benchmarks/*.sls
+%config /srv/salt/ceph/tools/fio/*.sls
+%config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
@@ -371,6 +380,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/packages/common/*.sls
 %config /srv/salt/ceph/pool/*.sls
 %config /srv/salt/ceph/purge/*.sls
+%config /srv/salt/ceph/rbd/files/*.sls
+%config /srv/salt/ceph/rbd/benchmarks/*.sls
+%config /srv/salt/ceph/rbd/benchmarks/files/keyring.j2
 %config /srv/salt/ceph/reactor/*.sls
 %config /srv/salt/ceph/refresh/*.sls
 %config /srv/salt/ceph/repo/*.sls
@@ -458,6 +470,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/maintenance/upgrade/master/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/minion/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/report/*.sls
+%config /srv/salt/ceph/tools/fio/*.sls
+%config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/updates/*.sls
 %config /srv/salt/ceph/updates/restart/*.sls
 %config /srv/salt/ceph/updates/master/*.sls
