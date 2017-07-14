@@ -1,12 +1,4 @@
-{% if salt['saltutil.runner']('validate.setup') == False %}
-
-validate failed:
-  salt.state:
-    - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - failhard: True
-
-{% endif %}
+{% if salt['saltutil.runner']('upgrade.check') or salt['saltutil.runner']('validate.setup') != False %}
 
 {% set notice =  salt['saltutil.runner']('advise.salt_upgrade') %}
 
@@ -34,4 +26,12 @@ reboot master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart
 
+{% else %}
 
+validate failed:
+  salt.state:
+    - name: just.exit
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}
