@@ -28,6 +28,7 @@ policy_cfg_client
 policy_cfg_mds
 cat_policy_cfg
 run_stage_2
+salt_pillar_items
 ceph_conf_small_cluster
 cat_global_conf
 run_stage_3
@@ -37,3 +38,5 @@ run_stage_4
 ceph_cluster_status
 ceph_health_test
 cephfs_mount_and_sanity_test
+
+echo "OK"

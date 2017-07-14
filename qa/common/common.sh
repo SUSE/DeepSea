@@ -97,13 +97,6 @@ mon allow pool delete = true
 EOF
 }
 
-function cat_global_conf {
-  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
-}
-
-function cat_ceph_conf {
-  cat /etc/ceph/ceph.conf
-}
 
 #
 # functions for generating policy.cfg
@@ -177,6 +170,18 @@ function cat_salt_config {
 
 function cat_policy_cfg {
   cat /srv/pillar/ceph/proposals/policy.cfg
+}
+
+function salt_pillar_items {
+  salt '*' pillar.items
+}
+
+function cat_global_conf {
+  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+}
+
+function cat_ceph_conf {
+  cat /etc/ceph/ceph.conf
 }
 
 function ceph_cluster_status {

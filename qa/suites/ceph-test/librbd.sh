@@ -28,6 +28,7 @@ policy_cfg_base
 policy_cfg_client
 cat_policy_cfg
 run_stage_2
+salt_pillar_items
 ceph_conf_small_cluster
 ceph_conf_mon_allow_pool_delete
 ceph_conf_upstream_rbd_default_features
@@ -37,3 +38,5 @@ cat_ceph_conf
 ceph_cluster_status
 ceph_health_test
 ceph_test_librbd_can_be_run
+
+echo "OK, now you can exercise librbd"

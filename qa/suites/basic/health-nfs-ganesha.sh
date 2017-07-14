@@ -29,6 +29,7 @@ policy_cfg_mds
 policy_cfg_nfs_ganesha
 cat_policy_cfg
 run_stage_2
+salt_pillar_items
 ceph_conf_small_cluster
 cat_global_conf
 run_stage_3
