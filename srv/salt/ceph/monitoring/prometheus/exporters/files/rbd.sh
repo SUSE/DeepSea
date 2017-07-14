@@ -7,13 +7,14 @@
 
 awk_cmd='
 {
-print "# HELP ceph_rbd_image_bytes_used Used space of an rbd image"
-print "# TYPE ceph_rbd_image_bytes_used gauge"
 print "ceph_rbd_image_bytes_used{image=\""$1"\",cluster=\""cluster"\"} " $3
-print "# HELP ceph_rbd_image_bytes_provisioned Provisioned space of an rbd image"
-print "# TYPE ceph_rbd_image_bytes_provisioned gauge"
 print "ceph_rbd_image_bytes_provisioned{image=\""$1"\",cluster=\""cluster"\"} " $2
 }'
+
+echo '# HELP ceph_rbd_image_bytes_used Used space of an rbd image
+# TYPE ceph_rbd_image_bytes_used gauge
+# HELP ceph_rbd_image_bytes_provisioned Provisioned space of an rbd image
+# TYPE ceph_rbd_image_bytes_provisioned gauge'
 
 for conf in /etc/ceph/*.conf
 do
