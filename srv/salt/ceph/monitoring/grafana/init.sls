@@ -66,3 +66,10 @@ add osd dashboard:
         curl -s -H "Content-Type: application/json" \
           -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
           -d @/srv/salt/ceph/monitoring/grafana/files/ceph-osd.json
+
+add rbd dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-rbd.json
