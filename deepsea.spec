@@ -254,6 +254,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/tools/fio
 %dir /srv/salt/ceph/tools/fio/files
 %dir /srv/salt/ceph/sync
+%dir /srv/salt/ceph/setosdflags
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/time/ntp/files
@@ -282,6 +283,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/wait/4hours/until/OK
 %dir /srv/salt/ceph/wait/until
 %dir /srv/salt/ceph/wait/until/OK
+%dir /srv/salt/ceph/wait/until/expired
+%dir /srv/salt/ceph/wait/until/expired/30sec
 %dir /srv/salt/ceph/warning
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
@@ -465,6 +468,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/removal/*.sls
 %config /srv/salt/ceph/stage/services/*.sls
 %config /srv/salt/ceph/sync/*.sls
+%config /srv/salt/ceph/setosdflags/*.sls
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/time/ntp/files/*.j2
@@ -487,6 +491,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/wait/2hours/until/OK/*.sls
 %config /srv/salt/ceph/wait/4hours/until/OK/*.sls
 %config /srv/salt/ceph/wait/until/OK/*.sls
+%config /srv/salt/ceph/wait/until/expired/30sec/*.sls
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/processes/*.sls
