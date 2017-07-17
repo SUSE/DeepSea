@@ -142,7 +142,8 @@ def _propose(node, proposal, args):
                 dev_par['journal'] = v
                 dev_par['journal_size'] = args.get('journal-size')
         dev_par['format'] = format_
-        dev_par['encryption'] = args.get('encryption')
+        if args.get('encryption') != '':
+            dev_par['encryption'] = args.get('encryption')
         profile[k] = dev_par
 
     return {node: profile}
