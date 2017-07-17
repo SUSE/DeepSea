@@ -802,6 +802,9 @@ def show(**kwargs):
 
     Note: rearrange at some point
     """
+    print(("DEPRECATION WARNING: the generation of storage profiles is now"
+          " handled by the proposal runner. This function will go away in the"
+          " future."))
     settings = Settings()
 
     salt_writer = SaltWriter(**kwargs)
@@ -841,18 +844,7 @@ def proposals(**kwargs):
     ceph_cluster = CephCluster(settings, salt_writer, **kwargs)
     ceph_cluster.generate()
 
-    # Allow overriding of hardware profile class
-    hardwareprofile = HardwareProfile()
-
     for name in ceph_cluster.names:
-        # Common cluster configuration
-        ceph_storage = CephStorage(settings, name, salt_writer)
-
-        ## Determine storage nodes and save proposals
-        disk_configuration = DiskConfiguration(settings, servers=ceph_cluster.minions)
-        disk_configuration.generate(hardwareprofile)
-        ceph_storage.save(hardwareprofile.servers, disk_configuration.proposals)
-
         # Determine roles and save proposals
         ceph_roles = CephRoles(settings, name, ceph_cluster.minions, salt_writer)
         ceph_roles.generate()
