@@ -41,12 +41,6 @@ upgrading mon on {{ host }}:
     - name: minions.message
     - content: "Upgrading mon on host {{ host }}"
 
-#wait until the OSDs/MONs are acutally marked as down ~30 seconds ~1m
-wait for ceph to mark services as out/down to process {{ host }}:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.wait.until.expired.30sec
-
 wait until the cluster has recovered before processing mon on {{ host }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -87,6 +81,12 @@ upgrading {{ host }}:
   salt.runner:
     - name: minions.message
     - content: "Upgrading host {{ host }}"
+
+# wait until the OSDs/MONs are acutally marked as down ~30 seconds ~1m
+wait for ceph to mark services as out/down to process {{ host }}:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.wait.until.expired.30sec
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
