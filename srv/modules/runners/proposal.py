@@ -10,6 +10,7 @@ import pprint
 import yaml
 from os.path import isdir, isfile
 import os
+from sys import exit
 import logging
 
 log = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ The proposal runner compiles and either shows or writes storage profile
 proposals. It offers two methods: 'peek' and 'populate'.
 The 'peek' method simply collects the proposals from the minions and displays
 the chosen proposal.
-The 'populate' method writes these proposals the a storage profile directory.
+The 'populate' method writes these proposals to a storage profile directory.
 By default this profile is written to
 '/srv/pillar/ceph/proposal/profile-default'. The profile can also be named by
 passing 'name=foo'. The profile is then written to
@@ -43,12 +44,12 @@ range 'min-max' (for example data=500, data=500-1000). Only drives of the exact
 capacity in GB (in case of a number) or drives that fall into the range (also
 in GB) will be considered for data drives or journal drives respectively.
 
-The 'target=' paramter can be passed to only show or store proposals from
+The 'target=' parameter can be passed to only show or store proposals from
 minions fitting the specified glob. For example 'target="data1*"' will
 only query minions whose minion id starts with 'data1'.
 
 List of recognized parameters and their defaults:
-    leftovers=False - Set to True topropose leftover drives as
+    leftovers=False - Set to True to propose leftover drives as
                                  standalone OSDs.
     standalone=False
     nvme-ssd=False
@@ -57,18 +58,30 @@ List of recognized parameters and their defaults:
                         a certain proposal. Note that this can end up returning
                         an empty proposal
     ratio=5 - Set the amount of data drives per journal drive
-    target='*' - Glob to specifiy which nodes will be queried
+    db-ration=5 - Set the amount of db drives per wal partition. Only has an
+                  effect if format=bluestore and all three device classes are
+                  present, i.e. spinners, ssds and nvmes
+    target='*' - Glob to specify which nodes will be queried
     data=0
-    journal=0 - Size filter for data/journal drives. 0 means no filtering. A
+    journal=0
+    db=0
+    wal=0     - Size filter for data/journal/db/wal drives. 0 means no filtering. A
                 number (in GB) can be specified or a range min-max (also in
                 GB). For example journal=500-1000 will only consider drives
-                between 500GB and 1TB for journal devices.
+                between 500GB and 1TB for journal devices. journal and db are
+                treated to be equivalent with db taking precedence.
     name=default - Name of the storage profile and thus location of the
                    resulting files.
     format=bluestore - The OSDs underlying storage format. Legal values are
                        bluestore and filestore.
-    encryption='' - Set to dmcrypt to encrypt OSD. leave empty (the default)
+    encryption='' - Set to dmcrypt to encrypt OSD. Leave empty (the default)
                     for non-encrypted OSDs.
+    journal-size=5g
+    db-size=500m
+    wal-size=500m - Sizes for journal/db/wal partitions respectively. Specify a
+                    number with a unit suffix. Unit suffix' as accepted by
+                    sgdisk can be used, i.e. kibibytes (K), mebibytes (M),
+                    gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
 std_args = {
@@ -98,6 +111,15 @@ base_dir = '/srv/pillar/ceph/proposals'
 def _parse_args(kwargs):
     args = std_args.copy()
     args.update(kwargs)
+    if args.get('name') == 'import':
+        print(('ERROR: profile name import is a reserved name. Please use'
+              ' another name'))
+        exit(-1)
+    if args.get('encryption') != '' and args.get('encryption') != 'dmcrypt':
+        print(('ERROR: encryption{} is not supported. Currently only '
+               '"dmcrypt" is supported.').format(args.get('encryption')))
+        exit(-1)
+
     return args
 
 
@@ -110,12 +132,12 @@ def _propose(node, proposal, args):
         format_ = args.get('format')
         if type(v) is dict:
             assert format_ == 'bluestore'
-            wal, db = v.items()[0]
+            db, wal = v.items()[0]
             dev_par['wal'] = wal
             dev_par['db'] = db
             dev_par['wal_size'] = args.get('wal-size')
             dev_par['db_size'] = args.get('db-size')
-        elif type(v) is str:
+        elif type(v) is str and v != '':
             if format_ == 'bluestore':
                 dev_par['wal'] = v
                 dev_par['db'] = v
@@ -125,7 +147,8 @@ def _propose(node, proposal, args):
                 dev_par['journal'] = v
                 dev_par['journal_size'] = args.get('journal-size')
         dev_par['format'] = format_
-        dev_par['encryption'] = args.get('encryption')
+        if args.get('encryption') != '':
+            dev_par['encryption'] = args.get('encryption')
         profile[k] = dev_par
 
     return {node: profile}

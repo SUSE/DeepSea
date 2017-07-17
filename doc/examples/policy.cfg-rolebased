@@ -31,5 +31,5 @@ config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
 
 ## Profiles
-profile-*-1/cluster/*.sls
-profile-*-1/stack/default/ceph/minions/*.yml
+profile-default/cluster/*.sls
+profile-default/stack/default/ceph/minions/*.yml
