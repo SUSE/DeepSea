@@ -127,16 +127,16 @@ EOF
 function policy_cfg_no_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-*-1/cluster/*.sls
-profile-*-1/stack/default/ceph/minions/*yml
+profile-default/cluster/*.sls
+profile-default/stack/default/ceph/minions/*yml
 EOF
 }
 
 function policy_cfg_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-*-1/cluster/*.sls slice=[:-1]
-profile-*-1/stack/default/ceph/minions/*yml slice=[:-1]
+profile-default/cluster/*.sls slice=[:-1]
+profile-default/stack/default/ceph/minions/*yml slice=[:-1]
 EOF
 }
 
