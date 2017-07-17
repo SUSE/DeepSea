@@ -1,6 +1,11 @@
 {% if salt['saltutil.runner']('upgrade.check') and salt['saltutil.runner']('validate.setup') != False %}
 
 {% set notice = salt['saltutil.runner']('advise.salt_upgrade') %}
+
+ready:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
   
 sync all:
   salt.state:
