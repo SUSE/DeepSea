@@ -420,8 +420,6 @@ copy-files:
 	# state files - orchestrate stages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/all
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/benchmark
-	install -m 644 srv/salt/ceph/stage/benchmark/*.sls $(DESTDIR)/srv/salt/ceph/stage/benchmark/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/cephfs
 	install -m 644 srv/salt/ceph/stage/cephfs/*.sls $(DESTDIR)/srv/salt/ceph/stage/cephfs/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/configure
