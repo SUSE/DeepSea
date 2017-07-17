@@ -93,6 +93,11 @@ setup ceph exporter:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_exporter
 
+setup rbd exporter:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.exporters.rbd_exporter
 
 osd auth:
   salt.state:

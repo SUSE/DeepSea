@@ -7,23 +7,6 @@ grafana-server:
     - enable: true
     - require:
       - pkg: grafana
-    - watch:
-      - file: /etc/grafana/grafana.ini
-
-grafana-dashboards-ceph:
-  pkg.installed:
-    - fire_event: true
-
-/etc/grafana/grafana.ini:
-  file.replace:
-    - pattern: |
-        \[dashboards\.json\]
-        ;*enabled = .+
-        ;?path = .*
-    - repl: |
-        [dashboards.json]
-        enabled = true
-        path = /var/lib/grafana-dashboards-ceph
 
 wait-for-grafana-http:
   cmd.run:
@@ -55,3 +38,38 @@ add prometheus ds:
           -d @- <<EOF
           { "name": "Prometheus", "type": "prometheus", "access": "proxy", "url": "http://localhost:9090", "isDefault": true }
         EOF
+
+add node dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/node.json
+
+add cluster dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-cluster.json
+
+add pools dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-pools.json
+
+add osd dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-osd.json
+
+add rbd dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-rbd.json

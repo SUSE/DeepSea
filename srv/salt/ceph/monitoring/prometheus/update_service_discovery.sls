@@ -13,3 +13,17 @@
         minion: {{ minion }}
 {% endfor %}
 
+/etc/prometheus/ses_nodes:
+  file.directory:
+    - user: root
+    - group: root
+    - file_mode: 644
+    - dir_mode: 755
+    - clean: True
+    - makedirs: True
+    - require:
+{% for minion in salt.saltutil.runner('select.minions', cluster='ceph', host=False) %}
+       - file: /etc/prometheus/ses_nodes/{{ minion }}.yml
+{% endfor %}
+
+
