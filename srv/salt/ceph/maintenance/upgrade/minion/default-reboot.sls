@@ -1,3 +1,4 @@
+
 update salt:
   salt.state:
     - tgt: '*'
@@ -34,54 +35,8 @@ common packages:
 
 {% if salt['saltutil.runner']('cephprocesses.mon') == True %}
 
-{% for host in salt.saltutil.runner('orderednodes.only', cluster='ceph', role='mon') %}
 
-upgrading mon on {{ host }}:
-  salt.runner:
-    - name: minions.message
-    - content: "Upgrading mon on host {{ host }}"
-
-#wait until the OSDs/MONs are acutally marked as down ~30 seconds ~1m
-wait for ceph to mark services as out/down to process {{ host }}:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.wait.until.expired.30sec
-
-wait until the cluster has recovered before processing mon on {{ host }}:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.wait
-    - failhard: True
-
-# OSDs are up and running althouth officially not starting because a missing flag..
-check if all processes are still running after processing mon on {{ host }}:
-  salt.state:
-    - tgt: '*'
-    - sls: ceph.processes
-    - failhard: True
-
-updating mon {{ host }}:
-  salt.state:
-    - tgt: {{ host }}
-    - tgt_type: compound
-    - sls: ceph.upgrade
-    - failhard: True
-
-restart mon {{ host }} if updates require:
-  salt.state:
-    - tgt: {{ host }}
-    - tgt_type: compound
-    - sls: ceph.mon.restart
-    - failhard: True
-
-upgraded mon on {{ host }}:
-  salt.runner:
-    - name: minions.message
-    - content: "Upgraded mon on host {{ host }}"
-
-{% endfor %}
-
-{% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph', exclude=['mon']) %}
+{% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
 
 upgrading {{ host }}:
   salt.runner:
@@ -94,6 +49,7 @@ wait until the cluster has recovered before processing {{ host }}:
     - sls: ceph.wait
     - failhard: True
 
+# OSDs are up and running althouth officially not starting because a missing flag..
 check if all processes are still running after processing {{ host }}:
   salt.state:
     - tgt: '*'
@@ -131,6 +87,7 @@ upgraded {{ host }}:
     - name: minions.message
     - content: "Upgraded host {{ host }}"
 
+
 {% endfor %}
 
 unset noout after final iteration: 
@@ -152,9 +109,9 @@ updates:
     - tgt: '*'
     - sls: ceph.upgrade
 
+{% endif %}
+
 restart:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates.restart
-
-{% endif %}

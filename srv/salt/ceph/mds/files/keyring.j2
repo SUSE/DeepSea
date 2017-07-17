@@ -1,6 +1,7 @@
 [{{ client }}]
         key = {{ secret }}
-        caps mds = "allow"
-        caps mon = "allow profile mds"
-        caps osd = "allow rwx"
+        caps mds = "allow *"                         
+        caps mgr = "allow profile mds"               
+        caps mon = "allow profile mds"               
+        caps osd = "allow rwx"   
 

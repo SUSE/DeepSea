@@ -283,9 +283,9 @@ class Zypper(PackageManager):
 
     def _migrate(self):
         # There is no dryrun
-        strategy_flags = ['--auto-agree-with-licenses', '--replacefiles']
-        # _NOT_ passing --allow-vendor-change as this should be a user
-        # decision and be targeted prior to the upgrade
+        strategy_flags = ['--auto-agree-with-licenses', '--replacefiles', '--allow-vendor-change']
+        # Passing allow-vendor-change because the issue you get when not using it
+        # is so well hidden its gonna be a nightmare to debug
         cmd = []
         cmd.extend(self.base_command)
         cmd.extend(['migration'])

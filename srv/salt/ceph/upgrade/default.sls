@@ -1,9 +1,7 @@
-packagemanager dup:
+packagemanager migrate:
   module.run:
-    - name: packagemanager.dup
+    - name: packagemanager.migrate
     - kwargs:
-        'debug': False
-        'reboot': False
-        'kernel': True
+        'reboot': {{ salt['pillar.get']('auto_reboot', True) }} 
     - fire_event: True
     - failhard: True
