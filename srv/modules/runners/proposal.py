@@ -115,6 +115,11 @@ def _parse_args(kwargs):
         print(('ERROR: profile name import is a reserved name. Please use'
               ' another name'))
         exit(-1)
+    if args.get('encryption') != '' and args.get('encryption') != 'dmcrypt':
+        print(('ERROR: encryption{} is not supported. Currently only '
+               '"dmcrypt" is supported.').format(args.get('encryption')))
+        exit(-1)
+
     return args
 
 
