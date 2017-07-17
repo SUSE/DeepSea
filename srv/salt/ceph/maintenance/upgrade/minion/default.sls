@@ -36,7 +36,7 @@ common packages:
 
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mon') %}
 
-ready:
+readycheck before processing {{ host }}:
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 600) }}

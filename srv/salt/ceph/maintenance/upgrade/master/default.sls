@@ -2,7 +2,7 @@
 
 {% set notice = salt['saltutil.runner']('advise.salt_upgrade') %}
 
-ready:
+readycheck:
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
