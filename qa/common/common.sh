@@ -189,7 +189,7 @@ function salt_cmd_run_lsblk {
 }
 
 function cat_global_conf {
-  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf || true
 }
 
 function cat_ceph_conf {
