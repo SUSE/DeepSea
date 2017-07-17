@@ -1,6 +1,6 @@
 # DeepSea default configuration. Changes in this file will be overwritten on
 # package update. Include custom configuration fragments in
-# /srv/salt/ceph/configuration/files/ceph.conf.d/[global,osd,mon,mds,client].conf
+# /srv/salt/ceph/configuration/files/ceph.conf.d/[global,osd,mon,mgr,mds,client].conf
 [global]
 fsid = {{ salt['pillar.get']('fsid') }}
 mon_initial_members = {{ salt['pillar.get']('mon_initial_members') | join(', ') }}
@@ -26,6 +26,9 @@ cluster_network = {{ salt['pillar.get']('cluster_network') }}
 
 [mon]
 {% include "ceph/configuration/files/ceph.conf.d/mon.conf" ignore missing %}
+
+[mgr]
+{% include "ceph/configuration/files/ceph.conf.d/mgr.conf" ignore missing %}
 
 [mds]
 {% include "ceph/configuration/files/ceph.conf.d/mds.conf" ignore missing %}
