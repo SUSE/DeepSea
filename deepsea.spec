@@ -236,7 +236,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/users
 %dir /srv/salt/ceph/stage
 %dir /srv/salt/ceph/stage/all
-%dir /srv/salt/ceph/stage/benchmark
 %dir /srv/salt/ceph/stage/cephfs
 %dir /srv/salt/ceph/stage/configure
 %dir /srv/salt/ceph/stage/deploy
@@ -250,6 +249,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
+%dir /srv/salt/ceph/tools
 %dir /srv/salt/ceph/tools/benchmarks
 %dir /srv/salt/ceph/tools/fio
 %dir /srv/salt/ceph/tools/fio/files
@@ -289,11 +289,11 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
-%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/config.yml
-%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/benchmark.cfg
-%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/collections/*.yml
-%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/fio/*.yml
-%config %attr(-, salt, salt) /srv/pillar/ceph/benchmark/templates/*.j2
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/config.yml
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/benchmark.cfg
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/collections/*.yml
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/fio/*.yml
+%config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/templates/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 %config /srv/salt/_modules/*.py*
@@ -385,7 +385,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/packages/common/*.sls
 %config /srv/salt/ceph/pool/*.sls
 %config /srv/salt/ceph/purge/*.sls
-%config /srv/salt/ceph/rbd/files/*.sls
 %config /srv/salt/ceph/rbd/benchmarks/*.sls
 %config /srv/salt/ceph/rbd/benchmarks/files/keyring.j2
 %config /srv/salt/ceph/reactor/*.sls
@@ -452,7 +451,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/4
 %config /srv/salt/ceph/stage/5
 %config /srv/salt/ceph/stage/all/*.sls
-%config /srv/salt/ceph/stage/benchmark/*.sls
 %config /srv/salt/ceph/stage/cephfs/*.sls
 %config /srv/salt/ceph/stage/configure/*.sls
 %config /srv/salt/ceph/stage/deploy/*.sls
