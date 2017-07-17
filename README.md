@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/SUSE/DeepSea.svg?branch=master)](https://travis-ci.org/SUSE/DeepSea)
 # DeepSea
 A collection of [Salt](https://saltstack.com/salt-open-source/) files for deploying, managing and automating [Ceph](https://ceph.com/).
 
