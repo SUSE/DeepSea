@@ -156,6 +156,13 @@ role-rgw/cluster/*.sls slice=[:1]
 EOF
 }
 
+function policy_cfg_igw {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - igw (first node)
+role-igw/cluster/*.sls slice=[:1]
+EOF
+}
+
 function policy_cfg_nfs_ganesha {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - NFS-Ganesha (first node)
@@ -271,5 +278,39 @@ rm -f $RGWXMLOUT
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
+}
+
+function iscsi_mount_and_sanity_test {
+  #
+  # run iscsi mount test script on the client node
+  # mounts iscsi in /mnt, touches a file, asserts that it exists
+  #
+  local TESTSCRIPT=/tmp/iscsi_test.sh
+  local CLIENTNODE=$(_client_node)
+  local IGWNODE=$(_first_x_node igw)
+  cat << EOF > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+zypper --non-interactive --no-gpg-checks refresh
+zypper --non-interactive install --no-recommends open-iscsi
+systemctl start iscsid.service
+sleep 5
+systemctl status -l iscsid.service
+iscsiadm -m discovery -t st -p $IGWNODE
+iscsiadm -m node -L all
+systemctl start multipathd.service
+sleep 5
+systemctl status -l multipathd.service
+mkfs -t xfs /dev/mapper/mpatha
+test -d /mnt
+mount /dev/mapper/mpatha /mnt
+df -h /mnt
+touch /mnt/bubba
+test -f /mnt/bubba
+umount /mnt
+echo "Result: OK"
+EOF
+  # FIXME: assert script not running on the iSCSI gateway node
+  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
