@@ -34,7 +34,7 @@ common packages:
 
 {% if salt['saltutil.runner']('cephprocesses.mon') == True %}
 
-{% for host in salt.saltutil.runner('orderednodes.only', cluster='ceph', role='mon') %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mon') %}
 
 upgrading mon on {{ host }}:
   salt.runner:

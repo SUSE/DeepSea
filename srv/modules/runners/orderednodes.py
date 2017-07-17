@@ -15,17 +15,6 @@ def _preserve_order_sorted(seq):
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
 
-def only(cluster='ceph', role=None):
-    client = salt.client.LocalClient(__opts__['conf_file'])
-
-    target =  "I@cluster:{} and I@roles:{}".format(cluster, role)
-    _stdout = sys.stdout
-    sys.stdout = open(os.devnull, 'w')
-    nodes = client.cmd(target, 'pillar.get', ['roles'], expr_form="compound")
-    sys.stdout = _stdout
-    return nodes.keys()
-    
-
 def unique(cluster='ceph', exclude=[]):
     """ 
     Assembling a list of nodes.
