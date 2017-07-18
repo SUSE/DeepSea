@@ -1,12 +1,13 @@
+pre minion readycheck:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+    - hardfail: True
+
 update salt:
   salt.state:
     - tgt: '*'
     - sls: ceph.updates.salt
-
-ready:
-  salt.runner:
-    - name: minions.ready
-    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
 
 mines:
   salt.state:
@@ -39,7 +40,8 @@ common packages:
 readycheck before processing {{ host }}:
   salt.runner:
     - name: minions.ready
-    - timeout: {{ salt['pillar.get']('ready_timeout', 600) }}
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+    - hardfail: True
 
 upgrading mon on {{ host }}:
   salt.runner:
@@ -81,6 +83,12 @@ upgraded mon on {{ host }}:
 {% endfor %}
 
 {% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph', exclude=['mon']) %}
+
+readycheck for {{ host }} after processing mons :
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+    - hardfail: True
 
 upgrading {{ host }}:
   salt.runner:
