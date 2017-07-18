@@ -93,58 +93,11 @@ class Radosgw(object):
     @staticmethod
     def endpoints(cluster='ceph'):
         result = []
-        search = "I@cluster:{}".format(cluster)
-        __opts__ = salt.config.client_config('/etc/salt/master')
-        pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
-                                                         use_cached_grains=True,
-                                                         grains_fallback=False,
-                                                         opts=__opts__)
-        cached = pillar_util.get_minion_pillar()
-        for minion in cached:
-            if 'rgw_endpoint' in cached[minion]:
-                match = re.search(r'http(s?)://(.+):?(\d*)', cached[minion]['rgw_endpoint'])
-                if match:
-                    result.append({
-                        'host': match.group(2),
-                        'port': int(match.group(3)) if match.group(3) else 7480,
-                        'ssl': match.group(1) == 's',
-                        'url': cached[minion]['rgw_endpoint']
-                    })
-                else:
-                    result.append({
-                        'host': None,
-                        'port': None,
-                        'ssl': None,
-                        'url': cached[minion]['rgw_endpoint']
-                    })
-                return result
-
-        port = '7480'  # civetweb default port
-        ssl = ''
-        admin_path = 'admin'
-        for rgw_conf_file_path in glob.glob("/srv/salt/ceph/configuration/files/ceph.conf.*"):
-            if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
-                with open(rgw_conf_file_path) as rgw_conf_file:
-                    for line in rgw_conf_file:
-                        if line:
-                            match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
-                            if match:
-                                port = int(match.group(1))
-                                ssl = match.group(2)
-
-                            match = re.search(r'rgw.*admin.*entry.*=\s*(\w+)', line)
-                            if match:
-                                admin_path = match.group(1)
-
         local = salt.client.LocalClient()
-        fqdns = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
-        for _, grains in fqdns.items():
-            result.append({
-                'host': grains['fqdn'],
-                'port': port,
-                'ssl': ssl == 's',
-                'url': "http{}://{}:{}/{}".format(ssl, grains['fqdn'], port, admin_path)
-            })
+        for master_node in local.cmd('*', "pillar.get", ["master_minion"]):
+            result = local.cmd(master_node, 'rgw.endpoints', ['cluster=ceph'])[master_node]
+            break
+
         return result
 
 
