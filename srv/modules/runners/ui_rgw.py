@@ -7,7 +7,7 @@ All operations will happen using the rest-api of RadosGW.  The one execption
 is getting the credentials for an administrative user which is implemented
 here.
 """
-
+from __future__ import absolute_import
 import logging
 import os
 import json
@@ -121,7 +121,7 @@ class Radosgw(object):
 
         port = '7480'  # civetweb default port
         ssl = ''
-        found = False
+        admin_path = 'admin'
         for rgw_conf_file_path in glob.glob("/srv/salt/ceph/configuration/files/ceph.conf.*"):
             if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
                 with open(rgw_conf_file_path) as rgw_conf_file:
@@ -131,9 +131,10 @@ class Radosgw(object):
                             if match:
                                 port = int(match.group(1))
                                 ssl = match.group(2)
-                                found = True
-            if found:
-                break
+
+                            match = re.search(r'rgw.*admin.*entry.*=\s*(\w+)', line)
+                            if match:
+                                admin_path = match.group(1)
 
         local = salt.client.LocalClient()
         fqdns = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
@@ -142,7 +143,7 @@ class Radosgw(object):
                 'host': grains['fqdn'],
                 'port': port,
                 'ssl': ssl == 's',
-                'url': "http{}://{}:{}".format(ssl, grains['fqdn'], port)
+                'url': "http{}://{}:{}/{}".format(ssl, grains['fqdn'], port, admin_path)
             })
         return result
 
