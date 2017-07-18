@@ -99,7 +99,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_health_status{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_health_status{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "refId": "A",
@@ -128,6 +128,7 @@
                 "value": "2"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -187,7 +188,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_monitor_quorum_count{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_monitor_quorum_count{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -207,6 +208,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -266,7 +268,7 @@
             },
             "targets": [
               {
-                "expr": "count(ceph_pool_available_bytes)[1m]",
+                "expr": "count(ceph_pool_available_bytes)",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -286,6 +288,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -345,7 +348,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_cluster_capacity_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_cluster_capacity_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -365,6 +368,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -424,7 +428,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_cluster_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_cluster_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -444,6 +448,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -504,7 +509,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_cluster_available_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}/ceph_cluster_capacity_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_cluster_available_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}/ceph_cluster_capacity_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -524,6 +529,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           }
         ],
@@ -595,7 +601,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_osds_in{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_osds_in{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -614,6 +620,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -673,7 +680,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_osds_down{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_osds_down{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -692,6 +699,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -751,7 +759,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_osds_up{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_osds_up{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -770,6 +778,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -829,7 +838,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_osds_down{cluster='$cluster',instance='$instance',job='ceph-exporter'}[1m]",
+                "expr": "ceph_osds_down{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -848,6 +857,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
@@ -907,7 +917,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_osd_pgs)[1m]",
+                "expr": "avg(ceph_osd_pgs)",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -985,7 +995,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_osd_perf_apply_latency_seconds)[1m]",
+                "expr": "avg(ceph_osd_perf_apply_latency_seconds)",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -1063,7 +1073,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_osd_perf_commit_latency_seconds)[1m]",
+                "expr": "avg(ceph_osd_perf_commit_latency_seconds)",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -1142,7 +1152,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_monitor_latency_seconds)[1m]",
+                "expr": "avg(ceph_monitor_latency_seconds)",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
