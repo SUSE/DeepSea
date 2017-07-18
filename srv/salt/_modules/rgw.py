@@ -8,7 +8,8 @@ import json
 import boto
 import boto.s3.connection
 import boto.exception
-
+import glob
+import re
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def configuration(role):
             for rgw_config in  __pillar__['rgw_configurations'].keys():
                 if rgw_config in role:
                     return rgw_config
-    return 
+    return
 
 
 
@@ -73,7 +74,7 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
     """
     if 'rgw_configurations' not in __pillar__:
         return
-    
+
     for role in __pillar__['rgw_configurations']:
         for user in __pillar__['rgw_configurations'][role]['users']:
             if 'uid' not in user or 'name' not in user:
@@ -109,26 +110,9 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache"):
 
             proc.wait()
 
-
-def create_bucket(**kwargs):
-    s3conn = boto.connect_s3(
-        aws_access_key_id=kwargs['access_key'],
-        aws_secret_access_key=kwargs['secret_key'],
-        host=kwargs['host'],
-        is_secure=kwargs['ssl'],
-        port=kwargs['port'],
-        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
-    )
-    try:
-        s3conn.create_bucket(kwargs['bucket_name'])
-    except boto.exception.S3CreateError:
-        return False
-    return True
-
-
 def _key(user, field, pathname):
     """
-    Read the filename and return the key value.  
+    Read the filename and return the key value.
     """
     data = None
     filename = "{}/user.{}.json".format(pathname, user)
@@ -143,9 +127,93 @@ def _key(user, field, pathname):
 
 def access_key(user, pathname="/srv/salt/ceph/rgw/cache"):
     if not user:
-        raise ValueError("ERROR: no user specified") 
+        raise ValueError("ERROR: no user specified")
     return _key(user, 'access_key', pathname)
 
 def secret_key(user, pathname="/srv/salt/ceph/rgw/cache"):
     return _key(user, 'secret_key', pathname)
 
+def endpoints(cluster='ceph'):
+    result = []
+    search = "I@cluster:{}".format(cluster)
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
+                                                    use_cached_grains=True,
+                                                    grains_fallback=False,
+                                                    opts=__opts__)
+    cached = pillar_util.get_minion_pillar()
+    for minion in cached:
+        if 'rgw_endpoint' in cached[minion]:
+            match = re.search(r'http(s?)://(.+):?(\d*)', cached[minion]['rgw_endpoint'])
+            if match:
+                result.append({
+                    'host': match.group(2),
+                    'port': int(match.group(3)) if match.group(3) else 7480,
+                    'ssl': match.group(1) == 's',
+                    'url': cached[minion]['rgw_endpoint']
+                })
+            else:
+                result.append({
+                    'host': None,
+                    'port': None,
+                    'ssl': None,
+                    'url': cached[minion]['rgw_endpoint']
+                })
+            return result
+
+    port = '7480'  # civetweb default port
+    ssl = ''
+    admin_path = 'admin'
+    for rgw_conf_file_path in glob.glob("/srv/salt/ceph/configuration/files/ceph.conf.*"):
+        if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
+            with open(rgw_conf_file_path) as rgw_conf_file:
+                for line in rgw_conf_file:
+                    if line:
+                        match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
+                        if match:
+                            port = int(match.group(1))
+                            ssl = match.group(2)
+
+                        match = re.search(r'rgw.*admin.*entry.*=\s*(\w+)', line)
+                        if match:
+                            admin_path = match.group(1)
+
+    local = salt.client.LocalClient()
+    fqdns = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
+    for _, grains in fqdns.items():
+        result.append({
+            'host': grains['fqdn'],
+            'port': port,
+            'ssl': ssl == 's',
+            'url': "http{}://{}:{}/{}".format(ssl, grains['fqdn'], port, admin_path)
+        })
+
+    return result
+
+def s3connect(user):
+    endpoint = endpoints()[0]
+
+    s3conn = boto.connect_s3(
+        aws_access_key_id=access_key(user),
+        aws_secret_access_key=secret_key(user),
+        host=endpoint['host'],
+        is_secure=bool(endpoint['ssl']),
+        port=int(endpoint['port']),
+        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+    )
+    return s3conn
+
+def create_bucket(**kwargs):
+    s3conn = s3connect(kwargs['user'])
+    try:
+        s3conn.create_bucket(kwargs['bucket_name'])
+    except boto.exception.S3CreateError:
+        return False
+    return True
+
+def lookup_bucket(user, bucket):
+    s3conn = s3connect(user)
+    if s3conn.lookup(bucket, validate=True) is None:
+        return False
+
+    return True
