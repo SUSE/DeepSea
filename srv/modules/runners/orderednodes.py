@@ -16,7 +16,7 @@ def _preserve_order_sorted(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def unique(cluster='ceph', exclude=[]):
+def unique(cluster='ceph', exclude=[], single=False):
     """ 
     Assembling a list of nodes.
     Ordered(MON, MGR, OSD, MDS, RGW, IGW)
@@ -42,6 +42,9 @@ def unique(cluster='ceph', exclude=[]):
     for role in roles:
         nodes = client.cmd("I@roles:{} and {}".format(role, cluster_assignment), 'pillar.get', ['roles'], expr_form="compound")
         all_clients += nodes.keys()
+
+    if single:
+        all_clients = all_clients[:1]
 
     sys.stdout = _stdout
     return _preserve_order_sorted(all_clients)

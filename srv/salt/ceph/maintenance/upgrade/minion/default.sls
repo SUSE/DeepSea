@@ -41,7 +41,11 @@ common packages:
 #    - sls: ceph.warning.noout
 #    - failhard: True
 
-{% for host in salt.saltutil.runner('orderednodes.unique', cluster='ceph') %}
+{% set clustername = salt['pillar.get']('cluster', 'ceph') %}
+{% set exclude = salt['pillar.get']('exclude_from_upgrade', []) %}
+{% set single = salt['pillar.get']('single_node_upgrade', False) %}
+
+{% for host in salt.saltutil.runner('orderednodes.unique', cluster=clustername, exclude=exclude, single=single ) %}
 
 upgrading {{ host }}:
   salt.runner:
