@@ -1153,6 +1153,45 @@ class TestOSDCommands():
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
     @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_27th_twodigit(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And the device has #partitions > 10
+        And is_partition() returns True
+        And the device is not a nvme
+        And the device is the 27th so will be /dev/sdaa
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sdaa'}
+        glob_mock.glob.return_value = ['/dev/sdaa10', '/dev/sdaa11']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == '11'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_twodigit(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And the device has #partitions > 10
+        And is_partition() returns True
+        And the device is not a nvme
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sda'}
+        glob_mock.glob.return_value = ['/dev/sda10', '/dev/sda11']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == '11'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
     def test_highest_partition_27th_no_partitions(self, glob_mock, part_mock, osdc_o):
         """
         Given there is a device
@@ -1163,7 +1202,7 @@ class TestOSDCommands():
         Expect to return 2
         """
         kwargs = {'device': '/dev/sdaa'}
-        glob_mock.glob.return_value = ['/dev/sdaa']
+        glob_mock.glob.return_value = []
         part_mock.return_value = True
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
