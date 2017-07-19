@@ -448,6 +448,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/services/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sync
 	install -m 644 srv/salt/ceph/sync/*.sls $(DESTDIR)/srv/salt/ceph/sync/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags
+	install -m 644 srv/salt/ceph/setosdflags/*.sls $(DESTDIR)/srv/salt/ceph/setosdflags
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time
 	install -m 644 srv/salt/ceph/time/default.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -m 644 srv/salt/ceph/time/disabled.sls $(DESTDIR)/srv/salt/ceph/time/
@@ -467,6 +469,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/wait/4hours/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/4hours/until/OK
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/until/OK
 	install -m 644 srv/salt/ceph/wait/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/until/OK
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/until/expired/30sec
+	install -m 644 srv/salt/ceph/wait/until/expired/30sec/*.sls $(DESTDIR)/srv/salt/ceph/wait/until/expired/30sec
 	# state files - check processes
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes
 	install -m 644 srv/salt/ceph/processes/*.sls $(DESTDIR)/srv/salt/ceph/processes/

@@ -1,26 +1,24 @@
-{% if salt['saltutil.runner']('validate.setup') == False %}
+{% if salt['saltutil.runner']('upgrade.check') and salt['saltutil.runner']('validate.setup') != False %}
 
-validate failed:
+pre master readycheck:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+    - hardfail: True
+
+{% set notice = salt['saltutil.runner']('advise.salt_upgrade') %}
+  
+sync all:
   salt.state:
-    - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '*'
+    - sls: ceph.sync
     - failhard: True
-
-{% endif %}
-
-{% set notice =  salt['saltutil.runner']('advise.salt_upgrade') %}
 
 # May generate an unpack error which is safe to ignore
 update deepsea and master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.master
-  
-sync master:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.sync
-    - failhard: True
 
 upgrading:
   salt.state:
@@ -34,4 +32,12 @@ reboot master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart
 
+{% else %}
 
+validate failed:
+  salt.state:
+    - name: just.exit
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}

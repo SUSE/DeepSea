@@ -19,7 +19,7 @@ class HealthCheck(object):
         """
         Default settings can be overridden
         """
-        if 'status' not in kwargs:
+        if 'nohealthcheck' not in kwargs and 'status' not in kwargs:
             msg = "status argument required\nExample: status=HEALTH_OK"
             raise ValueError(msg)
 
@@ -86,6 +86,13 @@ class HealthCheck(object):
         else:
             log.debug("status == {}".format(settings['status']))
             return (current == settings['status'])
+
+    def just(self):
+        time.sleep(self.settings['delay'])
+
+def just(**kwargs):
+    hc = HealthCheck(**kwargs)
+    hc.just()
 
 def until(**kwargs):
     """

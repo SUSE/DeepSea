@@ -19,7 +19,8 @@ def ready(**kwargs):
     settings = {
                  'timeout': None,
                  'search': None,
-                 'sleep': 6
+                 'sleep': 6,
+                 'hardfail': True
                }
     settings.update(kwargs)
 
@@ -63,6 +64,8 @@ def ready(**kwargs):
         if end_time:
             if end_time < time.time():
                 log.warn("Timeout reached")
+                if settings['hardfail']:
+                    raise RuntimeError("Timeout reached. {} seems to be down.".format(",".join(list(expected - actual))))
                 return False
         time.sleep(settings['sleep'])
 

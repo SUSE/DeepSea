@@ -15,7 +15,6 @@ def _preserve_order_sorted(seq):
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
 
-
 def unique(cluster='ceph', exclude=[]):
     """ 
     Assembling a list of nodes.
