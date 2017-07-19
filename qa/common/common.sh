@@ -280,6 +280,26 @@ EOF
   _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
 }
 
+function igw_info {
+  #
+  # peek at igw information on the igw node
+  #
+  local TESTSCRIPT=/tmp/igw_info.sh
+  local IGWNODE=$(_first_x_node igw)
+  cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "igw info script running as $(whoami) on $(hostname --fqdn)"
+rpm -q lrbd || true
+lrbd --output || true
+ls -lR /sys/kernel/config/target/ || true
+netstat --tcp --listening --numeric-ports
+echo "See 3260 there?"
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
 function iscsi_mount_and_sanity_test {
   #
   # run iscsi mount test script on the client node
