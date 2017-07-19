@@ -409,6 +409,14 @@ def restore_weight(id, **kwargs):
     o.restore()
     return True
 
+def _find_paths(device):
+    if 'nvme' in device:
+        pathnames = glob.glob("{}p[0-9]*".format(device))
+    else:
+        pathnames = glob.glob("{}[0-9]*".format(device))
+    return pathnames
+
+
 def readlink(device, follow=True):
     """
     Return the short name for a symlink device
@@ -700,7 +708,7 @@ class OSDPartitions(object):
 
         Note: expected to only run inside of "not is_prepared"
         """
-        pathnames = glob.glob("{}?*".format(self.osd.device))
+        pathnames = _find_paths(self.osd.device)
         if pathnames:
             cmd = "sgdisk -Z --clear -g {}".format(self.osd.device)
             rc, _stdout, _stderr = _run(cmd)
@@ -888,7 +896,7 @@ class OSDPartitions(object):
         Return the last partition. Only the number is needed for the sgdisk
         command.
         """
-        pathnames = glob.glob("{}?*".format(device))
+        pathnames = _find_paths(device)
         if pathnames:
             partitions = sorted([re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
             log.debug("partitions: {}".format(partitions))
@@ -954,8 +962,10 @@ class OSDCommands(object):
         """
         if device:
             log.debug("{} device: {}".format(partition_type, device))
-            pathnames = glob.glob("{}?*".format(device))
+            pathnames = _find_paths(device)
+            # the to int -> key=int conversion fails here
             partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int, reverse=True)
+            # best strategy? remove key=int and do checks before conversion ourselves?
             log.debug("partitions: {}".format(partitions))
             for partition in partitions:
                 log.debug("checking partition {} on device {}".format(partition, device))
@@ -995,7 +1005,7 @@ class OSDCommands(object):
         """
         Return whether the device is already partitioned
         """
-        result = glob.glob("{}?*".format(device))
+        result = _find_paths(device)
         log.debug("Found {} partitions on {}".format(result, device))
         return result != []
 

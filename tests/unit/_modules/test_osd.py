@@ -1,3 +1,5 @@
+from pyfakefs import fake_filesystem as fake_fs
+from pyfakefs import fake_filesystem_glob as fake_glob
 import pytest
 from srv.salt._modules import osd
 from mock import MagicMock, patch, mock
@@ -6,6 +8,19 @@ class TestOSDInstanceMethods():
     '''
     This class contains a set of functions that test srv.salt._modules.osd
     '''
+    fs = fake_fs.FakeFilesystem()
+    dev_dir = '/dev'
+    devices = ['sda', 'sdaa', 'sda1', 'sda10', 'sdaa1', 'sdaa10',
+               'sdax', 'sdax10',
+               'nvme0n1', 'nvme1n1', 'nvme100n1', 'nvme0n1p1',
+               'nvme0n1p100', 'nvme0n100', 'nvme1n1p1', 'nvme100n1p1']
+    for dev in devices:
+        fs.CreateFile('{}/{}'.format(dev_dir, dev))
+
+    f_glob = fake_glob.FakeGlobModule(fs)
+    f_os = fake_fs.FakeOsModule(fs)
+    f_open = fake_fs.FakeFileOpen(fs)
+
     @mock.patch('srv.salt._modules.osd.glob')
     def test_paths(self, glob):
         glob.return_value.glob = []
@@ -57,10 +72,50 @@ class TestOSDInstanceMethods():
         glob.glob.assert_called_with('/var/lib/ceph/osd/*/fsid')
         assert type(ret) is list
 
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_default(self):
+        ret = osd._find_paths('/dev/sda')
+        assert ret == ['/dev/sda10', '/dev/sda1']
+
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_none(self):
+        ret = osd._find_paths('/dev/sdx')
+        assert ret == []
+
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_long(self):
+        ret = osd._find_paths('/dev/sdaa')
+        assert ret == ['/dev/sdaa1', '/dev/sdaa10']
+
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_one_high(self):
+        ret = osd._find_paths('/dev/sdax')
+        assert ret == ['/dev/sdax10']
+
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_nvme_1(self):
+        ret = osd._find_paths('/dev/nvme0n1')
+        assert ret == ['/dev/nvme0n1p1', '/dev/nvme0n1p100']
+
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_nvme_2(self):
+        ret = osd._find_paths('/dev/nvme0n1')
+        assert ret == ['/dev/nvme0n1p1', '/dev/nvme0n1p100']
+    
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_nvme_3(self):
+        ret = osd._find_paths('/dev/nvme1n1')
+        assert ret == ['/dev/nvme1n1p1']
+
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test__find_paths_nvme_4(self):
+        ret = osd._find_paths('/dev/nvme100n1')
+        assert ret == ['/dev/nvme100n1p1']
 
     @pytest.mark.skip(reason="Low priority: skipped")
     def test_readlink(self):
         pass
+    
 
 @pytest.mark.skip(reason="Low priority: skipped")
 class TetstOSDState():
@@ -1008,7 +1063,7 @@ class TestOSDPartitions():
         osd_config = OSDConfig()
         obj = osdp_o(osd_config)
         ret = obj._last_partition(osd_config.device)
-        glob_mock.glob.assert_called_with('/dev/sdx?*')
+        glob_mock.glob.assert_called_with('/dev/sdx[0-9]*')
         assert type(ret) is int
 
     @mock.patch('srv.salt._modules.osd.glob')
@@ -1017,7 +1072,7 @@ class TestOSDPartitions():
         osd_config = OSDConfig()
         obj = osdp_o(osd_config)
         ret = obj._last_partition(osd_config.device)
-        glob_mock.glob.assert_called_with('/dev/sdx?*')
+        glob_mock.glob.assert_called_with('/dev/sdx[0-9]*')
         assert ret == 0
 
     @pytest.mark.skip(reason='postponed')
@@ -1116,6 +1171,101 @@ class TestOSDCommands():
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
     @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_no_nvme(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And is_partition() returns True
+        And the device is not a nvme
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sda'}
+        glob_mock.glob.return_value = ['/dev/sda1', '/dev/sda2']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == '2'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_27th(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And is_partition() returns True
+        And the device is not a nvme
+        And the device is the 27th so will be /dev/sdaa
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sdaa'}
+        glob_mock.glob.return_value = ['/dev/sdaa1', '/dev/sdaa2']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == '2'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_27th_twodigit(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And the device has #partitions > 10
+        And is_partition() returns True
+        And the device is not a nvme
+        And the device is the 27th so will be /dev/sdaa
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sdaa'}
+        glob_mock.glob.return_value = ['/dev/sdaa10', '/dev/sdaa11']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == '11'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_twodigit(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And the device has #partitions > 10
+        And is_partition() returns True
+        And the device is not a nvme
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sda'}
+        glob_mock.glob.return_value = ['/dev/sda10', '/dev/sda11']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == '11'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_27th_no_partitions(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And the device has partitions
+        And is_partition() returns True
+        And the device is not a nvme
+        And the device is the 27th so will be /dev/sdaa
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/sdaa'}
+        glob_mock.glob.return_value = []
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == 0
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
     def test_highest_partition_1(self, glob_mock, part_mock, osdc_o):
         """
         Given there is a device
@@ -1160,7 +1310,7 @@ class TestOSDCommands():
         osd_config = OSDConfig()
         obj = osdc_o(osd_config)
         ret = obj.is_partitioned(osd_config.device)
-        glob_mock.glob.assert_called_with('/dev/sdx?*')
+        glob_mock.glob.assert_called_with('/dev/sdx[0-9]*')
         assert ret is True
 
     @mock.patch('srv.salt._modules.osd.glob')
@@ -1169,7 +1319,7 @@ class TestOSDCommands():
         osd_config = OSDConfig()
         obj = osdc_o(osd_config)
         ret = obj.is_partitioned(osd_config.device)
-        glob_mock.glob.assert_called_with('/dev/sdx?*')
+        glob_mock.glob.assert_called_with('/dev/sdx[0-9]*')
         assert ret is False
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
