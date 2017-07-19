@@ -199,7 +199,7 @@ function cat_ceph_conf {
 function ceph_cluster_status {
   ceph osd tree
   ceph osd pool ls detail
-  ceph -s
+  ceph health detail -f json-pretty
 }
 
 
