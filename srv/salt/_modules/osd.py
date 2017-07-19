@@ -107,12 +107,16 @@ def configured(**kwargs):
         devices = __pillar__['ceph']['storage']['osds']
         devices = _filter_devices(devices, **kwargs)
         devices = devices.keys()
-    if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
+    if ('storage' in __pillar__ and
+        'osds' in __pillar__['storage'] and
+        type(__pillar__['storage']['osds']) is list):
         devices = __pillar__['storage']['osds']
         log.debug("devices: {}".format(devices))
         if 'format' in kwargs and kwargs['format'] != 'filestore':
             return []
-    if 'storage' in __pillar__ and 'data+journals' in __pillar__['storage']:
+    if ('storage' in __pillar__ and
+        'data+journals' in __pillar__['storage'] and
+        type(__pillar__['storage']['data+journals']) is list):
         [devices.append(x.keys()[0]) for x in __pillar__['storage']['data+journals']]
     log.debug("devices: {}".format(devices))
 
@@ -554,7 +558,7 @@ class OSDConfig(object):
                 return self.tli[self.device]['format']
             return OSDConfig.DEFAULT_FORMAT_FOR_V2
 
-        raise("Probably a parsing Error or something not written to the pillar yet..")
+        raise RuntimeError("Probably a parsing Error or something not written to the pillar yet..")
 
     def set_journal(self, default=False):
         """
