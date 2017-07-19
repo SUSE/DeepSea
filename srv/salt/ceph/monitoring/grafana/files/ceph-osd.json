@@ -99,7 +99,7 @@
             },
             "targets": [
               {
-                "expr": "ceph_osd_utilization{cluster='$cluster',instance='$instance',job='ceph-exporter',osd='$osd'}[1m]",
+                "expr": "ceph_osd_utilization{cluster='$cluster',instance='$instance',job='ceph-exporter',osd='$osd'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -120,6 +120,7 @@
                 "value": "null"
               }
             ],
+            "timeFrom": "1m",
             "valueName": "current"
           },
           {
