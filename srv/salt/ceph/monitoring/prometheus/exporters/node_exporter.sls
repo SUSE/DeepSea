@@ -30,7 +30,7 @@ run smartmon exporter hourly:
     - mode: 755
     - contents: |
         #!/bin/sh
-        /var/lib/prometheus/node-exporter/smartmon.sh > /var/lib/prometheus/node-exporter/smartmon.prom
+        /var/lib/prometheus/node-exporter/smartmon.sh > /var/lib/prometheus/node-exporter/smartmon.prom 2> /dev/null
 
 start node exporter:
   service.running:
