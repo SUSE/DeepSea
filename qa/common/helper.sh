@@ -68,3 +68,8 @@ function _run_test_script_on_node {
   test "x$RESULT" = "xOK"
 }
 
+function _grace_period {
+  local SECONDS=$1
+  echo "${SECONDS}-second grace period"
+  sleep $SECONDS
+}

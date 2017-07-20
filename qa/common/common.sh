@@ -54,6 +54,7 @@ function run_stage_3 {
   _run_stage 3 "$@"
   salt_cmd_run_lsblk
   cat_ceph_conf
+  admin_auth_status
 }
 
 function run_stage_4 {
@@ -196,9 +197,21 @@ function cat_ceph_conf {
   cat /etc/ceph/ceph.conf
 }
 
+function admin_auth_status {
+  ceph auth get client.admin
+  ls -l /etc/ceph/ceph.client.admin.keyring
+  cat /etc/ceph/ceph.client.admin.keyring
+}
+
 function ceph_cluster_status {
+  ceph pg stat -f json-pretty
+  _grace_period 1
+  ceph health detail -f json-pretty
+  _grace_period 1
   ceph osd tree
-  ceph osd pool ls detail
+  _grace_period 1
+  ceph osd pool ls detail -f json-pretty
+  _grace_period 1
   ceph -s
 }
 
