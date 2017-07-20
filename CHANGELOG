@@ -3,18 +3,19 @@ Thu Jul 20 10:28:31 UTC 2017 - jfajerski@suse.com
 - Version 0.7.17
 - Change default proposal to new profiles
 - Propose bluestore OSDs by default
-- Fixes for upgrade
+- Fixes for upgrade (bsc#1043863, bsc#1048186)
 - Fixes for import of ceph-deploy cluster
 - Add support for new 'ceph health' format
 - Add smartmon and rbd monitoring to grafana
-- Add mgr removal
+- Add mgr removal (bsc#1047892)
 - Fix rbd demo image creation for iscsi
-- Deploy salt-api and add eauth sharedsecret
+- Deploy salt-api and add eauth sharedsecret (bsc#1049215)
+- Fix mgr caps in various keyrings (bsc#1049151)
 - Improve integrtation tests
 - Update benchmark capabilities
 
 -------------------------------------------------------------------
-Thu Jul 6 15:52:53 UTC 2017 - ejackson@suse.com
+Fri Jul  7 00:02:28 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.16
 - Upgrade fixes
