@@ -85,7 +85,7 @@ class TestOSDInstanceMethods():
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_long(self):
         ret = osd._find_paths('/dev/sdaa')
-        assert ret == ['/dev/sdaa1', '/dev/sdaa10']
+        assert ret == ['/dev/sdaa10', '/dev/sdaa1']
 
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_one_high(self):
