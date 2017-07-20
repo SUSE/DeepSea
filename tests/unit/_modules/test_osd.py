@@ -75,7 +75,7 @@ class TestOSDInstanceMethods():
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_default(self):
         ret = osd._find_paths('/dev/sda')
-        assert ret == ['/dev/sda10', '/dev/sda1']
+        assert sorted(ret) == sorted(['/dev/sda10', '/dev/sda1'])
 
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_none(self):
