@@ -280,6 +280,24 @@ EOF
   _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
 }
 
+function iscsi_kludge {
+  #
+  # apply kludge to work around bsc#1049669
+  #
+  local TESTSCRIPT=/tmp/iscsi_kludge.sh
+  local IGWNODE=$(_first_x_node igw)
+  cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "igw kludge script running as $(whoami) on $(hostname --fqdn)"
+sed -i -e 's/\("host": "target[[:digit:]]\+\)"/\1.teuthology"/' /tmp/lrbd.conf
+cat /tmp/lrbd.conf
+source /etc/sysconfig/lrbd; lrbd -v $LRBD_OPTIONS -f /tmp/lrbd.conf
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
 function igw_info {
   #
   # peek at igw information on the igw node
