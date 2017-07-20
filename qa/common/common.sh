@@ -332,7 +332,7 @@ function iscsi_mount_and_sanity_test {
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
 zypper --non-interactive --no-gpg-checks refresh
-zypper --non-interactive install --no-recommends open-iscsi
+zypper --non-interactive install --no-recommends open-iscsi multipath-tools
 systemctl start iscsid.service
 sleep 5
 systemctl status -l iscsid.service
