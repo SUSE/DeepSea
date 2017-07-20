@@ -11,7 +11,7 @@ rbd text exporter:
     - source: salt://ceph/monitoring/prometheus/exporters/files/rbd.sh
     - makedirs: True
 
-rbd_exporter cron job:
+/var/lib/prometheus/node-exporter/rbd.sh > /var/lib/prometheus/node-exporter/rbd.prom 2> /dev/null:
   cron.present:
-    - name: /var/lib/prometheus/node-exporter/rbd.sh > /var/lib/prometheus/node-exporter/rbd.prom 2> /dev/null
     - minute: '*/5'
+    - identifier: deepsea rbd_exporter cron job
