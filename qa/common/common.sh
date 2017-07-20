@@ -204,9 +204,15 @@ function admin_auth_status {
 }
 
 function ceph_cluster_status {
-  ceph osd tree
-  ceph osd pool ls detail
+  ceph pg stat -f json-pretty
+  _grace_period 1
   ceph health detail -f json-pretty
+  _grace_period 1
+  ceph osd tree
+  _grace_period 1
+  ceph osd pool ls detail -f json-pretty
+  _grace_period 1
+  ceph -s
 }
 
 
