@@ -11,6 +11,6 @@ rbd text exporter:
     - source: salt://ceph/monitoring/prometheus/exporters/files/rbd.sh
     - makedirs: True
 
-/var/lib/prometheus/node-exporter/rbd.sh > /var/lib/prometheus/node-exporter/rbd.prom:
+/var/lib/prometheus/node-exporter/rbd.sh > /var/lib/prometheus/node-exporter/rbd.prom 2> /dev/null:
   cron.present:
     - minute: '*/5'
