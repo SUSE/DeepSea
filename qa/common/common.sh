@@ -341,9 +341,11 @@ iscsiadm -m node -L all
 systemctl start multipathd.service
 sleep 5
 systemctl status -l multipathd.service
-mkfs -t xfs /dev/mapper/mpatha
+ls -lR /dev/mapper
+multipath -ll
+mkfs -t xfs /dev/dm-0
 test -d /mnt
-mount /dev/mapper/mpatha /mnt
+mount /dev/dm-0 /mnt
 df -h /mnt
 touch /mnt/bubba
 test -f /mnt/bubba
