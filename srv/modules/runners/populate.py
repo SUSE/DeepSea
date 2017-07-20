@@ -1037,14 +1037,18 @@ def engulf_existing_cluster(**kwargs):
             # We'll talk to this minion later to obtain keyrings
             admin_minion = minion
 
-        if not info["running_services"].keys() and not is_admin:
-            # No ceph services running, no admin key, don't assign it
-            # to the cluster
+        is_master = local.cmd(minion, "pillar.get", [ "master_minion" ])[minion] == minion
+
+        if not info["running_services"].keys() and not is_admin and not is_master:
+            # No ceph services running, no admin key, not the master_minion,
+            # don't assign it to the cluster
             continue
 
         policy_cfg.append("cluster-ceph/cluster/" + minion + ".sls")
 
-        if is_admin:
+        if is_master:
+            policy_cfg.append("role-master/cluster/" + minion + ".sls")
+        elif is_admin:
             policy_cfg.append("role-admin/cluster/" + minion + ".sls")
 
         if "ceph-mon" in info["running_services"].keys():
