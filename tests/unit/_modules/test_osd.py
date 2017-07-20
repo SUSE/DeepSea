@@ -85,23 +85,23 @@ class TestOSDInstanceMethods():
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_long(self):
         ret = osd._find_paths('/dev/sdaa')
-        assert ret == ['/dev/sdaa10', '/dev/sdaa1']
+        assert sorted(ret) == sorted(['/dev/sdaa10', '/dev/sdaa1'])
 
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_one_high(self):
         ret = osd._find_paths('/dev/sdax')
-        assert ret == ['/dev/sdax10']
+        assert sorted(ret) == sorted(['/dev/sdax10'])
 
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_nvme_1(self):
         ret = osd._find_paths('/dev/nvme0n1')
-        assert ret == ['/dev/nvme0n1p1', '/dev/nvme0n1p100']
+        assert sorted(ret) == sorted(['/dev/nvme0n1p1', '/dev/nvme0n1p100'])
 
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_nvme_2(self):
         ret = osd._find_paths('/dev/nvme0n1')
-        assert ret == ['/dev/nvme0n1p1', '/dev/nvme0n1p100']
-    
+        assert sorted(ret) == sorted(['/dev/nvme0n1p1', '/dev/nvme0n1p100'])
+
     @mock.patch('glob.glob', new=f_glob.glob)
     def test__find_paths_nvme_3(self):
         ret = osd._find_paths('/dev/nvme1n1')
@@ -115,7 +115,7 @@ class TestOSDInstanceMethods():
     @pytest.mark.skip(reason="Low priority: skipped")
     def test_readlink(self):
         pass
-    
+
 
 @pytest.mark.skip(reason="Low priority: skipped")
 class TetstOSDState():
@@ -157,7 +157,7 @@ class TestOSDConfig():
     def test_convert_tli(self):
         pass
 
-    def test_set_bytes_valid(self, osd_o):  
+    def test_set_bytes_valid(self, osd_o):
         osd.__grains__ = {'id': 'data1.ceph'}
         cephdisks_out = {'data1.ceph': [{'Device File': '/dev/sdx', 'Bytes': 1000000}]}
         osd.__salt__ = {'mine.get': lambda tgt, fun: cephdisks_out}
@@ -165,7 +165,7 @@ class TestOSDConfig():
         assert type(ret) is int
         assert ret == 1000000
 
-    def test_set_bytes_invalid(self, osd_o):  
+    def test_set_bytes_invalid(self, osd_o):
         osd.__grains__ = {'id': 'data1.ceph'}
         cephdisks_out = {}
         osd.__salt__ = {'mine.get': lambda tgt, fun: cephdisks_out}
@@ -173,7 +173,7 @@ class TestOSDConfig():
             osd_o.set_bytes()
             assert 'Mine on data1.ceph' in str(excinfo.value)
 
-    def test_set_capacity(self, osd_o):  
+    def test_set_capacity(self, osd_o):
         osd.__grains__ = {'id': 'data1.ceph'}
         cephdisks_out = {'data1.ceph': [{'Device File': '/dev/sdx', 'Capacity': 1000000}]}
         osd.__salt__ = {'mine.get': lambda tgt, fun: cephdisks_out}
@@ -181,7 +181,7 @@ class TestOSDConfig():
         ret = osd_o.set_capacity()
         assert ret == 1000000
 
-    def test_set_capacity_invalid(self, osd_o):  
+    def test_set_capacity_invalid(self, osd_o):
         osd.__grains__ = {'id': 'data1.ceph'}
         cephdisks_out = {}
         osd.__salt__ = {'mine.get': lambda tgt, fun: cephdisks_out}
@@ -319,7 +319,7 @@ class TestOSDConfig():
         data = [{'/dev/sdx': '/dev/journal'}]
         ret = osd_o._convert_data_journals(data)
         assert ret == {'/dev/sdx': '/dev/journal'}
-    
+
     @mock.patch('srv.salt._modules.osd.readlink')
     def test_convert_data_journals_empty(self, readlink, osd_o):
         #                       why reverse?
@@ -333,7 +333,7 @@ class TestOSDConfig():
         ident = {'/dev/sdx': {'key': 'value'}}
         key = 'key'
         ret = osd_o._check_existence(key, ident, device)
-        assert ret == 'value' 
+        assert ret == 'value'
 
     def test_check_existence_default(self, osd_o):
         device = '/dev/sdx'
@@ -551,7 +551,7 @@ class TestOSDPartitions():
         cnf = osd.OSDPartitions
         yield cnf
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._xfs_partitions')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._xfs_partitions')
     def test_partition_filestore(self, xfs_part_mock, osdp_o):
         kwargs = {'format': 'filestore'}
         osd_config = OSDConfig(**kwargs)
@@ -559,7 +559,7 @@ class TestOSDPartitions():
         obj.partition()
         xfs_part_mock.assert_called_with(obj.osd.device, obj.osd.size)
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._bluestore_partitions')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions._bluestore_partitions')
     def test_partition_bluestore(self, blue_part_mock, osdp_o):
         kwargs = {'format': 'bluestore'}
         osd_config = OSDConfig(**kwargs)
@@ -567,7 +567,7 @@ class TestOSDPartitions():
         obj.partition()
         blue_part_mock.assert_called_with(obj.osd.device)
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_colocated(self, create_mock, osdp_o):
         """
         Given I have a journal
@@ -582,7 +582,7 @@ class TestOSDPartitions():
         obj._xfs_partitions(obj.osd.device, obj.osd.size)
         create_mock.assert_called_with(obj.osd.journal, [('journal', obj.osd.journal_size), ('osd', None)])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_not_colocated(self, create_mock, osdp_o):
         """
         Given I have a journal
@@ -599,7 +599,7 @@ class TestOSDPartitions():
         create_mock.assert_any_call(obj.osd.journal, [('journal', obj.osd.journal_size)])
         create_mock.assert_any_call(obj.osd.device, [('osd', None)])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_colocated_no_journal_size(self, create_mock, osdp_o):
         """
         Given I have a journal
@@ -615,7 +615,7 @@ class TestOSDPartitions():
         obj._xfs_partitions(obj.osd.device, obj.osd.size)
         create_mock.assert_called_with(obj.osd.device, [('journal', obj.osd.journal_size), ('osd', None)])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_not_colocated_no_journal_size(self, create_mock, osdp_o):
         """
         Given I have a journal
@@ -633,7 +633,7 @@ class TestOSDPartitions():
         create_mock.assert_any_call(obj.osd.journal, [('journal', obj.osd.journal_size)])
         create_mock.assert_any_call(obj.osd.device, [('osd', None)])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')  
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_no_journal(self, create_mock, osdp_o):
         """
         Given I don't have a journal
@@ -647,7 +647,7 @@ class TestOSDPartitions():
         obj._xfs_partitions(obj.osd.device, obj.osd.size)
         create_mock.assert_called_with(obj.osd.device, [('journal', obj.osd.journal_size), ('osd', None)])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create') 
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_no_journal_small(self, create_mock, osdp_o):
         """
         Given I don't have a journal
@@ -678,10 +678,10 @@ class TestOSDPartitions():
         And wal is equivalent to the device
         Expect to call log() ( and leave the partition creation to ceph-disk )
         """
-        kwargs = {'format': 
-                  'bluestore', 
-                  'wal': '/dev/sdx', 
-                  'db': '/dev/sdx', 
+        kwargs = {'format':
+                  'bluestore',
+                  'wal': '/dev/sdx',
+                  'db': '/dev/sdx',
                   'wal_size': '1000'}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
@@ -701,16 +701,16 @@ class TestOSDPartitions():
         """
         kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdx',
-                  'db': '/dev/sdx', 
-                  'wal_size': '1000', 
+                  'db': '/dev/sdx',
+                  'wal_size': '1000',
                   'db_size': 10000}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
         obj._bluestore_partitions(obj.osd.device)
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
         mock_log.warn.assert_any_call('DB size is unsupported for same device of /dev/sdx')
-    
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create') 
+
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_bluestore_partitions_wal_and_db_all_size_no_eq(self, create_mock, osdp_o):
         """
         Given I defined a wal and a db
@@ -720,7 +720,7 @@ class TestOSDPartitions():
         Expect to call create('/dev/sddb', [('db', db_size)])
         Expect to call create('/dev/sdwal', [('wal', wal_size)])
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
                   'db': '/dev/sddb',
                   'wal_size': 'walsize',
@@ -731,7 +731,7 @@ class TestOSDPartitions():
         create_mock.assert_any_call('/dev/sdwal', [('wal', 'walsize')])
         create_mock.assert_any_call('/dev/sddb', [('db', 'dbsize')])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create') 
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_wal_and_db_db_size_no_eq(self, mock_log, create_mock, osdp_o):
         """
@@ -742,7 +742,7 @@ class TestOSDPartitions():
         Expect to call create('/dev/sdx', [('wal', wal_size)])
         Expect to call log()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
                   'db': '/dev/sddb',
                   'wal_size': None,
@@ -753,7 +753,7 @@ class TestOSDPartitions():
         create_mock.assert_any_call('/dev/sddb', [('db', 'dbsize')])
         mock_log.error.assert_any_call('No size specified for wal /dev/sdwal')
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create') 
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_wal_and_db_wal_size_no_eq(self, mock_log, create_mock, osdp_o):
         """
@@ -763,7 +763,7 @@ class TestOSDPartitions():
         And wal is not equivalent to the device
         Expect to call create('/dev/sdx', [('wal', wal_size)])
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
                   'db': '/dev/sddb',
                   'wal_size': 'walsize',
@@ -783,7 +783,7 @@ class TestOSDPartitions():
         Expect to call log()
         Expect to call log()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
                   'db': '/dev/sddb',
                   'wal_size': None,
@@ -802,7 +802,7 @@ class TestOSDPartitions():
         And wal is equivalent to the device
         Expect to call log()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdx',
                   'db': None,
                   'wal_size': 'walsize',
@@ -813,7 +813,7 @@ class TestOSDPartitions():
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._halve')
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create') 
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_only_wal_and_size_no_eq(self, mock_log, create_mock, halve_mock, osdp_o):
         """
@@ -824,7 +824,7 @@ class TestOSDPartitions():
         Expect to call _halve()
         Expect to call create()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
                   'db': None,
                   'wal_size': 100000,
@@ -843,7 +843,7 @@ class TestOSDPartitions():
         And I have a wal_size
         Expect to call log()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': None,
                   'db': None,
                   'wal_size': 'walsize',
@@ -861,7 +861,7 @@ class TestOSDPartitions():
         And wal is the same
         Expect to call log()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdx', # temp fix until #340 is merged
                   'db': '/dev/sddb',
                   'wal_size': None,
@@ -872,7 +872,7 @@ class TestOSDPartitions():
         mock_log.warn.assert_called_with('DB size is unsupported for same device of /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._double')
-    @mock.patch('srv.salt._modules.osd.OSDPartitions.create') 
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_only_db_and_size_no_eq_create(self, mock_log, create_mock, double_mock, osdp_o):
         """
@@ -882,7 +882,7 @@ class TestOSDPartitions():
         Expect to call log()
         Expect to call create()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': None,
                   'db': '/dev/sddb',
                   'wal_size': None,
@@ -901,7 +901,7 @@ class TestOSDPartitions():
         And I have a db_size
         Expect to call log()
         """
-        kwargs = {'format': 'bluestore', 
+        kwargs = {'format': 'bluestore',
                   'wal': None,
                   'db': None,
                   'wal_size': None,
@@ -1143,7 +1143,7 @@ class TestOSDCommands():
         obj = osdc_o(osd_config)
         ret = obj.osd_partition()
         hp_mock.assert_called_with('/dev/sdx', 'osd')
-        
+
 
     @pytest.mark.skip(reason="FIXME: refactor to _run()")
     def test_is_partition(self, osdc_o):
@@ -1295,7 +1295,7 @@ class TestOSDCommands():
         ret = obj.highest_partition(osd_config.device, 'osd')
         assert ret == 0
         log_mock.error.assert_called_with("Partition type osd not found on /dev/sdx")
-    
+
     @pytest.mark.skip(reason="Postponed to later")
     def test__cluster_name(self):
         pass
@@ -1344,7 +1344,7 @@ class TestOSDCommands():
     def test_filestore_args_1(self, hp_mock, ip_mock, osdc_o):
         """
         Given the disk is partitioned ('/dev/sdx{1,2}')
-        And there is no journal 
+        And there is no journal
         Expect to return:
         "/dev/sdx2, /dev/sdx3
         """
@@ -1355,12 +1355,12 @@ class TestOSDCommands():
         hp_mock.side_effect = [2,3]
         ret = obj._filestore_args()
         assert ret == "/dev/sdx2 /dev/sdx3"
-        
+
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
     def test_filestore_args_2(self, ip_mock, osdc_o):
         """
         Given the disk not is partitioned ('/dev/sdx')
-        And there is a journal 
+        And there is a journal
         Expect to return:
         "/dev/sdx, /dev/journal
         """
@@ -1375,7 +1375,7 @@ class TestOSDCommands():
     def test_filestore_args_3(self, ip_mock, osdc_o):
         """
         Given the disk not is partitioned ('/dev/sdx')
-        And there is no journal 
+        And there is no journal
         Expect to return:
         "/dev/sdx
         """
@@ -1399,7 +1399,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1p1
 
         """
@@ -1426,7 +1426,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal --block.db /dev/sddb2 /dev/nvme0n1p1
 
         """
@@ -1453,7 +1453,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal1 --block.db /dev/sddb /dev/nvme0n1p1
 
         """
@@ -1480,7 +1480,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal --block.db /dev/sddb1 /dev/nvme0n1p1
 
         """
@@ -1507,7 +1507,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal --block.db /dev/sddb /dev/nvme0n1p1
 
         """
@@ -1526,7 +1526,7 @@ class TestOSDCommands():
     def test_bluestore_args_5(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
-        And the wal is partitioned 
+        And the wal is partitioned
         And there are actually partitions (2)
         And the db is colocated on the wal
         and the highest partition is (3)
@@ -1534,7 +1534,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal2 --block.db /dev/sdwal3 /dev/nvme0n1p1
 
         """
@@ -1547,13 +1547,13 @@ class TestOSDCommands():
         hp_mock.side_effect = [2,3]
         ret = obj._bluestore_args()
         assert ret == "--block.wal /dev/sdwal2 --block.db /dev/sdwal3 /dev/nvme0n1p1"
-    
+
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
     @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_6(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
-        And the wal is partitioned 
+        And the wal is partitioned
         And there are actually partitions (2)
         And the db is colocated on the wal
         and the highest partition is None
@@ -1561,7 +1561,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal2 --block.db /dev/sdwal /dev/nvme0n1p1
 
         """
@@ -1580,7 +1580,7 @@ class TestOSDCommands():
     def test_bluestore_args_7(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
-        And the wal is not partitioned 
+        And the wal is not partitioned
         And the wal is eq the device
 
         And the device is partitioned
@@ -1588,7 +1588,7 @@ class TestOSDCommands():
         Expect args to be:
 
         /dev/nvme0n1p1
-        
+
         """
         kwargs = {'wal': '/dev/nvme0n1',
                   'db': None,
@@ -1605,13 +1605,13 @@ class TestOSDCommands():
     def test_bluestore_args_8(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a wal definded
-        And the wal is not partitioned 
+        And the wal is not partitioned
         And the wal is not eq the device
 
         And the device is partitioned
         And the device is a NVME
         Expect args to be:
-        
+
         """
         kwargs = {'wal': '/dev/sdwal',
                   'db': None,
@@ -1628,7 +1628,7 @@ class TestOSDCommands():
     def test_bluestore_args_9(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
-        And the db is partitioned 
+        And the db is partitioned
         And there are actually partitions (2)
         And the wal is colocated on the wal
         and the highest partition is (3)
@@ -1636,7 +1636,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.db /dev/sddb2 --block.wal /dev/sddb3 /dev/nvme0n1p1
 
         """
@@ -1649,21 +1649,21 @@ class TestOSDCommands():
         hp_mock.side_effect = [2,3]
         ret = obj._bluestore_args()
         assert ret == "--block.db /dev/sddb2 --block.wal /dev/sddb3 /dev/nvme0n1p1"
-    
+
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
     @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     def test_bluestore_args_10(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
-        And the db is partitioned 
+        And the db is partitioned
         And there are actually partitions (2)
-        And the wal is colocated on the db 
+        And the wal is colocated on the db
         and the highest partition is None
 
         And the device is partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.db /dev/sddb2 --block.wal /dev/sddb /dev/nvme0n1p1
 
         """
@@ -1682,7 +1682,7 @@ class TestOSDCommands():
     def test_bluestore_args_11(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
-        And the db is not partitioned 
+        And the db is not partitioned
         And the db is eq the device
 
         And the device is partitioned
@@ -1690,7 +1690,7 @@ class TestOSDCommands():
         Expect args to be:
 
         /dev/nvme0n1p1"
-        
+
         """
         kwargs = {'wal': None,
                   'db': '/dev/nvme0n1',
@@ -1707,13 +1707,13 @@ class TestOSDCommands():
     def test_bluestore_args_12(self, hp_mock, ip_mock, osdc_o):
         """
         Given there is only a db definded
-        And the db is not partitioned 
+        And the db is not partitioned
         And the db is not eq the device
 
         And the device is partitioned
         And the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sddb --block.db /dev/sddb /dev/nvme0n1p1"
 
         """
@@ -1740,7 +1740,7 @@ class TestOSDCommands():
         And the device is not partitioned
         And and the device is a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1
 
         """
@@ -1767,7 +1767,7 @@ class TestOSDCommands():
         And the device is partitioned
         And and the device is not a NVME
         Expect args to be:
-        
+
         --block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/sdx
 
         """
