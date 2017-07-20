@@ -293,6 +293,8 @@ echo "igw kludge script running as $(whoami) on $(hostname --fqdn)"
 sed -i -e 's/\("host": "target[[:digit:]]\+\)"/\1.teuthology"/' /tmp/lrbd.conf
 cat /tmp/lrbd.conf
 source /etc/sysconfig/lrbd; lrbd -v $LRBD_OPTIONS -f /tmp/lrbd.conf
+systemctl restart lrbd.service
+systemctl status -l lrbd.service
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $IGWNODE
