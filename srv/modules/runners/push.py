@@ -284,7 +284,7 @@ class PillarData(object):
             for line in policy:
                 # strip comments from the end of the line
                 line = re.sub('\s+#.*$', '', line)
-                line = line.rstrip()
+                line = line.strip()
                 if (line.startswith('#') or not line):
                     log.debug("Ignoring '{}'".format(line))
                     continue
