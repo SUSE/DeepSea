@@ -156,6 +156,13 @@ role-rgw/cluster/*.sls slice=[:1]
 EOF
 }
 
+function policy_cfg_igw {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - igw (first node)
+role-igw/cluster/*.sls slice=[:1]
+EOF
+}
+
 function policy_cfg_nfs_ganesha {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - NFS-Ganesha (first node)
@@ -271,5 +278,83 @@ rm -f $RGWXMLOUT
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
+}
+
+function iscsi_kludge {
+  #
+  # apply kludge to work around bsc#1049669
+  #
+  local TESTSCRIPT=/tmp/iscsi_kludge.sh
+  local IGWNODE=$(_first_x_node igw)
+  cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "igw kludge script running as $(whoami) on $(hostname --fqdn)"
+sed -i -e 's/\("host": "target[[:digit:]]\+\)"/\1.teuthology"/' /tmp/lrbd.conf
+cat /tmp/lrbd.conf
+source /etc/sysconfig/lrbd; lrbd -v $LRBD_OPTIONS -f /tmp/lrbd.conf
+systemctl restart lrbd.service
+systemctl status -l lrbd.service
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
+function igw_info {
+  #
+  # peek at igw information on the igw node
+  #
+  local TESTSCRIPT=/tmp/igw_info.sh
+  local IGWNODE=$(_first_x_node igw)
+  cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "igw info script running as $(whoami) on $(hostname --fqdn)"
+rpm -q lrbd || true
+lrbd --output || true
+ls -lR /sys/kernel/config/target/ || true
+netstat --tcp --listening --numeric-ports
+echo "See 3260 there?"
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
+function iscsi_mount_and_sanity_test {
+  #
+  # run iscsi mount test script on the client node
+  # mounts iscsi in /mnt, touches a file, asserts that it exists
+  #
+  local TESTSCRIPT=/tmp/iscsi_test.sh
+  local CLIENTNODE=$(_client_node)
+  local IGWNODE=$(_first_x_node igw)
+  cat << EOF > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+zypper --non-interactive --no-gpg-checks refresh
+zypper --non-interactive install --no-recommends open-iscsi multipath-tools
+systemctl start iscsid.service
+sleep 5
+systemctl status -l iscsid.service
+iscsiadm -m discovery -t st -p $IGWNODE
+iscsiadm -m node -L all
+systemctl start multipathd.service
+sleep 5
+systemctl status -l multipathd.service
+ls -lR /dev/mapper
+ls -l /dev/disk/by-path
+ls -l /dev/disk/by-*id
+multipath -ll
+mkfs -t xfs /dev/dm-0
+test -d /mnt
+mount /dev/dm-0 /mnt
+df -h /mnt
+touch /mnt/bubba
+test -f /mnt/bubba
+umount /mnt
+echo "Result: OK"
+EOF
+  # FIXME: assert script not running on the iSCSI gateway node
+  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
