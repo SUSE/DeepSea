@@ -342,6 +342,8 @@ systemctl start multipathd.service
 sleep 5
 systemctl status -l multipathd.service
 ls -lR /dev/mapper
+ls -l /dev/disk/by-path
+ls -l /dev/disk/by-*id
 multipath -ll
 mkfs -t xfs /dev/dm-0
 test -d /mnt
