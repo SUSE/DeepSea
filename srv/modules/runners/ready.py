@@ -72,7 +72,7 @@ class Checks(object):
         """
         contents = self.local.cmd(self.search , 'cmd.shell', [ '/usr/sbin/apparmor_status --enabled 2>/dev/null; echo $?' ], expr_form="compound")
         for minion in contents:
-            if contents[minion] == 0:
+            if contents[minion] and int(contents[minion]) == 0:
                 msg = "enabled on minion {}".format(minion)
                 if 'apparmor' in self.warnings:
                     self.warnings['apparmor'].append(msg)
@@ -92,7 +92,7 @@ class Checks(object):
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, self.warnings[attr], bcolors.ENDC)
 
 
-def check(cluster, fail_on_warning=True, **kwargs):
+def check(cluster, fail_on_warning=True, search=None, **kwargs):
     """
     Check a cluster for runtime configurations that may cause issues for an
     installation.
@@ -100,8 +100,11 @@ def check(cluster, fail_on_warning=True, **kwargs):
     if cluster is None:
         cluster = kwargs['cluster']
 
-    # Restrict search to this cluster
-    search = "I@cluster:{}".format(cluster)
+    # Restrict search to this cluster, but allow caller to set search directly.
+    # Setting search by caller is needed when DeepSea is engulfing a cluster it
+    # did not deploy.  At that point, "I@cluster:ceph" does not contain any
+    # minions.
+    search = "I@cluster:{}".format(cluster) if not search else search
 
     c = Checks(search)
     c.firewall()
