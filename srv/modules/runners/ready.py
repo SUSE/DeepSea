@@ -56,7 +56,8 @@ class Checks(object):
         """
         contents = self.local.cmd(self.search , 'cmd.run', [ '/usr/sbin/iptables -S' ], expr_form="compound")
         for minion in contents.keys():
-            if contents[minion] != "-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT":
+            # Accept custom named chains
+            if not contents[minion].startswith("-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT"):
                 msg = "enabled on minion {}".format(minion)
                 if 'firewall' in self.warnings:
                     self.warnings['firewall'].append(msg)
