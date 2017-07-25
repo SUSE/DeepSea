@@ -17,4 +17,5 @@ uninstall ceph-radosgw:
 
 include:
 - .keyring
+- .monitoring
 {% endif %}
