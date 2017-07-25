@@ -95,7 +95,7 @@
                 "expr": "ceph_pool_available_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter',pool='$pool'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
-                "legendFormat": "Avilable - {{ pool }}",
+                "legendFormat": "Available - {{ pool }}",
                 "metric": "ceph_pool_available_bytes",
                 "refId": "A",
                 "step": 60
