@@ -31,6 +31,16 @@ fs.CreateFile('policy.cfg_commented2',
 fs.CreateFile('policy.cfg_ml_commented',
               contents=('# a line comment\n'
                         'cluster-ceph/cluster/*.sls \t# with a comment'))
+fs.CreateFile('policy.cfg_leading_whitespace',
+              contents=(' cluster-ceph/cluster/*.sls'))
+fs.CreateFile('policy.cfg_trailing_whitespace',
+              contents=('cluster-ceph/cluster/*.sls '))
+fs.CreateFile('policy.cfg_trailing_and_leading_whitespace',
+              contents=(' cluster-ceph/cluster/*.sls '))
+fs.CreateFile('policy.cfg_trailing_and_leading_whitespace_and_leading_comment',
+              contents=(' #cluster-ceph/cluster/*.sls '))
+fs.CreateFile('policy.cfg_trailing_and_leading_whitespace_and_trailing_comment',
+              contents=(' cluster-ceph/cluster/*.sls #'))
 
 f_glob = fake_glob.FakeGlobModule(fs)
 f_os = fake_fs.FakeOsModule(fs)
@@ -80,4 +90,19 @@ class TestPush():
         assert len(organized.keys()) == len(nodes)
 
         organized = p_d.organize('policy.cfg_ml_commented')
+        assert len(organized.keys()) == len(nodes)
+
+        organized = p_d.organize('policy.cfg_leading_whitespace')
+        assert len(organized.keys()) == len(nodes)
+
+        organized = p_d.organize('policy.cfg_trailing_whitespace')
+        assert len(organized.keys()) == len(nodes)
+
+        organized = p_d.organize('policy.cfg_trailing_and_leading_whitespace')
+        assert len(organized.keys()) == len(nodes)
+
+        organized = p_d.organize('policy.cfg_trailing_and_leading_whitespace_and_leading_comment')
+        assert len(organized.keys()) == 0
+
+        organized = p_d.organize('policy.cfg_trailing_and_leading_whitespace_and_trailing_comment')
         assert len(organized.keys()) == len(nodes)
