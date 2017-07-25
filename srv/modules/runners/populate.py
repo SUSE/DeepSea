@@ -986,7 +986,7 @@ def engulf_existing_cluster(**kwargs):
     salt_writer = SaltWriter(**kwargs)
 
     # Check for firewall/apparmor.
-    if not ready.check("ceph"):
+    if not ready.check("ceph", True, "*"):
         return False
 
     # First, hand apply select Stage 0 functions
