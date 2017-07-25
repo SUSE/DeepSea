@@ -158,3 +158,23 @@ def credentials(canned=None, **kwargs):
 
 def endpoints(**kwargs):
     return Radosgw.endpoints()
+
+def token(**kwargs):
+    local = salt.client.LocalClient()
+
+    if "data" not in kwargs:
+        log.error("No data dictionary in kwargs.")
+        return None
+
+    data = kwargs["data"]
+
+    if "ttype" not in data or "access" not in data or "secret" not in data:
+        log.error("Token type, access key and secret id needed to compute RGW token.")
+        return None
+
+    ttype = data["ttype"]
+    access = data["access"]
+    secret = data["secret"]
+
+    token = local.cmd('I@roles:rgw', 'cmd.shell', [ 'radosgw-token --encode --ttype={} --access={} --secret={}'.format(ttype, access, secret) ], expr_form="compound")
+    return token
