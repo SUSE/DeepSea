@@ -2,7 +2,7 @@
 
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 
-<dom-module id="salt-api" attributes="node port cmd arg target func data userid password authtype client canned">
+<dom-module id="salt-api" attributes="node port cmd arg target func data userid sharedsecret authtype client canned">
     <template>
         <iron-ajax
             id="saltapi"
@@ -58,7 +58,7 @@
                                    "fun": this.func,
                                    "data": this.data,
                                    "username": this.userid,
-                                   "password": this.password,
+                                   "sharedsecret": this.sharedsecret,
                                    "eauth": this.authtype,
                                    "contenttype": this.contentType};
 
