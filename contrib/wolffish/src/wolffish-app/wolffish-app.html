@@ -86,6 +86,7 @@
                 <app-toolbar>Menu</app-toolbar>
                 <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
 		    <a name="wf-welcome" href="#/wf-welcome">Welcome</a>
+                    <a name="rgw-utils" href="#/rgw-utils">RGW Utils</a>
                     <a name="iscsi-conf" href="#/iscsi-conf">iSCSI Configuration</a>
 		    <a name="wf-diags" href="#/wf-diags">Diagnostics</a>
                 </iron-selector>
@@ -111,6 +112,7 @@
                     fallback-selection="view-404"
                     role="main">
 		    <wf-welcome name="wf-welcome"></wf-welcome>
+                    <rgw-utils name="rgw-utils"></rgw-utils>
                     <iscsi-conf name="iscsi-conf"></iscsi-conf>
 		    <wf-diags name="wf-diags"></wf-diags>
                     <view-404 name="view-404"></view-404>
