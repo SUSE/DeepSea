@@ -65,7 +65,13 @@ class JsonPrinter:
         json.dump(self.result, sys.stdout)
 
 def get_printer(__pub_output=None, **kwargs):
-    return JsonPrinter() if __pub_output in ['json', 'quiet'] else PrettyPrinter()
+    if 'printer' in kwargs:
+        return kwargs['printer']
+
+    if __pub_output in ['json', 'quiet']:
+        return JsonPrinter() 
+    else:
+        return PrettyPrinter()
 
 
 
@@ -729,8 +735,7 @@ def pillars(**kwargs):
     local = salt.client.LocalClient()
     cluster = ClusterAssignment(local)
 
-    printer = printer = get_printer(**kwargs)
-
+    printer = get_printer(**kwargs)
 
     for name in cluster.names:
         pillar(name, printer=printer, **kwargs)
@@ -743,9 +748,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     a Ceph cluster.
     """
 
-    has_printer = printer is not None
-    if not has_printer:
-        printer = get_printer(**kwargs)
+    printer = get_printer(**kwargs)
 
     if not cluster:
         usage(func='discovery')
@@ -769,8 +772,7 @@ def discovery(cluster=None, printer=None, **kwargs):
         v._profiles_populated()
     v.report()
 
-    if not has_printer:
-        printer.print_result()
+    printer.print_result()
 
     if v.errors:
         return False
@@ -784,9 +786,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     a Ceph cluster.
     """
 
-    has_printer = printer is not None
-    if not has_printer:
-        printer = get_printer(**kwargs)
+    printer = get_printer(**kwargs)
 
     if not cluster:
         usage(func='pillar')
