@@ -65,15 +65,16 @@ class JsonPrinter:
         json.dump(self.result, sys.stdout)
 
 def get_printer(__pub_output=None, **kwargs):
+    """
+    Return the passed printer, JsonPrinter or PrettyPrinter function
+    """
     if 'printer' in kwargs:
         return kwargs['printer']
 
     if __pub_output in ['json', 'quiet']:
-        return JsonPrinter() 
+        return JsonPrinter()
     else:
         return PrettyPrinter()
-
-
 
 class SaltOptions(object):
     """
@@ -588,6 +589,26 @@ class Validate(object):
 
         self._set_pass_status('fqdn')
 
+    def openattic(self):
+        """
+        Check for incompatible issues for openATTIC
+
+        The rgw role (or any custom rgw role) may be configured to use
+        port 80.  With all the configuration allowed in the pillar, checking the
+        final ceph.conf seems the most reliable.
+        """
+        local = salt.client.LocalClient()
+        for node in self.data.keys():
+            if ('roles' in self.data[node] and
+                'openattic' in self.data[node]['roles']):
+                # Would use file.contains if it supported '='
+                result = local.cmd(node, 'file.contains_regex', [ '/etc/ceph/ceph.conf', 'port\=80'], expr_form="glob")
+                if result[node]:
+                    msg = "rgw port conflicts with openATTIC on {} - check ceph.conf".format(node)
+                    self.errors.setdefault('openattic', []).append(msg)
+
+        self._set_pass_status('openattic')
+
 # Note: the master_minion and ceph_version are specific to the Stage 0
 # validate.  These are also more similar to the ready.py for the firewall
 # check than to all the Stage 3 checks.  The difference is that these need
@@ -632,8 +653,8 @@ class Validate(object):
 
     def _accumulate_files_from(self, filename):
         accumulated_files = []
-	proposals_dir = "/srv/pillar/ceph/proposals" 
-        
+	proposals_dir = "/srv/pillar/ceph/proposals"
+
         with open(filename, "r") as policy:
             for line in policy:
                 # strip comments from the end of the line
@@ -653,7 +674,7 @@ class Validate(object):
                         continue
                     accumulated_files.append(filename)
 	return accumulated_files
-   
+
     def _stack_files(self, stack_dir, filetype='yml'):
 	"""
 	Lists all files under stack_dir
@@ -723,6 +744,7 @@ class Validate(object):
 
     def report(self):
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
+        self.printer.print_result()
 
 def usage(func='None'):
     print "salt-run validate.{} cluster_name".format(func)
@@ -741,15 +763,13 @@ def pillars(**kwargs):
         pillar(name, printer=printer, **kwargs)
 
     printer.print_result()
+    return ""
 
 def discovery(cluster=None, printer=None, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
-
-    printer = get_printer(**kwargs)
-
     if not cluster:
         usage(func='discovery')
         exit(1)
@@ -765,6 +785,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
 
+    printer = get_printer(**kwargs)
     v = Validate(cluster, data=pillar_data, printer=printer)
 
     v._lint_yaml_files()
@@ -772,21 +793,13 @@ def discovery(cluster=None, printer=None, **kwargs):
         v._profiles_populated()
     v.report()
 
-    printer.print_result()
-
-    if v.errors:
-        return False
-
-    return True
-
+    return ""
 
 def pillar(cluster = None, printer=None, **kwargs):
     """
     Check that the pillar for each cluster meets the requirements to install
     a Ceph cluster.
     """
-
-    printer = get_printer(**kwargs)
 
     if not cluster:
         usage(func='pillar')
@@ -797,9 +810,10 @@ def pillar(cluster = None, printer=None, **kwargs):
     # Restrict search to this cluster
     search = "I@cluster:{}".format(cluster)
 
-    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
-    grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
 
+    printer = get_printer(**kwargs)
     v = Validate(cluster, pillar_data, grains_data, printer)
     v.dev_env()
     v.fsid()
@@ -820,13 +834,25 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.fqdn()
     v.report()
 
-    if not has_printer:
-        printer.print_result()
-
     if v.errors:
         return False
 
     return True
+
+def deploy(**kwargs):
+    """
+    Verify that Stage 4, Services can succeed.
+    """
+    local = salt.client.LocalClient()
+    pillar_data = local.cmd('*', 'pillar.items', [], expr_form="glob")
+    grains_data = local.cmd('*', 'grains.items', [], expr_form="compound")
+    printer = get_printer(**kwargs)
+
+    v = Validate("deploy", pillar_data, grains_data, printer)
+    v.openattic()
+    v.report()
+
+    return ""
 
 def setup(**kwargs):
     """
@@ -841,4 +867,4 @@ def setup(**kwargs):
     v.ceph_version()
     v.report()
 
-    printer.print_result()
+    return ""
