@@ -793,7 +793,10 @@ def discovery(cluster=None, printer=None, **kwargs):
         v._profiles_populated()
     v.report()
 
-    return ""
+    if v.errors:
+        return False
+
+    return True
 
 def pillar(cluster = None, printer=None, **kwargs):
     """
@@ -852,7 +855,10 @@ def deploy(**kwargs):
     v.openattic()
     v.report()
 
-    return ""
+    if v.errors:
+        return False
+
+    return True
 
 def setup(**kwargs):
     """
@@ -867,4 +873,7 @@ def setup(**kwargs):
     v.ceph_version()
     v.report()
 
-    return ""
+    if v.errors:
+        return False
+
+    return True
