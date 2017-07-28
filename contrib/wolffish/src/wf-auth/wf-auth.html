@@ -49,7 +49,7 @@
             target=""
             func=""
             userid="{{userid}}"
-            password="{{password}}"
+            sharedsecret="{{password}}"
             authtype="{{authType}}">
         </salt-api>
 
@@ -62,7 +62,7 @@
             target="{{saltApiNode}}"
             func="{{loginCheckFunc}}"
             userid=""
-            password=""
+            sharedsecret=""
             authtype="">
         </salt-api>
     </template>
@@ -230,7 +230,7 @@
              this.disableLoginButton = true;
 
              /* Attempt to authenticate. */
-             this.authType = "auto";  /* salt-api eauth type we use */
+             this.authType = "sharedsecret";  /* salt-api eauth type we use */
              /* Redirects to /login against the salt-api url.  Also used in handleAuth200/Err(). */
              this.cmd = "login";
              this.$.saltapiauth.runPost();
