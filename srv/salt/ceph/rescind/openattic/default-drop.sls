@@ -11,6 +11,13 @@ stop openattic-systemd:
     - enable: False
 {% endif %}
 
+{% if 'openattic' in salt['pkg.list_pkgs']() %}
+remove openattic database:
+  cmd.run:
+    - names:
+      - "su - postgres -c 'dropdb openattic; dropuser openattic;'"
+{% endif %}
+
 uninstall openattic:
   pkg.removed:
     - pkgs:

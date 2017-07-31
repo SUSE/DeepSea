@@ -1,7 +1,0 @@
-
-openattic_configurations:
-  drop_database: True
-  stop_services:
-    - apache2
-    - icinga
-    - postgresql
