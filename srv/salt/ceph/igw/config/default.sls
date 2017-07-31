@@ -10,6 +10,11 @@ demo pool:
     - unless: "ceph osd pool ls | grep -q iscsi-images$"
     - fire_event: True
 
+demo pool enable application:
+  cmd.run:
+    - name: "ceph osd pool application enable iscsi-images rbd"
+    - fire_event: True
+
 demo image:
   cmd.run:
     - name: "rbd -p iscsi-images create demo --size=1024"
