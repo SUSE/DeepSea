@@ -48,6 +48,8 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
+%__rm -f %{buildroot}/%{_mandir}/man?/*.gz
+%__gzip %{buildroot}/%{_mandir}/man?/deepsea.*
 
 %post
 if [ $1 -eq 1 ] ; then
@@ -288,6 +290,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
+%{_mandir}/man7/deepsea.commands.7.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls

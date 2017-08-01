@@ -45,6 +45,9 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
+	# man pages
+	install -d -m 755 $(DESTDIR)/usr/share/man/man7
+	install -m 644 man/deepsea.*.7 $(DESTDIR)/usr/share/man/man7
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
 	install -m 644 srv/salt/_modules/*.py $(DESTDIR)/srv/salt/_modules/
