@@ -1,8 +1,5 @@
-pre minion readycheck:
-  salt.runner:
-    - name: minions.ready
-    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
-    - hardfail: True
+{% set timeout=salt['pillar.get']('minions_ready_timeout', 30) %}
+{% if salt.saltutil.runner('minions.ready', timeout=timeout) %}
 
 update salt:
   salt.state:
@@ -42,6 +39,7 @@ readycheck before processing {{ host }}:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
     - hardfail: True
+    - exception: True
 
 upgrading mon on {{ host }}:
   salt.runner:
@@ -89,6 +87,7 @@ readycheck for {{ host }} after processing mons :
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
     - hardfail: True
+    - exception: True
 
 upgrading {{ host }}:
   salt.runner:
@@ -171,3 +170,10 @@ restart:
     - sls: ceph.updates.restart
 
 {% endif %}
+
+{% else %}
+
+minions not ready:
+  test.nop
+{% endif %}
+
