@@ -8,7 +8,3 @@ oaconfig:
   cmd.run:
     - name: "oaconfig install --allow-broken-hostname"
 
-restart icinga:
-  module.run:
-    - name: service.restart
-    - m_name: icinga
