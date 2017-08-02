@@ -391,6 +391,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/cert/
+	install -m 644 srv/salt/ceph/rgw/cert/*.sls $(DESTDIR)/srv/salt/ceph/rgw/cert/
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
