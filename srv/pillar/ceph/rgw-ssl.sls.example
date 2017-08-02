@@ -1,0 +1,9 @@
+rgw_configurations:
+  rgw:
+    users:
+      - { uid: "admin", name: "Admin", email: "admin@demo.nil", system: True }
+  # when using only RGW& not ganesha ssl will have all the users of rgw already,
+  # but to be consistent we define atleast one user
+  rgw-ssl:
+    users:
+      - { uid: "admin", name: "Admin", email: "admin@demo.nil", system: True }

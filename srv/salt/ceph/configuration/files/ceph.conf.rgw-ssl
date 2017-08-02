@@ -1,0 +1,3 @@
+[ client.{{ client }} ]
+rgw frontends = "civetweb port=443s ssl_certificate=/etc/ceph/rgw.pem"
+rgw dns name = {{ grains['fqdn'] }}
