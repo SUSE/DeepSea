@@ -12,7 +12,7 @@ demo pool:
 
 demo pool enable application:
   cmd.run:
-    - name: "ceph osd pool application enable iscsi-images rbd"
+    - name: "ceph osd pool application enable iscsi-images rbd || :"
     - fire_event: True
 
 demo image:
