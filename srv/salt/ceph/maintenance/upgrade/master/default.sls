@@ -5,6 +5,7 @@ pre master readycheck:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
     - hardfail: True
+    - failhard: True
 
 {% set notice = salt['saltutil.runner']('advise.salt_upgrade') %}
   
