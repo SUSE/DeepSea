@@ -1,13 +1,7 @@
 {% if 'rgw' in salt['pillar.get']('roles') %}
-install_packages:
+install_package:
   pkg.installed:
-    - name: python-pip
-
-install_pip_packages:
-  pip.installed:
-    - name: prometheus-client
-    - require:
-      - pkg: python-pip
+    - name: python-prometheus-client
 
 install_rgw_exporter:
   file.managed:

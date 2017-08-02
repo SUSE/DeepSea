@@ -12,11 +12,8 @@ remove_rgw_exporter:
   file.absent:
     - name: /var/lib/prometheus/node-exporter/ceph_rgw.py
 
-uninstall_pip_packages:
-  pip.removed:
-    - name: prometheus-client
-    - onlyif: "test -f /usr/bin/pip"
-
-uninstall_packages:
+{% if 'python-prometheus-client' in salt['pkg.list_pkgs']() %}
+uninstall_package:
   pkg.removed:
-    - name: python-pip
+    - name: python-prometheus-client
+{% endif %}
