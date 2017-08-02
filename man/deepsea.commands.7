@@ -1,0 +1,902 @@
+.TH deepsea commands 7
+.SH NAME
+deepsea commands
+.SH DESCRIPTION
+.B DeepSea
+uses different Salt commands.  All commands are organized under orchestrations, states, modules and runners.
+.PP
+One difficulty with Salt is distinguishing between these types of commands.  Running the wrong base command with the desired operational arguments results in confusing error messages.  The separation below hopes to prevent some confusion.
+
+.SS ORCHESTRATIONS
+Salt orchestrations run on the Salt master and typically perform multiple steps sequentially on different sets of minions.  Some of these steps will run on multiple minions in parallel.
+.PP
+While these orchestrations are powerful, the files end with
+.BR sls
+and can be easily confused with normal state files.  Additionally, the
+.BR state.orch
+is a salt-runner which only returns results when all steps have completed.  The commands
+.BR salt-run
+.BR jobs.active
+and
+.BR salt-run
+.BR state.event
+.BR pretty=True
+can provide useful progress of an orchestration.
+.PP
+The list below is all orchestration commands.
+.PP
+salt-run state.orch ceph.stage.0
+.RS
+.RE
+salt-run state.orch ceph.stage.prep
+.RS
+.RE
+salt-run state.orch ceph.stage.prep.master
+.RS
+.RE
+salt-run state.orch ceph.stage.prep.minion
+.PP
+salt-run state.orch ceph.stage.1
+.RS
+.RE
+salt-run state.orch ceph.stage.discovery
+.PP
+salt-run state.orch ceph.stage.2
+.RS
+.RE
+salt-run state.orch ceph.stage.configure
+.PP
+salt-run state.orch ceph.stage.3
+.RS
+.RE
+salt-run state.orch ceph.stage.deploy
+.PP
+salt-run state.orch ceph.stage.4
+.RS
+.RE
+salt-run state.orch ceph.stage.services
+.RS
+.RE
+salt-run state.orch ceph.stage.cephfs
+.RS
+.RE
+salt-run state.orch ceph.stage.ganesha
+.RS
+.RE
+salt-run state.orch ceph.stage.iscsi
+.RS
+.RE
+salt-run state.orch ceph.stage.openattic
+.RS
+.RE
+salt-run state.orch ceph.stage.radosgw
+.PP
+salt-run state.orch ceph.stage.5
+.RS
+.RE
+salt-run state.orch ceph.stage.removal
+.PP
+salt-run state.orch ceph.benchmarks.baseline
+.RS
+.RE
+salt-run state.orch ceph.benchmarks.cephfs
+.PP
+salt-run state.orch ceph.diagnose.iperf3-concurrent
+.RS
+.RE
+salt-run state.orch ceph.diagnose.iperf3
+.RS
+.RE
+salt-run state.orch ceph.diagnose.ping
+.PP
+salt-run state.orch ceph.maintenance.upgrade
+.RS
+.RE
+salt-run state.orch ceph.maintenance.upgrade.master
+.RS
+.RE
+salt-run state.orch ceph.maintenance.upgrade.minion
+.PP
+salt-run state.orch ceph.migrate.nodes
+.RS
+.RE
+salt-run state.orch ceph.migrate.osds
+.RS
+.RE
+salt-run state.orch ceph.migrate.policy
+.PP
+salt-run state.orch ceph.purge
+.PP
+salt-run state.orch ceph.redeploy.nodes
+.RS
+.RE
+salt-run state.orch ceph.redeploy.osds
+.PP
+salt-run state.orch ceph.restart.ganesha
+.RS
+.RE
+salt-run state.orch ceph.restart.igw
+.RS
+.RE
+salt-run state.orch ceph.restart.mds
+.RS
+.RE
+salt-run state.orch ceph.restart.mgr
+.RS
+.RE
+salt-run state.orch ceph.restart.mon
+.RS
+.RE
+salt-run state.orch ceph.restart.osd
+.RS
+.RE
+salt-run state.orch ceph.restart.rgw
+.PP
+.SS STATES
+Salt States are the essential building blocks for running a series of steps on a single minion.  The state.apply is a Salt module that processes an
+.BR sls
+file.
+.PP
+The states below can be run indepdently and are useful when debugging.  Nearly all states are part of a larger orchestration which may have prerequisites of other states.  Running these commands requires understanding what you are doing.
+.PP
+For guidance, the Salt targets are listed as pseudo hostnames.  Some are intended to only run on the Salt master.  These targets are
+.BR master_minion.
+Others are expected to only run on minions assigned a specific role.  These targets are labeled as
+.BI role*.
+Running states against unintended minions will often result in confusing errors.
+.PP
+salt 'igw*' state.apply ceph.igw.import
+.RS
+.RE
+salt 'master_minion' state.apply ceph.igw.auth
+.RS
+.RE
+salt 'igw*' state.apply ceph.igw.config
+.RS
+.RE
+salt 'master_minion' state.apply ceph.igw.key
+.RS
+.RE
+salt 'igw*' state.apply ceph.igw.keyring
+.RS
+.RE
+salt 'igw*' state.apply ceph.igw.restart
+.RS
+.RE
+salt 'igw*' state.apply ceph.igw.sysconfig
+.RS
+.RE
+salt 'igw*' state.apply ceph.igw
+.PP
+salt 'master_minion state.apply ceph.osd.auth
+.RS
+.RE
+salt 'master_minion state.apply ceph.osd.key
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd.keyring
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd.restart
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd.scheduler
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd
+.PP
+salt 'storage*' state.apply ceph.packages.common
+.RS
+.RE
+salt '*' state.apply ceph.packages
+.PP
+salt 'master_minion state.apply ceph.pool
+.PP
+salt 'master_minion' state.apply ceph.rgw.auth
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.buckets
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.key
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.keyring
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.restart
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.users
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw
+.PP
+salt '*' state.apply ceph.time.ntp
+.RS
+.RE
+salt '*' state.apply ceph.time
+.PP
+salt '*' state.apply ceph.updates.kernel
+.RS
+.RE
+salt 'master_minion' state.apply ceph.updates.master
+.RS
+.RE
+salt '*' state.apply ceph.updates.regular
+.RS
+.RE
+salt '*' state.apply ceph.updates.restart
+.RS
+.RE
+salt '*' state.apply ceph.updates.salt
+.RS
+.RE
+salt '*' state.apply ceph.updates
+.PP
+.RS
+.RE
+salt 'master_minion' state.apply ceph.configuration.check
+.RS
+.RE
+salt '*' state.apply ceph.configuration
+.PP
+.RS
+.RE
+salt 'master_minion state.apply ceph.wait.1hour.until.OK
+.RS
+.RE
+salt 'master_minion state.apply ceph.wait.2hours.until.OK
+.RS
+.RE
+salt 'master_minion state.apply ceph.wait.4hours.until.OK
+.RS
+.RE
+salt 'master_minion state.apply ceph.wait.until.OK
+.RS
+.RE
+salt 'master_minion state.apply ceph.wait
+.PP
+.RS
+.RE
+salt 'master_minion state.apply ceph.admin.key
+.RS
+.RE
+salt '*' state.apply ceph.admin
+.PP
+salt 'master_minion state.apply ceph.ganesha.auth
+.RS
+.RE
+salt 'master_minion state.apply ceph.ganesha.config
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha.configure
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha.install
+.RS
+.RE
+salt 'master_minion state.apply ceph.ganesha.key
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha.keyring
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha.restart
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha.service
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha
+.PP
+salt 'master_minion state.apply ceph.maintenance.noout
+.PP
+salt 'master_minion state.apply ceph.mds.auth
+.RS
+.RE
+salt 'master_minion state.apply ceph.mds.key
+.RS
+.RE
+salt 'mds*' state.apply ceph.mds.keyring
+.RS
+.RE
+salt 'mds*' state.apply ceph.mds.pools
+.RS
+.RE
+salt 'mds*' state.apply ceph.mds.restart
+.RS
+.RE
+salt 'mds*' state.apply ceph.mds
+.PP
+.RS
+.RE
+salt 'master_minion state.apply ceph.mgr.auth
+.RS
+.RE
+salt 'master_minion state.apply ceph.mgr.key
+.RS
+.RE
+salt 'mgr*' state.apply ceph.mgr.keyring
+.RS
+.RE
+salt 'mgr*' state.apply ceph.mgr.restart
+.RS
+.RE
+salt 'mgr*' state.apply ceph.mgr
+.PP
+salt 'mgr*' state.apply ceph.mines
+.PP
+.RS
+.RE
+salt 'master_minion' state.apply ceph.mon.key
+.RS
+.RE
+salt 'mon*' state.apply ceph.mon.restart
+.RS
+.RE
+salt 'mon*' state.apply ceph.mon
+.PP
+.RS
+.RE
+salt 'master_minion' state.apply ceph.monitoring
+.PP
+.RS
+.RE
+salt 'master_minion state.apply ceph.noout.set
+.RS
+.RE
+salt 'master_minion state.apply ceph.noout.unset
+.PP
+.RS
+.RE
+salt 'master_minion state.apply ceph.openattic.auth
+.RS
+.RE
+salt 'master_minion state.apply ceph.openattic.key
+.RS
+.RE
+salt 'openattic*' state.apply ceph.openattic.keyring
+.RS
+.RE
+salt 'openattic*' state.apply ceph.openattic.oaconfig
+.RS
+.RE
+salt 'openattic*' state.apply ceph.openattic
+.PP
+.RS
+.RE
+salt '*' state.apply ceph.processes
+.PP
+.RS
+.RE
+salt '*' state.apply ceph.refresh
+.PP
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.ganesha
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.igw.auth
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.mds
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.mon
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.openattic
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.rgw
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.storage.drain
+.RS
+.RE
+salt 'master_minion state.apply ceph.remove.storage
+.PP
+.RS
+.RE
+salt '*' state.apply ceph.repo
+.PP
+.RS
+.RE
+salt '*' state.apply ceph.rescind.admin
+.RS
+.RE
+salt '*' state.apply ceph.rescind.client-cephfs
+.RS
+.RE
+salt '*' state.apply ceph.rescind.client-iscsi
+.RS
+.RE
+salt '*' state.apply ceph.rescind.client-nfs
+.RS
+.RE
+salt '*' state.apply ceph.rescind.client-radosgw
+.RS
+.RE
+salt '*' state.apply ceph.rescind.ganesha
+.RS
+.RE
+salt '*' state.apply ceph.rescind.igw.keyring
+.RS
+.RE
+salt '*' state.apply ceph.rescind.igw.lrbd
+.RS
+.RE
+salt '*' state.apply ceph.rescind.igw.sysconfig
+.RS
+.RE
+salt '*' state.apply ceph.rescind.igw
+.RS
+.RE
+salt '*' state.apply ceph.rescind.master
+.RS
+.RE
+salt '*' state.apply ceph.rescind.mds.keyring
+.RS
+.RE
+salt '*' state.apply ceph.rescind.mds
+.RS
+.RE
+salt '*' state.apply ceph.rescind.mds-nfs
+.RS
+.RE
+salt '*' state.apply ceph.rescind.mgr.keyring
+.RS
+.RE
+salt '*' state.apply ceph.rescind.mgr
+.RS
+.RE
+salt '*' state.apply ceph.rescind.mon
+.RS
+.RE
+salt '*' state.apply ceph.rescind.openattic.keyring
+.RS
+.RE
+salt '*' state.apply ceph.rescind.openattic
+.RS
+.RE
+salt '*' state.apply ceph.rescind.rgw.keyring
+.RS
+.RE
+salt '*' state.apply ceph.rescind.rgw
+.RS
+.RE
+salt '*' state.apply ceph.rescind.rgw-nfs
+.RS
+.RE
+salt '*' state.apply ceph.rescind.storage.keyring
+.RS
+.RE
+salt '*' state.apply ceph.rescind.storage.terminate
+.RS
+.RE
+salt '*' state.apply ceph.rescind.storage
+.RS
+.RE
+salt '*' state.apply ceph.rescind
+.PP
+salt 'master_minion state.apply ceph.reset
+.PP
+salt 'master_minion state.apply ceph.salt-api
+.PP
+salt '*' state.apply ceph.sync
+.PP
+salt '*' state.apply ceph.upgrade
+.PP
+salt 'master_minion' state.apply ceph.warning.noout
+.PP
+salt 'master_minion*' state.apply ceph.warning
+.PP
+.SS MODULES
+Salt execution modules have different uses.  Some rely on the side effect of executing multiple steps that have complex conditionals not suitable for an sls file.  Others perform queries and return structured output.
+.PP
+One distinction with modules is that these run on a minion.  As a result, the scope of pillar data is restricted to the minion itself.
+.PP
+Like states, the Salt targets are listed as pseudo hostnames.  
+The
+.BR master_minion 
+target is intended to only run on the Salt master.
+Targets labeled as
+.BI role*
+are expected to only run on minions with that role.
+.PP
+salt '*' advise.reboot
+.RS
+.RE
+salt '*' advise.generic
+.PP
+salt '*' cephdisks.list
+.PP
+salt 'master_minion cephimages.list
+.PP
+salt '*' cephinspector.get_minion_public_network
+.RS
+.RE
+salt '*' cephinspector.get_minion_cluster_network
+.RS
+.RE
+salt '*' cephinspector.get_ceph_disks_yml
+.RS
+.RE
+salt '*' cephinspector.get_keyring
+.RS
+.RE
+salt '*' cephinspector.inspect
+.PP
+salt '*' cephprocesses.check
+.RS
+.RE
+salt '*' cephprocesses.wait
+.PP
+salt 'ganehsa*' ganesha.configurations
+.RS
+.RE
+salt 'ganesha*' ganesha.get_exports_info
+.PP
+salt '*' kernel.replace
+.PP
+salt 'master_minion' keyring.file
+.RS
+.RE
+salt 'master_minion' keyring.secret
+.PP
+salt 'master_minion' mon.list
+.PP
+salt '*' multi.ping
+.RS
+.RE
+salt '*' multi.ping_cmd
+.PP
+salt 'storage*' osd.paths
+.RS
+.RE
+salt 'storage*' osd.devices
+.RS
+.RE
+salt 'storage*' osd.pairs
+.RS
+.RE
+salt 'storage*' osd.configured
+.RS
+.RE
+salt 'storage*' osd.list
+.RS
+.RE
+salt 'storage*' osd.rescinded
+.RS
+.RE
+salt 'storage*' osd.ids
+.RS
+.RE
+salt 'storage*' osd.tree
+.RS
+.RE
+salt 'storage*' osd.down
+.RS
+.RE
+salt 'storage*' osd.zero_weight
+.RS
+.RE
+salt 'storage*' osd.restore_weight
+.RS
+.RE
+salt 'storage*' osd.readlink
+.RS
+.RE
+salt 'storage*' osd.partition
+.RS
+.RE
+salt 'storage*' osd.split_partition
+.RS
+.RE
+salt 'storage*' osd.remove
+.RS
+.RE
+salt 'storage*' osd.is_empty
+.RS
+.RE
+salt 'storage*' osd.terminate
+.RS
+.RE
+salt 'storage*' osd.unmount
+.RS
+.RE
+salt 'storage*' osd.wipe
+.RS
+.RE
+salt 'storage*' osd.destroy
+.RS
+.RE
+salt 'storage*' osd.is_partitioned
+.RS
+.RE
+salt 'storage*' osd.deploy
+.RS
+.RE
+salt 'storage*' osd.redeploy
+.RS
+.RE
+salt 'storage*' osd.is_prepared
+.RS
+.RE
+salt 'storage*' osd.prepare
+.RS
+.RE
+salt 'storage*' osd.is_activated
+.RS
+.RE
+salt 'storage*' osd.activate
+.RS
+.RE
+salt 'storage*' osd.detect
+.RS
+.RE
+salt 'storage*' osd.is_incorrect
+.RS
+.RE
+salt 'storage*' osd.partitions
+.RS
+.RE
+salt 'storage*' osd.retain
+.RS
+.RE
+salt 'storage*' osd.report
+.PP
+salt '*' packagemanager.up
+.RS
+.RE
+salt '*' packagemanager.dup
+.RS
+.RE
+salt '*' packagemanager.patch
+.RS
+.RE
+salt '*' packagemanager.migrate
+.PP
+salt '*' proposal.generate
+.RS
+.RE
+salt '*' proposal.test
+.PP
+salt 'master_minion' purge.configuration
+.RS
+.RE
+salt 'master_minion' purge.roles
+.RS
+.RE
+salt 'master_minion' purge.proposals
+.RS
+.RE
+salt 'master_minion' purge.default
+.PP
+salt '*' retry.cmd
+.RS
+.RE
+salt '*' retry.pkill
+.PP
+salt 'rgw*' rgw.configuration
+.RS
+.RE
+salt 'rgw*' rgw.configurations
+.RS
+.RE
+salt 'rgw*' rgw.users
+.RS
+.RE
+salt 'rgw*' rgw.add_users
+.RS
+.RE
+salt 'rgw*' rgw.create_buckets
+.RS
+.RE
+salt 'rgw*' rgw.access_key
+.RS
+.RE
+salt 'rgw*' rgw.secret_key
+.PP
+salt 'master_minion' wait.out
+.RS
+.RE
+salt 'master_minion' wait.until
+.PP
+salt '*' zypper_locks.py
+
+.SS RUNNERS
+Salt runners have different uses as well.  Some can be utilities with user friendly output.  Others serve as conditionals inside of orchestrations. Lastly, some execute complex operations on the Salt master that are difficult to express in an orchestration.
+.PP
+Since runners execute in the context of the Salt master, these environments have access to all pillar data for all minions.  However, file operations are restricted to the Salt master user such as
+.BR salt.
+.PP
+salt-run advise.salt_run
+.RS
+.RE
+salt-run advise.salt_upgrade
+.PP
+salt-run benchmark.baseline
+.RS
+.RE
+salt-run benchmark.run
+.PP
+salt-run cephops.set_noout
+.PP
+salt-run cephprocesses.check
+.RS
+.RE
+salt-run cephprocesses.mon
+.RS
+.RE
+salt-run cephprocesses.wait
+.PP
+salt-run configure.cluster
+.PP
+salt-run disengage.safety
+.RS
+.RE
+salt-run disengage.check
+.PP
+salt-run filequeue.help
+.RS
+.RE
+salt-run filequeue.queues
+.RS
+.RE
+salt-run filequeue.enqueue
+.RS
+.RE
+salt-run filequeue.dequeue
+.RS
+.RE
+salt-run filequeue.pop
+.RS
+.RE
+salt-run filequeue.ls
+.RS
+.RE
+salt-run filequeue.list
+.RS
+.RE
+salt-run filequeue.items
+.RS
+.RE
+salt-run filequeue.empty
+.RS
+.RE
+salt-run filequeue.check
+.RS
+.RE
+salt-run filequeue.remove
+.RS
+.RE
+salt-run filequeue.vacate
+.PP
+salt-run minions.ready
+.RS
+.RE
+salt-run minions.message
+.PP
+salt-run net.ping
+.PP
+salt-run orderednodes.unique
+.PP
+salt-run populate.network_sort
+.RS
+.RE
+salt-run populate.show
+.RS
+.RE
+salt-run populate.proposals
+.RS
+.RE
+salt-run populate.engulf_existing_cluster
+.PP
+salt-run proposal.help
+.RS
+.RE
+salt-run proposal.test
+.RS
+.RE
+salt-run proposal.peek
+.RS
+.RE
+salt-run proposal.populate
+.PP
+salt-run push.proposal
+.RS
+.RE
+salt-run push.convert
+.PP
+salt-run ready.check
+.PP
+salt-run remove.osd
+.PP
+salt-run rescinded.ids
+.RS
+.RE
+salt-run rescinded.osds
+.PP
+salt-run select.minions
+.RS
+.RE
+salt-run select.one_minion
+.RS
+.RE
+salt-run select.attr
+.PP
+salt-run sharedsecret.show
+.PP
+salt-run status.report
+.PP
+salt-run ui_ganesha.get_hosts
+.RS
+.RE
+salt-run ui_ganesha.get_fsals_available
+.RS
+.RE
+salt-run ui_ganesha.get_exports
+.RS
+.RE
+salt-run ui_ganesha.save_exports
+.RS
+.RE
+salt-run ui_ganesha.deploy_exports
+.RS
+.RE
+salt-run ui_ganesha.status_exports
+.RS
+.RE
+salt-run ui_ganesha.stop_exports
+.PP
+salt-run ui_iscsi.populate
+.RS
+.RE
+salt-run ui_iscsi.save
+.RS
+.RE
+salt-run ui_iscsi.config
+.RS
+.RE
+salt-run ui_iscsi.interfaces
+.RS
+.RE
+salt-run ui_iscsi.images
+.RS
+.RE
+salt-run ui_iscsi.status
+.RS
+.RE
+salt-run ui_iscsi.deploy
+.RS
+.RE
+salt-run ui_iscsi.undeploy
+.PP
+salt-run ui_rgw.credentials
+.RS
+.RE
+salt-run ui_rgw.endpoints
+.PP
+salt-run validate.get_printer
+.RS
+.RE
+salt-run validate.usage
+.RS
+.RE
+salt-run validate.pillars
+.RS
+.RE
+salt-run validate.discovery
+.RS
+.RE
+salt-run validate.pillar
+.RS
+.RE
+salt-run validate.setup
+.PP
+
+.SH AUTHOR
+Eric Jackson <ejackson@suse.com>
+
