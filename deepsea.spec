@@ -214,6 +214,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/rgw-nfs
 %dir /srv/salt/ceph/rescind/rgw
 %dir /srv/salt/ceph/rescind/rgw/keyring
+%dir /srv/salt/ceph/rescind/rgw/monitoring
 %dir /srv/salt/ceph/rescind/storage
 %dir /srv/salt/ceph/rescind/storage/terminate
 %dir /srv/salt/ceph/rescind/storage/keyring
@@ -429,6 +430,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/rgw-nfs/*.sls
 %config /srv/salt/ceph/rescind/rgw/*.sls
 %config /srv/salt/ceph/rescind/rgw/keyring/*.sls
+%config /srv/salt/ceph/rescind/rgw/monitoring/*.sls
 %config /srv/salt/ceph/rescind/storage/*.sls
 %config /srv/salt/ceph/rescind/storage/keyring/*.sls
 %config /srv/salt/ceph/rescind/openattic/*.sls
