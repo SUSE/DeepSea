@@ -336,6 +336,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/rgw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw/keyring
 	install -m 644 srv/salt/ceph/rescind/rgw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw/monitoring
+	install -m 644 srv/salt/ceph/rescind/rgw/monitoring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw/monitoring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage
 	install -m 644 srv/salt/ceph/rescind/storage/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage/keyring

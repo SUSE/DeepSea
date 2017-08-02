@@ -3,8 +3,7 @@ golang-github-prometheus-prometheus:
     - fire_event: True
 
 /etc/prometheus/prometheus.yml:
-  file:
-    - managed
+  file.managed:
     - source: salt://ceph/monitoring/prometheus/files/prometheus.yml.j2
     - template: jinja
     - user: root
@@ -17,3 +16,6 @@ start prometheus:
   service.running:
     - name: prometheus
     - enable: True
+    - restart: True
+    - watch:
+      - file: /etc/prometheus/prometheus.yml
