@@ -1,4 +1,18 @@
 -------------------------------------------------------------------
+Wed Aug  2 23:51:59 UTC 2017 - ejackson@suse.com
+- Version 0.7.18
+- Enable salt-api
+- Add rgw-ssl state, examples
+- Fix upgrade check on minons.ready, remove icinga references
+- Add deepsea.commands man page
+- Move openattic example to rescind/openattic
+- Enable iscsi-images pool
+- Add module for configuring openATTIC, mds caps to keyring
+- Check for openATTIC and rgw role conflicts
+- Relax firewall check, allow custom chains
+- Fix apparmor check for importing clusters
+
+-------------------------------------------------------------------
 Thu Jul 20 10:28:31 UTC 2017 - jfajerski@suse.com
 - Version 0.7.17
 - Change default proposal to new profiles
