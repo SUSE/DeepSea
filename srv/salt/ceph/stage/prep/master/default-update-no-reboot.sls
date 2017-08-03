@@ -25,11 +25,6 @@ prepare master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates
 
-salt api:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.salt-api
-
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
 unlock:
