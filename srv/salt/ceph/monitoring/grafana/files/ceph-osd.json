@@ -121,7 +121,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "aliasColors": {},
