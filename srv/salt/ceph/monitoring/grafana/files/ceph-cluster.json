@@ -49,7 +49,7 @@
             "colors": [
               "rgba(50, 172, 45, 0.97)",
               "rgb(255, 0, 0)",
-              "rgb(255, 0, 0)"
+              "rgb(255, 200, 0)"
             ],
             "datasource": "Prometheus",
             "editable": true,
@@ -107,29 +107,30 @@
               }
             ],
             "thresholds": "1",
-            "title": "Status",
+            "title": "Health Status",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
-                "text": "HEALTHY",
+                "text": "OK",
                 "value": "0"
               },
               {
                 "op": "=",
-                "text": "WARNING",
+                "text": "WARN",
                 "value": "1"
               },
               {
                 "op": "=",
-                "text": "HEALTH_ERR",
+                "text": "ERR",
                 "value": "2"
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -200,7 +201,7 @@
             "title": "Monitors In Quorum",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -209,7 +210,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -280,7 +282,7 @@
             "title": "Pools",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -289,7 +291,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -360,7 +363,7 @@
             "title": "Cluster Capacity",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -369,7 +372,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -440,7 +444,7 @@
             "title": "Used Capacity",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -449,7 +453,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -521,7 +526,7 @@
             "title": "Available Capacity",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "80%",
             "valueMaps": [
               {
                 "op": "=",
@@ -530,7 +535,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           }
         ],
         "repeat": null,
@@ -612,7 +618,7 @@
             "thresholds": "",
             "title": "OSDs IN",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -621,7 +627,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -691,7 +698,7 @@
             "thresholds": "1,1",
             "title": "OSDs OUT",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -700,7 +707,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -770,7 +778,7 @@
             "thresholds": "",
             "title": "OSDs UP",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -779,7 +787,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -849,7 +858,7 @@
             "thresholds": "1,1",
             "title": "OSDs DOWN",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -858,7 +867,8 @@
               }
             ],
             "timeFrom": "1m",
-            "valueName": "current"
+            "valueName": "current",
+            "hideTimeOverride": true
           },
           {
             "cacheTimeout": null,
@@ -928,7 +938,7 @@
             "thresholds": "250,300",
             "title": "Average PGs per OSD",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -1006,7 +1016,7 @@
             "thresholds": "0.01,0.05",
             "title": "Average OSD Apply Latency",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -1084,7 +1094,7 @@
             "thresholds": "0.01,0.05",
             "title": "Average OSD Commit Latency",
             "type": "singlestat",
-            "valueFontSize": "80%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
@@ -1164,7 +1174,7 @@
             "title": "Average Monitor Latency",
             "transparent": false,
             "type": "singlestat",
-            "valueFontSize": "100%",
+            "valueFontSize": "50%",
             "valueMaps": [
               {
                 "op": "=",
