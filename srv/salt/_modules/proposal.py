@@ -84,15 +84,10 @@ class Proposal(object):
             log.debug('found only one type of disks...proposing standalone')
             return proposals
 
-        # create proposal with wal, db and data on distinct drives. Only
-        # sensible when nvme, ssd and spinners are available.
-        if sum([not self.nvme, not self.ssd, not self.spinner]) is 0:
-            log.debug(('found three types of disks...proposing external'
-                       'wal AND db'))
-            proposals['nvme-ssd-spinner'] = self._propose_external_db_wal(
-                self._filter(self.spinner, 'data'),
-                self._filter(self.ssd, 'journal'),
-                self._filter(self.nvme, 'wal'))
+        proposals['nvme-ssd-spinner'] = self._propose_external_db_wal(
+            self._filter(self.spinner, 'data'),
+            self._filter(self.ssd, 'journal'),
+            self._filter(self.nvme, 'wal'))
 
         # create all other proposals
         configs = [('nvme', 'ssd', 'spinner'),
@@ -126,6 +121,12 @@ class Proposal(object):
     # of the db and wal on separate drives. This only makes sense if nvme, ssd
     # and spinners are present
     def _propose_external_db_wal(self, data_disks, db_disks, wal_disks):
+        # create proposal with wal, db and data on distinct drives. Only
+        # sensible when nvme, ssd and spinners are available.
+        if sum([not data_disks, not db_disks, not wal_disks]) > 0:
+            log.debug(('found only two types of disks...not proposing '
+                       'external wal AND db'))
+            return []
         assert data_disks and db_disks and wal_disks
 
         external = []
