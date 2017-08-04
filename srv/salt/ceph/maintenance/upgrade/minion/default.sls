@@ -3,30 +3,30 @@
 
 update salt:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.updates.salt
 
 mines:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.mines
     - failhard: True
 
 sync:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.sync
     - failhard: True
 
 repo:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.repo
     - failhard: True
 
 common packages:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.packages.common
     - failhard: True
 
@@ -55,7 +55,7 @@ wait until the cluster has recovered before processing mon on {{ host }}:
 # OSDs are up and running althouth officially not starting because a missing flag..
 check if all processes are still running after processing mon on {{ host }}:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.processes
     - failhard: True
 
@@ -108,7 +108,7 @@ wait until the cluster has recovered before processing {{ host }}:
 
 check if all processes are still running after processing {{ host }}:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.processes
     - failhard: True
 
@@ -161,12 +161,12 @@ set luminous osds:
 
 updates:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.upgrade
 
 restart:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt) }}
     - sls: ceph.updates.restart
 
 {% endif %}

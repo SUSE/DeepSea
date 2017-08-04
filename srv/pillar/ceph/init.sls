@@ -3,6 +3,5 @@
 
 {% include 'ceph/master_minion.sls' ignore missing %}
 
-{% include 'ceph/rgw.sls' ignore missing %}
+{% include 'ceph/ceph_tgt.sls' ignore missing %}
 
-{% include 'ceph/openattic.sls' ignore missing %}

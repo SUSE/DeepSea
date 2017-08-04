@@ -304,6 +304,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/fio/*.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/templates/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
+%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/ceph_tgt.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 %config /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls

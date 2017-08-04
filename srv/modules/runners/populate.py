@@ -24,6 +24,7 @@ import errno
 import uuid
 import ipaddress
 import logging
+import ceph_tgt
 
 import sys
 
@@ -471,21 +472,24 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
+        target = ceph_tgt.CephTgt()
+        self.search = target.ceph_tgt
+
         self.networks = self._networks(self.servers)
         self.public_networks, self.cluster_networks = self.public_cluster(self.networks)
 
-        #self.master_contents = {}
         self.available_roles = [ 'storage' ]
+
 
     def _rgw_configurations(self):
         """
         Use the custom names for rgw configurations specified.  Otherwise,
         default to 'rgw'.
         """
+
         local = salt.client.LocalClient()
 
-        # Should we add a master_minion lookup and have two calls instead?
-        _rgws = local.cmd('*' , 'pillar.get', [ 'rgw_configurations' ])
+        _rgws = local.cmd(self.search , 'pillar.get', [ 'rgw_configurations' ])
         for node in _rgws.keys():
             # Check the first one
             if _rgws[node]:
@@ -500,8 +504,7 @@ class CephRoles(object):
         """
         local = salt.client.LocalClient()
 
-        # Should we add a master_minion lookup and have two calls instead?
-        _ganeshas = local.cmd('*' , 'pillar.get', [ 'ganesha_configurations' ])
+        _ganeshas = local.cmd(self.search , 'pillar.get', [ 'ganesha_configurations' ])
         for node in _ganeshas.keys():
             # Check the first one
             if _ganeshas[node]:
@@ -651,7 +654,7 @@ class CephRoles(object):
         networks = {}
         local = salt.client.LocalClient()
 
-        interfaces = local.cmd('*' , 'network.interfaces')
+        interfaces = local.cmd(self.search, 'network.interfaces')
 
         for minion in interfaces.keys():
             for nic in interfaces[minion]:
@@ -738,11 +741,13 @@ class CephCluster(object):
             self.names = [ 'ceph' ]
         self.writer = writer
 
-        local = salt.client.LocalClient()
-        self.minions = local.cmd('*' , 'grains.get', [ 'id' ])
+        target = ceph_tgt.CephTgt()
+        search = target.ceph_tgt
 
-        # Should we add a master_minion lookup and have two calls instead?
-        _rgws = local.cmd('*' , 'pillar.get', [ 'rgw_configurations' ])
+        local = salt.client.LocalClient()
+        self.minions = local.cmd(search , 'grains.get', [ 'id' ])
+
+        _rgws = local.cmd(search , 'pillar.get', [ 'rgw_configurations' ])
         for node in _rgws.keys():
             self.rgw_configurations = _rgws[node]
             # Just need first
@@ -897,11 +902,14 @@ def _get_existing_cluster_network(addrs, public_network=None):
     returns an address consisting of network prefix followed by the cidr
     prefix (ie. 10.0.0.0/24).
     """
+    target = ceph_tgt.CephTgt()
+    search = target.ceph_tgt
+
     local = salt.client.LocalClient()
     minion_networks = []
 
     # Grab network interfaces from salt.
-    minion_network_interfaces = local.cmd("*", "network.interfaces")
+    minion_network_interfaces = local.cmd(search, "network.interfaces")
     # Remove lo.
     for entry in minion_network_interfaces:
 	try:
