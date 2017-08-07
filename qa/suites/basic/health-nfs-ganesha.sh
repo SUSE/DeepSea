@@ -95,6 +95,9 @@ nfs_ganesha_mount
 if [ "$FSAL" = "cephfs" ] ; then
     nfs_ganesha_touch_a_file
 else
+    rgw_curl_test
+    # test for presence of rgw users via radosgw-admin
+    # create buckets (?)
     nfs_ls_mount
 fi
 
