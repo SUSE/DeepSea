@@ -32,8 +32,14 @@ If you would like to contribute to DeepSea, refer to the [contribution guideline
 ## Usage
 You need at least a minimum of 4 nodes to be able to test and use DeepSea properly.
 
-You could set the option `DEV_ENV=true` as an environment variable or pillar variable during the deployment stages to be able to use
-less than 4 nodes. 
+To be able to use less than 4 nodes during the deployment stages (e.g. in a
+development/testing environment), you could set the option `DEV_ENV=true` as an
+environment variable or globally as a pillar variable in
+`/srv/pillar/ceph/stack/global.yml`. Setting `DEV_ENV` allows you to:
+
+- Deploy monitors without the presence of a `profile` directory
+- Deply a cluster with at least _one_ (instead of 3/4/3) storage/monitor/mgr
+  nodes
 
 ### Add DeepSea repo to your admin host
 
