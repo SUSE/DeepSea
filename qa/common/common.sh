@@ -278,26 +278,6 @@ EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
-function rgw_curl_test {
-  local TESTSCRIPT=/tmp/rgw_test.sh
-  cat << 'EOF' > $TESTSCRIPT
-set -ex
-trap 'echo "Result: NOT_OK"' ERR
-echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
-RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-zypper --non-interactive --no-gpg-checks refresh
-zypper --non-interactive install --no-recommends curl libxml2-tools
-RGWXMLOUT=/tmp/rgw_test.xml
-curl $RGWNODE > $RGWXMLOUT
-test -f $RGWXMLOUT
-xmllint $RGWXMLOUT
-grep anonymous $RGWXMLOUT
-rm -f $RGWXMLOUT
-echo "Result: OK"
-EOF
-  _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
-}
-
 function iscsi_kludge {
   #
   # apply kludge to work around bsc#1049669
