@@ -6,6 +6,7 @@ BASEDIR=$(pwd)
 source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
+source $BASEDIR/common/rgw.sh
 
 SALT_MASTER=$(cat /srv/pillar/ceph/master_minion.sls | \
              sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
@@ -16,6 +17,23 @@ MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
 
 export DEV_ENV='true'
 
+
+#
+# functions for processing command-line arguments
+#
+
+function assert_enhanced_getopt {
+    set +e
+    echo -n "Running 'getopt --test'... "
+    getopt --test > /dev/null
+    if [ $? -ne 4 ]; then
+        echo "FAIL"
+        echo "This script requires enhanced getopt. Bailing out."
+        exit 1
+    fi
+    echo "PASS"
+    set -e
+}
 
 #
 # functions for setting up the Salt Master node so it can run these tests

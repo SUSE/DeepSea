@@ -77,6 +77,20 @@ EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
 }
 
+function nfs_ls_mount {
+  local ASUSER=$1
+  local CLIENTNODE=$(_client_node)
+  local TESTSCRIPT=/tmp/test-nfs-ls-mount.sh
+  cat <<EOF > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+ls -lR /root/mnt
+echo "Result: OK"
+EOF
+  # FIXME: assert no MDS running on $CLIENTNODE
+  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
+}
+
 function nfs_ganesha_touch_a_file {
   #
   # touches a file, asserts that it exists, unmounts /root/mnt
