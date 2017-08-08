@@ -6,6 +6,7 @@ BASEDIR=$(pwd)
 source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
+source $BASEDIR/common/rgw.sh
 
 SALT_MASTER=$(cat /srv/pillar/ceph/master_minion.sls | \
              sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
@@ -16,6 +17,23 @@ MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
 
 export DEV_ENV='true'
 
+
+#
+# functions for processing command-line arguments
+#
+
+function assert_enhanced_getopt {
+    set +e
+    echo -n "Running 'getopt --test'... "
+    getopt --test > /dev/null
+    if [ $? -ne 4 ]; then
+        echo "FAIL"
+        echo "This script requires enhanced getopt. Bailing out."
+        exit 1
+    fi
+    echo "PASS"
+    set -e
+}
 
 #
 # functions for setting up the Salt Master node so it can run these tests
@@ -258,26 +276,6 @@ echo "Result: OK"
 EOF
   # FIXME: assert no MDS running on $CLIENTNODE
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
-}
-
-function rgw_curl_test {
-  local TESTSCRIPT=/tmp/rgw_test.sh
-  cat << 'EOF' > $TESTSCRIPT
-set -ex
-trap 'echo "Result: NOT_OK"' ERR
-echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
-RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-zypper --non-interactive --no-gpg-checks refresh
-zypper --non-interactive install --no-recommends curl libxml2-tools
-RGWXMLOUT=/tmp/rgw_test.xml
-curl $RGWNODE > $RGWXMLOUT
-test -f $RGWXMLOUT
-xmllint $RGWXMLOUT
-grep anonymous $RGWXMLOUT
-rm -f $RGWXMLOUT
-echo "Result: OK"
-EOF
-  _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
 }
 
 function iscsi_kludge {

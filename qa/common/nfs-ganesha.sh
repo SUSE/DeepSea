@@ -2,6 +2,8 @@
 # This file is part of the DeepSea integration test suite
 #
 
+NFS_MOUNTPOINT=/root/mnt
+
 function _nfs_ganesha_node {
   _first_x_node ganesha
 }
@@ -49,7 +51,7 @@ function nfs_ganesha_showmount_loop {
 
 function nfs_ganesha_mount {
   #
-  # creates a directory /root/mnt and mounts NFS-Ganesha export in it
+  # creates a mount point and mounts NFS-Ganesha export in it
   #
   local ASUSER=$1
   local CLIENTNODE=$(_client_node)
@@ -61,45 +63,59 @@ function nfs_ganesha_mount {
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "nfs-ganesha mount test script running as $(whoami) on $(hostname --fqdn)"
-test ! -e /root/mnt
-mkdir /root/mnt
-test -d /root/mnt
+test ! -e $NFS_MOUNTPOINT
+mkdir $NFS_MOUNTPOINT
+test -d $NFS_MOUNTPOINT
 # ************************************************
 # mount the NFS export - this is prone to timeout!
 # ************************************************
 # NOTE: NFSv4 does not work with root, even when /etc/ganesha/ganesha.conf
 # contains "Squash = No_root_squash;" line
-#mount -t nfs -o nfsvers=4 ${GANESHANODE}:/ /root/mnt
-mount -t nfs ${GANESHANODE}:/ /root/mnt
+#mount -t nfs -o nfsvers=4 ${GANESHANODE}:/ $NFS_MOUNTPOINT
+mount -t nfs -o sync ${GANESHANODE}:/ $NFS_MOUNTPOINT
+ls -lR $NFS_MOUNTPOINT
 echo "Result: OK"
 EOF
   # FIXME: assert no MDS running on $CLIENTNODE
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
 }
 
-function nfs_ganesha_touch_a_file {
-  #
-  # touches a file, asserts that it exists, unmounts /root/mnt
-  #
+function nfs_ganesha_umount {
   local ASUSER=$1
   local CLIENTNODE=$(_client_node)
-  local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
-  local MOUNTPOINT=/root/mnt
-  local PSEUDO="/cephfs"
-  local MOUNTPATH=$MOUNTPOINT
-  if [ -z "$ASUSER" ] ; then
-      MOUNTPATH=$MOUNTPOINT$PSEUDO
-  fi
-  local TOUCHFILE=$MOUNTPATH/bubba
+  local TESTSCRIPT=/tmp/test-nfs-ganesha-umount.sh
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-echo "nfs-ganesha touch-a-file test script running as $(whoami) on $(hostname --fqdn)"
-ls -lR $MOUNTPOINT
-touch $TOUCHFILE
-test -f $TOUCHFILE
-umount $MOUNTPATH
+echo "nfs-ganesha umount test script running as $(whoami) on $(hostname --fqdn)"
+umount $NFS_MOUNTPOINT
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
+}
+
+function nfs_ganesha_write_test {
+  #
+  # NFS-Ganesha FSAL write test
+  #
+  local FSAL=$1
+  local CLIENTNODE=$(_client_node)
+  local TESTSCRIPT=/tmp/test-nfs-ganesha-write.sh
+  local APPENDAGE=""
+  if [ "$FSAL" = "cephfs" ] ; then
+      APPENDAGE="/cephfs"
+  else
+      APPENDAGE="/demo/demo-demo"
+  fi
+  local TOUCHFILE=$NFS_MOUNTPOINT$APPENDAGE/saturn
+  cat <<EOF > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "nfs-ganesha write test script running as $(whoami) on $(hostname --fqdn)"
+! test -e $TOUCHFILE
+touch $TOUCHFILE
+test -f $TOUCHFILE
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
