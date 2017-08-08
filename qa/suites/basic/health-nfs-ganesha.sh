@@ -92,11 +92,12 @@ nfs_ganesha_cat_config_file
 nfs_ganesha_debug_log
 nfs_ganesha_showmount_loop
 nfs_ganesha_mount
-if [ "$FSAL" = "cephfs" ] ; then
+if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
     nfs_ganesha_touch_a_file
-else
+fi
+if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
     rgw_curl_test
-    # test for presence of rgw users via radosgw-admin
+    rgw_validate_demo_users
     # create buckets (?)
     nfs_ls_mount
 fi

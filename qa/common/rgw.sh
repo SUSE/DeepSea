@@ -11,6 +11,24 @@ rgw_configurations:
       - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
       - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
 EOF
+  cat $RGWSLS
+}
+
+function rgw_validate_demo_users {
+  #
+  # prove the demo users from rgw_demo_users were really set up
+  #
+  local TESTSCRIPT=/tmp/rgw_validate_demo_users.sh
+  local RGWNODE=$(_first_x_node rgw)
+  cat << EOF > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+radosgw-admin user list
+radosgw-admin user info --uid=demo
+radosgw-admin user info --uid=demo1
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $RGWNODE
 }
 
 function rgw_curl_test {
