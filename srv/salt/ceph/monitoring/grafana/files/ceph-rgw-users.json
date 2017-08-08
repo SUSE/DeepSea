@@ -355,7 +355,7 @@
           "options": [],
           "query": "label_values(ceph_rgw_user_usage_ops_total, category)",
           "refresh": 1,
-          "regex": "",
+          "regex": "^(?!set_attrs$).*",
           "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
