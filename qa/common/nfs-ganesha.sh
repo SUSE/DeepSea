@@ -119,3 +119,45 @@ echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
+
+function nfs_ganesha_pynfs_test {
+  #
+  # NFS-Ganesha PyNFS test
+  #
+  local CLIENTNODE=$(_client_node)
+  local GANESHANODE=$(_nfs_ganesha_node)
+  local TESTSCRIPT=/tmp/test-nfs-ganesha-pynfs.sh
+  cat <<'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+
+function assert_success {
+    local PYNFS_OUTPUT=$1
+    test -s $PYNFS_OUTPUT
+    # last line: determined return value of function
+    ! grep -q FAILURE $PYNFS_OUTPUT
+}
+
+echo "nfs-ganesha PyNFS test script running as $(whoami) on $(hostname --fqdn)"
+zypper --non-interactive install --no-recommends krb5-devel python-devel
+git clone --depth 1 https://github.com/supriti/Pynfs
+cd Pynfs
+./setup.py build
+cd nfs4.0
+sleep 90 # NFSv4 grace period
+LOGFILE="PyNFS.out"
+./testserver.py -v \
+    --outfile RESULTS.out \
+    --maketree GANESHANODE:/cephfs/ \
+    --showomit \
+    --secure \
+    --rundeps \
+    all \
+    ganesha 2>&1 | tee $LOGFILE
+#./showresults.py RESULTS.out
+assert_success $LOGFILE
+echo "Result: OK"
+EOF
+  sed -i 's/GANESHANODE/'$GANESHANODE'/' $TESTSCRIPT
+  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
+}

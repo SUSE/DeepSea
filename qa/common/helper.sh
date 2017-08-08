@@ -62,7 +62,7 @@ function _run_test_script_on_node {
   if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
     salt $TESTNODE cmd.run "sh $TESTSCRIPT" | tee $LOGFILE
   else
-    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"sh $TESTSCRIPT\"" | tee $LOGFILE
+    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" | tee $LOGFILE
   fi
   local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
   test "x$RESULT" = "xOK"
