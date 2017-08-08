@@ -249,6 +249,7 @@ function ceph_health_test {
   local LOGFILE=/tmp/ceph_health_test.log
   echo "Waiting up to 15 minutes for HEALTH_OK..."
   salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
+  # last line: determines return value of function
   ! grep -q 'Timeout expired' $LOGFILE
 }
 
