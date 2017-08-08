@@ -1011,6 +1011,7 @@ def engulf_existing_cluster(**kwargs):
     previous_minion = None
     admin_minion = None
 
+    mon_minions = []
     mgr_instances = []
     mds_instances = []
     rgw_instances = []
@@ -1052,6 +1053,7 @@ def engulf_existing_cluster(**kwargs):
             policy_cfg.append("role-admin/cluster/" + minion + ".sls")
 
         if "ceph-mon" in info["running_services"].keys():
+            mon_minions.append(minion)
             policy_cfg.append("role-mon/cluster/" + minion + ".sls")
             policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
 	    for minion, ipaddr in local.cmd(minion, "cephinspector.get_minion_public_network").items():
@@ -1122,6 +1124,14 @@ def engulf_existing_cluster(**kwargs):
     if not osd_bootstrap_keyring:
         print("Could not obtain osd bootstrap keyring")
         return False
+
+    # If there's no MGR instances, add MGR roles automatically to all the MONs
+    # (since Luminous, MGR is a requirement, so it seems reasonable to add this
+    # role automatically for imported clusters)
+    if not mgr_instances:
+        print("No MGRs detected, automatically assigning role-mgr to MONs")
+        for minion in mon_minions:
+            policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
 
     with open("/srv/salt/ceph/admin/cache/ceph.client.admin.keyring", 'w') as keyring:
         keyring.write(admin_keyring)
