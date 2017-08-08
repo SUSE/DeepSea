@@ -93,13 +93,13 @@ nfs_ganesha_debug_log
 nfs_ganesha_showmount_loop
 nfs_ganesha_mount
 if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
-    nfs_ganesha_touch_a_file
+    nfs_ganesha_write_test cephfs
 fi
 if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
     rgw_curl_test
     rgw_validate_demo_users
-    # create buckets (?)
-    nfs_ls_mount
+    nfs_ganesha_write_test rgw
 fi
+nfs_ganesha_umount
 
 echo "OK"
