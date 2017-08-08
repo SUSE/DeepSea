@@ -34,6 +34,7 @@ Requires:       salt-minion
 Requires:       salt-api
 Requires:       python-ipaddress
 Requires:       python-netaddr
+Requires:       python-rados
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
