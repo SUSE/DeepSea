@@ -489,7 +489,7 @@ class CephRoles(object):
 
         local = salt.client.LocalClient()
 
-        _rgws = local.cmd(self.search , 'pillar.get', [ 'rgw_configurations' ])
+        _rgws = local.cmd(self.search , 'pillar.get', [ 'rgw_configurations' ], expr_form="compound")
         for node in _rgws.keys():
             # Check the first one
             if _rgws[node]:
@@ -504,7 +504,7 @@ class CephRoles(object):
         """
         local = salt.client.LocalClient()
 
-        _ganeshas = local.cmd(self.search , 'pillar.get', [ 'ganesha_configurations' ])
+        _ganeshas = local.cmd(self.search , 'pillar.get', [ 'ganesha_configurations' ], expr_form="compound")
         for node in _ganeshas.keys():
             # Check the first one
             if _ganeshas[node]:
@@ -654,7 +654,7 @@ class CephRoles(object):
         networks = {}
         local = salt.client.LocalClient()
 
-        interfaces = local.cmd(self.search, 'network.interfaces')
+        interfaces = local.cmd(self.search, 'network.interfaces', [], expr_form="compound")
 
         for minion in interfaces.keys():
             for nic in interfaces[minion]:
@@ -745,9 +745,9 @@ class CephCluster(object):
         search = target.ceph_tgt
 
         local = salt.client.LocalClient()
-        self.minions = local.cmd(search , 'grains.get', [ 'id' ])
+        self.minions = local.cmd(search , 'grains.get', [ 'id' ], expr_form="compound")
 
-        _rgws = local.cmd(search , 'pillar.get', [ 'rgw_configurations' ])
+        _rgws = local.cmd(search , 'pillar.get', [ 'rgw_configurations' ], expr_form="compound")
         for node in _rgws.keys():
             self.rgw_configurations = _rgws[node]
             # Just need first
@@ -909,7 +909,7 @@ def _get_existing_cluster_network(addrs, public_network=None):
     minion_networks = []
 
     # Grab network interfaces from salt.
-    minion_network_interfaces = local.cmd(search, "network.interfaces")
+    minion_network_interfaces = local.cmd(search, "network.interfaces", [], expr_form="compound")
     # Remove lo.
     for entry in minion_network_interfaces:
 	try:

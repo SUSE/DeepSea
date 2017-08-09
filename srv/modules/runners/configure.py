@@ -75,7 +75,7 @@ class ClusterAssignment(object):
         target = ceph_tgt.CephTgt()
         search = target.ceph_tgt
 
-        self.minions = local.cmd(search , 'pillar.get', [ 'cluster' ])
+        self.minions = local.cmd(search , 'pillar.get', [ 'cluster' ], expr_form="compound")
 
         self.names = dict(self._clusters())
         if 'unassigned' in self.names:

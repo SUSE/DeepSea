@@ -646,7 +646,7 @@ class Validate(object):
         target = ceph_tgt.CephTgt()
         search = target.ceph_tgt
         local = salt.client.LocalClient()
-        contents = local.cmd(search , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
+        contents = local.cmd(search , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="compound")
 
         for minion in contents.keys():
             m = re.search(r'Version: (\S+)', contents[minion])
@@ -874,7 +874,7 @@ def deploy(**kwargs):
     target = ceph_tgt.CephTgt()
     search = target.ceph_tgt
     local = salt.client.LocalClient()
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="glob")
+    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
     printer = get_printer(**kwargs)
 
@@ -895,7 +895,7 @@ def setup(**kwargs):
     search = target.ceph_tgt
     local = salt.client.LocalClient()
 
-    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="glob")
+    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     printer = get_printer(**kwargs)
 
     v = Validate("setup", pillar_data, [], printer)
