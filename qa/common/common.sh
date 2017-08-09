@@ -174,6 +174,16 @@ role-rgw/cluster/*.sls slice=[:1]
 EOF
 }
 
+function policy_cfg_rgw_ssl {
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - rgw (first node)
+role-rgw/cluster/*.sls slice=[:1]
+role-rgw-ssl/cluster/*.sls slice=[:1]
+EOF
+}
+
+
+
 function policy_cfg_igw {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - igw (first node)
@@ -356,4 +366,3 @@ EOF
   # FIXME: assert script not running on the iSCSI gateway node
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
-
