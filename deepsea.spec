@@ -294,6 +294,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
 %{_mandir}/man7/deepsea.commands.7.gz
+%{_mandir}/man7/deepsea.ceph_tgt.7.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
