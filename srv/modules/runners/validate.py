@@ -612,6 +612,40 @@ class Validate(object):
 
         self._set_pass_status('openattic')
 
+    def saltapi(self):
+        """
+        Log into the salt-api and verify that a token is returned.
+
+        Note: The duplicate functionality between the post section of the
+        DeepSea rpm and the salt state may come across as unnecessary.  
+        However, some install using the Makefile and not the rpm.  Also,
+        the rpm will only attempt restarts of the salt-api, but neither
+        enable nor start the salt-api.  The salt state does.
+
+        In the expected case, the salt-master is restarted with the 
+        sharedsecret when DeepSea is installed.  The salt-api is then
+        started and enabled as part of Stage 0.  This check is really
+        here for those that went a completely different path.
+        """
+        __opts__ = salt.config.client_config('/etc/salt/master')
+        stdout, stderr = self._popen([ 'curl', '-si', 'localhost:8000/login', 
+                                       '-H', '"Accept: application/json"', 
+                                       '-d' 'username=admin', 
+                                       '-d', 'sharedsecret={}'.format(__opts__['sharedsecret']), 
+                                       '-d', 'eauth=sharedsecret' ])
+        try:
+            result = json.loads(stdout[-1])
+        except ValueError as err:
+            msg = "Salt API is failing to authenticate - try 'systemctl restart salt-master'"
+            self.errors.setdefault('salt-api', []).append(msg)
+            return
+        if 'return' in result:
+            if 'token' in result['return'][0]:
+                self._set_pass_status('salt-api')
+                return
+        msg = "Unexpected return for Salt API - check logs"
+        self.errors.setdefault('salt-api', []).append(msg)
+
 # Note: the master_minion and ceph_version are specific to the Stage 0
 # validate.  These are also more similar to the ready.py for the firewall
 # check than to all the Stage 3 checks.  The difference is that these need
@@ -881,6 +915,25 @@ def deploy(**kwargs):
 
     v = Validate("deploy", pillar_data, grains_data, printer)
     v.openattic()
+    v.report()
+
+    if v.errors:
+        return False
+
+    return True
+
+def saltapi(**kwargs):
+    """
+    """
+    target = ceph_tgt.CephTgt()
+    search = target.ceph_tgt
+    local = salt.client.LocalClient()
+
+    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
+    printer = get_printer(**kwargs)
+
+    v = Validate("salt-api", pillar_data, [], printer)
+    v.saltapi()
     v.report()
 
     if v.errors:
