@@ -4,10 +4,10 @@ rgw nop:
 
 {% if 'master' not in salt['pillar.get']('roles') and
       'rgw' not in salt['pillar.get']('roles') %}
+
 stop ceph-radosgw:
-  service.dead:
-    - name: ceph-radosgw@rgw.*
-    - enable: False
+  cmd.run:
+    - name: 'systemctl stop ceph-radosgw@rgw*'
     - onlyif: "test -f /usr/bin/radosgw"
 
 # Need conditional check if all rgw configurations are unassigned
