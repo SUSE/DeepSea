@@ -307,7 +307,7 @@
           "allValue": null,
           "current": {},
           "datasource": "Prometheus",
-          "hide": 0,
+          "hide": 2,
           "includeAll": false,
           "label": "Username",
           "multi": false,
@@ -396,6 +396,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway users",
-    "version": 1
+    "version": 2
   }
 }
