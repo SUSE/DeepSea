@@ -53,5 +53,6 @@ setup monitoring:
 setup node exporters:
   salt.state:
     - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.node_exporter
 

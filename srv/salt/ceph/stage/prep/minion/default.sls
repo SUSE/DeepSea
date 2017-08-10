@@ -46,6 +46,7 @@ wait until the cluster has recovered before processing {{ host }}:
 check if all processes are still running after processing {{ host }}:
   salt.state:
     - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.processes
     - failhard: True
 
@@ -133,6 +134,7 @@ updates:
 restart:
   salt.state:
     - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.updates.restart
 
 {% endif %}
