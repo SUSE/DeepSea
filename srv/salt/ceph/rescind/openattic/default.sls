@@ -16,7 +16,7 @@ uninstall openattic:
     - pkgs:
       - openattic
 
-{% for service in [ 'apache2', 'postgresql' ] %}
+{% for service in [ 'postgresql' ] %}
 {% if salt['service.available'](service) %}
 stop {{ service }}:
   service.dead:
