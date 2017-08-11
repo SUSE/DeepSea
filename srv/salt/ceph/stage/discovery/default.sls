@@ -19,3 +19,5 @@ discover roles:
 discover storage profiles:
   salt.runner:
     - name: proposal.populate
+    - require:
+        - salt: refresh_pillar0
