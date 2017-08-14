@@ -30,13 +30,14 @@ Assumptions made by all test scripts
 6. the integration test script (this script) is run from the qa/ subdirectory
    of the DeepSea repo clone.
 
+Caveats
+-------
 
-The following section is WIP - do not use!
-------------------------------------------
-
-7. a file called 'deepsea-qa-cluster-layout' (working name) has optionally been
-   created inside the same directory where the DeepSea repo was cloned. If it
-   exists, this file is expected to contain data points describing the cluster
-   layout (e.g. which nodes are storage nodes, which are client nodes, etc.).
-   If it is not present, the test script will try to do without it.
+1. Ceph will not work properly unless the nodes have (at least) short
+   hostnames. That means the qa scripts won't pass, either. There are two
+   options: /etc/hosts or DNS
+2. Node targeting: DeepSea suite sets "ceph_tgt: *" in
+   /srv/pillar/ceph/ceph_tgt.sls. If you want to override this in a test, just
+   reset that file to something else after sourcing qa/common/common.sh, but
+   before running stage 0.
 

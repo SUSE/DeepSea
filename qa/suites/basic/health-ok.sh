@@ -31,5 +31,6 @@ ceph_conf_small_cluster
 run_stage_3
 ceph_cluster_status
 ceph_health_test
+ceph_version_sanity_test
 
 echo "OK"

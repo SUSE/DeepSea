@@ -8,6 +8,7 @@ source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
+# determine hostname of Salt Master
 MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
 if test -s $MASTER_MINION_SLS ; then
     SALT_MASTER=$(cat $MASTER_MINION_SLS | \
@@ -18,7 +19,16 @@ else
     exit 1
 fi
 
-MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+# set ceph_tgt to * - see https://github.com/SUSE/DeepSea/pull/526
+echo "ceph_tgt: '*'" > /srv/pillar/ceph/ceph_tgt.sls
+
+# get list of minions
+if type salt-key > /dev/null 2>&1; then
+    MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+else
+    echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
+    exit 1
+fi
 
 export DEV_ENV='true'
 
@@ -259,6 +269,18 @@ function ceph_cluster_status {
 #
 # core validation tests
 #
+
+function ceph_version_sanity_test {
+  rpm -q ceph
+  local RPM_NAME=$(rpm -q ceph)
+  local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
+  echo "According to RPM, the ceph upstream version is $RPM_CEPH_VERSION"
+  ceph --version
+  local BUFFER=$(ceph --version)
+  local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
+  echo "According to \"ceph --version\", the ceph upstream version is $CEPH_CEPH_VERSION"
+  test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
+}
 
 function ceph_health_test {
   local LOGFILE=/tmp/ceph_health_test.log
