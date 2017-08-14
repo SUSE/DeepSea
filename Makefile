@@ -82,6 +82,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/files/*.j2 $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/*.rbd $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/*.rgw $(DESTDIR)/srv/salt/ceph/configuration/files/
+	install -m 644 srv/salt/ceph/configuration/files/*.rgw-ssl $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.import $(DESTDIR)/srv/salt/ceph/configuration/files/
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
