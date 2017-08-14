@@ -8,6 +8,21 @@ validate failed:
 
 {% endif %}
 
+salt-api:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.salt-api
+
+{% if salt['saltutil.runner']('validate.saltapi') == False %}
+
+salt-api failed:
+  salt.state:
+    - name: just.exit
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}
+
 sync master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
