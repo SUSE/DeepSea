@@ -888,13 +888,14 @@
             "fill": 1,
             "id": 12,
             "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
+                "avg": true,
+                "current": false,
+                "max": true,
+                "min": true,
+                "show": true,
+                "total": false,
+                "values": true,
+                "alignAsTable": true
             },
             "lines": true,
             "linewidth": 1,
@@ -922,7 +923,7 @@
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Disk Temperaturs",
+            "title": "Disk Temperatures",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -938,7 +939,7 @@
             },
             "yaxes": [
               {
-                "format": "short",
+                "format": "celsius",
                 "label": null,
                 "logBase": 1,
                 "max": null,
