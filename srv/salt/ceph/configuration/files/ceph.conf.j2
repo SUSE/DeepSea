@@ -12,6 +12,11 @@ filestore_xattr_use_omap = true
 public_network = {{ salt['pillar.get']('public_network') }}
 cluster_network = {{ salt['pillar.get']('cluster_network') }}
 
+# enable old ceph health format in the json output. This fixes the
+# ceph_exporter. This option will only stay until the prometheus plugin takes
+# over
+mon_health_preluminous_compat = true
+
 {% include "ceph/configuration/files/ceph.conf.rbd" %}
 
 {% include "ceph/configuration/files/ceph.conf.d/global.conf" ignore missing %}

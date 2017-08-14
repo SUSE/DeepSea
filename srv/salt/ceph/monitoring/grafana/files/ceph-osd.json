@@ -258,7 +258,7 @@
             "links": [],
             "nullPointMode": "connected",
             "percentage": false,
-            "pointradius": 2,
+            "pointradius": 1,
             "points": true,
             "renderer": "flot",
             "seriesOverrides": [],
@@ -270,8 +270,8 @@
                 "expr": "ceph_osd_variance{osd=~'$osd'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
-                "legendFormat": "Available - {{ osd }}",
-                "metric": "ceph_osd_avail_bytes",
+                "legendFormat": "{{ osd }}",
+                "metric": "",
                 "refId": "A",
                 "step": 60
               }
@@ -350,7 +350,7 @@
             "links": [],
             "nullPointMode": "connected",
             "percentage": false,
-            "pointradius": 2,
+            "pointradius": 1,
             "points": true,
             "renderer": "flot",
             "seriesOverrides": [],
@@ -442,7 +442,7 @@
             "renderer": "flot",
             "seriesOverrides": [],
             "span": 6,
-            "stack": true,
+            "stack": false,
             "steppedLine": false,
             "targets": [
               {
@@ -485,14 +485,6 @@
             "yaxes": [
               {
                 "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": 0,
-                "show": true
-              },
-              {
-                "format": "short",
                 "label": null,
                 "logBase": 1,
                 "max": null,
@@ -652,7 +644,7 @@
           "query": "label_values(ceph_osd_up, osd)",
           "refresh": 1,
           "regex": "",
-          "sort": 0,
+          "sort": 3,
           "tagValuesQuery": "",
           "tags": [],
           "tagsQuery": "",

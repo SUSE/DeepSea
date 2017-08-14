@@ -222,7 +222,116 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": false,
-        "title": "Row",
+        "title": "CPU & Memory",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": "250px",
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "editable": true,
+            "error": false,
+            "fill": 1,
+            "grid": {},
+            "id": 13,
+            "legend": {
+              "avg": true,
+              "current": false,
+              "max": true,
+              "min": true,
+              "show": true,
+              "total": false,
+              "values": true,
+              "alignAsTable": true
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "minSpan": 2,
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "repeat": "node",
+            "seriesOverrides": [
+              {
+                "alias": "/.*_in/",
+                "transform": "negative-Y"
+              }
+            ],
+            "span": 12,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "expr": "irate(node_network_receive_bytes{instance=~'$instance', device!='lo'}[5m])",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "{{device}}_in",
+                "metric": "node_netw",
+                "refId": "A",
+                "step": 120,
+                "target": ""
+              },
+              {
+                "expr": "irate(node_network_transmit_bytes{instance=~'$instance', device!='lo'}[5m])",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "{{device}}_out",
+                "refId": "B",
+                "step": 120
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Network Traffic",
+            "tooltip": {
+              "msResolution": false,
+              "shared": true,
+              "sort": 0,
+              "value_type": "cumulative"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": [],
+              "buckets": null
+            },
+            "yaxes": [
+              {
+                "format": "Bps",
+                "label": "bits in (-) / bits out (+)",
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true
+              },
+              {
+                "format": "short",
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ],
+            "dashes": false,
+            "dashLength": 10,
+            "spaceLength": 10
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "Network",
         "titleSize": "h6"
       },
       {
@@ -439,7 +548,7 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": false,
-        "title": "New row",
+        "title": "File system",
         "titleSize": "h6"
       },
       {
@@ -453,13 +562,15 @@
             "fill": 1,
             "id": 6,
             "legend": {
-              "avg": false,
+              "avg": true,
               "current": false,
-              "max": false,
-              "min": false,
+              "max": true,
+              "min": true,
               "show": true,
               "total": false,
-              "values": false
+              "values": true,
+              "alignAsTable": true,
+              "rightSide": true
             },
             "lines": true,
             "linewidth": 1,
@@ -469,94 +580,35 @@
             "pointradius": 5,
             "points": false,
             "renderer": "flot",
-            "seriesOverrides": [],
-            "span": 4,
+            "seriesOverrides": [
+              {
+                "alias": "/.*_w/",
+                "transform": "negative-Y"
+              }
+            ],
+            "span": 8,
             "stack": false,
             "steppedLine": false,
             "targets": [
               {
-                "expr": "node_disk_bytes_written{instance='$instance',job='node-exporter'}",
+                "expr": "irate(node_disk_bytes_written{instance='$instance',job='node-exporter', device!~\"loop.?\"}[5m])",
                 "intervalFactor": 1,
-                "legendFormat": "{{device}}",
+                "legendFormat": "{{device}}_w",
                 "refId": "A",
                 "step": 60
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "Bytes written",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "decbytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
               },
               {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ]
-          },
-          {
-            "aliasColors": {},
-            "bars": false,
-            "datasource": "Prometheus",
-            "fill": 1,
-            "id": 7,
-            "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "span": 4,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "node_disk_bytes_read{instance='$instance',job='node-exporter'}",
-                "intervalFactor": 1,
-                "legendFormat": "{{device}}",
-                "refId": "A",
-                "step": 60
+                "expr": "irate(node_disk_bytes_read{instance='$instance',job='node-exporter', device!~'loop.*'}[5m])",
+                "intervalFactor": 2,
+                "refId": "B",
+                "step": 120,
+                "legendFormat": "{{device}}_r"
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Bytes read",
+            "title": "Disk I/O",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -572,7 +624,7 @@
             "yaxes": [
               {
                 "format": "decbytes",
-                "label": null,
+                "label": "- write / + read",
                 "logBase": 1,
                 "max": null,
                 "min": null,
@@ -664,7 +716,7 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": false,
-        "title": "Dashboard Row",
+        "title": "I/O Stats",
         "titleSize": "h6"
       },
       {
@@ -836,13 +888,14 @@
             "fill": 1,
             "id": 12,
             "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
+                "avg": true,
+                "current": false,
+                "max": true,
+                "min": true,
+                "show": true,
+                "total": false,
+                "values": true,
+                "alignAsTable": true
             },
             "lines": true,
             "linewidth": 1,
@@ -870,7 +923,7 @@
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Disk Temperaturs",
+            "title": "Disk Temperatures",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -886,7 +939,7 @@
             },
             "yaxes": [
               {
-                "format": "short",
+                "format": "celsius",
                 "label": null,
                 "logBase": 1,
                 "max": null,
