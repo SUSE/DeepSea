@@ -813,6 +813,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     printer = get_printer(**kwargs)
     v = Validate(cluster, data=pillar_data, printer=printer)
 
+    v.ceph_tgt(target)
     v._lint_yaml_files()
     if not v.in_dev_env:
         v._profiles_populated()
@@ -886,6 +887,13 @@ def deploy(**kwargs):
         return False
 
     return True
+
+def prep(**kwargs):
+    """
+    Enough users seem to skip around.  Verify that the basics are still
+    correct for Stage 1.
+    """
+    setup(**kwargs)
 
 def setup(**kwargs):
     """
