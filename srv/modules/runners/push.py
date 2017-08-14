@@ -93,6 +93,8 @@ def convert(filename = "/srv/pillar/ceph/proposals/policy.cfg"):
     common = pillar_data.organize(filename)
     pillar_data.convert(common)
     pillar_data.rename(filename)
+
+    proposal(filename=filename)
     return ""
 
 def _create_dirs(path, root):
