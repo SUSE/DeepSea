@@ -3,6 +3,7 @@
 import logging
 import re
 import salt.client
+import ceph_tgt
 
 from netaddr import IPNetwork, IPAddress
 
@@ -82,7 +83,9 @@ def ping(cluster = None, exclude = None, **kwargs):
             if 'public_network' in networks[host]:
                 addresses.extend(_address(total[host], networks[host]['public_network']))
     else:
-        search = "*"
+        target = ceph_tgt.CephTgt()
+        search = target.ceph_tgt
+
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug( "ping: search {} ".format(search))

@@ -294,6 +294,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
 %{_mandir}/man7/deepsea.commands.7.gz
+%{_mandir}/man7/deepsea.ceph_tgt.7.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 %config /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
@@ -304,6 +305,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/fio/*.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/templates/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
+%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/ceph_tgt.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 %config /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls

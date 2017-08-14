@@ -1,0 +1,56 @@
+.TH deepsea 7
+.SH NAME
+deepsea ceph_tgt
+.SH DESCRIPTION
+For compatibility with other Salt solutions,
+.B DeepSea
+uses
+.I ceph_tgt,
+which constrains the targeting of Salt minions.
+By default DeepSea targets by grain using 'G@deepsea'. For more information on salt targeting see https://docs.saltstack.com/en/latest/topics/targeting/
+.SH METHODS
+Either reconfigure 
+.I ceph_tgt
+to use any valid Salt target or apply grains to the desired minions.  For example, 
+.PP
+.RS 4
+ceph_tgt: '*'
+.RE
+.PP
+will target all Salt minions.  Likewise,
+.PP
+.RS 4
+ceph_tgt: 'ses*'
+.RE
+.PP
+will only target minions that begin with 
+.B ses.
+.PP
+Alternatively, apply a grain to each minion and use the default ceph_tgt of
+.B G@deepsea:*.
+For example,
+.PP
+.RS 4
+salt -L node1.domain,node2.domain grains.append deepsea default
+salt -S 10.0.0.0/24 grains.append deepsea default
+.RE
+.PP
+will target the minions node1.domain and node2.domain in addition to all minions in the subnet 10.0.0.0/24.  Grain selection works well in environments where Salt is installed on minions that follow no simple pattern.
+.PP
+To remove a grain completely from a minion, run
+.PP
+.RS 4
+salt 'xyz.domain' grains.delval deepsea destructive=True
+.RE
+.PP
+For more information on Salt grains see https://docs.saltstack.com/en/latest/topics/grains/
+
+.SH FILES
+The file for 
+.I ceph_tgt
+is /srv/pillar/ceph/ceph_tgt.sls.
+.SH AUTHORS
+Eric Jackson <ejackson@suse.com>
+.RS
+.RE
+Jan Fajerski <jfajerski@suse.com>

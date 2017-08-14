@@ -10,6 +10,7 @@ import yaml
 import os
 import re
 import sys
+import ceph_tgt
 from subprocess import call, Popen, PIPE
 from os.path import dirname
 import glob
@@ -99,7 +100,9 @@ class ClusterAssignment(object):
         """
         Query the cluster assignment and remove unassigned
         """
-        self.minions = local.cmd('*' , 'pillar.get', [ 'cluster' ])
+        target = ceph_tgt.CephTgt()
+        search = target.ceph_tgt
+        self.minions = local.cmd(search , 'pillar.get', [ 'cluster' ])
 
         self.names = dict(self._clusters())
         if 'unassigned' in self.names:
@@ -155,7 +158,7 @@ class Validate(object):
         self.passed = OrderedDict()
         self.errors = OrderedDict()
         self.warnings = OrderedDict()
-        self._minion_check()
+        #self._minion_check()
 
     def __dev_env(self):
         if 'DEV_ENV' in os.environ:
@@ -619,6 +622,8 @@ class Validate(object):
         """
         Verify that the master minion setting is a minion
         """
+        data = None
+        node = None
         local = salt.client.LocalClient()
         for node in self.data.keys():
             data = local.cmd(self.data[node]['master_minion'] , 'pillar.get', [ 'master_minion' ], expr_form="glob")
@@ -626,7 +631,10 @@ class Validate(object):
         if data:
             self.passed['master_minion'] = "valid"
         else:
-            msg = "Could not find minion {}. Check /srv/pillar/ceph/master_minion.sls".format(self.data[node]['master_minion'])
+            if node:
+                msg = "Could not find minion {}. Check /srv/pillar/ceph/master_minion.sls".format(self.data[node]['master_minion'])
+            else:
+                msg = "Missing pillar data"
             self.errors['master_minion'] = [ msg ]
 
 
@@ -635,8 +643,10 @@ class Validate(object):
         Scan all minions for ceph versions in their repos.
         """
         JEWEL_VERSION="10.2"
+        target = ceph_tgt.CephTgt()
+        search = target.ceph_tgt
         local = salt.client.LocalClient()
-        contents = local.cmd('*' , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="glob")
+        contents = local.cmd(search , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="compound")
 
         for minion in contents.keys():
             m = re.search(r'Version: (\S+)', contents[minion])
@@ -742,6 +752,20 @@ class Validate(object):
             files = glob.glob(line)
         return files
 
+    def ceph_tgt(self, target):
+        """
+        Verify ceph_tgt is set
+        """
+        if target.ceph_tgt:
+            if target.matches:
+                self.passed['ceph_tgt'] = "valid"
+            else:
+                msg = "No minions matched for {} - check /srv/pillar/ceph/ceph_tgt.sls".format(target.ceph_tgt)
+                self.errors['ceph_tgt'] = [ msg ]
+        else:
+            msg = "ceph_tgt not defined - check /srv/pillar/ceph/ceph_tgt.sls"
+            self.errors['ceph_tgt'] = [ msg ]
+
     def report(self):
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
         self.printer.print_result()
@@ -777,7 +801,8 @@ def discovery(cluster=None, printer=None, **kwargs):
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster
-    search = "*"
+    target = ceph_tgt.CephTgt()
+    search = target.ceph_tgt
     if 'cluster' in __pillar__:
         if __pillar__['cluster']:
             search = "I@cluster:{}".format(cluster)
@@ -788,6 +813,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     printer = get_printer(**kwargs)
     v = Validate(cluster, data=pillar_data, printer=printer)
 
+    v.ceph_tgt(target)
     v._lint_yaml_files()
     if not v.in_dev_env:
         v._profiles_populated()
@@ -846,9 +872,11 @@ def deploy(**kwargs):
     """
     Verify that Stage 4, Services can succeed.
     """
+    target = ceph_tgt.CephTgt()
+    search = target.ceph_tgt
     local = salt.client.LocalClient()
-    pillar_data = local.cmd('*', 'pillar.items', [], expr_form="glob")
-    grains_data = local.cmd('*', 'grains.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
     printer = get_printer(**kwargs)
 
     v = Validate("deploy", pillar_data, grains_data, printer)
@@ -860,15 +888,26 @@ def deploy(**kwargs):
 
     return True
 
+def prep(**kwargs):
+    """
+    Enough users seem to skip around.  Verify that the basics are still
+    correct for Stage 1.
+    """
+    setup(**kwargs)
+
 def setup(**kwargs):
     """
     Check that initial files prior to any stage are correct
     """
+    target = ceph_tgt.CephTgt()
+    search = target.ceph_tgt
     local = salt.client.LocalClient()
-    pillar_data = local.cmd('*' , 'pillar.items', [], expr_form="glob")
+
+    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     printer = get_printer(**kwargs)
 
     v = Validate("setup", pillar_data, [], printer)
+    v.ceph_tgt(target)
     v.master_minion()
     v.ceph_version()
     v.report()

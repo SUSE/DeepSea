@@ -14,7 +14,8 @@ push proposals:
 
 refresh_pillar1:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.refresh
     - require:
       - salt: push proposals
@@ -27,7 +28,8 @@ post configuration:
 
 refresh_pillar2:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.refresh
     - require: 
       - salt: post configuration
@@ -50,6 +52,7 @@ setup monitoring:
 
 setup node exporters:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.node_exporter
 

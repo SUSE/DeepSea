@@ -42,6 +42,7 @@ copy-files:
 	install -m 644 srv/pillar/ceph/benchmarks/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
+	install -m 644 srv/pillar/ceph/ceph_tgt.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
@@ -524,6 +525,8 @@ copy-files:
 install: copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
+	sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
+	echo "ceph_tgt: '*'" > /srv/pillar/ceph/ceph_tgt.sls
 	chown -R salt /srv/pillar/ceph
 	systemctl restart salt-master
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls

@@ -1,21 +1,25 @@
 sync:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.sync
 
 repo:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.repo
 
 common packages:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.packages.common
 
 mines:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.mines
 
 {% if salt['saltutil.runner']('cephprocesses.mon') == True %}
@@ -41,7 +45,8 @@ wait until the cluster has recovered before processing {{ host }}:
 
 check if all processes are still running after processing {{ host }}:
   salt.state:
-    - tgt: '*'
+    - tgt: {{ salt['pillar.get']('ceph_tgt') }}
+    - tgt_type: compound
     - sls: ceph.processes
     - failhard: True
 
@@ -108,7 +113,8 @@ finishing remaining minions:
 
 updates:
   salt.state:
-    - tgt: '*'
+    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt_type: compound
     - sls: ceph.updates
 
 {% endif %}

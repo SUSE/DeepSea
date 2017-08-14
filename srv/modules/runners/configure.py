@@ -5,6 +5,7 @@ import ipaddress
 import pprint
 import yaml
 import os
+import ceph_tgt
 from os.path import dirname
 
 
@@ -71,7 +72,10 @@ class ClusterAssignment(object):
         """
         Query the cluster assignment and remove unassigned
         """
-        self.minions = local.cmd('*' , 'pillar.get', [ 'cluster' ])
+        target = ceph_tgt.CephTgt()
+        search = target.ceph_tgt
+
+        self.minions = local.cmd(search , 'pillar.get', [ 'cluster' ], expr_form="compound")
 
         self.names = dict(self._clusters())
         if 'unassigned' in self.names:

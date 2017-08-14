@@ -12,6 +12,7 @@ from os.path import isdir, isfile
 import os
 from sys import exit
 import logging
+import ceph_tgt
 
 log = logging.getLogger(__name__)
 
@@ -84,6 +85,8 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
+target = ceph_tgt.CephTgt()
+
 std_args = {
     'leftovers': False,
     'standalone': False,
@@ -93,7 +96,7 @@ std_args = {
     'ssd-spinner': False,
     'ratio': 5,
     'db-ratio': 5,
-    'target': '*',
+    'target': target.ceph_tgt,
     'data': 0,
     'journal': 0,
     'wal': 0,
@@ -162,8 +165,11 @@ def _choose_proposal(node, proposal, args):
             return _propose(node, proposal[conf], args)
     # if no flags a present propose what is there
     for conf in confs:
-        if proposal[conf]:
-            return _propose(node, proposal[conf], args)
+        if conf in proposal:
+            if proposal[conf]:
+                return _propose(node, proposal[conf], args)
+        else:
+            log.error("Verify that targeted minions have proposal.generate")
 
 
 def help():
