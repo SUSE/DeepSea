@@ -67,7 +67,7 @@
             "points": false,
             "renderer": "flot",
             "seriesOverrides": [],
-            "span": 12,
+            "span": 6,
             "stack": false,
             "steppedLine": true,
             "targets": [
@@ -76,7 +76,7 @@
                 "hide": false,
                 "interval": "$interval",
                 "intervalFactor": 1,
-                "legendFormat": "Operations",
+                "legendFormat": "Total",
                 "metric": "",
                 "refId": "A",
                 "step": 3600
@@ -85,34 +85,16 @@
                 "expr": "ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
-                "legendFormat": "Successful operations",
+                "legendFormat": "Successful",
                 "metric": "",
                 "refId": "B",
-                "step": 3600
-              },
-              {
-                "expr": "ceph_rgw_user_usage_sent_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Sent",
-                "metric": "",
-                "refId": "C",
-                "step": 3600
-              },
-              {
-                "expr": "ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Received",
-                "metric": "",
-                "refId": "D",
                 "step": 3600
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Bandwidth usage - $category",
+            "title": "Operations - $category",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -127,20 +109,108 @@
             },
             "yaxes": [
               {
-                "format": "short",
+                "format": "none",
                 "label": null,
                 "logBase": 1,
                 "max": null,
-                "min": null,
+                "min": "0",
                 "show": true
               },
               {
-                "format": "short",
+                "format": "bytes",
                 "label": null,
                 "logBase": 1,
                 "max": null,
                 "min": null,
+                "show": false
+              }
+            ]
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "decimals": null,
+            "fill": 1,
+            "id": 2,
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "hideEmpty": false,
+              "hideZero": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "sideWidth": null,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "null as zero",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "span": 6,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+              {
+                "expr": "ceph_rgw_user_usage_sent_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Bytes sent",
+                "metric": "",
+                "refId": "C",
+                "step": 3600
+              },
+              {
+                "expr": "ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Bytes received",
+                "metric": "",
+                "refId": "D",
+                "step": 3600
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Bandwidth - $category",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": "0",
                 "show": true
+              },
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
               }
             ]
           }
@@ -237,7 +307,7 @@
           "allValue": null,
           "current": {},
           "datasource": "Prometheus",
-          "hide": 0,
+          "hide": 2,
           "includeAll": false,
           "label": "Username",
           "multi": false,
@@ -285,7 +355,7 @@
           "options": [],
           "query": "label_values(ceph_rgw_user_usage_ops_total, category)",
           "refresh": 1,
-          "regex": "",
+          "regex": "^(?!set_attrs$).*",
           "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
@@ -326,6 +396,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway users",
-    "version": 0
+    "version": 2
   }
 }
