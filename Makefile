@@ -524,9 +524,9 @@ copy-files:
 install: copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
-	sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
 	chown -R salt /srv/pillar/ceph
 	systemctl restart salt-master
+	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls
 	zypper -n install salt-api
 	systemctl restart salt-api
 
