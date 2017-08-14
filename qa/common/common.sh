@@ -19,6 +19,9 @@ else
     exit 1
 fi
 
+# set ceph_tgt to * - see https://github.com/SUSE/DeepSea/pull/526
+echo "ceph_tgt: '*'" > /srv/pillar/ceph/ceph_tgt.sls
+
 # get list of minions
 if type salt-key > /dev/null 2>&1; then
     MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
