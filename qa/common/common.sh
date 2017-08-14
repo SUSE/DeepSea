@@ -8,6 +8,7 @@ source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
+# determine hostname of Salt Master
 MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
 if test -s $MASTER_MINION_SLS ; then
     SALT_MASTER=$(cat $MASTER_MINION_SLS | \
@@ -18,7 +19,13 @@ else
     exit 1
 fi
 
-MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+# get list of minions
+if type salt-key > /dev/null 2>&1; then
+    MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+else
+    echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
+    exit 1
+fi
 
 export DEV_ENV='true'
 
