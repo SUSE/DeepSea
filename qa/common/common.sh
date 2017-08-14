@@ -260,6 +260,18 @@ function ceph_cluster_status {
 # core validation tests
 #
 
+function ceph_version_sanity_test {
+  rpm -q ceph
+  local RPM_NAME=$(rpm -q ceph)
+  local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
+  echo "According to RPM, the ceph upstream version is $RPM_CEPH_VERSION"
+  ceph --version
+  local BUFFER=$(ceph --version)
+  local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
+  echo "According to \"ceph --version\", the ceph upstream version is $CEPH_CEPH_VERSION"
+  test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
+}
+
 function ceph_health_test {
   local LOGFILE=/tmp/ceph_health_test.log
   echo "Waiting up to 15 minutes for HEALTH_OK..."
