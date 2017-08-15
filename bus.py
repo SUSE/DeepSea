@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-import fnmatch
 import os
 import sys
 import salt.config
 import salt.utils.event
-import pprint
 
 opts = salt.config.client_config('/etc/salt/master')
 
@@ -18,15 +16,16 @@ sevent = salt.utils.event.get_event(
 class Filter(object):
     def __init__(self, **kwargs):
         default_filter = ['pillar.get']
-        self.filter_for = {'commands': [],
-                           'duplicates': True
-			   }
+        self._filter = {'commands': [],
+                        'duplicates': True
+		       }
 
         command_filter = kwargs.get('commands', default_filter)
-	self.filter_for['commands'] = command_filter
+	self._filter['commands'] = command_filter
 
-    def get_filter(self):
-        return self.filter_for
+    @property
+    def filter(self):
+        return self._filter
 
 class bcolors:
     HEADER = '\033[95m'
@@ -70,11 +69,6 @@ class Ident(object):
      def stagename(self, stagename):
         self._ident['stagename'] = stagename
 
-     def is_sane(self, ret):
-	if ret is not None:
-            if 'fun' in ret['data']:
-                return True
-
      @property
      def counter(self):
 	return self._ident['cnt']
@@ -83,10 +77,15 @@ class Ident(object):
      def counter(self, nr):
 	self._ident['cnt'] = nr
 
+     def is_sane(self, ret):
+	if ret is not None:
+            if 'fun' in ret['data']:
+                return True
+
 
 class Matcher(object):
     def __init__(self):
-        self.filters = Filter().get_filter()
+        self.filters = Filter().filter
 
     def is_orch(self, name, ident):
 	if 'runner.state.orch' in name:
