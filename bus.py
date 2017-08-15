@@ -41,39 +41,47 @@ class bcolors:
 
 class Ident(object):
      def __init__(self):
-        self.ident = {'jid': 0,
+        self._ident = {'jid': 0,
                       'name': 'None',
                       'prev_name': 'None',
-		      'stage_name': 'None',
+		      'stagename': 'None',
 		      'cnt': 0}
+     @property
      def jid(self):
-	return self.ident['jid']
+	return self._ident['jid']
 
-     def set_jid(self, jid):
-	self.ident['jid'] = jid
+     @jid.setter
+     def jid(self, jid):
+	self._ident['jid'] = jid
 
-     def set_prev_name(self, prev_name):
-        self.ident['prev_name'] = prev_name
-
+     @property
      def prev_name(self):
-        return self.ident['prev_name']
+        return self._ident['prev_name']
 
-     def set_stage_name(self, stage_name):
-        self.ident['stage_name'] = stage_name
+     @prev_name.setter
+     def prev_name(self, prev_name):
+        self._ident['prev_name'] = prev_name
 
-     def stage_name(self):
-        return self.ident['stage_name']
+     @property
+     def stagename(self):
+        return self._ident['stagename']
+
+     @stagename.setter
+     def stagename(self, stagename):
+        self._ident['stagename'] = stagename
 
      def is_sane(self, ret):
 	if ret is not None:
             if 'fun' in ret['data']:
                 return True
 
-     def set_counter(self, nr):
-	self.ident['cnt'] = nr
-
+     @property
      def counter(self):
-	return self.ident['cnt']
+	return self._ident['cnt']
+
+     @counter.setter
+     def counter(self, nr):
+	self._ident['cnt'] = nr
 
 
 class Matcher(object):
@@ -85,19 +93,19 @@ class Matcher(object):
             return True
 
     def stage_started(self, ret, ident):
-        if ident.jid() == 0 and \
+        if ident.jid == 0 and \
 	   'return' not in ret['data'] and \
 	   'success' not in ret['data']:
 	    return True
      
     def stage_ended(self, ret, ident, jid):
-        if ident.jid() == jid or \
+        if ident.jid == jid or \
 	   'success' in ret['data'] and \
 	   'return' in ret['data']:
 	    return True
 
     def check_stages(self, ident, jid, ret):
-	orch_name = "{}{}{}".format(bcolors.HEADER, ident.stage_name(), bcolors.ENDC)
+	orch_name = "{}{}{}".format(bcolors.HEADER, ident.stagename, bcolors.ENDC)
         if self.stage_started(ret, ident):
 	    os.system('clear')
             message = "{} started\n".format(orch_name)
@@ -108,14 +116,14 @@ class Matcher(object):
                 status = "{}succeeded {}".format(bcolors.OKGREEN, bcolors.ENDC) if ret['data']['success'] is True else "{}failed {}".format(bcolors.FAIL, bcolors.ENDC)
             message = "{} finished and {}\n".format(orch_name, status)
 	    Printer(message)
-            ident.set_jid(0)
-            ident.set_prev_name('None')
-            ident.set_stage_name('None')
+            ident.jid = 0
+            ident.prev_name = 'None'
+            ident.stagename = 'None'
             return True
 
     def construct_message(self, command_name, ret, ident):
-	prefix = "" if ident.counter() < 5 else "{}Still {}".format(bcolors.WARNING, bcolors.ENDC)
-	suffix = " ({}{}{})".format(bcolors.WARNING, ident.counter(), bcolors.ENDC) if ident.counter() >= 5 else ""
+	prefix = "" if ident.counter < 5 else "{}Still {}".format(bcolors.WARNING, bcolors.ENDC)
+	suffix = " ({}{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC) if ident.counter >= 5 else ""
         if 'saltutil.find_job' in ret['fun']:
 	    if 'return' in ret:
 		if 'arg' in ret['return']:
@@ -138,7 +146,7 @@ class Matcher(object):
 	if not self.is_orch(name, ident):
           message = self.construct_message(name, ret, ident)
 	  if 'duplicates' in self.filters:
-              if not ident.prev_name() == name:
+              if not ident.prev_name == name:
                   Printer(message)
 		  return True 
 	      else:
@@ -169,12 +177,12 @@ while True:
          # a saltutil.find_job is an internal call which should be excluded
           continue
       if matcher.is_orch(name, ident):
-            stage_name = ret['data']['fun_args'][0]
-            ident.set_stage_name(stage_name)
+            stagename = ret['data']['fun_args'][0]
+            ident.stagename = stagename
             if not matcher.check_stages(ident, jid, ret):
-              ident.set_jid(jid)
+              ident.jid = jid
       if matcher.print_current_step(ident, name, ret['data']):
-          ident.set_counter(0)
+          ident.counter = 0
       else:
-	  ident.set_counter(ident.counter()+1)
-      ident.set_prev_name(name)
+	  ident.counter =ident.counter + 1
+      ident.prev_name = name
