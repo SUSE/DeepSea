@@ -147,7 +147,7 @@ class Matcher(object):
         if 'saltutil.find_job' in ret['fun']:
 	    if 'return' in ret:
 		if 'arg' in ret['return']:
-		    return [ret['return']['tgt']], ret['return']['arg'][0]
+		    return "Waiting for", [ret['return']['tgt']], ret['return']['arg'][0]
         if 'state.sls' in ret['fun']:
             if 'arg' in ret:
                 command_name = ret['arg'][0]
@@ -157,8 +157,8 @@ class Matcher(object):
 	        minion = ret['minions']
             if 'id' in ret:
 		minion = [ret['id']]
-            return minion, command_name
-        return '', base_type
+            return "Executing", minion, command_name
+        return "Executing", '', base_type
 
     def construct_prefix(self):
 	if ident.counter < 5:
@@ -168,15 +168,15 @@ class Matcher(object):
 
     def construct_suffix(self):
 	if ident.counter >= 5:
-	    return " ({}{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC) 
+	    return " ({}#{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC) 
 	else:
 	    return  ""
 
     def construct_message(self, base_type, ret):
 	suffix = self.construct_suffix()
 	prefix = self.construct_prefix()
-	target, func_name = self.find_func_opts(ret, base_type)
-	message = "{}Executing {} to complete on {}{}".format(prefix, func_name, ' '.join(target), suffix)
+	verb, target, func_name = self.find_func_opts(ret, base_type)
+	message = "{}{} {} on {}{}".format(prefix, verb, func_name, ' '.join(target), suffix)
 	return target, func_name, message
          
     def print_current_step(self, base_type, ret):
