@@ -122,7 +122,18 @@ class Radosgw(object):
         port = '7480'  # civetweb default port
         ssl = ''
         admin_path = 'admin'
-        for rgw_conf_file_path in glob.glob("/srv/salt/ceph/configuration/files/ceph.conf.*"):
+
+        rgw_names = ['rgw']
+        for minion in cached:
+            if 'rgw_configurations' in cached[minion]:
+                # TODO: where is the master minion when we need it
+                rgw_names = cached[minion]['rgw_configurations'].keys()
+
+        conf_file_dir = "/srv/salt/ceph/configuration/files/"
+        rgw_conf_files = [os.path.join(conf_file_dir,"ceph.conf." + rgw_name) for rgw_name in rgw_names]
+
+        for rgw_name in rgw_names:
+            rgw_conf_file_path = os.path.join(conf_file_dir, "ceph.conf."+ rgw_name)
             if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
                 with open(rgw_conf_file_path) as rgw_conf_file:
                     for line in rgw_conf_file:
@@ -136,15 +147,16 @@ class Radosgw(object):
                             if match:
                                 admin_path = match.group(1)
 
-        local = salt.client.LocalClient()
-        fqdns = local.cmd('I@roles:rgw', 'grains.item', ['fqdn'], expr_form="compound")
-        for _, grains in fqdns.items():
-            result.append({
-                'host': grains['fqdn'],
-                'port': port,
-                'ssl': ssl == 's',
-                'url': "http{}://{}:{}/{}".format(ssl, grains['fqdn'], port, admin_path)
-            })
+            local = salt.client.LocalClient()
+            fqdns = local.cmd('I@roles:'+ rgw_name, 'grains.item', ['fqdn'], expr_form="compound")
+            for _, grains in fqdns.items():
+                result.append({
+                    'host': grains['fqdn'],
+                    'port': port,
+                    'ssl': ssl == 's',
+                    'url': "http{}://{}:{}/{}".format(ssl, grains['fqdn'], port, admin_path)
+                })
+
         return result
 
 
