@@ -206,13 +206,11 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/igw/lrbd
 %dir /srv/salt/ceph/rescind/igw/sysconfig
 %dir /srv/salt/ceph/rescind/master
-%dir /srv/salt/ceph/rescind/mds-nfs
 %dir /srv/salt/ceph/rescind/mds
 %dir /srv/salt/ceph/rescind/mds/keyring
 %dir /srv/salt/ceph/rescind/mgr
 %dir /srv/salt/ceph/rescind/mgr/keyring
 %dir /srv/salt/ceph/rescind/mon
-%dir /srv/salt/ceph/rescind/rgw-nfs
 %dir /srv/salt/ceph/rescind/rgw
 %dir /srv/salt/ceph/rescind/rgw/keyring
 %dir /srv/salt/ceph/rescind/rgw/monitoring
@@ -424,13 +422,11 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/igw/lrbd/*.sls
 %config /srv/salt/ceph/rescind/igw/sysconfig/*.sls
 %config /srv/salt/ceph/rescind/master/*.sls
-%config /srv/salt/ceph/rescind/mds-nfs/*.sls
 %config /srv/salt/ceph/rescind/mds/*.sls
 %config /srv/salt/ceph/rescind/mds/keyring/*.sls
 %config /srv/salt/ceph/rescind/mgr/*.sls
 %config /srv/salt/ceph/rescind/mgr/keyring/*.sls
 %config /srv/salt/ceph/rescind/mon/*.sls
-%config /srv/salt/ceph/rescind/rgw-nfs/*.sls
 %config /srv/salt/ceph/rescind/rgw/*.sls
 %config /srv/salt/ceph/rescind/rgw/keyring/*.sls
 %config /srv/salt/ceph/rescind/rgw/monitoring/*.sls
