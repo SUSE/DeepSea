@@ -1,17 +1,18 @@
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') != [] %}
 EXPORT
 {
-	Export_ID=1;
+    Export_ID=1;
 
-	Path = /;
+    Path = /;
 
-	Pseudo = /cephfs/;
+    #Required only for nfs version 4
+    Pseudo = /cephfs/;
 
-	Access_Type = RW;
+    Access_Type = RW;
 
-	Protocols = 3, 4;
+    Protocols = 3, 4;
 
-	Transports = UDP, TCP;
+    Transports = UDP, TCP;
 
     FSAL {
             Name = CEPH;
@@ -28,28 +29,37 @@ EXPORT
 {% for user in salt['rgw.users'](role) %}
 EXPORT
 {
-	Export_ID={{ loop.index + 1 }};
+    Export_ID={{ loop.index + 1 }};
 
-	# exporting {{ user }}-demo bucket
-	Path = "{{ user }}-demo";
-	
-	# You can also export the root path / inplace of bucket name
-	# Path = "/"
+    {% set demo_bucket = user + '-' +  'demo' %}
+    {% if salt['rgw.lookup_bucket'](user, demo_bucket) == True %}
 
-	Pseudo = "/{{ user }}/{{ user }}-demo";
+    # exporting {{ user }}-demo bucket
+    Path = "{{ user }}-demo";
 
-	Access_Type = RW;
+    #Required only for nfs version 4
+    Pseudo = "/{{ user }}/{{ user }}-demo";
 
-	Protocols = 3, 4;
+    {% else %}
+    Path = "/";
 
-	Transports = UDP, TCP;
+    #Required only for nfs version 4
+    Pseudo = "/{{ user }}";
 
-	FSAL {
-		Name = RGW;
-		User_Id = "{{ user }}";
-		Access_Key_Id ="{{ salt['rgw.access_key'](user) }}";
-		Secret_Access_Key = "{{ salt['rgw.secret_key'](user) }}";
-	}
+    {%endif%}
+
+    Access_Type = RW;
+
+    Protocols = 3, 4;
+
+    Transports = UDP, TCP;
+
+    FSAL {
+        Name = RGW;
+        User_Id = "{{ user }}";
+        Access_Key_Id ="{{ salt['rgw.access_key'](user) }}";
+        Secret_Access_Key = "{{ salt['rgw.secret_key'](user) }}";
+    }
 }
 
 {% endfor %}
@@ -69,5 +79,5 @@ RGW {
 #Refer to man page "ganesha-core-config"
 NFS_KRB5
 {
-	Active_krb5 = false;
+    Active_krb5 = false;
 }

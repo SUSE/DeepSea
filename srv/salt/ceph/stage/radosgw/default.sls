@@ -21,16 +21,11 @@ rgw users:
 
 {% endfor %}
 
-{% set endpoint = salt.saltutil.runner('ui_rgw.endpoints')[0] %}
 rgw demo buckets:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.rgw.buckets
-    - pillar:
-        'rgw_host': {{ endpoint['host'] }}
-        'rgw_port': {{ endpoint['port'] }}
-        'rgw_ssl': {{ endpoint['ssl'] }}
 
 {% endif %}
 
