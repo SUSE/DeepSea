@@ -66,11 +66,7 @@ echo "nfs-ganesha mount test script running as $(whoami) on $(hostname --fqdn)"
 test ! -e $NFS_MOUNTPOINT
 mkdir $NFS_MOUNTPOINT
 test -d $NFS_MOUNTPOINT
-# ************************************************
-# mount the NFS export - this is prone to timeout!
-# ************************************************
-# NOTE: NFSv4 does not work with root, even when /etc/ganesha/ganesha.conf
-# contains "Squash = No_root_squash;" line
+showmount -e
 #mount -t nfs -o nfsvers=4 ${GANESHANODE}:/ $NFS_MOUNTPOINT
 mount -t nfs -o sync ${GANESHANODE}:/ $NFS_MOUNTPOINT
 ls -lR $NFS_MOUNTPOINT
