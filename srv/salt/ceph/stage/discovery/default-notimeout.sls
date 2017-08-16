@@ -1,9 +1,9 @@
 
-ready:
-  salt.runner:
-    - name: minions.ready
+include:
+  - .default
 
-discover:
-  salt.runner:
-    - name: populate.proposals
-
+extend:
+  ready:
+    salt.runner:
+      - name: minions.ready
+      - timeout: 0
