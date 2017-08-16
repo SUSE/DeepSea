@@ -209,6 +209,7 @@ class Parser(object):
 	self._stage_name = stage_name
 	self._base_dir = '/srv/salt'
 	self._sls_file  = None
+	self.find_file()
     
     def find_file(self, start_dir='/srv/salt'):
 	 def walk_dirs(start_dir):
@@ -217,18 +218,21 @@ class Parser(object):
                      if _dir in sub_name:
 	                 return _dir
 
-	 sls_path = "{}".format(start_dir)
+	 logger.info("stage name: {}".format(self._stage_name))
+	 init_dir = start_dir
+         #import pdb;pdb.set_trace()
 	 for sub_name in self._stage_name.split('.'):
-             new_sub_dir = walk_dirs(start_dir)
-	     sls_path = sls_path + "/" + new_sub_dir
+	     logger.info("Scanning dirs for {}".format(sub_name))
+             new_sub_dir = walk_dirs(init_dir)
+	     init_dir = init_dir + "/" + new_sub_dir
 
-	 sls_path = sls_path + "/default.sls"
-	 self._sls_file = sls_path
+	 self._sls_file = init_dir + "/default.sls"
          return self._sls_file
 
     def parse_yaml(self):
 	substages = []
 	content = []
+	subfiles = []
 	with open(self._sls_file, 'r') as stream:
 	    try:
 		content = yaml.load(stream)
@@ -245,13 +249,15 @@ class Parser(object):
 	    content = resolve_deps(content)
 	    [substages.append(x) for x in content]
             for substage in substages:
-		new_sub = self._stage_name + "." + substage
-                subfiles = self.find_file(base_dir=new_sub)
-		import pdb;pdb.set_trace()
+		old_stage_name = self._stage_name 
+		self._stage_name = old_stage_name + "." + substage
+                subfiles.append(self.find_file())
+		self._stage_name = old_stage_name
+	print subfiles
 		
 			    
-parser = Parser('ceph.stage.0.master')
-print parser.find_file()
+parser = Parser('ceph.stage.4')
+#print parser.find_file()
 parser.parse_yaml()
 	
 class Printer():
