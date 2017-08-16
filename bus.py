@@ -3,9 +3,25 @@ import os
 import sys
 import salt.config
 import salt.utils.event
+import logging
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('/srv/salt/bus.log')
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
+
 
 opts = salt.config.client_config('/etc/salt/master')
 
+# connection should also be over the API
 sevent = salt.utils.event.get_event(
         'master',
         sock_dir=opts['sock_dir'],
@@ -13,15 +29,17 @@ sevent = salt.utils.event.get_event(
         opts=opts)
 
 
+# Filter loads from file
 class Filter(object):
     def __init__(self, **kwargs):
         default_filter = ['pillar.get']
         self._filter = {'commands': [],
-                        'duplicates': True
+                        'duplicates': False
 		       }
 
         command_filter = kwargs.get('commands', default_filter)
 	self._filter['commands'] = command_filter
+	logger.info("Filter settings: {}".format(self._filter))
 
     @property
     def filter(self):
@@ -45,6 +63,8 @@ class Ident(object):
                       'prev_name': 'None',
 		      'stagename': 'None',
 		      'cnt': 0}
+	self.filters = Filter().filter
+
      @property
      def jid(self):
 	return self._ident['jid']
@@ -84,33 +104,35 @@ class Ident(object):
 
 
 class Matcher(object):
-    def __init__(self):
-        self.filters = Filter().filter
 
-    def is_orch(self, name, ident):
+    def is_orch(self, name):
 	if 'runner.state.orch' in name:
+	    logger.info("Found orchestration: {}".format(name))
             return True
 
-    def stage_started(self, ret, ident):
+    def stage_started(self, ret):
         if ident.jid == 0 and \
 	   'return' not in ret['data'] and \
 	   'success' not in ret['data']:
+	    logger.info("Stage started {}".format(ident.stagename))
 	    return True
      
-    def stage_ended(self, ret, ident, jid):
+    def stage_ended(self, ret, jid):
         if ident.jid == jid or \
 	   'success' in ret['data'] and \
 	   'return' in ret['data']:
+	    logger.info("Stage ended {}".format(ident.stagename))
 	    return True
 
-    def check_stages(self, ident, jid, ret):
+    def check_stages(self, jid, ret):
 	orch_name = "{}{}{}".format(bcolors.HEADER, ident.stagename, bcolors.ENDC)
-        if self.stage_started(ret, ident):
+        if self.stage_started(ret):
 	    os.system('clear')
             message = "{} started\n".format(orch_name)
 	    Printer(message)
+            ident.jid = jid
 	    return False
-	if self.stage_ended(ret, ident, jid):
+	if self.stage_ended(ret, jid):
 	    if 'success' in ret['data']:
                 status = "{}succeeded {}".format(bcolors.OKGREEN, bcolors.ENDC) if ret['data']['success'] is True else "{}failed {}".format(bcolors.FAIL, bcolors.ENDC)
             message = "{} finished and {}\n".format(orch_name, status)
@@ -118,41 +140,61 @@ class Matcher(object):
             ident.jid = 0
             ident.prev_name = 'None'
             ident.stagename = 'None'
-            return True
+	    return False
 
-    def construct_message(self, command_name, ret, ident):
-	prefix = "" if ident.counter < 5 else "{}Still {}".format(bcolors.WARNING, bcolors.ENDC)
-	suffix = " ({}{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC) if ident.counter >= 5 else ""
+    def find_func_opts(self, ret, base_type):
+	# In case that's a callback
         if 'saltutil.find_job' in ret['fun']:
 	    if 'return' in ret:
 		if 'arg' in ret['return']:
-                    message = "{}Waiting for {} to complete on {}{}".format(prefix, ret['return']['arg'][0], ret['return']['tgt'], suffix)
-	            return message
+		    return [ret['return']['tgt']], ret['return']['arg'][0]
         if 'state.sls' in ret['fun']:
             if 'arg' in ret:
                 command_name = ret['arg'][0]
             if 'fun_args' in ret:
                 command_name = ret['fun_args'][0]
-        if 'minions' in ret:
-	    minion = ret['minions']
-            message = "{}Executing {} on {}{}".format(prefix, command_name, ', '.join(minion), suffix)
-	    return message
-        if 'id' in ret:
-            return "{}Executing {} on {}{}".format(prefix, command_name, ret['id'], suffix)
-        return "{}Executing {}{}".format(prefix, command_name, suffix)
+            if 'minions' in ret:
+	        minion = ret['minions']
+            if 'id' in ret:
+		minion = [ret['id']]
+            return minion, command_name
+        return '', base_type
+
+    def construct_prefix(self):
+	if ident.counter < 5:
+	    return ""
+        else:
+            return "{}Still {}".format(bcolors.WARNING, bcolors.ENDC)
+
+    def construct_suffix(self):
+	if ident.counter >= 5:
+	    return " ({}{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC) 
+	else:
+	    return  ""
+
+    def construct_message(self, base_type, ret):
+	suffix = self.construct_suffix()
+	prefix = self.construct_prefix()
+	target, func_name = self.find_func_opts(ret, base_type)
+	message = "{}Executing {} to complete on {}{}".format(prefix, func_name, ' '.join(target), suffix)
+	return target, func_name, message
          
-    def print_current_step(self, ident, name, ret):
-	if not self.is_orch(name, ident):
-          message = self.construct_message(name, ret, ident)
-	  if 'duplicates' in self.filters:
-              if not ident.prev_name == name:
+    def print_current_step(self, base_type, ret):
+	if not self.is_orch(base_type):
+          target, func_name, message = self.construct_message(base_type, ret)
+	  if not ident.filters['duplicates']:
+              if ident.prev_name != func_name:
                   Printer(message)
-		  return True 
+		  ident.counter = 0
+		  logger.debug("Resetting the counter; new function")
 	      else:
 		  Printer(message)
-		  return False
+		  ident.counter += 1
+		  logger.debug("Incrementing the counter to {}; still calling {}".format(ident.counter, base_type))
+              ident.prev_name = func_name
 	  else:
 	      print "{}".format(message)
+		
 
 class Printer():
     """Print things to stdout on one line dynamically"""
@@ -170,18 +212,13 @@ while True:
     matcher = Matcher()
     if ident.is_sane(ret):
       jid = ret['data']['jid']
-      name = ret['data']['fun']
-      if name in matcher.filters['commands'] or \
-	 (name in 'saltutil.find_job' and not 'return' in ret['data']):
+      base_type = ret['data']['fun'] # That's only the type  'state.sls'
+      if base_type in ident.filters['commands'] or \
+	 (base_type in 'saltutil.find_job' and not 'return' in ret['data']):
          # a saltutil.find_job is an internal call which should be excluded
           continue
-      if matcher.is_orch(name, ident):
+      if matcher.is_orch(base_type):
             stagename = ret['data']['fun_args'][0]
             ident.stagename = stagename
-            if not matcher.check_stages(ident, jid, ret):
-              ident.jid = jid
-      if matcher.print_current_step(ident, name, ret['data']):
-          ident.counter = 0
-      else:
-	  ident.counter =ident.counter + 1
-      ident.prev_name = name
+            matcher.check_stages(jid, ret)
+      matcher.print_current_step(base_type, ret['data'])
