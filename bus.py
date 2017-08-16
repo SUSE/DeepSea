@@ -147,7 +147,8 @@ class Matcher(object):
         if 'saltutil.find_job' in ret['fun']:
 	    if 'return' in ret:
 		if 'arg' in ret['return']:
-		    return "Waiting for", [ret['return']['tgt']], ret['return']['arg'][0]
+		    if type(ret['return']['arg']) is list and len(ret['return']['arg']) > 0:
+		        return "Waiting for", [ret['return']['tgt']], ret['return']['arg'][0]
         if 'state.sls' in ret['fun']:
             if 'arg' in ret:
                 command_name = ret['arg'][0]
@@ -158,6 +159,7 @@ class Matcher(object):
             if 'id' in ret:
 		minion = [ret['id']]
             return "Executing", minion, command_name
+        logger.info("Couldn't find a function name. Printing {}".format(base_type))
         return "Executing", '', base_type
 
     def construct_prefix(self):
@@ -194,7 +196,7 @@ class Matcher(object):
               ident.prev_name = func_name
 	  else:
 	      print "{}".format(message)
-		
+
 
 class Printer():
     """Print things to stdout on one line dynamically"""
@@ -203,7 +205,6 @@ class Printer():
         sys.stdout.write("\r"+" ".ljust(int(columns)))
         sys.stdout.write("\r"+message)
         sys.stdout.flush()
-
 
 ident = Ident()
 
