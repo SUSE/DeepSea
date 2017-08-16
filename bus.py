@@ -4,6 +4,8 @@ import sys
 import salt.config
 import salt.utils.event
 import logging
+import sys, signal
+import yaml
 
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,9 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+def signal_handler(signal, frame):
+    print("\nAborted by user..")
+    sys.exit(0)
 
 opts = salt.config.client_config('/etc/salt/master')
 
@@ -147,7 +152,9 @@ class Matcher(object):
         if 'saltutil.find_job' in ret['fun']:
 	    if 'return' in ret:
 		if 'arg' in ret['return']:
-		    if type(ret['return']['arg']) is list and len(ret['return']['arg']) > 0:
+		    if type(ret['return']['arg']) is list and len(ret['return']['arg']) == 0:
+			if 'fun' in ret['return']:
+			    return "Waiting for", [ret['return']['tgt']], ret['return']['fun']
 		        return "Waiting for", [ret['return']['tgt']], ret['return']['arg'][0]
         if 'state.sls' in ret['fun']:
             if 'arg' in ret:
@@ -159,7 +166,7 @@ class Matcher(object):
             if 'id' in ret:
 		minion = [ret['id']]
             return "Executing", minion, command_name
-        logger.info("Couldn't find a function name. Printing {}".format(base_type))
+        logger.info("No state or callback. defaulting to {}".format(base_type))
         return "Executing", '', base_type
 
     def construct_prefix(self):
@@ -197,16 +204,68 @@ class Matcher(object):
 	  else:
 	      print "{}".format(message)
 
+class Parser(object):
+    def __init__(self, stage_name):
+	self._stage_name = stage_name
+	self._base_dir = '/srv/salt'
+	self._sls_file  = None
+    
+    def find_file(self, start_dir='/srv/salt'):
+	 def walk_dirs(start_dir):
+             for root, dirs, files in os.walk(start_dir):
+                 for _dir in dirs:
+                     if _dir in sub_name:
+	                 return _dir
 
+	 sls_path = "{}".format(start_dir)
+	 for sub_name in self._stage_name.split('.'):
+             new_sub_dir = walk_dirs(start_dir)
+	     sls_path = sls_path + "/" + new_sub_dir
+
+	 sls_path = sls_path + "/default.sls"
+	 self._sls_file = sls_path
+         return self._sls_file
+
+    def parse_yaml(self):
+	substages = []
+	content = []
+	with open(self._sls_file, 'r') as stream:
+	    try:
+		content = yaml.load(stream)
+	    except yaml.YAMLError as exc:
+		logger.error(exc)
+
+        def resolve_deps(content):
+	    if 'include' in content:
+		# includes start with a dot.
+		content = [x.replace('.', '') for x in content['include']]
+            return content
+
+	while 'include' in content:
+	    content = resolve_deps(content)
+	    [substages.append(x) for x in content]
+            for substage in substages:
+		new_sub = self._stage_name + "." + substage
+                subfiles = self.find_file(base_dir=new_sub)
+		import pdb;pdb.set_trace()
+		
+			    
+parser = Parser('ceph.stage.0.master')
+print parser.find_file()
+parser.parse_yaml()
+	
 class Printer():
     """Print things to stdout on one line dynamically"""
     def __init__(self, message):
 	_, columns = os.popen('stty size', 'r').read().split()
+	if len(message) > int(columns):
+	    message = message[:(int(columns) - len(message) - 3)] + "..."
         sys.stdout.write("\r"+" ".ljust(int(columns)))
         sys.stdout.write("\r"+message)
         sys.stdout.flush()
 
 ident = Ident()
+signal.signal(signal.SIGINT, signal_handler)
 
 while True:
     ret = sevent.get_event(full=True)
@@ -223,3 +282,4 @@ while True:
             ident.stagename = stagename
             matcher.check_stages(jid, ret)
       matcher.print_current_step(base_type, ret['data'])
+
