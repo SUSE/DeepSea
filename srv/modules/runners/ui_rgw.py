@@ -122,7 +122,15 @@ class Radosgw(object):
         port = '7480'  # civetweb default port
         ssl = ''
         admin_path = 'admin'
-        for rgw_conf_file_path in glob.glob("/srv/salt/ceph/configuration/files/ceph.conf.*"):
+
+        rgw_names = ['rgw']
+        if 'roles' in __pillar__:
+            if 'rgw_configurations' in __pillar__:
+                rgw_names = __pillar__['rgw_configurations'].keys()
+
+        conf_file_dir = "/srv/salt/ceph/configuration/files/"
+        rgw_conf_files = [os.path.join(conf_file_dir,"ceph.conf." + rgw_name) for rgw_name in rgw_names]
+        for rgw_conf_file_path in rgw_conf_files:
             if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
                 with open(rgw_conf_file_path) as rgw_conf_file:
                     for line in rgw_conf_file:
