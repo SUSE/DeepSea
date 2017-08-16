@@ -26,6 +26,7 @@ trap 'echo "Result: NOT_OK"' ERR
 radosgw-admin user list
 radosgw-admin user info --uid=demo
 radosgw-admin user info --uid=demo1
+radosgw-admin bucket list
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $RGWNODE
