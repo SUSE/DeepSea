@@ -38,8 +38,8 @@ readycheck before processing {{ host }}:
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
-    - hardfail: True
     - exception: True
+    - failhard: True
 
 upgrading mon on {{ host }}:
   salt.runner:
@@ -86,8 +86,8 @@ readycheck for {{ host }} after processing mons :
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
-    - hardfail: True
     - exception: True
+    - failhard: True
 
 upgrading {{ host }}:
   salt.runner:
