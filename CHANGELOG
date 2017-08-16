@@ -1,4 +1,15 @@
 -------------------------------------------------------------------
+Wed Aug 16 21:14:51 UTC 2017 - ejackson@suse.com
+- Version 0.7.20
+- Update README for DEV_ENV
+- Various Grafana dashboard fixes/improvements
+- Add qa test cases for ganesha, sanity checks
+- Support ssl for rgw configurations
+- Add mandatory ceph_tgt constraint
+- Enable salt-api, include validation
+- Remove unused client roles
+
+-------------------------------------------------------------------
 Thu Aug  3 13:01:44 UTC 2017 - ejackson@suse.com
 - Version 0.7.19
 - Revert salt-api
