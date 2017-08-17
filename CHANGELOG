@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Aug 17 22:40:58 UTC 2017 - ejackson@suse.com
+- Version 0.7.21
+- Monitoring updates
+- Revert rgw.sls removal from /srv/pillar/ceph/init.sls
+- Add python-rados dependency to spec
+
+-------------------------------------------------------------------
 Wed Aug 16 21:14:51 UTC 2017 - ejackson@suse.com
 - Version 0.7.20
 - Update README for DEV_ENV
