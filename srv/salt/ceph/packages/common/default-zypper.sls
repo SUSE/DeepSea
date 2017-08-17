@@ -7,7 +7,7 @@ deps check lock:
 
 deps install:
   cmd.run:
-    - name: "zypper --non-interactive --no-gpg-checks in gptfdisk pciutils lsscsi"
+    - name: "zypper --non-interactive --no-gpg-checks in gptfdisk pciutils lsscsi iperf"
     - require:
       - module: deps check lock
     - fire_event: True
