@@ -6,6 +6,9 @@ import socket
 from subprocess import Popen, PIPE
 import json
 import psutil
+import logging
+
+log = logging.getLogger(__name__)
 
 def _get_listening_ipaddr(proc_name):
     """
@@ -46,41 +49,130 @@ def get_minion_cluster_network():
     """
     return _get_listening_ipaddr("ceph-osd")
 
+def _get_device_of_partition(partition):
+    """
+    Remove trailing numbers of partition, and for nvme, remove trailing 'p' as well.
+    """
+    partition = partition.rstrip("1234567890")
+    # For nvme, strip the trailing 'p' as well.
+    if "nvme" in partition:
+        partition = partition[:-1]
+
+    return partition
+
 def _get_disk_id(partition):
     """
-    Return the disk id of a partition/device, or an empty string if not available.
+    Return the disk id of a partition/device, or the original partition/device if
+    the disk id is not available.
     """
     disk_id_cmd = Popen("find -L /dev/disk/by-id -samefile " + partition + " \( -name ata* -o -name nvme* \)", stdout=PIPE, stderr=PIPE, shell=True)
     out, err = disk_id_cmd.communicate()
 
     # We should only ever have one entry that we return.
-    return out.rstrip()
+    if out:
+        return out.rstrip()
+    else:
+        return partition
 
-def _append_to_ceph_disk(ceph_disks, partition, journal_dev):
+def _get_osd_type(part_dict):
     """
-    Populate ceph_disks dictionary with data and journal partitions.
+    Return the OSD type string obtained from /var/lib/ceph/osd/ceph-X/type, or possibly
+    None.
+
+    TODO: Long term we should think about refactoring osd.py to expose some of these
+    for use in other modules.
     """
+    osd_type = None
+    type_file_path = part_dict["mount"] + "/type" if part_dict.has_key("mount") else ""
 
-    # We don't care about the trailing number on journal_dev.
-    journal_dev = journal_dev.rstrip("1234567890")
-    # For nvme journal, strip the trailing 'p' as well.
-    if "nvme" in journal_dev:
-        journal_dev = journal_dev[:-1]
+    if os.path.exists(type_file_path):
+        with open(type_file_path, 'r') as type_file:
+            osd_type = type_file.read().rstrip()
 
-    # Try to obtain disk id's for data partition (device) and journal partition.
-    partition_id = _get_disk_id(partition)
-    journal_dev_id = _get_disk_id(journal_dev)
+    return osd_type
 
-    partition = partition_id if partition_id else partition
-    journal_dev = journal_dev_id if journal_dev_id else journal_dev
+def _append_to_ceph_disk(ceph_disks, partition, part_dict):
+    try:
+        ceph_disks["ceph"]["storage"]["osds"][partition]
+    except KeyError, e:
+        ceph_disks["ceph"]["storage"]["osds"][partition] = {}
+    finally:
+        for k in part_dict:
+            ceph_disks["ceph"]["storage"]["osds"][partition][k] = part_dict[k]
+
+def _convert_size_to_human_readable_format(size):
+    """
+    Converts bytes to human readable string.  Note that precision was deliberately
+    kept to the nearest whole unit per osd.py.
+    TODO: another candidate for an osd.py lib fxn :)
+    """
+    suffixes = ['B', 'K', 'M', 'G', 'T']
+    s_index = 0
+
+    while size >= 1024 and s_index < len(suffixes):
+        s_index += 1
+        size = size / 1024.0
+
+    dec = size % 1
+    if dec:
+        s_index -= 1
+        dec = int(dec * 1024)
+        size = (int(size) * 1024) + dec
+    else:
+        size = int(size)
+
+    return "{}{}".format(size, suffixes[s_index])
+
+def _get_partition_size(partition):
+    """
+    Returns partition size in a human readable format.
+    """
+    blockdev_cmd = Popen("blockdev --getsize64 {}".format(partition), stdout=PIPE, stderr=PIPE, shell=True)
+    size, err = blockdev_cmd.communicate()
 
     try:
-	ceph_disks["ceph"]["storage"]["osds"][partition]
-    except KeyError, e:
-	ceph_disks["ceph"]["storage"]["osds"][partition] = {}
-    finally:
-	ceph_disks["ceph"]["storage"]["osds"][partition]["format"] = "filestore"
-	ceph_disks["ceph"]["storage"]["osds"][partition]["journal"] = journal_dev
+        size = _convert_size_to_human_readable_format(int(size))
+    except ValueError, e:
+        size = "0B"
+
+    return size
+    
+def _append_bs_to_ceph_disk(ceph_disks, path, part_dict):
+    """
+    Append a bluestore OSD to ceph_disks dict.
+    """
+    # Make sure path is a device path, not a partition path.  ceph-disk returns
+    # a device path, but let's not take any chances.
+    osd_dev = _get_disk_id(_get_device_of_partition(path))
+
+    # Take from part_dict the elements we need.
+    bs_dict = { "format": "bluestore" }
+    if part_dict.has_key("block.db_dev"):
+        bs_dict["db"] = _get_disk_id(_get_device_of_partition(part_dict["block.db_dev"]))
+        bs_dict["db_size"] = _get_partition_size(part_dict["block.db_dev"])
+    if part_dict.has_key("block.wal_dev"):
+        bs_dict["wal"] = _get_disk_id(_get_device_of_partition(part_dict["block.wal_dev"]))
+        bs_dict["wal_size"] = _get_partition_size(part_dict["block.wal_dev"])
+
+    _append_to_ceph_disk(ceph_disks, osd_dev, bs_dict)
+
+def _append_fs_to_ceph_disk(ceph_disks, path, part_dict):
+    """
+    Append a filestore OSD to ceph_disks dict.
+    """
+    # Make sure path is a device path, not a partition path.  ceph-disk returns
+    # a device path, but let's not take any chances.
+    osd_dev = _get_disk_id(_get_device_of_partition(path))
+
+    journal_partition = part_dict["journal_dev"] if part_dict.has_key("journal_dev") else ""
+    journal_partition_size = _get_partition_size(journal_partition)
+
+    journal_dev = _get_disk_id(_get_device_of_partition(journal_partition))
+
+    # Take from part_dict the elements we need.
+    fs_dict = { "format": "filestore", "journal": journal_dev, "journal_size": journal_partition_size }
+
+    _append_to_ceph_disk(ceph_disks, osd_dev, fs_dict)
 
 def get_ceph_disks_yml(**kwargs):
     """
@@ -92,8 +184,8 @@ def get_ceph_disks_yml(**kwargs):
     ceph_disk_list = Popen("ceph-disk list --format=json", stdout=PIPE, stderr=PIPE, shell=True)
     out, err = ceph_disk_list.communicate()
     ceph_disks = {"ceph":
-		  {"storage":
-		   {"osds": {} }}}
+                  {"storage":
+                   {"osds": {} }}}
 
     # Failed `ceph-disk list`
     if err: return None
@@ -101,14 +193,22 @@ def get_ceph_disks_yml(**kwargs):
     out_list = json.loads(out)
     # [ { 'path': '/dev/foo', 'partitions': [ {...}, ... ], ... }, ... ]
     # The partitions list has all the goodies.
-    for part_dict in out_list:
-        if not part_dict.has_key("partitions"):
-            # This can happen if we encounter a CD/DVD (/dev/sr0)
-            continue
-	path = part_dict['path']
-	for p in part_dict['partitions']:
-	    if p['type'] == 'data':
-		_append_to_ceph_disk(ceph_disks, path, p['journal_dev'])
+    for out_dict in out_list:
+        # Grab the path (ie. /dev/foo).
+        path = out_dict["path"] if out_dict.has_key("path") else None
+        # Paranoia: check to make sure we have a path and a "partitions" entry.
+        if path and out_dict.has_key("partitions"):
+            for part_dict in out_dict["partitions"]:
+                # We only care to process OSD "data" partitions.
+                if part_dict.has_key("type") and part_dict["type"] == "data":
+                    # Determine if we're dealing with filestore or bluestore.
+                    osd_type = _get_osd_type(part_dict)
+                    if osd_type == "filestore":
+                        _append_fs_to_ceph_disk(ceph_disks, path, part_dict)
+                    elif osd_type == "bluestore":
+                        _append_bs_to_ceph_disk(ceph_disks, path, part_dict)
+                    else:
+                        log.warn("Unable to engulf OSD at {}. Unsupported type. Skipping.".format(path))
 
     return ceph_disks
 
