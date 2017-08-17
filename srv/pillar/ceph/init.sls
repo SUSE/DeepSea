@@ -5,3 +5,5 @@
 
 {% include 'ceph/ceph_tgt.sls' ignore missing %}
 
+{% include 'ceph/rgw.sls' ignore missing %}
+
