@@ -37,7 +37,7 @@ class Fio(object):
         the public_network
         '''
         public_network = list(local_client.cmd(
-            client_glob, 'pillar.get',
+            'I@roles:mon', 'pillar.get',
             ['public_network'], expr_form='compound').values())[0]
 
         minion_ip_lists = local_client.cmd(
