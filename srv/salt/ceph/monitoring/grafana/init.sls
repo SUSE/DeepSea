@@ -38,6 +38,9 @@ add prometheus ds:
           -d @- <<EOF
           { "name": "Prometheus", "type": "prometheus", "access": "proxy", "url": "http://localhost:9090", "isDefault": true }
         EOF
+    - unless:
+      - curl -s -H "Content-Type: application/json" \
+          -XGET http://admin:admin@localhost:3000/api/datasources/name/Prometheus
 
 add node dashboard:
   cmd.run:
