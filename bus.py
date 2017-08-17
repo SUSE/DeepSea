@@ -209,7 +209,9 @@ class Parser(object):
 	self._stage_name = stage_name
 	self._base_dir = '/srv/salt'
 	self._sls_file  = None
+	self._subfiles = []
 	self.find_file()
+	self.resolve_deps()
     
     def find_file(self, start_dir='/srv/salt'):
 	 def walk_dirs(start_dir):
@@ -218,47 +220,58 @@ class Parser(object):
                      if _dir in sub_name:
 	                 return _dir
 
-	 logger.info("stage name: {}".format(self._stage_name))
+	 logger.debug("stage name: {}".format(self._stage_name))
 	 init_dir = start_dir
-         #import pdb;pdb.set_trace()
 	 for sub_name in self._stage_name.split('.'):
-	     logger.info("Scanning dirs for {}".format(sub_name))
+	     logger.debug("Scanning dirs for {}".format(sub_name))
              new_sub_dir = walk_dirs(init_dir)
+	     logger.debug("Found sub directory: {}".format(new_sub_dir))
 	     init_dir = init_dir + "/" + new_sub_dir
 
 	 self._sls_file = init_dir + "/default.sls"
          return self._sls_file
 
-    def parse_yaml(self):
-	substages = []
+    def read_yaml(self, file_name):
 	content = []
-	subfiles = []
-	with open(self._sls_file, 'r') as stream:
-	    try:
-		content = yaml.load(stream)
-	    except yaml.YAMLError as exc:
-		logger.error(exc)
+        logger.debug("Trying to parse {}".format(file_name))
+        with open(file_name, 'r') as stream:
+            try:
+	            raw = stream.readlines()
+		    raw = [x if x is not x.startswith('{%') else None for x in raw]
+		    for line in raw:
+			try:
+        	            content.append(yaml.load(line))
+			except:
+			    logger.error("Nah cant load {}".format(line))
+	            # YAML parsing still does not work..
+		    # Need to remove all jinja items before rendering
+		    import pdb;pdb.set_trace()
+	            return content
+            except yaml.YAMLError as exc:
+         	    logger.error(exc)
 
-        def resolve_deps(content):
+
+    def resolve_deps(self):
+	substages = []
+
+        def find_includes(content):
 	    if 'include' in content:
 		# includes start with a dot.
 		content = [x.replace('.', '') for x in content['include']]
             return content
 
+	content = self.read_yaml(self._sls_file)
+	self._subfiles.append(self._sls_file)
 	while 'include' in content:
-	    content = resolve_deps(content)
+	    content = find_includes(content)
 	    [substages.append(x) for x in content]
             for substage in substages:
 		old_stage_name = self._stage_name 
 		self._stage_name = old_stage_name + "." + substage
-                subfiles.append(self.find_file())
+                self._subfiles.append(self.find_file())
 		self._stage_name = old_stage_name
-	print subfiles
-		
-			    
-parser = Parser('ceph.stage.4')
-#print parser.find_file()
-parser.parse_yaml()
+
+
 	
 class Printer():
     """Print things to stdout on one line dynamically"""
@@ -285,6 +298,7 @@ while True:
           continue
       if matcher.is_orch(base_type):
             stagename = ret['data']['fun_args'][0]
+	    parser = Parser(stagename)
             ident.stagename = stagename
             matcher.check_stages(jid, ret)
       matcher.print_current_step(base_type, ret['data'])
