@@ -44,10 +44,10 @@ function nfs_ganesha_cat_config_file {
   salt -C 'I@roles:ganesha' cmd.run 'cat /etc/ganesha/ganesha.conf'
 }
 
-function nfs_ganesha_showmount_loop {
-  local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
-  salt -C 'I@roles:ganesha' cmd.run "while true ; do showmount -e $GANESHANODE | tee /tmp/showmount.log || true ; grep -q 'Timed out' /tmp/showmount.log || break ; done"
-}
+#function nfs_ganesha_showmount_loop {
+#  local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
+#  salt -C 'I@roles:ganesha' cmd.run "while true ; do showmount -e $GANESHANODE | tee /tmp/showmount.log || true ; grep -q 'Timed out' /tmp/showmount.log || break ; done"
+#}
 
 function nfs_ganesha_mount {
   #
