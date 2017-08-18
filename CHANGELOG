@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Aug 18 14:22:44 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.22
+- Rename ceph_tgt to deepsea_minions
+- Minor promethus fix, add ganesha role to policy example
+
+-------------------------------------------------------------------
 Thu Aug 17 22:40:58 UTC 2017 - ejackson@suse.com
 - Version 0.7.21
 - Monitoring updates
