@@ -3,7 +3,7 @@
 
 {% include 'ceph/master_minion.sls' ignore missing %}
 
-{% include 'ceph/ceph_tgt.sls' ignore missing %}
+{% include 'ceph/deepsea_minions.sls' ignore missing %}
 
 {% include 'ceph/rgw.sls' ignore missing %}
 

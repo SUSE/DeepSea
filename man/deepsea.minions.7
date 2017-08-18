@@ -1,32 +1,32 @@
 .TH deepsea 7
 .SH NAME
-deepsea ceph_tgt
+deepsea minions
 .SH DESCRIPTION
 For compatibility with other Salt solutions,
 .B DeepSea
 uses
-.I ceph_tgt,
+.I deepsea_minions,
 which constrains the targeting of Salt minions.
 By default DeepSea targets by grain using 'G@deepsea'. For more information on salt targeting see https://docs.saltstack.com/en/latest/topics/targeting/
 .SH METHODS
 Either reconfigure 
-.I ceph_tgt
+.I deepsea_minions
 to use any valid Salt target or apply grains to the desired minions.  For example, 
 .PP
 .RS 4
-ceph_tgt: '*'
+deepsea_minions: '*'
 .RE
 .PP
 will target all Salt minions.  Likewise,
 .PP
 .RS 4
-ceph_tgt: 'ses*'
+deepsea_minions: 'ses*'
 .RE
 .PP
 will only target minions that begin with 
 .B ses.
 .PP
-Alternatively, apply a grain to each minion and use the default ceph_tgt of
+Alternatively, apply a grain to each minion and use the default deepsea_minions of
 .B G@deepsea:*.
 For example,
 .PP
@@ -47,8 +47,8 @@ For more information on Salt grains see https://docs.saltstack.com/en/latest/top
 
 .SH FILES
 The file for 
-.I ceph_tgt
-is /srv/pillar/ceph/ceph_tgt.sls.
+.I deepsea_minions
+is /srv/pillar/ceph/deepsea_minions.sls.
 .SH AUTHORS
 Eric Jackson <ejackson@suse.com>
 .RS

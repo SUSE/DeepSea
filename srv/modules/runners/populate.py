@@ -24,7 +24,7 @@ import errno
 import uuid
 import ipaddress
 import logging
-import ceph_tgt
+import deepsea_minions
 
 import sys
 
@@ -472,8 +472,8 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        target = ceph_tgt.CephTgt()
-        self.search = target.ceph_tgt
+        target = deepsea_minions.DeepseaMinions()
+        self.search = target.deepsea_minions
 
         self.networks = self._networks(self.servers)
         self.public_networks, self.cluster_networks = self.public_cluster(self.networks)
@@ -741,8 +741,8 @@ class CephCluster(object):
             self.names = [ 'ceph' ]
         self.writer = writer
 
-        target = ceph_tgt.CephTgt()
-        search = target.ceph_tgt
+        target = deepsea_minions.DeepseaMinions()
+        search = target.deepsea_minions
 
         local = salt.client.LocalClient()
         self.minions = local.cmd(search , 'grains.get', [ 'id' ], expr_form="compound")
@@ -902,8 +902,8 @@ def _get_existing_cluster_network(addrs, public_network=None):
     returns an address consisting of network prefix followed by the cidr
     prefix (ie. 10.0.0.0/24).
     """
-    target = ceph_tgt.CephTgt()
-    search = target.ceph_tgt
+    target = deepsea_minions.DeepseaMinions()
+    search = target.deepsea_minions
 
     local = salt.client.LocalClient()
     minion_networks = []

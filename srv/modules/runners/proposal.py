@@ -12,7 +12,7 @@ from os.path import isdir, isfile
 import os
 from sys import exit
 import logging
-import ceph_tgt
+import deepsea_minions
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
-target = ceph_tgt.CephTgt()
+target = deepsea_minions.DeepseaMinions()
 
 std_args = {
     'leftovers': False,
@@ -96,7 +96,7 @@ std_args = {
     'ssd-spinner': False,
     'ratio': 5,
     'db-ratio': 5,
-    'target': target.ceph_tgt,
+    'target': target.deepsea_minions,
     'data': 0,
     'journal': 0,
     'wal': 0,

@@ -3,7 +3,7 @@
 import logging
 import re
 import salt.client
-import ceph_tgt
+import deepsea_minions
 
 from netaddr import IPNetwork, IPAddress
 
@@ -83,8 +83,8 @@ def ping(cluster = None, exclude = None, **kwargs):
             if 'public_network' in networks[host]:
                 addresses.extend(_address(total[host], networks[host]['public_network']))
     else:
-        target = ceph_tgt.CephTgt()
-        search = target.ceph_tgt
+        target = deepsea_minions.DeepseaMinions()
+        search = target.deepsea_minions
 
         if exclude_string:
             search += " and not ( " + exclude_string + " )"

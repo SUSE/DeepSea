@@ -5,7 +5,7 @@ import ipaddress
 import pprint
 import yaml
 import os
-import ceph_tgt
+import deepsea_minions
 from os.path import dirname
 
 
@@ -72,8 +72,8 @@ class ClusterAssignment(object):
         """
         Query the cluster assignment and remove unassigned
         """
-        target = ceph_tgt.CephTgt()
-        search = target.ceph_tgt
+        target = deepsea_minions.DeepseaMinions()
+        search = target.deepsea_minions
 
         self.minions = local.cmd(search , 'pillar.get', [ 'cluster' ], expr_form="compound")
 

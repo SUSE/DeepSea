@@ -36,8 +36,8 @@ Caveats
 1. Ceph will not work properly unless the nodes have (at least) short
    hostnames. That means the qa scripts won't pass, either. There are two
    options: /etc/hosts or DNS
-2. Node targeting: DeepSea suite sets "ceph_tgt: *" in
-   /srv/pillar/ceph/ceph_tgt.sls. If you want to override this in a test, just
+2. Node targeting: DeepSea suite sets "deepsea_minions: *" in
+   /srv/pillar/ceph/deepsea_minions.sls. If you want to override this in a test, just
    reset that file to something else after sourcing qa/common/common.sh, but
    before running stage 0.
 

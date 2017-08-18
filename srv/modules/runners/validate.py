@@ -10,7 +10,7 @@ import yaml
 import os
 import re
 import sys
-import ceph_tgt
+import deepsea_minions
 from subprocess import call, Popen, PIPE
 from os.path import dirname
 import glob
@@ -100,8 +100,8 @@ class ClusterAssignment(object):
         """
         Query the cluster assignment and remove unassigned
         """
-        target = ceph_tgt.CephTgt()
-        search = target.ceph_tgt
+        target = deepsea_minions.DeepseaMinions()
+        search = target.deepsea_minions
         self.minions = local.cmd(search , 'pillar.get', [ 'cluster' ])
 
         self.names = dict(self._clusters())
@@ -677,8 +677,8 @@ class Validate(object):
         Scan all minions for ceph versions in their repos.
         """
         JEWEL_VERSION="10.2"
-        target = ceph_tgt.CephTgt()
-        search = target.ceph_tgt
+        target = deepsea_minions.DeepseaMinions()
+        search = target.deepsea_minions
         local = salt.client.LocalClient()
         contents = local.cmd(search , 'cmd.shell', [ '/usr/bin/zypper info ceph' ], expr_form="compound")
 
@@ -786,19 +786,19 @@ class Validate(object):
             files = glob.glob(line)
         return files
 
-    def ceph_tgt(self, target):
+    def deepsea_minions(self, target):
         """
-        Verify ceph_tgt is set
+        Verify deepsea_minions is set
         """
-        if target.ceph_tgt:
+        if target.deepsea_minions:
             if target.matches:
-                self.passed['ceph_tgt'] = "valid"
+                self.passed['deepsea_minions'] = "valid"
             else:
-                msg = "No minions matched for {} - check /srv/pillar/ceph/ceph_tgt.sls".format(target.ceph_tgt)
-                self.errors['ceph_tgt'] = [ msg ]
+                msg = "No minions matched for {} - check /srv/pillar/ceph/deepsea_minions.sls".format(target.deepsea_minions)
+                self.errors['deepsea_minions'] = [ msg ]
         else:
-            msg = "ceph_tgt not defined - check /srv/pillar/ceph/ceph_tgt.sls"
-            self.errors['ceph_tgt'] = [ msg ]
+            msg = "deepsea_minions not defined - check /srv/pillar/ceph/deepsea_minions.sls"
+            self.errors['deepsea_minions'] = [ msg ]
 
     def report(self):
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
@@ -835,8 +835,8 @@ def discovery(cluster=None, printer=None, **kwargs):
     local = salt.client.LocalClient()
 
     # Restrict search to this cluster
-    target = ceph_tgt.CephTgt()
-    search = target.ceph_tgt
+    target = deepsea_minions.DeepseaMinions()
+    search = target.deepsea_minions
     if 'cluster' in __pillar__:
         if __pillar__['cluster']:
             search = "I@cluster:{}".format(cluster)
@@ -847,7 +847,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     printer = get_printer(**kwargs)
     v = Validate(cluster, data=pillar_data, printer=printer)
 
-    v.ceph_tgt(target)
+    v.deepsea_minions(target)
     v._lint_yaml_files()
     if not v.in_dev_env:
         v._profiles_populated()
@@ -906,8 +906,8 @@ def deploy(**kwargs):
     """
     Verify that Stage 4, Services can succeed.
     """
-    target = ceph_tgt.CephTgt()
-    search = target.ceph_tgt
+    target = deepsea_minions.DeepseaMinions()
+    search = target.deepsea_minions
     local = salt.client.LocalClient()
     pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
     grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
@@ -925,8 +925,8 @@ def deploy(**kwargs):
 def saltapi(**kwargs):
     """
     """
-    target = ceph_tgt.CephTgt()
-    search = target.ceph_tgt
+    target = deepsea_minions.DeepseaMinions()
+    search = target.deepsea_minions
     local = salt.client.LocalClient()
 
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
@@ -952,15 +952,15 @@ def setup(**kwargs):
     """
     Check that initial files prior to any stage are correct
     """
-    target = ceph_tgt.CephTgt()
-    search = target.ceph_tgt
+    target = deepsea_minions.DeepseaMinions()
+    search = target.deepsea_minions
     local = salt.client.LocalClient()
 
     pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
     printer = get_printer(**kwargs)
 
     v = Validate("setup", pillar_data, [], printer)
-    v.ceph_tgt(target)
+    v.deepsea_minions(target)
     v.master_minion()
     v.ceph_version()
     v.report()
