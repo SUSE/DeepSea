@@ -5,8 +5,9 @@ import salt.config
 import salt.utils.event
 import logging
 import sys, signal
-import yaml
-
+import json
+from subprocess import Popen, PIPE
+from pprint import pprint as pp
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -37,7 +38,7 @@ sevent = salt.utils.event.get_event(
 # Filter loads from file
 class Filter(object):
     def __init__(self, **kwargs):
-        default_filter = ['pillar.get']
+        default_filter = ['pillar.get', 'slsutil.renderer']
         self._filter = {'commands': [],
                         'duplicates': False
 		       }
@@ -67,7 +68,8 @@ class Ident(object):
                       'name': 'None',
                       'prev_name': 'None',
 		      'stagename': 'None',
-		      'cnt': 0}
+		      'cnt': 0,
+	              'expected_steps': []}
 	self.filters = Filter().filter
 
      @property
@@ -106,7 +108,14 @@ class Ident(object):
 	if ret is not None:
             if 'fun' in ret['data']:
                 return True
+     @property
+     def expected_steps(self):
+	return self._ident['expected_steps']
 
+     @expected_steps.setter
+     def expected_steps(self, steps):
+	self._ident['expected_steps'] = steps
+	
 
 class Matcher(object):
 
@@ -136,6 +145,8 @@ class Matcher(object):
             message = "{} started\n".format(orch_name)
 	    Printer(message)
             ident.jid = jid
+	    ident.expected_steps = Parser(ident.stagename).expected_steps
+	    pp(ident.expected_steps) 
 	    return False
 	if self.stage_ended(ret, jid):
 	    if 'success' in ret['data']:
@@ -145,6 +156,7 @@ class Matcher(object):
             ident.jid = 0
             ident.prev_name = 'None'
             ident.stagename = 'None'
+	    ident.expected_steps = []
 	    return False
 
     def find_func_opts(self, ret, base_type):
@@ -191,6 +203,9 @@ class Matcher(object):
     def print_current_step(self, base_type, ret):
 	if not self.is_orch(base_type):
           target, func_name, message = self.construct_message(base_type, ret)
+	  if func_name in ident.expected_steps:
+	      ident.expected_steps.pop(func_name)
+	      pp(ident.expected_steps)
 	  if not ident.filters['duplicates']:
               if ident.prev_name != func_name:
                   Printer(message)
@@ -231,48 +246,79 @@ class Parser(object):
 	 self._sls_file = init_dir + "/default.sls"
          return self._sls_file
 
-    def read_yaml(self, file_name):
-	content = []
-        logger.debug("Trying to parse {}".format(file_name))
-        with open(file_name, 'r') as stream:
-            try:
-	            raw = stream.readlines()
-		    raw = [x if x is not x.startswith('{%') else None for x in raw]
-		    for line in raw:
-			try:
-        	            content.append(yaml.load(line))
-			except:
-			    logger.error("Nah cant load {}".format(line))
-	            # YAML parsing still does not work..
-		    # Need to remove all jinja items before rendering
-		    import pdb;pdb.set_trace()
-	            return content
-            except yaml.YAMLError as exc:
-         	    logger.error(exc)
-
 
     def resolve_deps(self):
 	substages = []
 
         def find_includes(content):
+	    includes = []
 	    if 'include' in content:
-		# includes start with a dot.
-		content = [x.replace('.', '') for x in content['include']]
-            return content
+		includes = [str(inc) for inc in content['include']]
+            return includes 
 
-	content = self.read_yaml(self._sls_file)
-	self._subfiles.append(self._sls_file)
-	while 'include' in content:
-	    content = find_includes(content)
-	    [substages.append(x) for x in content]
-            for substage in substages:
-		old_stage_name = self._stage_name 
-		self._stage_name = old_stage_name + "." + substage
-                self._subfiles.append(self.find_file())
-		self._stage_name = old_stage_name
-
-
+	content = self._get_rendered_stage(self._sls_file)
+        includes = find_includes(content)
+	for inc in includes:
+            dot_count = inc.count('.')
+            inc = inc.replace('.', '')
+            if dot_count == 1:
+		stage_name = self._stage_name
+	    elif dot_count > 1:
+	        # The it's not ceph.stage.4.iscsi but ceph.stage.iscsi if
+		# the include has two dots (..) in it.
+	        stage_name = ".".join(self._stage_name.split('.')[:-(dot_count-1)])
+		
+	    tmp_stage_name = self._stage_name
+            self._stage_name = stage_name + "." + inc
+            self._subfiles.append(self.find_file())
+            #TODO: instead of temping back and forth, refactor to use params
+            self._stage_name = tmp_stage_name
+	if not self._subfiles:
+            self._subfiles.append(self._sls_file)
+         
 	
+    def _get_rendered_stage(self, file_name):
+	"""
+	Importing salt.modules.renderer unfortunately does not work as this script is not
+	executed within the salt context and therefore lacking the __salt__ and __opts__ 
+	variables.
+	"""
+	cmd = "salt --out=json --static -C \"I@roles:master\" slsutil.renderer {}".format(file_name)
+	proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+ 	stdout, stderr = proc.communicate()
+	if not stderr:
+	    #add checks
+	    return json.loads(stdout).values()[0]
+	
+    @property
+    def expected_steps(self):
+	"""
+	Currently only states
+	"""
+	states = {}
+	logger.debug("Started scraping states from SLS Files: {}".format(self._subfiles))
+	for sls in self._subfiles:
+	    content = self._get_rendered_stage(sls)
+            content.pop("retcode")
+	    if 'include' in content:
+		continue
+	    for stanza, descr in content.iteritems():
+		if str(descr) == 'test.nop':
+		    continue
+	        for _type, _info in descr.iteritems():
+	            if str(_type) == 'salt.state':
+	    	        for _data in _info:
+			    #import pdb;pdb.set_trace()
+	    	            if unicode('sls') in _data:
+				try:
+	                            states.update({str(_data.values()[0]): str(_info[0][unicode('tgt')])})
+				except:
+				    logger.info("No tgt found")
+	logger.debug("Found states for orchestration: {} \n {}".format(self._stage_name, states))
+	return states
+
+
+
 class Printer():
     """Print things to stdout on one line dynamically"""
     def __init__(self, message):
@@ -298,7 +344,6 @@ while True:
           continue
       if matcher.is_orch(base_type):
             stagename = ret['data']['fun_args'][0]
-	    parser = Parser(stagename)
             ident.stagename = stagename
             matcher.check_stages(jid, ret)
       matcher.print_current_step(base_type, ret['data'])
