@@ -92,15 +92,19 @@ nfs_ganesha_cat_config_file
 nfs_ganesha_debug_log
 # kludge to work around mount hang
 #nfs_ganesha_showmount_loop
-nfs_ganesha_mount
-if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
-    nfs_ganesha_write_test cephfs
-fi
-if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
-    rgw_curl_test
-    rgw_validate_demo_users
-    nfs_ganesha_write_test rgw
-fi
-nfs_ganesha_umount
+for v in "" "3" "4" ; do
+    echo "Testing NFS-Ganesha with NFS version ->$v<-"
+    nfs_ganesha_mount "$v"
+    if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
+        nfs_ganesha_write_test cephfs
+    fi
+    if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
+        rgw_curl_test
+        rgw_validate_demo_users
+        nfs_ganesha_write_test rgw
+    fi
+    nfs_ganesha_umount
+    sleep 10
+done
 
 echo "OK"
