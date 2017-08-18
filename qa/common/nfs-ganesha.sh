@@ -66,7 +66,6 @@ echo "nfs-ganesha mount test script running as $(whoami) on $(hostname --fqdn)"
 test ! -e $NFS_MOUNTPOINT
 mkdir $NFS_MOUNTPOINT
 test -d $NFS_MOUNTPOINT
-showmount -e
 #mount -t nfs -o nfsvers=4 ${GANESHANODE}:/ $NFS_MOUNTPOINT
 mount -t nfs -o sync ${GANESHANODE}:/ $NFS_MOUNTPOINT
 ls -lR $NFS_MOUNTPOINT
