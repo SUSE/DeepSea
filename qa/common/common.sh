@@ -19,8 +19,8 @@ else
     exit 1
 fi
 
-# set ceph_tgt to * - see https://github.com/SUSE/DeepSea/pull/526
-echo "ceph_tgt: '*'" > /srv/pillar/ceph/ceph_tgt.sls
+# set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
+echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 
 # get list of minions
 if type salt-key > /dev/null 2>&1; then
