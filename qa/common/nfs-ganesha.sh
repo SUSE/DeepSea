@@ -103,11 +103,16 @@ function nfs_ganesha_write_test {
   # NFS-Ganesha FSAL write test
   #
   local FSAL=$1
+  local NFSVERSION=$2
   local CLIENTNODE=$(_client_node)
   local TESTSCRIPT=/tmp/test-nfs-ganesha-write.sh
   local APPENDAGE=""
   if [ "$FSAL" = "cephfs" ] ; then
-      APPENDAGE="/cephfs"
+      if [ "$NFSVERSION" = "3" ] ; then
+          APPENDAGE=""
+      else
+          APPENDAGE="/cephfs"
+      fi
   else
       APPENDAGE="/demo/demo-demo"
   fi
@@ -115,10 +120,11 @@ function nfs_ganesha_write_test {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-echo "nfs-ganesha write test script running as $(whoami) on $(hostname --fqdn)"
+echo "nfs-ganesha write test script"
 ! test -e $TOUCHFILE
 touch $TOUCHFILE
 test -f $TOUCHFILE
+rm -f $TOUCHFILE
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE

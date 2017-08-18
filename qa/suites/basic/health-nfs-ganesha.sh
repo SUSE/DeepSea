@@ -96,12 +96,12 @@ for v in "" "3" "4" ; do
     echo "Testing NFS-Ganesha with NFS version ->$v<-"
     nfs_ganesha_mount "$v"
     if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
-        nfs_ganesha_write_test cephfs
+        nfs_ganesha_write_test cephfs "$v"
     fi
     if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
         rgw_curl_test
         rgw_validate_demo_users
-        nfs_ganesha_write_test rgw
+        nfs_ganesha_write_test rgw "$v"
     fi
     nfs_ganesha_umount
     sleep 10
