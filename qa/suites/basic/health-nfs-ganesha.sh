@@ -94,7 +94,12 @@ nfs_ganesha_debug_log
 #nfs_ganesha_showmount_loop
 for v in "" "3" "4" ; do
     echo "Testing NFS-Ganesha with NFS version ->$v<-"
-    nfs_ganesha_mount "$v"
+    if [ "$FSAL" = "rgw" -a "$v" = "3" ] ; then
+        echo "Not testing RGW FSAL on NFSv3"
+        continue
+    else
+        nfs_ganesha_mount "$v"
+    fi
     if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
         nfs_ganesha_write_test cephfs "$v"
     fi
