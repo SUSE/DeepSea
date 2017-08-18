@@ -99,9 +99,13 @@ for v in "" "3" "4" ; do
         nfs_ganesha_write_test cephfs "$v"
     fi
     if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
-        rgw_curl_test
-        rgw_validate_demo_users
-        nfs_ganesha_write_test rgw "$v"
+        if [ "$v" = "3" ] ; then
+            echo "Not testing RGW FSAL on NFSv3"
+        else
+            rgw_curl_test
+            rgw_validate_demo_users
+            nfs_ganesha_write_test rgw "$v"
+        fi
     fi
     nfs_ganesha_umount
     sleep 10
