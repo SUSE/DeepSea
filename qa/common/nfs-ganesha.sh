@@ -53,7 +53,8 @@ function nfs_ganesha_mount {
   #
   # creates a mount point and mounts NFS-Ganesha export in it
   #
-  local ASUSER=$1
+  local NFSVERSION=$1   # can be "3", "4", or ""
+  local ASUSER=$2
   local CLIENTNODE=$(_client_node)
   local GANESHANODE=$(_nfs_ganesha_node)
   local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
@@ -62,16 +63,23 @@ function nfs_ganesha_mount {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-echo "nfs-ganesha mount test script running as $(whoami) on $(hostname --fqdn)"
+echo "nfs-ganesha mount test script"
 test ! -e $NFS_MOUNTPOINT
 mkdir $NFS_MOUNTPOINT
 test -d $NFS_MOUNTPOINT
 #mount -t nfs -o nfsvers=4 ${GANESHANODE}:/ $NFS_MOUNTPOINT
-mount -t nfs -o sync ${GANESHANODE}:/ $NFS_MOUNTPOINT
+mount -t nfs -o ##OPTIONS## ${GANESHANODE}:/ $NFS_MOUNTPOINT
 ls -lR $NFS_MOUNTPOINT
 echo "Result: OK"
 EOF
-  # FIXME: assert no MDS running on $CLIENTNODE
+  if test -z $NFSVERSION ; then
+      sed -i 's/##OPTIONS##/sync/' $TESTSCRIPT
+  elif [ "$NFSVERSION" = "3" -o "$NFSVERSION" = "4" ] ; then
+      sed -i 's/##OPTIONS##/sync,nfsvers='$NFSVERSION'/' $TESTSCRIPT
+  else
+      echo "Bad NFS version ->$NFS_VERSION<- Bailing out!"
+      exit 1
+  fi
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
 }
 
