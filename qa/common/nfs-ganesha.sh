@@ -92,6 +92,7 @@ set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "nfs-ganesha umount test script running as $(whoami) on $(hostname --fqdn)"
 umount $NFS_MOUNTPOINT
+rm -rf $NFS_MOUNTPOINT
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
