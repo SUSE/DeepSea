@@ -19,30 +19,38 @@ class Proposal(object):
         self.data_disks = []
         self._parse_args(kwargs)
         # we differentiate 3 kinds of drives for now
+        log.debug(('creating proposal for '
+                   '{} disks').format(len(disks)))
         self.nvme = [disk for disk in disks if disk['Driver'] ==
                      self.NVME_DRIVER and disk['rotational'] is '0']
         self.ssd = [disk for disk in disks if disk['Driver'] !=
                     self.NVME_DRIVER and disk['rotational'] is '0']
         self.spinner = [disk for disk in disks if disk['rotational'] is '1']
-        log.warn(self.nvme)
-        log.warn(self.ssd)
-        log.warn(self.spinner)
+        log.debug('detected nvmes: {}'.format(self.nvme))
+        log.debug('detected ssds: {}'.format(self.ssd))
+        log.debug('detected spinners: {}'.format(self.spinner))
 
     def _parse_args(self, kwargs):
         self.data_r = kwargs.get('ratio', self.DEFAULT_DATA_R)
+        log.debug('data ratio: {}'.format(self.data_r))
         assert type(self.data_r) is int and self.data_r >= 1
 
-        self.db_r = kwargs.get('db-ratio', kwargs.get('db_ratio',self.DEFAULT_DB_R))
+        self.db_r = kwargs.get('db-ratio',
+                               kwargs.get('db_ratio', self.DEFAULT_DB_R))
+        log.debug('db ratio: {}'.format(self.db_r))
         assert type(self.db_r) is int and self.db_r >= 1
 
         data_filter = kwargs.get('data', '0')
         if type(data_filter) is str and data_filter.count('-') is 1:
             self.data_min = int(data_filter.split('-')[0])
             self.data_max = int(data_filter.split('-')[1])
+            log.debug('data min: {}'.format(self.data_min))
+            log.debug('data max: {}'.format(self.data_max))
             assert self.data_max >= self.data_min
         else:
             self.data_min = int(data_filter)
             self.data_max = 0
+            log.debug('data min: {}'.format(self.data_min))
 
         # in case of bluestore db is equal to journal
         journal_filter = kwargs.get('journal', '0')
@@ -50,22 +58,30 @@ class Proposal(object):
         if type(journal_filter) is str and journal_filter.count('-') is 1:
             self.journal_min = int(journal_filter.split('-')[0])
             self.journal_max = int(journal_filter.split('-')[1])
+            log.debug('journal min: {}'.format(self.journal_min))
+            log.debug('journal max: {}'.format(self.journal_max))
             assert self.journal_max >= self.journal_min
         else:
             self.journal_min = int(journal_filter)
             self.journal_max = 0
+            log.debug('journal min: {}'.format(self.journal_min))
 
         wal_filter = kwargs.get('wal', '0')
         if type(wal_filter) is str and wal_filter.count('-') is 1:
             self.wal_min = int(wal_filter.split('-')[0])
             self.wal_max = int(wal_filter.split('-')[1])
+            log.debug('wal min: {}'.format(self.wal_min))
+            log.debug('wal max: {}'.format(self.wal_max))
             assert self.wal_max >= self.wal_min
         else:
             self.wal_min = int(wal_filter)
             self.wal_max = 0
+            log.debug('wal min: {}'.format(self.wal_min))
 
         self.add_leftover_as_standalone = kwargs.get('leftovers',
                                                      False)
+        log.debug('leftover as standaline: {}'.format(
+            self.add_leftover_as_standalone))
 
     # TODO better name
     def create(self):
