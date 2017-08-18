@@ -23,6 +23,9 @@ role-igw/cluster/igw*.sls
 # RGW
 role-rgw/cluster/rgw*.sls
 
+# NFS
+role-ganesha/cluster/ganesha*.sls
+
 # openATTIC
 role-openattic/cluster/openattic*.sls
 
