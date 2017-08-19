@@ -25,6 +25,7 @@ import uuid
 import ipaddress
 import logging
 import deepsea_minions
+from validate import Validate, get_printer
 
 import sys
 
@@ -983,28 +984,31 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
-
-    # TODO:
-    # - verify the cluster is actually healthy and everything is running first
-
-    policy_cfg = []
-
     local = salt.client.LocalClient()
     settings = Settings()
     salt_writer = SaltWriter(**kwargs)
 
+    # Make sure deepsea_minions contains valid minions before proceeding with engulf.
+    minions = deepsea_minions.DeepseaMinions()
+    search = minions.deepsea_minions
+    validator = Validate("ceph", local.cmd(search , 'pillar.items', [], expr_form="compound"),
+                         [], get_printer())
+    validator.deepsea_minions(minions)
+    if validator.errors:
+        validator.report()
+        return False
+
+    policy_cfg = []
+
     # Check for firewall/apparmor.
-    if not ready.check("ceph", True, "*"):
+    if not ready.check("ceph", True, search):
         return False
 
     # First, hand apply select Stage 0 functions
-    local.cmd("*", "saltutil.sync_all")
-    local.cmd("*", "state.apply", ["ceph.mines"], expr_form="compound")
+    local.cmd(search, "saltutil.sync_all")
+    local.cmd(search, "state.apply", ["ceph.mines"], expr_form="compound")
 
-    # Run proposals gathering directly.  Note that this really isn't needed,
-    # but it may be useful for the admin to have the populated proposal tree
-    # for future reference
-    # TODO: minions.ready() needed?
+    # Run proposals gathering directly.
     proposals()
 
     # Our imported hardware profile proposal path
@@ -1024,7 +1028,7 @@ def engulf_existing_cluster(**kwargs):
     mds_instances = []
     rgw_instances = []
 
-    for minion, info in local.cmd("*", "cephinspector.inspect").items():
+    for minion, info in local.cmd(search, "cephinspector.inspect").items():
 
         if type(info) is not dict:
             print("cephinspector.inspect failed on %s: %s" % (minion, info))
