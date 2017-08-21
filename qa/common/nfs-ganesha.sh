@@ -44,16 +44,17 @@ function nfs_ganesha_cat_config_file {
   salt -C 'I@roles:ganesha' cmd.run 'cat /etc/ganesha/ganesha.conf'
 }
 
-function nfs_ganesha_showmount_loop {
-  local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
-  salt -C 'I@roles:ganesha' cmd.run "while true ; do showmount -e $GANESHANODE | tee /tmp/showmount.log || true ; grep -q 'Timed out' /tmp/showmount.log || break ; done"
-}
+#function nfs_ganesha_showmount_loop {
+#  local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
+#  salt -C 'I@roles:ganesha' cmd.run "while true ; do showmount -e $GANESHANODE | tee /tmp/showmount.log || true ; grep -q 'Timed out' /tmp/showmount.log || break ; done"
+#}
 
 function nfs_ganesha_mount {
   #
   # creates a mount point and mounts NFS-Ganesha export in it
   #
-  local ASUSER=$1
+  local NFSVERSION=$1   # can be "3", "4", or ""
+  local ASUSER=$2
   local CLIENTNODE=$(_client_node)
   local GANESHANODE=$(_nfs_ganesha_node)
   local TESTSCRIPT=/tmp/test-nfs-ganesha.sh
@@ -62,17 +63,23 @@ function nfs_ganesha_mount {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-echo "nfs-ganesha mount test script running as $(whoami) on $(hostname --fqdn)"
+echo "nfs-ganesha mount test script"
 test ! -e $NFS_MOUNTPOINT
 mkdir $NFS_MOUNTPOINT
 test -d $NFS_MOUNTPOINT
-showmount -e
 #mount -t nfs -o nfsvers=4 ${GANESHANODE}:/ $NFS_MOUNTPOINT
-mount -t nfs -o sync ${GANESHANODE}:/ $NFS_MOUNTPOINT
+mount -t nfs -o ##OPTIONS## ${GANESHANODE}:/ $NFS_MOUNTPOINT
 ls -lR $NFS_MOUNTPOINT
 echo "Result: OK"
 EOF
-  # FIXME: assert no MDS running on $CLIENTNODE
+  if test -z $NFSVERSION ; then
+      sed -i 's/##OPTIONS##/sync/' $TESTSCRIPT
+  elif [ "$NFSVERSION" = "3" -o "$NFSVERSION" = "4" ] ; then
+      sed -i 's/##OPTIONS##/sync,nfsvers='$NFSVERSION'/' $TESTSCRIPT
+  else
+      echo "Bad NFS version ->$NFS_VERSION<- Bailing out!"
+      exit 1
+  fi
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
 }
 
@@ -85,6 +92,7 @@ set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "nfs-ganesha umount test script running as $(whoami) on $(hostname --fqdn)"
 umount $NFS_MOUNTPOINT
+rm -rf $NFS_MOUNTPOINT
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE $ASUSER
@@ -95,11 +103,16 @@ function nfs_ganesha_write_test {
   # NFS-Ganesha FSAL write test
   #
   local FSAL=$1
+  local NFSVERSION=$2
   local CLIENTNODE=$(_client_node)
   local TESTSCRIPT=/tmp/test-nfs-ganesha-write.sh
   local APPENDAGE=""
   if [ "$FSAL" = "cephfs" ] ; then
-      APPENDAGE="/cephfs"
+      if [ "$NFSVERSION" = "3" ] ; then
+          APPENDAGE=""
+      else
+          APPENDAGE="/cephfs"
+      fi
   else
       APPENDAGE="/demo/demo-demo"
   fi
@@ -107,10 +120,11 @@ function nfs_ganesha_write_test {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-echo "nfs-ganesha write test script running as $(whoami) on $(hostname --fqdn)"
+echo "nfs-ganesha write test script"
 ! test -e $TOUCHFILE
 touch $TOUCHFILE
 test -f $TOUCHFILE
+rm -f $TOUCHFILE
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
