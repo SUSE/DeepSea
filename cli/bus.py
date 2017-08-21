@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 import sys
 import salt.config
@@ -60,7 +61,7 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-       
+
 
 class Ident(object):
      def __init__(self):
@@ -115,7 +116,7 @@ class Ident(object):
      @expected_steps.setter
      def expected_steps(self, steps):
 	self._ident['expected_steps'] = steps
-	
+
 
 class Matcher(object):
 
@@ -130,7 +131,7 @@ class Matcher(object):
 	   'success' not in ret['data']:
 	    logger.info("Stage started {}".format(ident.stagename))
 	    return True
-     
+
     def stage_ended(self, ret, jid):
         if ident.jid == jid or \
 	   'success' in ret['data'] and \
@@ -146,7 +147,7 @@ class Matcher(object):
 	    Printer(message)
             ident.jid = jid
 	    ident.expected_steps = Parser(ident.stagename).expected_steps
-	    pp(ident.expected_steps) 
+	    pp(ident.expected_steps)
 	    return False
 	if self.stage_ended(ret, jid):
 	    if 'success' in ret['data']:
@@ -189,7 +190,7 @@ class Matcher(object):
 
     def construct_suffix(self):
 	if ident.counter >= 5:
-	    return " ({}#{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC) 
+	    return " ({}#{}{})".format(bcolors.WARNING, ident.counter, bcolors.ENDC)
 	else:
 	    return  ""
 
@@ -199,7 +200,7 @@ class Matcher(object):
 	verb, target, func_name = self.find_func_opts(ret, base_type)
 	message = "{}{} {} on {}{}".format(prefix, verb, func_name, ' '.join(target), suffix)
 	return target, func_name, message
-         
+
     def print_current_step(self, base_type, ret):
 	if not self.is_orch(base_type):
           target, func_name, message = self.construct_message(base_type, ret)
@@ -227,7 +228,7 @@ class Parser(object):
 	self._subfiles = []
 	self.find_file()
 	self.resolve_deps()
-    
+
     def find_file(self, start_dir='/srv/salt'):
 	 def walk_dirs(start_dir):
              for root, dirs, files in os.walk(start_dir):
@@ -254,7 +255,7 @@ class Parser(object):
 	    includes = []
 	    if 'include' in content:
 		includes = [str(inc) for inc in content['include']]
-            return includes 
+            return includes
 
 	content = self._get_rendered_stage(self._sls_file)
         includes = find_includes(content)
@@ -267,7 +268,7 @@ class Parser(object):
 	        # The it's not ceph.stage.4.iscsi but ceph.stage.iscsi if
 		# the include has two dots (..) in it.
 	        stage_name = ".".join(self._stage_name.split('.')[:-(dot_count-1)])
-		
+
 	    tmp_stage_name = self._stage_name
             self._stage_name = stage_name + "." + inc
             self._subfiles.append(self.find_file())
@@ -275,12 +276,12 @@ class Parser(object):
             self._stage_name = tmp_stage_name
 	if not self._subfiles:
             self._subfiles.append(self._sls_file)
-         
-	
+
+
     def _get_rendered_stage(self, file_name):
 	"""
 	Importing salt.modules.renderer unfortunately does not work as this script is not
-	executed within the salt context and therefore lacking the __salt__ and __opts__ 
+	executed within the salt context and therefore lacking the __salt__ and __opts__
 	variables.
 	"""
 	cmd = "salt --out=json --static -C \"I@roles:master\" slsutil.renderer {}".format(file_name)
@@ -289,7 +290,7 @@ class Parser(object):
 	if not stderr:
 	    #add checks
 	    return json.loads(stdout).values()[0]
-	
+
     @property
     def expected_steps(self):
 	"""
