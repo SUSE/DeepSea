@@ -15,6 +15,9 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
+# unify libexec for all targets
+%global _libexecdir %{_exec_prefix}/lib
+
 
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
@@ -501,8 +504,21 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/processes/*.sls
+%dir %{_libexecdir}/deepsea
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 
+%package qa
+Summary:        DeepSea integration test scripts
+Group:          System/Libraries
+Recommends:     deepsea
+
+%description qa
+The deepsea-qa subpackage contains all the scripts used in DeepSeq
+integration/regression testing. These scripts are "environment-agnostic" - see
+the README for more information.
+
+%files qa
+%{_libexecdir}/deepsea/qa
 
 %changelog
