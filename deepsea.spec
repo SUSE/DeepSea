@@ -46,6 +46,7 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 %setup
 
 %build
+make DESTDIR=%{buildroot} pyc
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
