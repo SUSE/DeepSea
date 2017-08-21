@@ -6,6 +6,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import argparse
+import logging.config
+import logging
 import signal
 import sys
 
@@ -18,12 +20,49 @@ def _parse_cli_args():
     """
     parser = argparse.ArgumentParser(prog="deepsea")
     parser.add_argument("-m", "--monitor",
-                        help="Monitors and shows progress of DeepSea salt commands",
+                        help="monitors and shows the progress of DeepSea salt commands",
                         action="store_true")
+    parser.add_argument("--log-level", help="set log level (default: none)",
+                        choices=["info", "error", "debug", "none"], default="none")
+    parser.add_argument("--log-file", help="log file location", type=str,
+                        default="/var/log/deepsea.log")
     return parser.parse_args()
 
 
-def run_monitor():
+def _setup_logging(log_level, log_file):
+    """
+    Logging configuration
+    """
+    if log_level == "none":
+        return
+
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'standard': {
+                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+            },
+        },
+        'handlers': {
+            'file': {
+                'level': log_level.upper(),
+                'filename': log_file,
+                'class': 'logging.FileHandler',
+                'formatter': 'standard'
+            },
+        },
+        'loggers': {
+            '': {
+                'handlers': ['file'],
+                'level': log_level.upper(),
+                'propagate': True,
+            }
+        }
+    })
+
+
+def _run_monitor():
     """
     Run the DeepSea stage monitor and progress visualizer
     """
@@ -48,5 +87,9 @@ def main():
     """
     args = _parse_cli_args()
 
+    _setup_logging(args.log_level, args.log_file)
+    logger = logging.getLogger(__name__)
+    logger.info("HELLO!")
+
     if args.monitor:
-        run_monitor()
+        _run_monitor()
