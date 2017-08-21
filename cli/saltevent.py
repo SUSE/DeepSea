@@ -24,6 +24,9 @@ class SaltEvent(object):
         self.args = raw_event['data']['arg'] if 'arg' in raw_event['data'] else \
             raw_event['data']['fun_args']
 
+    def __str__(self):
+        return "fun: {} args: {}".format(self.fun, self.args)
+
 
 class NewJobEvent(SaltEvent):
     """
@@ -33,6 +36,10 @@ class NewJobEvent(SaltEvent):
     def __init__(self, raw_event):
         super(NewJobEvent, self).__init__(raw_event)
         self.minions = raw_event['data']['minions']
+
+    def __str__(self):
+        parent_str = super(NewJobEvent, self).__str__()
+        return "JobNew({} minions: {})".format(parent_str, self.minions)
 
 
 class RetJobEvent(SaltEvent):
@@ -47,6 +54,10 @@ class RetJobEvent(SaltEvent):
         self.ret = raw_event['data']['return']
         self.success = raw_event['data']['success']
 
+    def __str__(self):
+        parent_str = super(RetJobEvent, self).__str__()
+        return "JobRet({} minion: {} success: {})".format(parent_str, self.minion, self.success)
+
 
 class NewRunnerEvent(SaltEvent):
     """
@@ -55,6 +66,10 @@ class NewRunnerEvent(SaltEvent):
     """
     def __init__(self, raw_event):
         super(NewRunnerEvent, self).__init__(raw_event)
+
+    def __str__(self):
+        parent_str = super(NewRunnerEvent, self).__str__()
+        return "RunnerNew({})".format(parent_str)
 
 
 class RetRunnerEvent(SaltEvent):
@@ -66,6 +81,10 @@ class RetRunnerEvent(SaltEvent):
         super(RetRunnerEvent, self).__init__(raw_event)
         self.ret = raw_event['data']['return']
         self.success = raw_event['data']['success']
+
+    def __str__(self):
+        parent_str = super(RetRunnerEvent, self).__str__()
+        return "RunnerRet({} success: {})".format(parent_str, self.success)
 
 
 class EventListener(object):
@@ -127,6 +146,9 @@ class SaltEventProcessor(object):
         self.listeners.append(listener)
 
     def is_running(self):
+        """
+        Gets the running state of the processor
+        """
         return self.running
 
     def start(self):

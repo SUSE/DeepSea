@@ -89,7 +89,6 @@ def main():
 
     _setup_logging(args.log_level, args.log_file)
     logger = logging.getLogger(__name__)
-    logger.info("HELLO!")
 
     if args.monitor:
         _run_monitor()
