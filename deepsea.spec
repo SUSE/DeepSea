@@ -411,6 +411,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/remove/igw/auth/*.sls
 %config /srv/salt/ceph/remove/mon/*.sls
 %config /srv/salt/ceph/remove/mds/*.sls
+%config /srv/salt/ceph/remove/migrated/*.sls
 %config /srv/salt/ceph/remove/mgr/*.sls
 %config /srv/salt/ceph/remove/openattic/*.sls
 %config /srv/salt/ceph/remove/rgw/*.sls
