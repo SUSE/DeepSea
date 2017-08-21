@@ -7,6 +7,9 @@ usage:
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
 	@echo -e "\tmake test\tRun unittests"
 
+pyc:
+	find srv/ -name '*.py' -exec python -m py_compile {} \;
+
 copy-files:
 	# salt-master config files
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
@@ -28,7 +31,7 @@ copy-files:
 	install -m 644 srv/modules/pillar/stack.py $(DESTDIR)/srv/modules/pillar/
 	# runners
 	install -d -m 755 $(DESTDIR)/srv/modules/runners
-	install -m 644 srv/modules/runners/*.py $(DESTDIR)/srv/modules/runners/
+	install -m 644 srv/modules/runners/*.py* $(DESTDIR)/srv/modules/runners/
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks
@@ -51,7 +54,7 @@ copy-files:
 	install -m 644 man/deepsea.*.7 $(DESTDIR)/usr/share/man/man7
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
-	install -m 644 srv/salt/_modules/*.py $(DESTDIR)/srv/salt/_modules/
+	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
 	install -m 644 srv/salt/ceph/admin/*.sls $(DESTDIR)/srv/salt/ceph/admin/
@@ -136,7 +139,7 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/iperf
 	install -m 644 srv/salt/ceph/iperf/*.sls $(DESTDIR)/srv/salt/ceph/iperf/
 	install -m 644 srv/salt/ceph/iperf/systemd-iperf.service $(DESTDIR)/srv/salt/ceph/iperf/
-	install -m 644 srv/salt/ceph/iperf/*.py $(DESTDIR)/srv/salt/ceph/iperf
+	install -m 644 srv/salt/ceph/iperf/*.py* $(DESTDIR)/srv/salt/ceph/iperf
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
