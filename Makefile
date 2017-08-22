@@ -16,6 +16,14 @@ copy-files:
 	install -m 600 etc/salt/master.d/eauth.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/salt-api.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
+	# qa
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/common
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/suites/basic
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test
+	install -m 644 qa/README $(DESTDIR)/usr/lib/deepsea/qa/
+	install -m 644 qa/common/*.sh $(DESTDIR)/usr/lib/deepsea/qa/common/
+	install -m 755 qa/suites/basic/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/basic/
+	install -m 755 qa/suites/ceph-test/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test/
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/

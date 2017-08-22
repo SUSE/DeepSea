@@ -28,7 +28,11 @@ Assumptions made by all test scripts
 5. the DeepSea code under test has already been installed (git clone ; make
    install) on the master node
 6. the integration test script (this script) is run from the qa/ subdirectory
-   of the DeepSea repo clone.
+   of the DeepSea repo clone, or from the /usr/lib/deepsea/qa/ directory.
+   For example:
+   $ make install
+   $ cd /usr/lib/deepsea/qa/
+   $ suites/basic/health-ok.sh
 
 Caveats
 -------
