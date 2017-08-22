@@ -8,10 +8,10 @@ from __future__ import print_function
 import collections
 import logging
 
+from .common import print_progress, PrettyPrinter as PP
 from .saltevent import SaltEventProcessor
 from .saltevent import EventListener
 from .saltevent import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
-
 from .stage_parser import SLSParser
 
 
@@ -124,6 +124,8 @@ class Monitor(object):
         self._processor.add_listener(Monitor.DeepSeaEventListener(self))
 
         self._running_stage = None
+        self._steps_completed = 0
+        self.stage_map = {}
 
     def start_stage(self, event):
         """
@@ -134,9 +136,7 @@ class Monitor(object):
         self._running_stage = Stage(event.args[0], event.jid)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)
 
-        # parser = StageParser(self._running_stage.name)
         print("Start stage -> {}".format(self._running_stage.name))
-        # print(parser.expected_steps)
 
     def end_stage(self, event):
         """
@@ -166,6 +166,7 @@ class Monitor(object):
                 logger.info("Starting state step: %s jid=%s targets=%s", step.name, step.jid,
                             step.targets)
             else:
+                # print("Running {} -> ".format(event.fun, event.args))
                 # ignore jobs that are not state.sls for now
                 return
         elif isinstance(event, NewRunnerEvent):
@@ -190,7 +191,13 @@ class Monitor(object):
         """
         Start the monitoring thread
         """
-        logger.info("Starting the DeepSea event monitoring")
+        logger.info("Initializing the DeepSea event monitoring")
+        PP.p_bold("Initializing DeepSea progess monitor...")
+        self.stage_map['ceph.stage.1'] = {
+            'steps': SLSParser.parse_state_steps('ceph.stage.1'),
+            'done': 0
+        }
+        PP.p_bold("Done.")
         self._processor.start()
 
     def stop(self):

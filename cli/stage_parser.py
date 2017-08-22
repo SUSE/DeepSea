@@ -17,7 +17,9 @@ from .common import redirect_stdout
 logger = logging.getLogger(__name__)
 
 
-__caller__ = salt.client.Caller()
+__opts__ = salt.config.minion_config('/etc/salt/minion')
+__opts__['file_client'] = 'local'
+__caller__ = salt.client.Caller(mopts=__opts__)
 
 
 class OrchestrationNotFound(Exception):
@@ -31,6 +33,7 @@ class SLSRenderer(object):
     """
     Helper class to render sls files
     """
+
     @staticmethod
     def render(file_name):
         """

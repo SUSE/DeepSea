@@ -8,6 +8,7 @@ from __future__ import print_function
 import argparse
 import logging.config
 import logging
+import os
 import signal
 import sys
 
@@ -29,8 +30,8 @@ def _parse_cli_args():
     parser.add_argument('--list-all-steps', help="Shows all steps even if 'fire_event = False'. "
                                                  "To be used in conjuction with --show-stage-steps",
                         action="store_true")
-    parser.add_argument("--log-level", help="set log level (default: none)",
-                        choices=["info", "error", "debug", "none"], default="none")
+    parser.add_argument("--log-level", help="set log level (default: info)",
+                        choices=["info", "error", "debug", "silent"], default="info")
     parser.add_argument("--log-file", help="log file location", type=str,
                         default="/var/log/deepsea.log")
     return parser.parse_args()
@@ -40,7 +41,7 @@ def _setup_logging(log_level, log_file):
     """
     Logging configuration
     """
-    if log_level == "none":
+    if log_level == "silent":
         return
 
     logging.config.dictConfig({
@@ -81,9 +82,10 @@ def _run_monitor():
         SIGINT signal handler
         """
         monitor.stop()
-        sys.exit(0)
+        # sys.exit(0)
     signal.signal(signal.SIGINT, sigint_handler)
 
+    os.system('clear')
     print("Use Ctrl+C to stop the monitor")
     monitor.start()
 
