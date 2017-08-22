@@ -899,15 +899,19 @@ def _replace_key_in_cluster_yml(key, val):
 
 def _get_existing_cluster_network(addrs, public_network=None):
     """
-    Based on the addrs dictionary { minion: ipaddress }, this function
+    Based on the addrs dictionary { minion: [ ipaddress ] }, this function
     returns an address consisting of network prefix followed by the cidr
-    prefix (ie. 10.0.0.0/24).
+    prefix (ie. 10.0.0.0/24), or None.
     """
     target = deepsea_minions.DeepseaMinions()
     search = target.deepsea_minions
 
     local = salt.client.LocalClient()
+    # Stores the derived network addresses (in CIDR notation) of all addresses contained in addrs.
     minion_networks = []
+    # The network address (in CIDR notation) that we return after collapsing minion_networks,
+    # or None.
+    network = None
 
     # Grab network interfaces from salt.
     minion_network_interfaces = local.cmd(search, "network.interfaces", [], expr_form="compound")
@@ -918,26 +922,32 @@ def _get_existing_cluster_network(addrs, public_network=None):
 	except:
 	    pass
 
-    for minion, public_ip in addrs.items():
-	# Only continue if public_ip is present.
-	if public_ip:
+    for minion, ipaddr in addrs.items():
+	# Only continue if ipaddr is present.
+	for i in ipaddr:
 	    for intf, data in minion_network_interfaces[minion].items():
                 if "inet" in data:
 		    for inet_data in data["inet"]:
-		        if public_ip == "0.0.0.0":
+			if i == "0.0.0.0":
 			    # If running on 0.0.0.0, assume we can use public_network
-			    ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(public_ip, inet_data["netmask"]))
+			    ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(i, inet_data["netmask"]))
 			    minion_networks.append(str(ip.network))
-		        elif inet_data["address"] == public_ip:
+			elif inet_data["address"] == i:
 			    ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
 			    minion_networks.append(str(ip.network))
 
     # Check for consistency across all entries.
     if len(set(minion_networks)) == 1:
 	# We have equal entries.
-	return minion_networks[0]
+	network = minion_networks[0]
     else:
-	return None
+	# We have multiple possible networks.  This is liable to happen with OSDs
+	# when there is a private cluster network.  Let's try to remove the public
+	# network.
+	minion_networks = [ n for n in minion_networks if n != public_network ]
+	network = minion_networks[0] if len(set(minion_networks)) == 1 else None
+
+    return network
 
 def _replace_fsid_with_existing_cluster(fsid):
     """
@@ -948,12 +958,12 @@ def _replace_fsid_with_existing_cluster(fsid):
 
 def _replace_public_network_with_existing_cluster(mon_addrs):
     """
-    Replace proposed public_network with public_network of running cluster.
-    Retruns { 'ret': True/False, 'public_network': string }
+    Replace proposed public_network with public_network of the running cluster.
+    Returns { 'ret': True/False, 'public_network': string/None }
     """
     public_network = _get_existing_cluster_network(mon_addrs)
     if not public_network:
-	log.error("Failed to determine cluster public_network.")
+	log.error("Failed to determine cluster's public_network.")
 	return { 'ret': False, 'public_network': None }
     else:
 	return { 'ret': _replace_key_in_cluster_yml("public_network", public_network),
@@ -961,14 +971,15 @@ def _replace_public_network_with_existing_cluster(mon_addrs):
 
 def _replace_cluster_network_with_existing_cluster(osd_addrs, public_network=None):
     """
-    Replace proposed cluster_network with cluster_network of running cluster.
+    Replace proposed cluster_network with cluster_network of the running cluster.
     If a public_network is already provided, pass that along as a fallback for
     _get_existing_cluster_network() to use when cluster_network is found to
-    be 0.0.0.0.  Retruns { 'ret': True/False, 'cluster_network': string }
+    be 0.0.0.0, and to filter the public_network from the derived cluster_network.
+    Returns { 'ret': True/False, 'cluster_network': string/None }
     """
     cluster_network = _get_existing_cluster_network(osd_addrs, public_network)
     if not cluster_network:
-	log.error("Failed to determine cluster public_network.")
+	log.error("Failed to determine cluster's cluster_network.")
 	return { 'ret': False, 'cluster_network': None }
     else:
 	return { 'ret': _replace_key_in_cluster_yml("cluster_network", cluster_network),
@@ -1068,8 +1079,8 @@ def engulf_existing_cluster(**kwargs):
             mon_minions.append(minion)
             policy_cfg.append("role-mon/cluster/" + minion + ".sls")
             policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
-	    for minion, ipaddr in local.cmd(minion, "cephinspector.get_minion_public_network").items():
-		mon_addrs[minion] = ipaddr
+	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks").items():
+		mon_addrs[minion] = ipaddrs
 
         if "ceph-osd" in info["running_services"].keys():
             # Needs a storage profile assigned (which may be different
@@ -1095,9 +1106,8 @@ def engulf_existing_cluster(**kwargs):
 		policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
 		policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
 
-	    for minion, ipaddr in local.cmd(minion, "cephinspector.get_minion_cluster_network").items():
-		osd_addrs[minion] = ipaddr
-            pass
+	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks").items():
+		osd_addrs[minion] = ipaddrs
 
         if "ceph-mgr" in info["running_services"].keys():
             policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
