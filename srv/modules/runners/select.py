@@ -41,6 +41,38 @@ def one_minion(**kwargs):
     else:
         return
 
+
+def public_addresses(tuples = False, host = False, **kwargs):
+
+    criteria = []
+    for key in kwargs:
+        if key[0] == "_":
+            continue
+        criteria.append("I@{}:{}".format(key, kwargs[key]))
+
+    search = " and ".join(criteria)
+
+    # When search matches no minions, salt prints to stdout.  Suppress stdout.
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    local = salt.client.LocalClient()
+    result = local.cmd(search , 'public.address', [], expr_form="compound")
+
+    sys.stdout = _stdout
+
+    if tuples:
+        if host:
+            addresses = [ [k.split('.')[0],v] for k, v in result.items() ]
+        else:
+            addresses = [ [k,v] for k, v in result.items() ]
+    else:
+        addresses = []
+        for entry in result:
+            addresses.append(result[entry])
+    return addresses
+
+
 def attr(host = False, **kwargs):
     """
     Return a paired list of minions and a given attribute

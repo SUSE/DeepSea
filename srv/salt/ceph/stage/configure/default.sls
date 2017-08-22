@@ -17,22 +17,12 @@ refresh_pillar1:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.refresh
-    - require:
-      - salt: push proposals
 
-post configuration:
-  salt.runner:
-    - name: configure.cluster
-    - require: 
-      - salt: refresh_pillar1
-
-refresh_pillar2:
+create ceph.conf:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - tgt_type: compound
-    - sls: ceph.refresh
-    - require: 
-      - salt: post configuration
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.configuration.create
+    - failhard: True
 
 {% for role in [ 'admin', 'mon', 'mgr', 'osd', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
 {{ role }} key:

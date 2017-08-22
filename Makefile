@@ -90,6 +90,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/*.sls $(DESTDIR)/srv/salt/ceph/configuration/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/check
 	install -m 644 srv/salt/ceph/configuration/check/*.sls $(DESTDIR)/srv/salt/ceph/configuration/check/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/create
+	install -m 644 srv/salt/ceph/configuration/create/*.sls $(DESTDIR)/srv/salt/ceph/configuration/create/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files
 	install -m 644 srv/salt/ceph/configuration/files/*.j2 $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/*.rbd $(DESTDIR)/srv/salt/ceph/configuration/files/
