@@ -11,7 +11,9 @@ import logging
 import signal
 import sys
 
+from .common import PrettyPrinter as PP
 from .monitor import Monitor
+from .stage_parser import SLSParser
 
 
 def _parse_cli_args():
@@ -22,6 +24,8 @@ def _parse_cli_args():
     parser.add_argument("-m", "--monitor",
                         help="monitors and shows the progress of DeepSea salt commands",
                         action="store_true")
+    parser.add_argument("--show-stage-steps", help="Lists the steps of a given DeepSea stage",
+                        type=str)
     parser.add_argument("--log-level", help="set log level (default: none)",
                         choices=["info", "error", "debug", "none"], default="none")
     parser.add_argument("--log-file", help="log file location", type=str,
@@ -81,6 +85,19 @@ def _run_monitor():
     monitor.start()
 
 
+def _run_show_stage_steps(stage_name):
+    """
+    Runs stage parser and prints the list of steps
+    """
+    PP.p_header("Parsing stage: {}".format(stage_name))
+    steps = SLSParser.parse_state_steps(stage_name)
+    print()
+    PP.p_bold("List of steps for stage: {}".format(stage_name))
+    for i, step in enumerate(steps):
+        print("{}: {}".format(PP.yellow(i), step))
+    print()
+
+
 def main():
     """
     CLI main function
@@ -88,7 +105,8 @@ def main():
     args = _parse_cli_args()
 
     _setup_logging(args.log_level, args.log_file)
-    logger = logging.getLogger(__name__)
 
     if args.monitor:
         _run_monitor()
+    elif args.show_stage_steps:
+        _run_show_stage_steps(args.show_stage_steps)

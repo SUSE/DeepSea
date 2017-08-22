@@ -6,17 +6,13 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import collections
-import json
 import logging
-import os
-
-from subprocess import Popen, PIPE
 
 from .saltevent import SaltEventProcessor
 from .saltevent import EventListener
 from .saltevent import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
 
-from .stage_parser import SLS_Renderer, SLSParser
+from .stage_parser import SLSParser
 
 
 # pylint: disable=C0103
