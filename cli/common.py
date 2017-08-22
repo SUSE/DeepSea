@@ -90,6 +90,20 @@ class PrettyPrinter(object):
         return PrettyPrinter._format(PrettyPrinter.Colors.RED, text)
 
     @staticmethod
+    def cyan(text):
+        """
+        Formats text as cyan
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.CYAN, text)
+
+    @staticmethod
+    def magenta(text):
+        """
+        Formats text as magenta
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.MAGENTA, text)
+
+    @staticmethod
     def p_header(text):
         """
         Prints text formatted as header
