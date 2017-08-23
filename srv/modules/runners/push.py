@@ -186,6 +186,20 @@ class PillarData(object):
                 for osd, journal in entry.iteritems(): 
                     yaml['ceph']['storage']['osds'][osd] = { 'format': 'bluestore', 'wal': journal, 'db': journal }
             yaml.pop('storage')
+        elif 'ceph' in yaml and 'storage' in yaml['ceph'] and 'osds' in yaml['ceph']['storage']:
+            # if the profile is already in the new ceph namespace, just flip it to bluestore
+            for osd in yaml['ceph']['storage']['osds']:
+                if yaml['ceph']['storage']['osds'][osd]['format'] != 'filestore':
+                    continue
+                yaml['ceph']['storage']['osds'][osd]['format'] = 'bluestore'
+                if 'journal' not in yaml['ceph']['storage']['osds'][osd]:
+                    continue
+                if yaml['ceph']['storage']['osds'][osd]['journal'] != osd:
+                    # journal on separate device, set up wal and db to point to it
+                    yaml['ceph']['storage']['osds'][osd]['wal'] = yaml['ceph']['storage']['osds'][osd]['journal']
+                    yaml['ceph']['storage']['osds'][osd]['db'] = yaml['ceph']['storage']['osds'][osd]['journal']
+                # get rid of the old journal item
+                yaml['ceph']['storage']['osds'][osd].pop('journal')
         else:
             log.info("No migration for {} - copying".format(filename))
         return yaml
