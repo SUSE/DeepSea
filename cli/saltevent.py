@@ -5,11 +5,16 @@ Salt Event Processor module
 from __future__ import absolute_import
 
 import fnmatch
+import logging
 import threading
 
 import salt.config
 import salt.utils.event
 from tornado.ioloop import IOLoop
+
+
+# pylint: disable=C0103
+logger = logging.getLogger(__name__)
 
 
 class SaltEvent(object):
@@ -21,9 +26,16 @@ class SaltEvent(object):
         self.tag = raw_event['tag']
         self.jid = raw_event['data']['jid']
         self.stamp = raw_event['data']['_stamp']
-        self.fun = raw_event['data']['fun']
-        self.args = raw_event['data']['arg'] if 'arg' in raw_event['data'] else \
-            raw_event['data']['fun_args']
+        if 'fun' in raw_event['data']:
+            self.fun = raw_event['data']['fun']
+        else:
+            self.fun = None
+        if 'arg' in raw_event['data']:
+            self.args = raw_event['data']['arg']
+        elif 'fun_args' in raw_event['data']:
+            self.args = raw_event['data']['fun_args']
+        else:
+            self.args = None
 
     def __str__(self):
         return "fun: {} args: {}".format(self.fun, self.args)
@@ -36,11 +48,11 @@ class NewJobEvent(SaltEvent):
     """
     def __init__(self, raw_event):
         super(NewJobEvent, self).__init__(raw_event)
-        self.minions = raw_event['data']['minions']
+        self.targets = raw_event['data']['minions']
 
     def __str__(self):
         parent_str = super(NewJobEvent, self).__str__()
-        return "JobNew({} minions: {})".format(parent_str, self.minions)
+        return "JobNew({} targets: {})".format(parent_str, self.targets)
 
 
 class RetJobEvent(SaltEvent):
@@ -88,6 +100,22 @@ class RetRunnerEvent(SaltEvent):
         return "RunnerRet({} success: {})".format(parent_str, self.success)
 
 
+class StateResultEvent(SaltEvent):
+    """
+    Salt State Result Event
+    This kind of event represent the result event of modules executed inside salt states
+    """
+    def __init__(self, raw_event):
+        super(StateResultEvent, self).__init__(raw_event)
+        self.minion = raw_event['data']['id']
+        self.result = raw_event['data']['data']['ret']['result']
+        self.name = raw_event['data']['data']['ret']['name']
+
+    def __str__(self):
+        return "StateResult(name: {}, minion: {} result: {})".format(self.minion,
+                                                                     self.name, self.result)
+
+
 class EventListener(object):
     """
     This class represents a listener object that listens to particular Salt events.
@@ -125,6 +153,13 @@ class EventListener(object):
         """Handle ret job event
         Args:
             event (RetRunnerEvent): the ret runner event
+        """
+        pass
+
+    def handle_state_result_event(self, event):
+        """Handle state result event
+        Args:
+            event (StateResultEvent): the state result event
         """
         pass
 
@@ -191,6 +226,7 @@ class SaltEventProcessor(threading.Thread):
         Args:
             event (dict): the raw event data
         """
+        logger.debug("Process event -> %d", event)
         wrapper = None
         if fnmatch.fnmatch(event['tag'], 'salt/job/*/new'):
             wrapper = NewJobEvent(event)
@@ -212,3 +248,8 @@ class SaltEventProcessor(threading.Thread):
             for listener in self.listeners:
                 listener.handle_salt_event(wrapper)
                 listener.handle_ret_runner_event(wrapper)
+        elif fnmatch.fnmatch(event['tag'], 'salt/state_result/*'):
+            wrapper = StateResultEvent(event)
+            for listener in self.listeners:
+                listener.handle_salt_event(wrapper)
+                listener.handle_state_result_event(wrapper)

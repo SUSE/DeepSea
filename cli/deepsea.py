@@ -141,7 +141,10 @@ def _run_show_stage_steps(stage_name, all_steps):
             if step.fun in ['file.managed', 'file']:
                 step_str = "BuiltIn({}, {})".format(step.fun, step.desc)
             elif step.fun in ['service.running', 'cmd.run']:
-                step_str = "BuiltIn({}, {})".format(step.fun, step.args['name'])
+                arg = step.desc
+                if 'name' in step.args:
+                    arg = step.args['name']
+                step_str = "BuiltIn({}, {})".format(step.fun, arg)
             elif step.fun in ['pkg.latest', 'pkg.installed']:
                 arg = step.desc
                 if 'name' in step.args:

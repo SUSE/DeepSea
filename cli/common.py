@@ -29,23 +29,25 @@ class PrettyPrinter(object):
         """
         Color enum
         """
-        HEADER = '\033[95m'
-        BOLD = '\033[1m'
-        UNDERLINE = '\033[4m'
-        RED = '\x1B[31m'
-        GREEN = '\x1B[32m'
-        YELLOW = '\x1B[33m'
-        BLUE = '\x1B[34m'
-        MAGENTA = '\x1B[35m'
-        CYAN = '\x1B[36m'
-        ENDC = '\033[0m'
+        HEADER = '\x1B[95m'
+        BOLD = '\x1B[1m'
+        UNDERLINE = '\x1B[4m'
+        RED = '\x1B[38;5;161m'
+        GREEN = '\x1B[38;5;83m'
+        YELLOW = '\x1B[38;5;226m'
+        BLUE = '\x1B[38;5;33m'
+        MAGENTA = '\x1B[38;5;198m'
+        CYAN = '\x1B[38;5;122m'
+        ORANGE = '\x1B[38;5;214m'
+        PURPLE = '\x1B[38;5;134m'
+        ENDC = '\x1B[0m'
 
     @staticmethod
     def _format(color, text):
         """
         Generic pretty print string formatter
         """
-        return "{}{}{}".format(color, text, PrettyPrinter.Colors.ENDC)
+        return u"{}{}{}".format(color, text, PrettyPrinter.Colors.ENDC)
 
     @staticmethod
     def header(text):
@@ -90,6 +92,13 @@ class PrettyPrinter(object):
         return PrettyPrinter._format(PrettyPrinter.Colors.RED, text)
 
     @staticmethod
+    def orange(text):
+        """
+        Formats text as orange
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.ORANGE, text)
+
+    @staticmethod
     def cyan(text):
         """
         Formats text as cyan
@@ -102,6 +111,13 @@ class PrettyPrinter(object):
         Formats text as magenta
         """
         return PrettyPrinter._format(PrettyPrinter.Colors.MAGENTA, text)
+
+    @staticmethod
+    def purple(text):
+        """
+        Formats text as purple
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.PURPLE, text)
 
     @staticmethod
     def p_header(text):
@@ -122,7 +138,21 @@ class PrettyPrinter(object):
         """
         Prints text formatted as bold with newline in the end
         """
-        sys.stdout.write("{}\n".format(PrettyPrinter.bold(text)))
+        sys.stdout.write(u"{}\n".format(PrettyPrinter.bold(text)))
+
+    @staticmethod
+    def print(text):
+        """
+        Prints text as is
+        """
+        sys.stdout.write(text)
+
+    @staticmethod
+    def println(text):
+        """
+        Prints text as is with newline in the end
+        """
+        sys.stdout.write(u"{}\n".format(text))
 
     @staticmethod
     def p_blue(text):
@@ -132,34 +162,45 @@ class PrettyPrinter(object):
         print(PrettyPrinter.blue(text))
 
     @staticmethod
+    def p_green(text):
+        """
+        Prints text formatted as green
+        """
+        print(PrettyPrinter.green(text))
+
+    @staticmethod
     def p_red(text):
         """
         Prints text formatted as red
         """
         print(PrettyPrinter.red(text))
 
+    @staticmethod
+    def flush():
+        """
+        Flush stdout
+        """
+        sys.stdout.flush()
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):
-    """
-    Call in a loop to create terminal progress bar
 
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        bar_length  - Optional  : character length of bar (Int)
-    """
-    str_format = "{0:." + str(decimals) + "f}"
+def print_progress(progress_array, iteration, prefix='', suffix='', bar_length=100):
+    str_format = "{0:.1f}"
+    total = len(progress_array)
     percents = str_format.format(100 * (iteration / float(total)))
-    filled_length = int(round(bar_length * iteration / float(total)))
-    bar_symbol = '█' * filled_length + '-' * (bar_length - filled_length)
+    fill_length = int(round(bar_length / float(total)))
+    bar_symbol = ''
+    for idx, pos in enumerate(progress_array):
+
+        if idx == iteration:
+            bar_symbol += (PrettyPrinter.yellow(u'█') * fill_length)
+        elif pos is None:
+            bar_symbol += ('-' * fill_length)
+        elif pos:
+            bar_symbol += (PrettyPrinter.green(u'█') * fill_length)
+        else:
+            bar_symbol += (PrettyPrinter.red(u'█') * fill_length)
 
     # pylint: disable=W0106
-    sys.stdout.write('\x1b[2K\r{} |{}| {}{} {}'
+    sys.stdout.write(u'\x1b[2K\r{} |{}| {}{} {}\n'
                      .format(prefix, bar_symbol, percents, '%', suffix)),
-
-    if iteration == total:
-        sys.stdout.write('\n')
     sys.stdout.flush()

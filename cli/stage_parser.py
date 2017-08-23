@@ -141,7 +141,10 @@ class SLSParser(object):
                         elif fun == 'salt.runner':
                             result.append(SaltRunner(key, args))
                         elif fun == 'module.run':
-                            result.append(SaltModule(key, args))
+                            module = SaltModule(key, args)
+                            if not only_events or ('fire_event' in module.args and
+                                                   module.args['fire_event']):
+                                result.append(module)
                         else:
                             builtin = SaltBuiltIn(key, fun, args)
                             if not only_events or ('fire_event' in builtin.args and
@@ -151,7 +154,7 @@ class SLSParser(object):
         return result
 
 
-class SaltType(object):
+class SaltStep(object):
     """
     Base class to represent a single stage step
     """
@@ -169,7 +172,7 @@ class SaltType(object):
         return [arg for arg in self.args if key in arg][0][key]
 
 
-class SaltState(SaltType):
+class SaltState(SaltStep):
     """
     Class to represent a Salt state apply step
     """
@@ -183,7 +186,7 @@ class SaltState(SaltType):
                                                                    self.target)
 
 
-class SaltRunner(SaltType):
+class SaltRunner(SaltStep):
     """
     Class to represent a Salt runner step
     """
@@ -195,7 +198,7 @@ class SaltRunner(SaltType):
         return "SaltRunner(desc: {}, fun: {})".format(self.desc, self.fun)
 
 
-class SaltModule(SaltType):
+class SaltModule(SaltStep):
     """
     Class to represent a Salt module step
     """
@@ -207,7 +210,7 @@ class SaltModule(SaltType):
         return "SaltModule(desc: {}, fun: {})".format(self.desc, self.fun)
 
 
-class SaltBuiltIn(SaltType):
+class SaltBuiltIn(SaltStep):
     """
     Class to represent a Salt built-in command step
 
