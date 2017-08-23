@@ -1061,7 +1061,7 @@ def engulf_existing_cluster(**kwargs):
             # We'll talk to this minion later to obtain keyrings
             admin_minion = minion
 
-	is_master = local.cmd(minion, "pillar.get", [ "master_minion" ], expr_form="compound")[minion] == minion
+        is_master = local.cmd(minion, "pillar.get", [ "master_minion" ], expr_form="compound")[minion] == minion
 
         if not info["running_services"].keys() and not is_admin and not is_master:
             # No ceph services running, no admin key, not the master_minion,
@@ -1079,35 +1079,35 @@ def engulf_existing_cluster(**kwargs):
             mon_minions.append(minion)
             policy_cfg.append("role-mon/cluster/" + minion + ".sls")
             policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
-	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks", [], expr_form="compound").items():
-		mon_addrs[minion] = ipaddrs
+            for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks", [], expr_form="compound").items():
+                mon_addrs[minion] = ipaddrs
 
         if "ceph-osd" in info["running_services"].keys():
             # Needs a storage profile assigned (which may be different
             # than the proposals deepsea has come up with, depending on
             # how things were deployed)
-	    ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml", [], expr_form="compound")
-	    if not ceph_disks:
-		log.error("Failed to get list of Ceph OSD disks.")
-		return [ False ]
+            ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml", [], expr_form="compound")
+            if not ceph_disks:
+                log.error("Failed to get list of Ceph OSD disks.")
+                return [ False ]
 
-	    for minion, store in ceph_disks.items():
-		minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
-		minion_yml_path = minion_yml_dir + "/" + minion + ".yml"
-		_create_dirs(minion_yml_dir, "")
-		salt_writer.write(minion_yml_path, store)
+            for minion, store in ceph_disks.items():
+                minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
+                minion_yml_path = minion_yml_dir + "/" + minion + ".yml"
+                _create_dirs(minion_yml_dir, "")
+                salt_writer.write(minion_yml_path, store)
 
-		minion_sls_data = { "roles": [ "storage" ] }
-		minion_sls_dir = imported_profile_path + "/cluster"
-		minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
-		_create_dirs(minion_sls_dir, "")
-		salt_writer.write(minion_sls_path, minion_sls_data)
+                minion_sls_data = { "roles": [ "storage" ] }
+                minion_sls_dir = imported_profile_path + "/cluster"
+                minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
+                _create_dirs(minion_sls_dir, "")
+                salt_writer.write(minion_sls_path, minion_sls_data)
 
-		policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
-		policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
+                policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
+                policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
 
-	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks", [], expr_form="compound").items():
-		osd_addrs[minion] = ipaddrs
+            for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks", [], expr_form="compound").items():
+                osd_addrs[minion] = ipaddrs
 
         if "ceph-mgr" in info["running_services"].keys():
             policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
@@ -1168,7 +1168,7 @@ def engulf_existing_cluster(**kwargs):
         keyring.write(osd_bootstrap_keyring)
 
     for i in mgr_instances:
-	mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ], expr_form="compound")[admin_minion]
+        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ], expr_form="compound")[admin_minion]
         if not mgr_keyring:
             print("Could not obtain mgr." + i + " keyring")
             return False
@@ -1176,7 +1176,7 @@ def engulf_existing_cluster(**kwargs):
             keyring.write(mgr_keyring)
 
     for i in mds_instances:
-	mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ], expr_form="compound")[admin_minion]
+        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ], expr_form="compound")[admin_minion]
         if not mds_keyring:
             print("Could not obtain mds." + i + " keyring")
             return False
@@ -1184,7 +1184,7 @@ def engulf_existing_cluster(**kwargs):
             keyring.write(mds_keyring)
 
     for i in rgw_instances:
-	rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ], expr_form="compound")[admin_minion]
+        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ], expr_form="compound")[admin_minion]
         if not rgw_keyring:
             print("Could not obtain client." + i + " keyring")
             return False
@@ -1221,18 +1221,18 @@ def engulf_existing_cluster(**kwargs):
         return False
 
     if not _replace_fsid_with_existing_cluster(cp.get("global", "fsid")):
-	log.error("Failed to replace derived fsid with fsid of existing cluster.")
-	return [ False ]
+        log.error("Failed to replace derived fsid with fsid of existing cluster.")
+        return [ False ]
 
     p_net_dict = _replace_public_network_with_existing_cluster(mon_addrs)
     if not p_net_dict['ret']:
-	log.error("Failed to replace derived public_network with public_network of existing cluster.")
-	return [ False ]
+        log.error("Failed to replace derived public_network with public_network of existing cluster.")
+        return [ False ]
 
     c_net_dict = _replace_cluster_network_with_existing_cluster(osd_addrs, p_net_dict['public_network'])
     if not c_net_dict['ret']:
-	log.error("Failed to replace derived cluster_network with cluster_network of existing cluster.")
-	return [ False ]
+        log.error("Failed to replace derived cluster_network with cluster_network of existing cluster.")
+        return [ False ]
 
     # write out the imported ceph.conf
     with open("/srv/salt/ceph/configuration/files/ceph.conf.import", 'w') as conf:
