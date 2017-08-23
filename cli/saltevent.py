@@ -5,6 +5,7 @@ Salt Event Processor module
 from __future__ import absolute_import
 
 import fnmatch
+import threading
 
 import salt.config
 import salt.utils.event
@@ -128,7 +129,7 @@ class EventListener(object):
         pass
 
 
-class SaltEventProcessor(object):
+class SaltEventProcessor(threading.Thread):
     """
     This class implements an execution loop to listen for the Salt event BUS.
     """
@@ -136,7 +137,7 @@ class SaltEventProcessor(object):
         super(SaltEventProcessor, self).__init__()
         self.running = False
         self.listeners = []
-        self.io_loop = IOLoop.instance()
+        self.io_loop = None
 
     def add_listener(self, listener):
         """Adds an event listener to the listener list
@@ -152,14 +153,20 @@ class SaltEventProcessor(object):
         return self.running
 
     def start(self):
+        self.running = True
+        super(SaltEventProcessor, self).start()
+
+    def run(self):
         """
         Starts the IOLoop of Salt Event Processor
         """
+        self.io_loop = IOLoop.current()
+
         opts = salt.config.client_config('/etc/salt/master')
         stream = salt.utils.event.get_event('master', io_loop=self.io_loop,
                                             transport=opts['transport'], opts=opts)
         stream.set_event_handler(self._handle_event_recv)
-        self.running = True
+
         self.io_loop.start()
 
     def stop(self):

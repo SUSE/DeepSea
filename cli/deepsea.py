@@ -11,6 +11,7 @@ import logging
 import os
 import signal
 import sys
+import time
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
@@ -76,18 +77,34 @@ def _run_monitor():
     """
     monitor = Monitor()
 
+    logger = logging.getLogger(__name__)
+
     # pylint: disable=W0613
     def sigint_handler(*args):
         """
         SIGINT signal handler
         """
+        logger.debug("SIGINT, calling monitor.stop()")
+        PP.pl_bold("\x1b[2K\rShutting down...")
+        print()
         monitor.stop()
-        # sys.exit(0)
+
     signal.signal(signal.SIGINT, sigint_handler)
 
     os.system('clear')
     print("Use Ctrl+C to stop the monitor")
+    PP.p_bold("Initializing DeepSea progess monitor...")
     monitor.start()
+    PP.pl_bold(" Done.")
+    print()
+    if sys.version_info > (3, 0):
+        logger.debug("Python 3: blocking main thread on join()")
+        monitor.wait_to_finish()
+    else:
+        logger.debug("Python 2: polling for monitor.is_running() %s", monitor.is_running())
+        while monitor.is_running():
+            time.sleep(2)
+        monitor.wait_to_finish()
 
 
 def _run_show_stage_steps(stage_name, all_steps):

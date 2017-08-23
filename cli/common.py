@@ -115,7 +115,14 @@ class PrettyPrinter(object):
         """
         Prints text formatted as bold
         """
-        print(PrettyPrinter.bold(text))
+        sys.stdout.write(PrettyPrinter.bold(text))
+
+    @staticmethod
+    def pl_bold(text):
+        """
+        Prints text formatted as bold with newline in the end
+        """
+        sys.stdout.write("{}\n".format(PrettyPrinter.bold(text)))
 
     @staticmethod
     def p_blue(text):

@@ -159,7 +159,7 @@ class SaltType(object):
         self.desc = desc
         self.args = args
 
-    def __repr__(self):
+    def __str__(self):
         return self.desc
 
     def _get_arg(self, key):
@@ -178,7 +178,7 @@ class SaltState(SaltType):
         self.state = self._get_arg('sls')
         self.target = self._get_arg('tgt')
 
-    def __repr__(self):
+    def __str__(self):
         return "SaltState(desc: {}, state: {}, target: {})".format(self.desc, self.state,
                                                                    self.target)
 
@@ -191,7 +191,7 @@ class SaltRunner(SaltType):
         super(SaltRunner, self).__init__(desc, args)
         self.fun = self._get_arg('name')
 
-    def __repr__(self):
+    def __str__(self):
         return "SaltRunner(desc: {}, fun: {})".format(self.desc, self.fun)
 
 
@@ -203,7 +203,7 @@ class SaltModule(SaltType):
         super(SaltModule, self).__init__(desc, args)
         self.fun = self._get_arg('name')
 
-    def __repr__(self):
+    def __str__(self):
         return "SaltModule(desc: {}, fun: {})".format(self.desc, self.fun)
 
 
@@ -225,5 +225,5 @@ class SaltBuiltIn(SaltType):
             else:
                 self.args['nokey'] = arg
 
-    def __repr__(self):
+    def __str__(self):
         return "SaltBuiltIn(desc: {}, fun: {}, args: {})".format(self.desc, self.fun, self.args)
