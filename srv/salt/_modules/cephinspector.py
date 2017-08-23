@@ -10,12 +10,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def _get_listening_ipaddr(proc_name):
+def _get_listening_ipaddrs(proc_name):
     """
-    Search for the first instance of proc_name and return the first instance of a
-    listening IP address.  If proc_name or a listening IP are not found, return None.
+    Search for proc_name running on the node and return a list of unique IPs on which proc_name
+    listens.  Otherwise, return [].
     """
-    proc_listening_ip = None
+    proc_listening_ips = []
 
     for proc in psutil.process_iter():
 	# Note that depending on psutil version, there are slight api differences, hence the
@@ -31,23 +31,23 @@ def _get_listening_ipaddr(proc_name):
 		conns = proc.connections(kind="inet")
 	    for con in conns:
 		if con.status == "LISTEN":
-		    proc_listening_ip = con.laddr[0]
+		    proc_listening_ips.append(con.laddr[0])
 
-    return proc_listening_ip
+    return list(set(proc_listening_ips))
 
-def get_minion_public_network():
+def get_minion_public_networks():
     """
-    Returns the listening IP of the ceph-mon process encountered first on the system.
-    If ceph-mon is not running/listening, returns None.
+    For a given node, returns the list of unique IPs on which the ceph-mon processes are listening.
+    If ceph-mon is not running/listening, returns [].
     """
-    return _get_listening_ipaddr("ceph-mon")
+    return _get_listening_ipaddrs("ceph-mon")
 
-def get_minion_cluster_network():
+def get_minion_cluster_networks():
     """
-    Returns the listening IP of the ceph-osd process encountered first on the system.
-    If ceph-osd is not running/listening, returns None.
+    For a given node, returns the list of unique IPs on which the ceph-osd processes are listening.
+    If ceph-osd is not running/listening, returns [].
     """
-    return _get_listening_ipaddr("ceph-osd")
+    return _get_listening_ipaddrs("ceph-osd")
 
 def _get_device_of_partition(partition):
     """
