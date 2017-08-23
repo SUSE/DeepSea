@@ -1016,7 +1016,7 @@ def engulf_existing_cluster(**kwargs):
         return False
 
     # First, hand apply select Stage 0 functions
-    local.cmd(search, "saltutil.sync_all")
+    local.cmd(search, "saltutil.sync_all", [], expr_form="compound")
     local.cmd(search, "state.apply", ["ceph.mines"], expr_form="compound")
 
     # Run proposals gathering directly.
@@ -1039,7 +1039,7 @@ def engulf_existing_cluster(**kwargs):
     mds_instances = []
     rgw_instances = []
 
-    for minion, info in local.cmd(search, "cephinspector.inspect").items():
+    for minion, info in local.cmd(search, "cephinspector.inspect", [], expr_form="compound").items():
 
         if type(info) is not dict:
             print("cephinspector.inspect failed on %s: %s" % (minion, info))
@@ -1061,7 +1061,7 @@ def engulf_existing_cluster(**kwargs):
             # We'll talk to this minion later to obtain keyrings
             admin_minion = minion
 
-        is_master = local.cmd(minion, "pillar.get", [ "master_minion" ])[minion] == minion
+	is_master = local.cmd(minion, "pillar.get", [ "master_minion" ], expr_form="compound")[minion] == minion
 
         if not info["running_services"].keys() and not is_admin and not is_master:
             # No ceph services running, no admin key, not the master_minion,
@@ -1079,14 +1079,14 @@ def engulf_existing_cluster(**kwargs):
             mon_minions.append(minion)
             policy_cfg.append("role-mon/cluster/" + minion + ".sls")
             policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
-	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks").items():
+	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks", [], expr_form="compound").items():
 		mon_addrs[minion] = ipaddrs
 
         if "ceph-osd" in info["running_services"].keys():
             # Needs a storage profile assigned (which may be different
             # than the proposals deepsea has come up with, depending on
             # how things were deployed)
-	    ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml")
+	    ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml", [], expr_form="compound")
 	    if not ceph_disks:
 		log.error("Failed to get list of Ceph OSD disks.")
 		return [ False ]
@@ -1106,7 +1106,7 @@ def engulf_existing_cluster(**kwargs):
 		policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
 		policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
 
-	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks").items():
+	    for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks", [], expr_form="compound").items():
 		osd_addrs[minion] = ipaddrs
 
         if "ceph-mgr" in info["running_services"].keys():
@@ -1132,17 +1132,17 @@ def engulf_existing_cluster(**kwargs):
         return False
 
     # TODO: this is really not very DRY...
-    admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.admin" ])[admin_minion]
+    admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.admin" ], expr_form="compound")[admin_minion]
     if not admin_keyring:
         print("Could not obtain client.admin keyring")
         return False
 
-    mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mon." ])[admin_minion]
+    mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mon." ], expr_form="compound")[admin_minion]
     if not mon_keyring:
         print("Could not obtain mon keyring")
         return False
 
-    osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.bootstrap-osd" ])[admin_minion]
+    osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.bootstrap-osd" ], expr_form="compound")[admin_minion]
     if not osd_bootstrap_keyring:
         print("Could not obtain osd bootstrap keyring")
         return False
@@ -1168,7 +1168,7 @@ def engulf_existing_cluster(**kwargs):
         keyring.write(osd_bootstrap_keyring)
 
     for i in mgr_instances:
-        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ])[admin_minion]
+	mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ], expr_form="compound")[admin_minion]
         if not mgr_keyring:
             print("Could not obtain mgr." + i + " keyring")
             return False
@@ -1176,7 +1176,7 @@ def engulf_existing_cluster(**kwargs):
             keyring.write(mgr_keyring)
 
     for i in mds_instances:
-        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ])[admin_minion]
+	mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ], expr_form="compound")[admin_minion]
         if not mds_keyring:
             print("Could not obtain mds." + i + " keyring")
             return False
@@ -1184,7 +1184,7 @@ def engulf_existing_cluster(**kwargs):
             keyring.write(mds_keyring)
 
     for i in rgw_instances:
-        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ])[admin_minion]
+	rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ], expr_form="compound")[admin_minion]
         if not rgw_keyring:
             print("Could not obtain client." + i + " keyring")
             return False
