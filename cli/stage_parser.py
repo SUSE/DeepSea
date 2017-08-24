@@ -5,8 +5,10 @@ This module is responsible for the parsing of DeepSea stage files
 from __future__ import absolute_import
 from __future__ import print_function
 
+import glob
 import logging
 import os
+import pickle
 
 import salt.client
 
@@ -50,6 +52,9 @@ class SLSParser(object):
     """
     SLS files parser
     """
+
+    _CACHE_FILE_PREFIX_ = "_deepsea"
+    _CACHE_DIR_PATH_ = "/tmp"
 
     @staticmethod
     def _state_name_is_dir(state_name):
@@ -110,15 +115,30 @@ class SLSParser(object):
         return "{}.{}".format(parent_state, include)
 
     @staticmethod
-    def parse_state_steps(state_name, only_events=True):
+    def parse_state_steps(state_name, stages_only=True, cache=True):
         """
         Parses the all steps (actions) triggered by the execution of a state file
         Args:
             state_name (str): the salt state name, e.g., ceph.stage.1
+            only_events (bool): wheather to parse state declarations that have fire_event=True
+            cache (bool): wheather load/store the results in a cache file
 
         Returns:
             list(StepType): a list of steps
         """
+        if stages_only and not state_name.startswith('ceph.stage'):
+            return []
+
+        cache_file_path = '{}/{}_{}_{}.bin'.format(SLSParser._CACHE_DIR_PATH_,
+                                                   SLSParser._CACHE_FILE_PREFIX_,
+                                                   stages_only, state_name)
+        if cache:
+            if os.path.exists(cache_file_path):
+                logger.info("state %s found in cache, loading from cache...", state_name)
+                # pylint: disable=W8470
+                with open(cache_file_path, mode='rb') as binfile:
+                    return pickle.load(binfile)
+
         result = []
         path = SLSParser._state_file_path(state_name)
         state_dict = SLSRenderer.render(path)
@@ -129,7 +149,8 @@ class SLSParser(object):
                     logger.debug("Handling include of: parent={} include={}"
                                  .format(state_name, inc))
                     include_state_name = SLSParser._gen_state_name_from_include(state_name, inc)
-                    result.extend(SLSParser.parse_state_steps(include_state_name, only_events))
+                    result.extend(SLSParser.parse_state_steps(include_state_name, stages_only,
+                                                              cache))
             else:
                 if isinstance(steps, dict):
                     for fun, args in steps.items():
@@ -137,21 +158,37 @@ class SLSParser(object):
                         if fun == 'salt.state':
                             state = SaltState(key, args)
                             result.append(state)
-                            result.extend(SLSParser.parse_state_steps(state.state, only_events))
+                            result.extend(SLSParser.parse_state_steps(state.state, stages_only,
+                                                                      cache))
                         elif fun == 'salt.runner':
                             result.append(SaltRunner(key, args))
                         elif fun == 'module.run':
-                            module = SaltModule(key, args)
-                            if not only_events or ('fire_event' in module.args and
-                                                   module.args['fire_event']):
-                                result.append(module)
+                            result.append(SaltModule(key, args))
                         else:
-                            builtin = SaltBuiltIn(key, fun, args)
-                            if not only_events or ('fire_event' in builtin.args and
-                                                   builtin.args['fire_event']):
-                                result.append(SaltBuiltIn(key, fun, args))
+                            result.append(SaltBuiltIn(key, fun, args))
+
+        if cache:
+            # pylint: disable=W8470
+            with open(cache_file_path, mode='wb') as binfile:
+                pickle.dump(result, binfile)
 
         return result
+
+    @staticmethod
+    def clean_cache(state_name):
+        """
+        Deletes all cache files
+        """
+        if not state_name:
+            cache_files = '{}/{}_*.bin'.format(SLSParser._CACHE_DIR_PATH_,
+                                               SLSParser._CACHE_FILE_PREFIX_)
+        else:
+            cache_files = '{}/{}_*_{}.bin'.format(SLSParser._CACHE_DIR_PATH_,
+                                                  SLSParser._CACHE_FILE_PREFIX_,
+                                                  state_name)
+        logger.info("cleaning cache: %s", cache_files)
+        for cache_file in glob.glob(cache_files):
+            os.remove(cache_file)
 
 
 class SaltStep(object):

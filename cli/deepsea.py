@@ -26,10 +26,11 @@ def _parse_cli_args():
     parser.add_argument("-m", "--monitor",
                         help="monitors and shows the progress of DeepSea salt commands",
                         action="store_true")
-    parser.add_argument("--show-stage-steps", help="Lists the steps of a given DeepSea stage",
+    parser.add_argument("--show-stage-steps", help="lists the steps of a given DeepSea stage",
                         type=str, metavar="STAGE_NAME")
-    parser.add_argument('--list-all-steps', help="Shows all steps even if 'fire_event = False'. "
-                                                 "To be used in conjuction with --show-stage-steps",
+    parser.add_argument("--no-steps-cache", help="disables caching of stage steps parsing",
+                        action="store_true")
+    parser.add_argument("--clean-cache", help="cleans steps cache",
                         action="store_true")
     parser.add_argument("--log-level", help="set log level (default: info)",
                         choices=["info", "error", "debug", "silent"], default="info")
@@ -107,12 +108,12 @@ def _run_monitor():
         monitor.wait_to_finish()
 
 
-def _run_show_stage_steps(stage_name, all_steps):
+def _run_show_stage_steps(stage_name, cache):
     """
     Runs stage parser and prints the list of steps
     """
     PP.p_header("Parsing stage: {}".format(stage_name))
-    steps = SLSParser.parse_state_steps(stage_name, not all_steps)
+    steps = SLSParser.parse_state_steps(stage_name, False, cache)
     print()
     PP.p_bold("List of steps for stage {}:".format(stage_name))
     print()
@@ -169,7 +170,11 @@ def main():
 
     _setup_logging(args.log_level, args.log_file)
 
+    if args.clean_cache:
+        # SLSParser.clean_cache(None if args.clean_cache == '_ALL_' else args.clean_cache)
+        SLSParser.clean_cache(None)
+
     if args.monitor:
         _run_monitor()
     elif args.show_stage_steps:
-        _run_show_stage_steps(args.show_stage_steps, args.list_all_steps)
+        _run_show_stage_steps(args.show_stage_steps, not args.no_steps_cache)

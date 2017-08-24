@@ -40,6 +40,8 @@ class PrettyPrinter(object):
         CYAN = '\x1B[38;5;122m'
         ORANGE = '\x1B[38;5;214m'
         PURPLE = '\x1B[38;5;134m'
+        GREY = '\x1B[38;5;245m'
+        LIGHT_YELLOW = '\x1B[38;5;228m'
         ENDC = '\x1B[0m'
 
     @staticmethod
@@ -118,6 +120,13 @@ class PrettyPrinter(object):
         Formats text as purple
         """
         return PrettyPrinter._format(PrettyPrinter.Colors.PURPLE, text)
+
+    @staticmethod
+    def info(text):
+        """
+        Formats text as info
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.LIGHT_YELLOW, text)
 
     @staticmethod
     def p_header(text):
