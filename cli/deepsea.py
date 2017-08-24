@@ -5,39 +5,18 @@ DeepSea CLI
 from __future__ import absolute_import
 from __future__ import print_function
 
-import argparse
 import logging.config
 import logging
 import os
 import signal
 import sys
 import time
+import click
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
 from .monitors.terminal_outputter import StepListPrinter
 from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
-
-
-def _parse_cli_args():
-    """
-    This function initializes and parses the CLI arguments
-    """
-    parser = argparse.ArgumentParser(prog="deepsea", description="***** DeepSea CLI tool *****")
-    parser.add_argument("-m", "--monitor",
-                        help="monitors and shows the progress of DeepSea salt commands",
-                        action="store_true")
-    parser.add_argument("--show-stage-steps", help="lists the steps of a given DeepSea stage",
-                        type=str, metavar="STAGE_NAME")
-    parser.add_argument("--no-steps-cache", help="disables caching of stage steps parsing",
-                        action="store_true")
-    parser.add_argument("--clean-cache", help="cleans steps cache",
-                        action="store_true")
-    parser.add_argument("--log-level", help="set log level (default: info)",
-                        choices=["info", "error", "debug", "silent"], default="info")
-    parser.add_argument("--log-file", help="log file location", type=str,
-                        default="/var/log/deepsea.log")
-    return parser.parse_args()
 
 
 def _setup_logging(log_level, log_file):
@@ -164,19 +143,46 @@ def _run_show_stage_steps(stage_name, cache):
     print()
 
 
+@click.group()
+@click.option('--log-level', default='info',
+              type=click.Choice(["info", "error", "debug", "silent"]),
+              help="set log level (default: info)")
+@click.option('--log-file', default='/var/log/deepsea.log',
+              type=click.Path(dir_okay=False),
+              help="the file path for the log to be stored (default: /var/log/deepsea.log)")
+def cli(log_level, log_file):
+    _setup_logging(log_level, log_file)
+
+
+@click.command()
+@click.option('--clear-cache', is_flag=True, help="clear steps cache")
+@click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
+def monitor(clear_cache, no_cache):
+    if clear_cache:
+        SLSParser.clean_cache(None)
+    _run_monitor()
+
+
+@click.group()
+def stage():
+    pass
+
+
+@click.command(name='show')
+@click.argument('stage_name', 'the DeepSea stage name')
+@click.option('--clear-cache', is_flag=True, help="clear steps cache")
+@click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
+def stage_show(stage_name, clear_cache, no_cache):
+    if clear_cache:
+        SLSParser.clean_cache(None)
+    _run_show_stage_steps(stage_name, not no_cache)
+
+
 def main():
     """
     CLI main function
     """
-    args = _parse_cli_args()
-
-    _setup_logging(args.log_level, args.log_file)
-
-    if args.clean_cache:
-        # SLSParser.clean_cache(None if args.clean_cache == '_ALL_' else args.clean_cache)
-        SLSParser.clean_cache(None)
-
-    if args.monitor:
-        _run_monitor()
-    elif args.show_stage_steps:
-        _run_show_stage_steps(args.show_stage_steps, not args.no_steps_cache)
+    cli.add_command(monitor)
+    cli.add_command(stage)
+    stage.add_command(stage_show)
+    cli()
