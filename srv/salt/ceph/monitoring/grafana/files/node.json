@@ -1,5 +1,5 @@
 {
-  "overwrite": false,
+  "overwrite": true,
   "dashboard": {
     "__requires": [
       {
@@ -269,6 +269,14 @@
             "steppedLine": false,
             "targets": [
               {
+                "expr": "irate(node_network_transmit_bytes{instance=~'$instance', device!='lo'}[5m])",
+                "interval": "",
+                "intervalFactor": 2,
+                "legendFormat": "{{device}}_out",
+                "refId": "B",
+                "step": 120
+              },
+              {
                 "expr": "irate(node_network_receive_bytes{instance=~'$instance', device!='lo'}[5m])",
                 "interval": "",
                 "intervalFactor": 2,
@@ -277,14 +285,6 @@
                 "refId": "A",
                 "step": 120,
                 "target": ""
-              },
-              {
-                "expr": "irate(node_network_transmit_bytes{instance=~'$instance', device!='lo'}[5m])",
-                "interval": "",
-                "intervalFactor": 2,
-                "legendFormat": "{{device}}_out",
-                "refId": "B",
-                "step": 120
               }
             ],
             "thresholds": [],
