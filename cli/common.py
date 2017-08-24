@@ -42,6 +42,7 @@ class PrettyPrinter(object):
         PURPLE = '\x1B[38;5;134m'
         GREY = '\x1B[38;5;245m'
         LIGHT_YELLOW = '\x1B[38;5;228m'
+        LIGTH_PURPLE = '\x1B[38;5;225m'
         ENDC = '\x1B[0m'
 
     @staticmethod
@@ -71,6 +72,20 @@ class PrettyPrinter(object):
         Formats text as blue
         """
         return PrettyPrinter._format(PrettyPrinter.Colors.BLUE, text)
+
+    @staticmethod
+    def grey(text):
+        """
+        Formats text as grey
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.GREY, text)
+
+    @staticmethod
+    def light_purple(text):
+        """
+        Formats text as light_purple
+        """
+        return PrettyPrinter._format(PrettyPrinter.Colors.LIGTH_PURPLE, text)
 
     @staticmethod
     def green(text):
@@ -157,11 +172,14 @@ class PrettyPrinter(object):
         sys.stdout.write(text)
 
     @staticmethod
-    def println(text):
+    def println(text=None):
         """
         Prints text as is with newline in the end
         """
-        sys.stdout.write(u"{}\n".format(text))
+        if text:
+            sys.stdout.write(u"{}\n".format(text))
+        else:
+            sys.stdout.write(u"\n")
 
     @staticmethod
     def p_blue(text):
@@ -192,7 +210,10 @@ class PrettyPrinter(object):
         sys.stdout.flush()
 
 
-def print_progress(progress_array, iteration, prefix='', suffix='', bar_length=100):
+def print_progress_bar(progress_array, iteration, prefix='', suffix='', bar_length=100):
+    """
+    Prints a progress bar
+    """
     str_format = "{0:.1f}"
     total = len(progress_array)
     percents = str_format.format(100 * (iteration / float(total)))

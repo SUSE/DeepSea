@@ -15,6 +15,7 @@ import time
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
+from .monitors.terminal_outputter import StepListPrinter
 from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
 
 
@@ -77,6 +78,7 @@ def _run_monitor():
     Run the DeepSea stage monitor and progress visualizer
     """
     monitor = Monitor()
+    monitor.add_listener(StepListPrinter())
 
     logger = logging.getLogger(__name__)
 

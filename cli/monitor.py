@@ -7,9 +7,7 @@ from __future__ import print_function
 
 import logging
 import operator
-import os
 
-from .common import PrettyPrinter as PP, print_progress
 from .saltevent import SaltEventProcessor
 from .saltevent import EventListener
 from .saltevent import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
@@ -30,13 +28,14 @@ class Stage(object):
         """
         Class that models the execution of a single step
         """
-        def __init__(self, step, name):
+        def __init__(self, step, name, order):
             """
             Args:
                 step (stage_parse.SaltStep): the parsed step
             """
             self.step = step
             self.name = name
+            self.order = order
             self.jid = None
             self.finished = False
             self.success = None
@@ -49,8 +48,8 @@ class Stage(object):
             self.finished = True
 
     class TargetedStep(Step):
-        def __init__(self, step, name):
-            super(Stage.TargetedStep, self).__init__(step, name)
+        def __init__(self, step, name, order):
+            super(Stage.TargetedStep, self).__init__(step, name, order)
             self.targets = None
             self.sub_steps = []
             self.curr_sub_step = 0
@@ -88,25 +87,29 @@ class Stage(object):
         self.jid = None
         self.success = None
         self._executing = False
-        self._current_step = 0
+        self.current_step = 0
 
         self._steps = []
         _curr_state = None
         for step in self._parsed_steps:
             wrapper = None
             if isinstance(step, SaltRunner):
-                wrapper = Stage.Step(step, step.fun)
+                wrapper = Stage.Step(step, step.fun, len(self._steps)+1)
                 _curr_state = None
             elif isinstance(step, SaltState):
-                wrapper = Stage.TargetedStep(step, step.state)
+                wrapper = Stage.TargetedStep(step, step.state, len(self._steps)+1)
                 _curr_state = wrapper
             elif isinstance(step, SaltModule) or isinstance(step, SaltBuiltIn):
                 assert _curr_state
-                _curr_state.sub_steps.append(Stage.Step(step, step.fun))
+                _curr_state.sub_steps.append(Stage.Step(step, step.fun,
+                                                        len(_curr_state.sub_steps)+1))
                 continue
 
             assert wrapper
             self._steps.append(wrapper)
+
+    def total_steps(self):
+        return len(self._steps)
 
     def start(self, jid):
         """
@@ -114,10 +117,7 @@ class Stage(object):
         """
         self._executing = True
         self.jid = jid
-
-        self._current_step = 0
-
-        self.print_progress()
+        self.current_step = 0
 
     def finish(self, success):
         """
@@ -127,44 +127,28 @@ class Stage(object):
         self._executing = False
         self.success = success
 
-        PP.println("\x1B[K")
-        self.print_progress()
-
-        PP.p_bold("Ended stage: ")
-        PP.println(PP.magenta("{} total={}/{}".format(self.name, self._current_step,
-                                                      len(self._steps))))
-
     def start_step(self, event):
         assert self._executing
 
         if isinstance(event, NewRunnerEvent):
-            curr_step = self._steps[self._current_step]
+            curr_step = self._steps[self.current_step]
             if isinstance(curr_step.step, SaltRunner):
                 if curr_step.name == event.fun[7:]:
                     curr_step.start(event.jid)
-                    PP.p_bold("{:12}".format("({}/{}): ".format(self._current_step+1,
-                                                                len(self._steps))))
-                    PP.print(PP.orange("{:.<55} ".format(curr_step.name)))
-
-                    self.print_progress()
+                    return curr_step
 
         elif isinstance(event, NewJobEvent):
-            curr_step = self._steps[self._current_step]
+            curr_step = self._steps[self.current_step]
             if isinstance(curr_step, Stage.TargetedStep):
                 step_name = event.args[0] if event.fun == 'state.sls' else event.fun
                 if curr_step.name == step_name:
                     curr_step.start(event.jid, event.targets)
-                    PP.p_bold("{:12}".format("({}/{}): ".format(self._current_step+1,
-                                                                len(self._steps))))
-                    PP.println(PP.orange("{} on".format(curr_step.name)))
-                    for target in event.targets:
-                        PP.print(PP.cyan("{:12}{:.<55} ".format('', target)))
-                        PP.println(PP.orange(u"\u23F3"))
-
-                    self.print_progress()
+                    return curr_step
 
         else:
             assert False
+
+        return None
 
     def finish_step(self, event):
         """
@@ -175,34 +159,24 @@ class Stage(object):
         assert self._executing
 
         if isinstance(event, RetRunnerEvent):
-            curr_step = self._steps[self._current_step]
+            curr_step = self._steps[self.current_step]
             if curr_step.jid and curr_step.jid == event.jid:
                 curr_step.finish(event.success)
-                done = (PP.green(PP.bold(u"\u2713")) if curr_step.success else
-                        PP.red(PP.bold(u"\u274C")))
-                PP.println(done)
-                self._current_step += 1
-                self.print_progress()
+                self.current_step += 1
+                return self._steps[self.current_step-1]
 
         elif isinstance(event, RetJobEvent):
-            curr_step = self._steps[self._current_step]
+            curr_step = self._steps[self.current_step]
             if curr_step.jid and curr_step.jid == event.jid:
                 curr_step.finish(event.minion, event.success)
-                PP.print("\x1B[A" * len(curr_step.targets))
-                for target, data in curr_step.targets.items():
-                    PP.print(PP.cyan("\x1B[K{:12}{:.<55} ".format('', target)))
-                    if data['finished']:
-                        done = PP.green(PP.bold(u"\u2713")) if data['success'] else \
-                                                               PP.red(PP.bold(u"\u274C"))
-                        PP.println(done)
-                    else:
-                        PP.println(PP.orange(u"\u23F3"))
-                    self.print_progress()
                 if curr_step.finished:
-                    self._current_step += 1
+                    self.current_step += 1
+                return curr_step
 
         else:
             assert False
+
+        return None
 
     def state_result_step(self, event):
         """
@@ -212,7 +186,7 @@ class Stage(object):
         """
         assert self._executing
 
-        curr_step = self._steps[self._current_step]
+        curr_step = self._steps[self.current_step]
         assert not curr_step.finished
 
         if event.jid == curr_step.jid:
@@ -220,48 +194,90 @@ class Stage(object):
             # curr_step.finish_sub_step(event.result)
             pass
 
-    def print_progress(self):
+        return curr_step
+
+
+class MonitorListener(object):
+    def stage_started(self, stage_name):
         """
-        Prints a progress bar
+        This function is called when a stage starts
+        Args:
+            stage (str): the stage name
         """
-        # PP.println("\x1B[K")
-        # progress_array = [step.success for step in self._steps]
-        # if self._current_step >= len(self._steps):
-        #     suffix = (PP.green(PP.bold(u"\u2713")) if self.success else
-        #               PP.red(PP.bold(u"\u274C")))
-        # else:
-        #     suffix = PP.orange("running {}".format(self._steps[self._current_step].name))
-        # print_progress(progress_array, self._current_step, self.name[5:],
-        #                suffix, 50)
-        # PP.print("\x1B[A")
         pass
 
-    def reset(self):
+    def stage_parsing_started(self, stage_name):
         """
-        Resets to the original state of this object
+        This function is called when a stage parsing started
+        Args:
+            stage (str): the stage name
         """
-        self.jid = None
-        self.success = None
-        self._executing = False
-        self._current_step = 0
+        pass
 
-        self._steps = []
-        _curr_state = None
-        for step in self._parsed_steps:
-            wrapper = None
-            if isinstance(step, SaltRunner):
-                wrapper = Stage.Step(step, step.fun)
-                _curr_state = None
-            elif isinstance(step, SaltState):
-                wrapper = Stage.TargetedStep(step, step.state)
-                _curr_state = wrapper
-            elif isinstance(step, SaltModule) or isinstance(step, SaltBuiltIn):
-                assert _curr_state
-                _curr_state.sub_steps.append(Stage.Step(step, step.fun))
-                continue
+    def stage_parsing_finished(self, stage):
+        """
+        This function is called when a stage parsing finished
+        Args:
+            stage (Stage): the stage object or None if a parsing error occurred
+        """
+        pass
 
-            assert wrapper
-            self._steps.append(wrapper)
+    def stage_finished(self, stage):
+        """
+        This function is called when a stage finished execution
+        Args:
+            stage (Stage): the stage object
+        """
+        pass
+
+    def step_runner_started(self, step):
+        """
+        This function is called when a runner starts executing
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
+
+    def step_runner_finished(self, step):
+        """
+        This function is called when a runner finishes
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
+
+    def step_state_started(self, step):
+        """
+        This function is called when a Salt state starts executing
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
+
+    def step_state_minion_finished(self, step, minion):
+        """
+        This function is called when a Salt state finishes in a particular minion
+        Args:
+            step (Stage.Step): the step object
+            minion (str): the minion id
+        """
+        pass
+
+    def step_state_result(self, step):
+        """
+        This function is called when a Salt state result is received
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
+
+    def step_state_finished(self, step):
+        """
+        This function is called when a Salt state finishes executing in all targets
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
 
 
 class Monitor(object):
@@ -315,7 +331,20 @@ class Monitor(object):
         self._processor.add_listener(Monitor.DeepSeaEventListener(self))
 
         self._running_stage = None
-        self.stage_map = {}
+        self.monitor_listeners = []
+
+    def add_listener(self, listener):
+        """
+        Register a monitor listener
+        Args:
+            listener (MonitorListener): the listener object
+        """
+        assert isinstance(listener, MonitorListener)
+        self.monitor_listeners.append(listener)
+
+    def _fire_event(self, event, *args):
+        for listener in self.monitor_listeners:
+            getattr(listener, event)(*args)
 
     def start_stage(self, event):
         """
@@ -324,16 +353,10 @@ class Monitor(object):
             event (NewRunnerEvent): the DeepSea state.orch start event
         """
         stage_name = event.args[0]
-        os.system('clear')
-        PP.p_bold("Starting stage: ")
-        PP.println(PP.magenta(stage_name))
-        PP.print(PP.info("Parsing {} steps... ".format(stage_name)))
-        PP.println(PP.orange(u"\u23F3"))
+        self._fire_event('stage_started', stage_name)
+        self._fire_event('stage_parsing_started', stage_name)
         self._running_stage = Stage(stage_name, SLSParser.parse_state_steps(stage_name))
-        PP.print("\x1B[A\x1B[K")
-        PP.print(PP.info("Parsing {} steps... ".format(stage_name)))
-        PP.println(PP.green(PP.bold(u"\u2713")))
-        print()
+        self._fire_event('stage_parsing_finished', self._running_stage)
         self._running_stage.start(event.jid)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)
 
@@ -343,7 +366,12 @@ class Monitor(object):
         Args:
             event (RetRunnerEvent): the DeepSea state.orch end event
         """
+        if not self._running_stage:
+            # not inside a running stage, igore step
+            return
+
         self._running_stage.finish(event.success)
+        self._fire_event('stage_finished', self._running_stage)
         logger.info("End stage: %s jid=%s success=%s", self._running_stage.name,
                     self._running_stage.jid, event.success)
         self._running_stage = None
@@ -357,7 +385,11 @@ class Monitor(object):
         if not self._running_stage:
             # not inside a running stage, igore step
             return
-        self._running_stage.start_step(event)
+        step = self._running_stage.start_step(event)
+        if isinstance(step, Stage.TargetedStep):
+            self._fire_event('step_state_started', step)
+        else:
+            self._fire_event('step_runner_started', step)
 
     def end_step(self, event):
         """
@@ -368,28 +400,25 @@ class Monitor(object):
         if not self._running_stage:
             # not inside a running stage, igore step
             return
-        self._running_stage.finish_step(event)
+        step = self._running_stage.finish_step(event)
+        if isinstance(step, Stage.TargetedStep):
+            self._fire_event('step_state_minion_finished', step, event.minion)
+            if step.finished:
+                self._fire_event('step_state_finished', step)
+        else:
+            self._fire_event('step_runner_finished', step)
 
     def state_result_step(self, event):
         if not self._running_stage:
             # not inside a running stage, igore step
             return
-        self._running_stage.state_result_step(event)
+        step = self._running_stage.state_result_step(event)
+        self._fire_event('step_state_result', step)
 
     def start(self):
         """
         Start the monitoring thread
         """
-        # self.stage_map['ceph.stage.0'] = Stage('ceph.stage.0',
-        #                                        SLSParser.parse_state_steps('ceph.stage.0'))
-        # self.stage_map['ceph.stage.1'] = Stage('ceph.stage.1',
-        #                                        SLSParser.parse_state_steps('ceph.stage.1'))
-        # self.stage_map['ceph.stage.2'] = Stage('ceph.stage.2',
-        #                                        SLSParser.parse_state_steps('ceph.stage.2'))
-        # self.stage_map['ceph.stage.3'] = Stage('ceph.stage.3',
-        #                                        SLSParser.parse_state_steps('ceph.stage.3'))
-        # self.stage_map['ceph.stage.4'] = Stage('ceph.stage.4',
-        #                                        SLSParser.parse_state_steps('ceph.stage.4'))
         self._processor.start()
 
     def stop(self):
