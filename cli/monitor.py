@@ -39,13 +39,17 @@ class Stage(object):
             self.jid = None
             self.finished = False
             self.success = None
+            self.start_event = None
+            self.end_event = None
 
-        def start(self, jid):
-            self.jid = jid
+        def start(self, event):
+            self.jid = event.jid
+            self.start_event = event
 
-        def finish(self, success):
-            self.success = success
+        def finish(self, event):
+            self.success = event.success
             self.finished = True
+            self.end_event = event
 
     class TargetedStep(Step):
         def __init__(self, step, name, order):
@@ -55,23 +59,25 @@ class Stage(object):
             self.curr_sub_step = 0
 
         # pylint: disable=W0221
-        def start(self, jid, targets):
-            super(Stage.TargetedStep, self).start(jid)
+        def start(self, event):
+            super(Stage.TargetedStep, self).start(event)
             self.targets = {}
-            for target in targets:
+            for target in event.targets:
                 self.targets[target] = {
                     'finished': False,
                     'success': None
                 }
 
-        def finish(self, target, success):
-            self.targets[target] = {
+        def finish(self, event):
+            self.targets[event.minion] = {
                 'finished': True,
-                'success': success
+                'success': event.success and event.retcode == 0,
+                'event': event
             }
             if reduce(operator.__and__, [t['finished'] for t in self.targets.values()]):
-                super(Stage.TargetedStep, self).finish(
-                    reduce(operator.__and__, [t['success'] for t in self.targets.values()]))
+                self.success = reduce(
+                    operator.__and__, [t['success'] for t in self.targets.values()])
+                self.finished = True
 
         def current_sub_step(self):
             return self.sub_steps[self.curr_sub_step]
@@ -88,6 +94,8 @@ class Stage(object):
         self.success = None
         self._executing = False
         self.current_step = 0
+        self.start_event = None
+        self.end_event = None
 
         self._steps = []
         _curr_state = None
@@ -111,21 +119,23 @@ class Stage(object):
     def total_steps(self):
         return len(self._steps)
 
-    def start(self, jid):
+    def start(self, event):
         """
         Flags this stage as executing, and stores its salt job id
         """
         self._executing = True
-        self.jid = jid
+        self.jid = event.jid
+        self.start_event = event
         self.current_step = 0
 
-    def finish(self, success):
+    def finish(self, event):
         """
         Flags this stage as finished, and stores the result
         """
         assert self._executing
         self._executing = False
-        self.success = success
+        self.success = event.success
+        self.end_event = event
 
     def start_step(self, event):
         assert self._executing
@@ -134,7 +144,7 @@ class Stage(object):
             curr_step = self._steps[self.current_step]
             if isinstance(curr_step.step, SaltRunner):
                 if curr_step.name == event.fun[7:]:
-                    curr_step.start(event.jid)
+                    curr_step.start(event)
                     return curr_step
 
         elif isinstance(event, NewJobEvent):
@@ -142,7 +152,7 @@ class Stage(object):
             if isinstance(curr_step, Stage.TargetedStep):
                 step_name = event.args[0] if event.fun == 'state.sls' else event.fun
                 if curr_step.name == step_name:
-                    curr_step.start(event.jid, event.targets)
+                    curr_step.start(event)
                     return curr_step
 
         else:
@@ -161,14 +171,14 @@ class Stage(object):
         if isinstance(event, RetRunnerEvent):
             curr_step = self._steps[self.current_step]
             if curr_step.jid and curr_step.jid == event.jid:
-                curr_step.finish(event.success)
+                curr_step.finish(event)
                 self.current_step += 1
                 return self._steps[self.current_step-1]
 
         elif isinstance(event, RetJobEvent):
             curr_step = self._steps[self.current_step]
             if curr_step.jid and curr_step.jid == event.jid:
-                curr_step.finish(event.minion, event.success)
+                curr_step.finish(event)
                 if curr_step.finished:
                     self.current_step += 1
                 return curr_step
@@ -357,7 +367,7 @@ class Monitor(object):
         self._fire_event('stage_parsing_started', stage_name)
         self._running_stage = Stage(stage_name, SLSParser.parse_state_steps(stage_name))
         self._fire_event('stage_parsing_finished', self._running_stage)
-        self._running_stage.start(event.jid)
+        self._running_stage.start(event)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)
 
     def end_stage(self, event):
@@ -370,11 +380,11 @@ class Monitor(object):
             # not inside a running stage, igore step
             return
 
-        self._running_stage.finish(event.success)
-        self._fire_event('stage_finished', self._running_stage)
-        logger.info("End stage: %s jid=%s success=%s", self._running_stage.name,
-                    self._running_stage.jid, event.success)
+        self._running_stage.finish(event)
+        tmp_stage = self._running_stage
         self._running_stage = None
+        logger.info("End stage: %s jid=%s success=%s", tmp_stage, tmp_stage.jid, event.success)
+        self._fire_event('stage_finished', tmp_stage)
 
     def start_step(self, event):
         """
@@ -386,6 +396,8 @@ class Monitor(object):
             # not inside a running stage, igore step
             return
         step = self._running_stage.start_step(event)
+        if not step:
+            return
         if isinstance(step, Stage.TargetedStep):
             self._fire_event('step_state_started', step)
         else:
@@ -401,6 +413,8 @@ class Monitor(object):
             # not inside a running stage, igore step
             return
         step = self._running_stage.finish_step(event)
+        if not step:
+            return
         if isinstance(step, Stage.TargetedStep):
             self._fire_event('step_state_minion_finished', step, event.minion)
             if step.finished:
@@ -413,6 +427,8 @@ class Monitor(object):
             # not inside a running stage, igore step
             return
         step = self._running_stage.state_result_step(event)
+        if not step:
+            return
         self._fire_event('step_state_result', step)
 
     def start(self):

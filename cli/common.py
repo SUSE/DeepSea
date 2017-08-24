@@ -32,7 +32,7 @@ class PrettyPrinter(object):
         HEADER = '\x1B[95m'
         BOLD = '\x1B[1m'
         UNDERLINE = '\x1B[4m'
-        RED = '\x1B[38;5;161m'
+        RED = '\x1B[38;5;196m'
         GREEN = '\x1B[38;5;83m'
         YELLOW = '\x1B[38;5;226m'
         BLUE = '\x1B[38;5;33m'

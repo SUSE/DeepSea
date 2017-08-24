@@ -226,7 +226,7 @@ class SaltEventProcessor(threading.Thread):
         Args:
             event (dict): the raw event data
         """
-        logger.debug("Process event -> %d", event)
+        logger.debug("Process event -> %s", event)
         wrapper = None
         if fnmatch.fnmatch(event['tag'], 'salt/job/*/new'):
             wrapper = NewJobEvent(event)
