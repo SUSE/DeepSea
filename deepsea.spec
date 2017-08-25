@@ -99,6 +99,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/files/ceph.conf.d
 %dir /srv/salt/ceph/configuration/check
+%dir /srv/salt/ceph/configuration/create
 %dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/ganesha
 %dir /srv/salt/ceph/ganesha/auth
@@ -323,6 +324,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
+%config /srv/salt/ceph/configuration/create/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
 %config(noreplace) %attr(-, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.import
 /srv/salt/ceph/configuration/files/ceph.conf.d/README

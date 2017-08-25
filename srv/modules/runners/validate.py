@@ -475,19 +475,6 @@ class Validate(object):
 
         self._set_pass_status('master_role')
 
-    def mon_host(self):
-        """
-        The mon_host must be the same on all nodes and have at least
-        three entries.
-        """
-        self._monitor_check('mon_host')
-
-    def mon_initial_members(self):
-        """
-        The mon_initial_members must be the same on all nodes and have at least
-        three entries.
-        """
-        self._monitor_check('mon_initial_members')
 
     def _redirection_check(self, name):
         """
@@ -889,8 +876,6 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.storage()
     v.ganesha()
     v.master_role()
-    v.mon_host()
-    v.mon_initial_members()
     v.osd_creation()
     v.pool_creation()
     v.time_server()
