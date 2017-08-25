@@ -299,7 +299,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %{_mandir}/man7/deepsea.commands.7.gz
 %{_mandir}/man7/deepsea.minions.7.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
-%config /srv/modules/runners/*.py*
+/srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/config.yml
@@ -310,7 +310,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/deepsea_minions.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
-%config /srv/salt/_modules/*.py*
+/srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
@@ -351,7 +351,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/iperf/*.sls
 %config /srv/salt/ceph/iperf/*.service
-%config /srv/salt/ceph/iperf/*.py*
+/srv/salt/ceph/iperf/*.py*
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
 %config /srv/salt/ceph/mds/key/*.sls
