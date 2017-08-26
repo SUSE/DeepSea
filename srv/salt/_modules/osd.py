@@ -375,15 +375,31 @@ class OSDWeight(object):
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
 
+def _settings(**kwargs):
+    """
+    Initialize settings to use the client.storage name and keyring
+    if the keyring is available (Only exists on storage nodes.)
+
+    Otherwise, rely on the default which is client.admin. See
+    rados.Rados.
+    """
+    settings = {}
+    storage_keyring = '/etc/ceph/ceph.client.storage.keyring'
+    if os.path.exists(storage_keyring):
+        settings = {
+            'keyring': storage_keyring,
+            'client': 'client.storage'
+        }
+        settings.update(kwargs)
+    return settings
+
+
 def zero_weight(id, wait=True, **kwargs):
     """
     Set weight to zero and wait until PGs are moved
     """
-    settings = {
-            'keyring': '/etc/ceph/ceph.client.storage.keyring',
-            'client': 'client.storage'
-    }
-    settings.update(kwargs)
+    settings = _settings(**kwargs)
+
     o = OSDWeight(id, **settings)
     o.save()
     rc, _stdout, _stderr = o.reweight('0.0')
@@ -400,11 +416,8 @@ def restore_weight(id, **kwargs):
     """
     Restore the previous setting for an OSD if possible
     """
-    settings = {
-            'keyring': '/etc/ceph/ceph.client.storage.keyring',
-            'client': 'client.storage'
-    }
-    settings.update(kwargs)
+    settings = _settings(**kwargs)
+
     o = OSDWeight(id, **settings)
     o.restore()
     return True
@@ -1526,11 +1539,8 @@ class OSDRemove(object):
 def remove(osd_id, **kwargs):
     """
     """
-    settings = {
-            'keyring': '/etc/ceph/ceph.client.storage.keyring',
-            'client': 'client.storage'
-    }
-    settings.update(kwargs)
+    settings = _settings(**kwargs)
+
     if 'force' in kwargs and kwargs['force']:
         osdw = None
     else:
@@ -1544,12 +1554,8 @@ def remove(osd_id, **kwargs):
 def is_empty(osd_id, **kwargs):
     """
     """
+    settings = _settings(**kwargs)
     osdd = OSDDevices()
-    settings = {
-            'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
-            'client': 'client.bootstrap-osd'
-    }
-    settings.update(kwargs)
     osdw = OSDWeight(osd_id, **settings)
     return osdw.is_empty()
 

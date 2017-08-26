@@ -1,8 +1,8 @@
 
-reweight nop:
+remove migrated nop:
   test.nop
 
-{% for id in salt.saltutil.runner('rescinded.ids', cluster='ceph') %}
+{% for id in salt.saltutil.runner('rescinded.osds', cluster='ceph') %}
 
 remove osd.{{ id }}:
   cmd.run:
