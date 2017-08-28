@@ -4,6 +4,7 @@ import ipaddress
 import time
 import logging
 import pprint
+import re
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ def address():
 
     log.debug("pillar: {}".format(type(__pillar__['public_network'])))
     if type(__pillar__['public_network']) is str:
-        networks = [ __pillar__['public_network'] ]
+        networks = re.split(', *', __pillar__['public_network'])
     else:
         networks = __pillar__['public_network']
 
