@@ -194,6 +194,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/remove/mon
 %dir /srv/salt/ceph/remove/mds
 %dir /srv/salt/ceph/remove/mgr
+%dir /srv/salt/ceph/remove/migrated
 %dir /srv/salt/ceph/remove/rgw
 %dir /srv/salt/ceph/remove/storage
 %dir /srv/salt/ceph/remove/storage/drain
