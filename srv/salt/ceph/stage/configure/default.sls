@@ -18,6 +18,10 @@ refresh_pillar1:
     - tgt_type: compound
     - sls: ceph.refresh
 
+show networks:
+  salt.runner:
+    - name: advise.networks
+
 create ceph.conf:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
