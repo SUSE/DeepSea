@@ -52,12 +52,12 @@ def salt_upgrade():
 
 def networks():
     local = salt.client.LocalClient()
-    public = local.cmd('*' , 'pillar.get', [ 'public_network' ])
-    cluster = local.cmd('*' , 'pillar.get', [ 'cluster_network' ])
+    public = set(local.cmd('*' , 'pillar.get', [ 'public_network' ]).values())
+    cluster = set(local.cmd('*' , 'pillar.get', [ 'cluster_network' ]).values())
 
     bold = '\033[1m'
     endc = '\033[0m'
 
-    for attr in [ 'public network', 'cluster network' ]:
-         print "{:25}: {}{}{}".format(attr, bold, ", ".join(filter(None, set(public.values()))), endc)
+    print "{:25}: {}{}{}".format('public network', bold, ", ".join(filter(None, public)), endc)
+    print "{:25}: {}{}{}".format('cluster network', bold, ", ".join(filter(None, cluster)), endc)
     return ""
