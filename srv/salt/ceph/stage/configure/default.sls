@@ -22,12 +22,6 @@ show networks:
   salt.runner:
     - name: advise.networks
 
-create ceph.conf:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.configuration.create
-    - failhard: True
-
 {% for role in [ 'admin', 'mon', 'mgr', 'osd', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
 {{ role }} key:
   salt.state:
