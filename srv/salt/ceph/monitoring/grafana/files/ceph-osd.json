@@ -1,5 +1,5 @@
 {
-  "overwrite": false,
+  "overwrite": true,
   "dashboard": {
     "__requires": [
       {
@@ -412,86 +412,82 @@
             ]
           },
           {
-            "aliasColors": {},
-            "bars": false,
-            "datasource": "Prometheus",
-            "decimals": 2,
-            "editable": true,
-            "error": false,
-            "fill": 1,
-            "grid": {},
-            "id": 2,
-            "interval": "$interval",
-            "legend": {
-              "alignAsTable": true,
-              "avg": true,
-              "current": true,
-              "max": true,
-              "min": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 2,
-            "links": [],
-            "nullPointMode": "connected",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "span": 6,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "ceph_osd_avail_bytes{osd=~'$osd'}",
-                "hide": false,
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Available - {{ osd }}",
-                "metric": "ceph_osd_avail_bytes",
-                "refId": "A",
-                "step": 60
+              "title": "OSD Storage",
+              "span": 6,
+              "type": "graph",
+              "targets": [
+                  {
+                      "expr": "ceph_osd_avail_bytes{osd=~'$osd'}",
+                      "intervalFactor": 2,
+                      "refId": "A",
+                      "step": 120,
+                      "legendFormat": "Available - {{osd}}"
+                  },
+                  {
+                      "expr": "ceph_osd_used_bytes{osd=~'$osd'}",
+                      "intervalFactor": 2,
+                      "refId": "B",
+                      "step": 120,
+                      "legendFormat": "Used - {{osd}}"
+                  }
+              ],
+              "datasource": null,
+              "renderer": "flot",
+              "yaxes": [
+                  {
+                      "label": null,
+                      "show": true,
+                      "logBase": 1,
+                      "min": null,
+                      "max": null,
+                      "format": "bytes"
+                  },
+                  {
+                      "label": null,
+                      "show": true,
+                      "logBase": 1,
+                      "min": null,
+                      "max": null,
+                      "format": "short"
+                  }
+              ],
+              "xaxis": {
+                  "show": true,
+                  "mode": "time",
+                  "name": null,
+                  "values": []
               },
-              {
-                "expr": "ceph_osd_used_bytes{osd=~'$osd'}",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Used - {{ osd }}",
-                "metric": "ceph_osd_avail_bytes",
-                "refId": "B",
-                "step": 60
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "OSD Storage",
-            "tooltip": {
-              "msResolution": false,
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": 0,
-                "show": true
-              }
-            ]
+              "lines": true,
+              "fill": 1,
+              "linewidth": 1,
+              "points": false,
+              "pointradius": 5,
+              "bars": false,
+              "stack": false,
+              "percentage": false,
+              "legend": {
+                  "show": true,
+                  "values": true,
+                  "min": true,
+                  "max": true,
+                  "current": true,
+                  "total": false,
+                  "avg": true,
+                  "alignAsTable": true
+              },
+              "nullPointMode": "null",
+              "steppedLine": false,
+              "tooltip": {
+                  "value_type": "individual",
+                  "shared": true,
+                  "sort": 0
+              },
+              "timeFrom": null,
+              "timeShift": null,
+              "aliasColors": {},
+              "seriesOverrides": [],
+              "thresholds": [],
+              "links": []
           }
         ],
         "repeat": null,

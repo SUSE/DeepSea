@@ -1,5 +1,5 @@
 {
-  "overwrite": false,
+  "overwrite": true,
   "dashboard": {
     "__requires": [
       {
