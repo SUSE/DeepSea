@@ -97,7 +97,7 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
                             "Fastest 2 hosts": dict(sort_result[-2:])}})
             return result
     else:
-        search = ceph_tgt.CephTgt().ceph_tgt
+        search = deepsea_minions.DeepseaMinions().deepsea_minions
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))
