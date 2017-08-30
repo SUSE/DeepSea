@@ -115,9 +115,10 @@ class SLSParser(object):
         return "{}.{}".format(parent_state, include)
 
     @staticmethod
-    def parse_state_steps(state_name, stages_only=True, cache=True):
+    def _traverse_state(state_name, stages_only, cache):
         """
-        Parses the all steps (actions) triggered by the execution of a state file
+        Parses the all steps (actions) triggered by the execution of a state file.
+        It recursevely follows "include" directives, and state files.
         Args:
             state_name (str): the salt state name, e.g., ceph.stage.1
             only_events (bool): wheather to parse state declarations that have fire_event=True
@@ -149,8 +150,8 @@ class SLSParser(object):
                     logger.debug("Handling include of: parent={} include={}"
                                  .format(state_name, inc))
                     include_state_name = SLSParser._gen_state_name_from_include(state_name, inc)
-                    result.extend(SLSParser.parse_state_steps(include_state_name, stages_only,
-                                                              cache))
+                    result.extend(SLSParser._traverse_state(include_state_name, stages_only,
+                                                            cache))
             else:
                 if isinstance(steps, dict):
                     for fun, args in steps.items():
@@ -158,8 +159,8 @@ class SLSParser(object):
                         if fun == 'salt.state':
                             state = SaltState(key, args)
                             result.append(state)
-                            result.extend(SLSParser.parse_state_steps(state.state, stages_only,
-                                                                      cache))
+                            result.extend(SLSParser._traverse_state(state.state, stages_only,
+                                                                    cache))
                         elif fun == 'salt.runner':
                             result.append(SaltRunner(key, args))
                         elif fun == 'module.run':
@@ -171,6 +172,82 @@ class SLSParser(object):
             # pylint: disable=W8470
             with open(cache_file_path, mode='wb') as binfile:
                 pickle.dump(result, binfile)
+
+        return result
+
+    @staticmethod
+    def _search_step(steps, mod_name, sid):
+        """
+        Searches a step that matches the module name and state id
+        Args:
+            steps (list): list of steps
+            mod_name (str): salt module name, can be None
+            sid (str): state id
+        """
+        for step in steps:
+            if mod_name:
+                if isinstance(step, SaltRunner):
+                    if mod_name != 'salt':
+                        continue
+                elif isinstance(step, SaltState):
+                    if mod_name != 'salt':
+                        continue
+                else:
+                    step_mod = step.fun[:step.fun.find('.')]
+                    if mod_name != step_mod:
+                        continue
+            name_arg = step.get_arg('name')
+            if step.desc == sid or (name_arg and name_arg == sid):
+                return step
+        return None
+
+    @staticmethod
+    def parse_state_steps(state_name, stages_only=True, cache=True):
+        """
+        Parses the all steps (actions) triggered by the execution of a state file
+        Args:
+            state_name (str): the salt state name, e.g., ceph.stage.1
+            only_events (bool): wheather to parse state declarations that have fire_event=True
+            cache (bool): wheather load/store the results in a cache file
+
+        Returns:
+            list(StepType): a list of steps
+        """
+        result = SLSParser._traverse_state(state_name, stages_only, cache)
+
+        def process_requisite_directive(step, directive):
+            """
+            Processes a requisite directive
+            """
+            req = step.get_arg(directive)
+            if req:
+                if not isinstance(req, list):
+                    # usually req will be a list of dicts, this is just for
+                    # the case when req is not a list and maintain the same code
+                    # below
+                    req = [req]
+
+                for req in req:
+                    if isinstance(req, dict):
+                        for mod, sid in req.items():
+                            req_step = SLSParser._search_step(result, mod, sid)
+                            assert req_step
+                            if directive in ['require', 'watch', 'onchanges']:
+                                step.on_success_deps.append(req_step)
+                            elif directive == 'onfail':
+                                step.on_fail_deps.append(req_step)
+                    else:
+                        req_step = SLSParser._search_step(result, None, req)
+                        assert req_step
+                        if directive in ['require', 'watch', 'onchanges']:
+                            step.on_success_deps.append(req_step)
+                        elif directive == 'onfail':
+                            step.on_fail_deps.append(req_step)
+
+        # process state requisites
+        for step in result:
+            for directive in ['require', 'watch', 'onchanges', 'onfail']:
+                process_requisite_directive(step, directive)
 
         return result
 
@@ -198,15 +275,26 @@ class SaltStep(object):
     def __init__(self, desc, args):
         self.desc = desc
         self.args = args
+        self.on_success_deps = []
+        self.on_fail_deps = []
 
     def __str__(self):
         return self.desc
 
-    def _get_arg(self, key):
+    def get_arg(self, key):
         """
         Returns the arg value for the key
         """
-        return [arg for arg in self.args if key in arg][0][key]
+        if isinstance(self.args, dict):
+            if key in self.args:
+                return self.args[key]
+        elif isinstance(self.args, list):
+            arg = [arg for arg in self.args if key in arg]
+            if arg:
+                return arg[0][key]
+        else:
+            assert False
+        return None
 
 
 class SaltState(SaltStep):
@@ -215,8 +303,8 @@ class SaltState(SaltStep):
     """
     def __init__(self, desc, args):
         super(SaltState, self).__init__(desc, args)
-        self.state = self._get_arg('sls')
-        self.target = self._get_arg('tgt')
+        self.state = self.get_arg('sls')
+        self.target = self.get_arg('tgt')
 
     def __str__(self):
         return "SaltState(desc: {}, state: {}, target: {})".format(self.desc, self.state,
@@ -229,7 +317,7 @@ class SaltRunner(SaltStep):
     """
     def __init__(self, desc, args):
         super(SaltRunner, self).__init__(desc, args)
-        self.fun = self._get_arg('name')
+        self.fun = self.get_arg('name')
 
     def __str__(self):
         return "SaltRunner(desc: {}, fun: {})".format(self.desc, self.fun)
@@ -241,7 +329,7 @@ class SaltModule(SaltStep):
     """
     def __init__(self, desc, args):
         super(SaltModule, self).__init__(desc, args)
-        self.fun = self._get_arg('name')
+        self.fun = self.get_arg('name')
 
     def __str__(self):
         return "SaltModule(desc: {}, fun: {})".format(self.desc, self.fun)

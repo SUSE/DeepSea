@@ -15,7 +15,7 @@ import click
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
-from .monitors.terminal_outputter import StepListPrinter
+from .monitors.terminal_outputter import ThreadedStepListPrinter, SimplePrinter
 from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
 
 
@@ -52,12 +52,13 @@ def _setup_logging(log_level, log_file):
     })
 
 
-def _run_monitor():
+def _run_monitor(simple_output):
     """
     Run the DeepSea stage monitor and progress visualizer
     """
-    monitor = Monitor()
-    monitor.add_listener(StepListPrinter())
+    mon = Monitor()
+    listener = SimplePrinter() if simple_output else ThreadedStepListPrinter()
+    mon.add_listener(listener)
 
     logger = logging.getLogger(__name__)
 
@@ -67,26 +68,38 @@ def _run_monitor():
         SIGINT signal handler
         """
         logger.debug("SIGINT, calling monitor.stop()")
-        PP.pl_bold("\x1b[2K\rShutting down...")
-        print()
-        monitor.stop()
+        if not simple_output:
+            PP.pl_bold("\x1b[2K\rShutting down...")
+        else:
+            PP.println("Shutting down...")
+        PP.println()
+        mon.stop()
 
     signal.signal(signal.SIGINT, sigint_handler)
 
-    os.system('clear')
-    print("Use Ctrl+C to stop the monitor")
-    PP.p_bold("Initializing DeepSea progess monitor...")
-    monitor.start()
-    PP.pl_bold(" Done.")
-    print()
+    if not simple_output:
+        os.system('clear')
+        PP.println("Use Ctrl+C to stop the monitor")
+        PP.p_bold("Initializing DeepSea progess monitor...")
+    else:
+        PP.println("Use Ctrl+C to stop the monitor")
+        PP.print("Initializing DeepSea progess monitor...")
+
+    mon.start()
+    if not simple_output:
+        PP.pl_bold(" done.")
+    else:
+        PP.println(" done")
+
+    PP.println()
     if sys.version_info > (3, 0):
         logger.debug("Python 3: blocking main thread on join()")
-        monitor.wait_to_finish()
+        mon.wait_to_finish()
     else:
-        logger.debug("Python 2: polling for monitor.is_running() %s", monitor.is_running())
-        while monitor.is_running():
+        logger.debug("Python 2: polling for monitor.is_running() %s", mon.is_running())
+        while mon.is_running():
             time.sleep(2)
-        monitor.wait_to_finish()
+        mon.wait_to_finish()
 
 
 def _run_show_stage_steps(stage_name, cache):
@@ -100,23 +113,38 @@ def _run_show_stage_steps(stage_name, cache):
     print()
     state_count = 1
     sub_state_count = 1
+    step_order_map = {}
     for step in steps:
         state_count_str = "{:<2}".format(state_count)
         sub_state_count_str = "{:4}{:>2}.{:<2}".format('', state_count-1, sub_state_count)
         if isinstance(step, SaltState):
             target_str = "{:30}".format(step.target)
-            print("{}: [{}] {}".format(PP.bold(state_count_str), PP.magenta(target_str),
-                                       PP.green("State({})".format(step.state))))
+            print("{}: [{}] {} on_success={} on_fail={}"
+                  .format(PP.bold(state_count_str),
+                          PP.magenta(target_str),
+                          PP.green("State({})".format(step.state)),
+                          [step_order_map[s.desc] for s in step.on_success_deps],
+                          [step_order_map[s.desc] for s in step.on_fail_deps]))
+            step_order_map[step.desc] = str(state_count)
             state_count += 1
             sub_state_count = 1
         elif isinstance(step, SaltRunner):
             target_str = "{:30}".format('master')
-            print("{}: [{}] {}".format(PP.bold(state_count_str), PP.magenta(target_str),
-                                       PP.blue("Runner({})".format(step.fun))))
+            print("{}: [{}] {} on_success={} on_fail={}"
+                  .format(PP.bold(state_count_str),
+                          PP.magenta(target_str),
+                          PP.blue("Runner({})".format(step.fun)),
+                          [step_order_map[s.desc] for s in step.on_success_deps],
+                          [step_order_map[s.desc] for s in step.on_fail_deps]))
+            step_order_map[step.desc] = str(state_count)
             state_count += 1
         elif isinstance(step, SaltModule):
-            print("{}:{:26} {}".format(PP.bold(sub_state_count_str), '',
-                                       PP.cyan("Module({})".format(step.fun))))
+            print("{}:{:26} {} on_success={} on_fail={}"
+                  .format(PP.bold(sub_state_count_str), '',
+                          PP.cyan("Module({})".format(step.fun)),
+                          [step_order_map[s.desc] for s in step.on_success_deps],
+                          [step_order_map[s.desc] for s in step.on_fail_deps]))
+            step_order_map[step.desc] = "{}.{}".format(state_count-1, sub_state_count)
             sub_state_count += 1
         else:  # SaltBuiltIn
             step_str = "BuiltIn({})".format(step.fun)
@@ -135,11 +163,15 @@ def _run_show_stage_steps(stage_name, cache):
                     arg = step.args['pkgs']
                 step_str = "BuiltIn({}, {})".format(step.fun, arg)
 
-            print("{}:{:26} {}".format(PP.bold(sub_state_count_str), '',
-                                       PP.yellow(step_str)))
+            print("{}:{:26} {} on_success={} on_fail={}"
+                  .format(PP.bold(sub_state_count_str), '',
+                          PP.yellow(step_str),
+                          [step_order_map[s.desc] for s in step.on_success_deps],
+                          [step_order_map[s.desc] for s in step.on_fail_deps]))
+            step_order_map[step.desc] = "{}.{}".format(state_count-1, sub_state_count)
             sub_state_count += 1
     print()
-    PP.p_bold("Total steps of stage {}:".format(len(steps)))
+    PP.p_bold("Total steps: {}".format(len(steps)))
     print()
 
 
@@ -156,11 +188,11 @@ def cli(log_level, log_file):
 
 @click.command(short_help='starts DeepSea progress monitor')
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
-@click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
-def monitor(clear_cache, no_cache):
+@click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
+def monitor(clear_cache, simple_output):
     if clear_cache:
         SLSParser.clean_cache(None)
-    _run_monitor()
+    _run_monitor(simple_output)
 
 
 @click.group(short_help='stage related commands')

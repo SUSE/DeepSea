@@ -41,6 +41,7 @@ class Stage(object):
             self.success = None
             self.start_event = None
             self.end_event = None
+            self.skipped = False
 
         def start(self, event):
             self.jid = event.jid
@@ -206,6 +207,29 @@ class Stage(object):
 
         return curr_step
 
+    def check_if_current_step_will_run(self):
+        assert self._executing
+
+        curr_step = self._steps[self.current_step]
+        for dep in curr_step.step.on_success_deps:
+            for i in range(1, self.current_step+1):
+                dep_step = self._steps[self.current_step-i]
+                if dep_step.step.desc == dep.desc:
+                    if not dep_step.success:
+                        curr_step.skipped = True
+                        self.current_step += 1
+                        return curr_step
+        for dep in curr_step.step.on_fail_deps:
+            for i in range(1, self.current_step+1):
+                dep_step = self._steps[self.current_step-i]
+                if dep_step.step.desc == dep.desc:
+                    if dep_step.success:
+                        curr_step.skipped = True
+                        self.current_step += 1
+                        return curr_step
+
+        return None
+
 
 class MonitorListener(object):
     def stage_started(self, stage_name):
@@ -353,6 +377,7 @@ class Monitor(object):
         self.monitor_listeners.append(listener)
 
     def _fire_event(self, event, *args):
+        logger.debug("fire event: %s", event)
         for listener in self.monitor_listeners:
             getattr(listener, event)(*args)
 
@@ -396,6 +421,7 @@ class Monitor(object):
             # not inside a running stage, igore step
             return
         step = self._running_stage.start_step(event)
+        logger.debug("started step: %s", step)
         if not step:
             return
         if isinstance(step, Stage.TargetedStep):
@@ -421,6 +447,14 @@ class Monitor(object):
                 self._fire_event('step_state_finished', step)
         else:
             self._fire_event('step_runner_finished', step)
+
+        skipped = self._running_stage.check_if_current_step_will_run()
+        while skipped:
+            if isinstance(skipped, Stage.TargetedStep):
+                self._fire_event('step_state_started', skipped)
+            else:
+                self._fire_event('step_runner_started', skipped)
+            skipped = self._running_stage.check_if_current_step_will_run()
 
     def state_result_step(self, event):
         if not self._running_stage:
