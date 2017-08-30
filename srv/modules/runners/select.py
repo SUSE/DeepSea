@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import salt.client
+import logging
 import pprint
 import os
 import sys
+import re
+
+log = logging.getLogger(__name__)
 
 def minions(host = False, **kwargs):
     """
@@ -103,3 +107,44 @@ def attr(host = False, **kwargs):
     else:
         pairs = [ [k,v] for k, v in minions.items() ]
     return pairs
+
+def from_(pillar, *args, **kwargs):
+    """
+    Return a list of roles and corresponding grains for the provided pillar
+    argument.
+
+    salt-run select.from rgw_configurations host fqdn
+    salt-run select.from pillar=data, attr="host, fqdn"
+
+    Note: Support the second form because Jinja hates us.
+    """
+
+    if 'attr' in kwargs:
+        args = re.split(',\s*', kwargs['attr'])
+        print args
+
+    # When search matches no minions, salt prints to stdout.  Suppress stdout.
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    local = salt.client.LocalClient()
+    search = "I@roles:master"
+    result = local.cmd(search , 'pillar.get', [ pillar ], expr_form="compound")
+
+    results = []
+    sys.stdout = _stdout
+    for master in result:
+        for role in result[master].keys():
+            minion_list = minions(roles=role)
+            for minion in minion_list:
+                grains_result = local.cmd(minion , 'grains.item',  list(args)).values()[0]
+                small = [ role ]
+                for arg in list(args):
+                    small.append(grains_result[arg])
+                results.append(small)
+                
+    return results
+
+__func_alias__ = {
+                 'from_': 'from',
+                 }

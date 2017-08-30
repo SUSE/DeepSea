@@ -22,9 +22,13 @@ mon health preluminous compat warning = false
 
 {% include "ceph/configuration/files/ceph.conf.d/global.conf" ignore missing %}
 
-{% for config in salt['rgw.configurations']() %}
-{% set client = config + "." + grains['host'] %}
+{% for config,host,fqdn in salt.saltutil.runner('select.from', pillar='rgw_configurations', attr='host, fqdn') %}
+{% set client = config + "." + host %}
+{% if salt['file.file_exists']("/srv/salt/ceph/configuration/files/ceph.conf.d/ceph.conf." + config) %}
+{% include "ceph/configuration/files/ceph.conf.d/ceph.conf." + config %}
+{% else %}
 {% include "ceph/configuration/files/ceph.conf." + config %}
+{% endif %}
 {% endfor %}
 
 [osd]
