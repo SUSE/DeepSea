@@ -446,7 +446,7 @@ def _summarize_iperf(results):
             elif result[host]['errored']:
                 # print "errored :\n{}".format(result[host]['errored'])
                 server_results[result[host]['server']] +=\
-                        " Error to connect from {}".format(host)
+                        " Error to execute iperf from {} check installation.".format(host)
 
     for key, result in server_results.iteritems():
         total = 0
