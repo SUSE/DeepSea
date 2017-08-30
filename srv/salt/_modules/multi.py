@@ -59,14 +59,21 @@ def _summarize_iperf(result):
     if rc == 0:
         msg['succeeded'] = True
         msg['speed'] = out
-        msg['filter'] = re.match(
-            r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Mbits/sec)',
-            out, re.DOTALL).group(2)
+        try:
+            msg['filter'] = re.match(
+                r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Mbits/sec)',
+                out, re.DOTALL).group(2)
+        except:
+            msg['filter'] = '0 Mbits/sec'
+        msg['failed'] = False
+        msg['errored'] = False
     if rc == 1:
         msg['succeeded'] = False
         msg['failed'] = True
+        msg['errored'] = False
     if rc == 2:
         msg['succeeded'] = False
+        msg['failed'] = False
         msg['errored'] = True
     return msg
 
