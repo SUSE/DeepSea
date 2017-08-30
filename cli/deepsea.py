@@ -143,7 +143,7 @@ def _run_show_stage_steps(stage_name, cache):
     print()
 
 
-@click.group()
+@click.group(name="deepsea")
 @click.option('--log-level', default='info',
               type=click.Choice(["info", "error", "debug", "silent"]),
               help="set log level (default: info)")
@@ -154,7 +154,7 @@ def cli(log_level, log_file):
     _setup_logging(log_level, log_file)
 
 
-@click.command()
+@click.command(short_help='starts DeepSea progress monitor')
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
 @click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
 def monitor(clear_cache, no_cache):
@@ -163,12 +163,12 @@ def monitor(clear_cache, no_cache):
     _run_monitor()
 
 
-@click.group()
+@click.group(short_help='stage related commands')
 def stage():
     pass
 
 
-@click.command(name='show')
+@click.command(name='show', short_help='show DeepSea stage steps')
 @click.argument('stage_name', 'the DeepSea stage name')
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
 @click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
