@@ -4,9 +4,8 @@ import logging
 import operator
 import re
 import salt.client
-import ceph_tgt
+import deepsea_minions
 import time
-
 
 from netaddr import IPNetwork, IPAddress
 
@@ -270,7 +269,8 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                 addresses.extend(_address(total[host],
                                           networks[host]['public_network']))
     else:
-        search = ceph_tgt.CephTgt().ceph_tgt
+        search = deepsea_minions.DeepseaMinions().deepsea_minions
+
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))

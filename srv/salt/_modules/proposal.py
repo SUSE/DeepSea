@@ -177,7 +177,7 @@ class Proposal(object):
         standalone = []
         for disk in disks:
             log.info('proposing {} as standalone osd'.format(
-                disk['device']))
+                disk['Device File']))
             standalone.append({self._device(disk): ''})
         return standalone
 
@@ -200,8 +200,8 @@ class Proposal(object):
             for path in drive['Device Files'].split(', '):
                 if 'by-id' in path:
                     return path
-        else:
-            return drive['Device File']
+        # fallback to Device File if no by-id path was found
+        return drive['Device File']
 
 
 def generate(**kwargs):

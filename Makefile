@@ -7,6 +7,9 @@ usage:
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
 	@echo -e "\tmake test\tRun unittests"
 
+pyc:
+	find srv/ -name '*.py' -exec python -m py_compile {} \;
+
 copy-files:
 	# salt-master config files
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
@@ -16,6 +19,14 @@ copy-files:
 	install -m 600 etc/salt/master.d/eauth.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/salt-api.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
+	# qa
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/common
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/suites/basic
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test
+	install -m 644 qa/README $(DESTDIR)/usr/lib/deepsea/qa/
+	install -m 644 qa/common/*.sh $(DESTDIR)/usr/lib/deepsea/qa/common/
+	install -m 755 qa/suites/basic/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/basic/
+	install -m 755 qa/suites/ceph-test/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test/
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
@@ -28,7 +39,7 @@ copy-files:
 	install -m 644 srv/modules/pillar/stack.py $(DESTDIR)/srv/modules/pillar/
 	# runners
 	install -d -m 755 $(DESTDIR)/srv/modules/runners
-	install -m 644 srv/modules/runners/*.py $(DESTDIR)/srv/modules/runners/
+	install -m 644 srv/modules/runners/*.py* $(DESTDIR)/srv/modules/runners/
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks
@@ -42,7 +53,7 @@ copy-files:
 	install -m 644 srv/pillar/ceph/benchmarks/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
-	install -m 644 srv/pillar/ceph/ceph_tgt.sls $(DESTDIR)/srv/pillar/ceph/
+	install -m 644 srv/pillar/ceph/deepsea_minions.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
@@ -51,7 +62,7 @@ copy-files:
 	install -m 644 man/deepsea.*.7 $(DESTDIR)/usr/share/man/man7
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
-	install -m 644 srv/salt/_modules/*.py $(DESTDIR)/srv/salt/_modules/
+	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
 	install -m 644 srv/salt/ceph/admin/*.sls $(DESTDIR)/srv/salt/ceph/admin/
@@ -79,6 +90,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/*.sls $(DESTDIR)/srv/salt/ceph/configuration/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/check
 	install -m 644 srv/salt/ceph/configuration/check/*.sls $(DESTDIR)/srv/salt/ceph/configuration/check/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/create
+	install -m 644 srv/salt/ceph/configuration/create/*.sls $(DESTDIR)/srv/salt/ceph/configuration/create/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files
 	install -m 644 srv/salt/ceph/configuration/files/*.j2 $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/*.rbd $(DESTDIR)/srv/salt/ceph/configuration/files/
@@ -136,7 +149,7 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/iperf
 	install -m 644 srv/salt/ceph/iperf/*.sls $(DESTDIR)/srv/salt/ceph/iperf/
 	install -m 644 srv/salt/ceph/iperf/systemd-iperf.service $(DESTDIR)/srv/salt/ceph/iperf/
-	install -m 644 srv/salt/ceph/iperf/*.py $(DESTDIR)/srv/salt/ceph/iperf
+	install -m 644 srv/salt/ceph/iperf/*.py* $(DESTDIR)/srv/salt/ceph/iperf
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
@@ -279,6 +292,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/remove/igw/auth/*.sls $(DESTDIR)/srv/salt/ceph/remove/igw/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mds
 	install -m 644 srv/salt/ceph/remove/mds/*.sls $(DESTDIR)/srv/salt/ceph/remove/mds/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/migrated
+	install -m 644 srv/salt/ceph/remove/migrated/*.sls $(DESTDIR)/srv/salt/ceph/remove/migrated/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mgr
 	install -m 644 srv/salt/ceph/remove/mgr/*.sls $(DESTDIR)/srv/salt/ceph/remove/mgr/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mon
@@ -521,7 +536,7 @@ copy-files:
 install: copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
-	echo "ceph_tgt: '*'" > /srv/pillar/ceph/ceph_tgt.sls
+	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 	chown -R salt /srv/pillar/ceph
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls
 	systemctl restart salt-master

@@ -15,11 +15,14 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
+# unify libexec for all targets
+%global _libexecdir %{_exec_prefix}/lib
+
 
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.7.20
+Version:        0.7.23
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -46,6 +49,7 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 %setup
 
 %build
+make DESTDIR=%{buildroot} pyc
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
@@ -95,6 +99,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/files/ceph.conf.d
 %dir /srv/salt/ceph/configuration/check
+%dir /srv/salt/ceph/configuration/create
 %dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/ganesha
 %dir /srv/salt/ceph/ganesha/auth
@@ -189,6 +194,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/remove/mon
 %dir /srv/salt/ceph/remove/mds
 %dir /srv/salt/ceph/remove/mgr
+%dir /srv/salt/ceph/remove/migrated
 %dir /srv/salt/ceph/remove/rgw
 %dir /srv/salt/ceph/remove/storage
 %dir /srv/salt/ceph/remove/storage/drain
@@ -292,9 +298,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
 %{_mandir}/man7/deepsea.commands.7.gz
-%{_mandir}/man7/deepsea.ceph_tgt.7.gz
+%{_mandir}/man7/deepsea.minions.7.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
-%config /srv/modules/runners/*.py*
+/srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/config.yml
@@ -303,9 +309,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/fio/*.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/templates/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
-%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/ceph_tgt.sls
+%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/deepsea_minions.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
-%config /srv/salt/_modules/*.py*
+/srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
@@ -319,6 +325,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
+%config /srv/salt/ceph/configuration/create/*.sls
 %config /srv/salt/ceph/configuration/files/ceph.conf*
 %config(noreplace) %attr(-, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.import
 /srv/salt/ceph/configuration/files/ceph.conf.d/README
@@ -345,7 +352,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/iperf/*.sls
 %config /srv/salt/ceph/iperf/*.service
-%config /srv/salt/ceph/iperf/*.py*
+/srv/salt/ceph/iperf/*.py*
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
 %config /srv/salt/ceph/mds/key/*.sls
@@ -405,6 +412,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/remove/igw/auth/*.sls
 %config /srv/salt/ceph/remove/mon/*.sls
 %config /srv/salt/ceph/remove/mds/*.sls
+%config /srv/salt/ceph/remove/migrated/*.sls
 %config /srv/salt/ceph/remove/mgr/*.sls
 %config /srv/salt/ceph/remove/openattic/*.sls
 %config /srv/salt/ceph/remove/rgw/*.sls
@@ -501,8 +509,21 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/processes/*.sls
+%dir %{_libexecdir}/deepsea
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 
+%package qa
+Summary:        DeepSea integration test scripts
+Group:          System/Libraries
+Recommends:     deepsea
+
+%description qa
+The deepsea-qa subpackage contains all the scripts used in DeepSeq
+integration/regression testing. These scripts are "environment-agnostic" - see
+the README for more information.
+
+%files qa
+%{_libexecdir}/deepsea/qa
 
 %changelog

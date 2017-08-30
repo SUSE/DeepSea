@@ -14,25 +14,13 @@ push proposals:
 
 refresh_pillar1:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.refresh
-    - require:
-      - salt: push proposals
 
-post configuration:
+show networks:
   salt.runner:
-    - name: configure.cluster
-    - require: 
-      - salt: refresh_pillar1
-
-refresh_pillar2:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
-    - tgt_type: compound
-    - sls: ceph.refresh
-    - require: 
-      - salt: post configuration
+    - name: advise.networks
 
 {% for role in [ 'admin', 'mon', 'mgr', 'osd', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
 {{ role }} key:
@@ -52,7 +40,7 @@ setup monitoring:
 
 setup node exporters:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.node_exporter
 

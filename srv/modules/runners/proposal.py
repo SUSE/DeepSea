@@ -12,7 +12,7 @@ from os.path import isdir, isfile
 import os
 from sys import exit
 import logging
-import ceph_tgt
+import deepsea_minions
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +58,9 @@ List of recognized parameters and their defaults:
     ssd-spinner=False - Set any of these to True to force the runner to return
                         a certain proposal. Note that this can end up returning
                         an empty proposal
-    ratio=5 - Set the amount of data drives per journal drive
-    db-ration=5 - Set the amount of db drives per wal partition. Only has an
+    ratio=5 - Set the amount of data drives per journal drive (for filestore)
+              wal/db drive (for bluestore)
+    db-ratio=5 - Set the amount of db drives per wal partition. Only has an
                   effect if format=bluestore and all three device classes are
                   present, i.e. spinners, ssds and nvmes
     target='*' - Glob to specify which nodes will be queried
@@ -85,7 +86,7 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
-target = ceph_tgt.CephTgt()
+target = deepsea_minions.DeepseaMinions()
 
 std_args = {
     'leftovers': False,
@@ -96,7 +97,7 @@ std_args = {
     'ssd-spinner': False,
     'ratio': 5,
     'db-ratio': 5,
-    'target': target.ceph_tgt,
+    'target': target.deepsea_minions,
     'data': 0,
     'journal': 0,
     'wal': 0,

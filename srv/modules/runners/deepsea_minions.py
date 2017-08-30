@@ -7,7 +7,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-class CephTgt(object):
+class DeepseaMinions(object):
     """
     """
 
@@ -15,7 +15,7 @@ class CephTgt(object):
         """
         """
         self.local = salt.client.LocalClient()
-        self.ceph_tgt = self._query()
+        self.deepsea_minions = self._query()
         self.matches = self._matches()
        
 
@@ -28,7 +28,7 @@ class CephTgt(object):
         sys.stdout = open(os.devnull, 'w')
 
         ret = self.local.cmd('*' , 'saltutil.pillar_refresh')
-        minions = self.local.cmd('*' , 'pillar.get', [ 'ceph_tgt' ], 
+        minions = self.local.cmd('*' , 'pillar.get', [ 'deepsea_minions' ], 
                             expr_form="compound")
         sys.stdout = _stdout
         for minion in minions:
@@ -36,18 +36,18 @@ class CephTgt(object):
                 return minions[minion]
            
         
-        log.error("ceph_tgt is not set")
+        log.error("deepsea_minions is not set")
         return []
 
     def _matches(self):
         """
         """
-        if self.ceph_tgt:
+        if self.deepsea_minions:
             # When search matches no minions, salt prints to stdout.  
             # Suppress stdout.
             _stdout = sys.stdout
             sys.stdout = open(os.devnull, 'w')
-            matches = self.local.cmd(self.ceph_tgt , 'pillar.get', [ 'id' ], 
+            matches = self.local.cmd(self.deepsea_minions , 'pillar.get', [ 'id' ], 
                                 expr_form="compound")
             sys.stdout = _stdout
             return matches.keys()
@@ -56,9 +56,9 @@ class CephTgt(object):
 def show(**kwargs):
     """
     """
-    target = CephTgt()
-    return target.ceph_tgt
+    target = DeepseaMinions()
+    return target.deepsea_minions
 
 def matches(**kwargs):
-    target = CephTgt()
+    target = DeepseaMinions()
     return target.matches

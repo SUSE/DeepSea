@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import salt.client
 import time
 import logging
 import os
@@ -49,3 +50,14 @@ def salt_upgrade():
     print message
     return message
 
+def networks():
+    local = salt.client.LocalClient()
+    public = set(local.cmd('*' , 'pillar.get', [ 'public_network' ]).values())
+    cluster = set(local.cmd('*' , 'pillar.get', [ 'cluster_network' ]).values())
+
+    bold = '\033[1m'
+    endc = '\033[0m'
+
+    print "{:25}: {}{}{}".format('public network', bold, ", ".join(filter(None, public)), endc)
+    print "{:25}: {}{}{}".format('cluster network', bold, ", ".join(filter(None, cluster)), endc)
+    return ""

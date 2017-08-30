@@ -3,8 +3,8 @@
 # /srv/salt/ceph/configuration/files/ceph.conf.d/[global,osd,mon,mgr,mds,client].conf
 [global]
 fsid = {{ salt['pillar.get']('fsid') }}
-mon_initial_members = {{ salt['pillar.get']('mon_initial_members') | join(', ') }}
-mon_host = {{ salt['pillar.get']('mon_host') | join(', ') }}
+mon_initial_members = {{ salt.saltutil.runner('select.minions', cluster='ceph', roles='mon', host=True) | join(', ') }}
+mon_host = {{ salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='mon') | join(', ') }}
 auth_cluster_required = cephx
 auth_service_required = cephx
 auth_client_required = cephx

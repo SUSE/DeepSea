@@ -90,16 +90,30 @@ ceph_cluster_status
 ceph_health_test
 nfs_ganesha_cat_config_file
 nfs_ganesha_debug_log
-nfs_ganesha_showmount_loop
-nfs_ganesha_mount
-if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
-    nfs_ganesha_write_test cephfs
-fi
-if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
-    rgw_curl_test
-    rgw_validate_demo_users
-    nfs_ganesha_write_test rgw
-fi
-nfs_ganesha_umount
+# kludge to work around mount hang
+#nfs_ganesha_showmount_loop
+for v in "" "3" "4" ; do
+    echo "Testing NFS-Ganesha with NFS version ->$v<-"
+    if [ "$FSAL" = "rgw" -a "$v" = "3" ] ; then
+        echo "Not testing RGW FSAL on NFSv3"
+        continue
+    else
+        nfs_ganesha_mount "$v"
+    fi
+    if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
+        nfs_ganesha_write_test cephfs "$v"
+    fi
+    if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
+        if [ "$v" = "3" ] ; then
+            echo "Not testing RGW FSAL on NFSv3"
+        else
+            rgw_curl_test
+            rgw_validate_demo_users
+            nfs_ganesha_write_test rgw "$v"
+        fi
+    fi
+    nfs_ganesha_umount
+    sleep 10
+done
 
 echo "OK"

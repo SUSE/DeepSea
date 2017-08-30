@@ -25,7 +25,7 @@
         }
     ],
     "portals": [
-{% for minion, address in salt.saltutil.runner('select.attr', cluster='ceph', roles='igw', attr='public_address', host=True) %}
+{% for minion, address in salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='igw', tuples=True, host=True) %}
         {
             "name": "portal-{{ minion }}",
             "addresses": [

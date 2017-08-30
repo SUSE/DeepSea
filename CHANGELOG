@@ -1,4 +1,33 @@
 -------------------------------------------------------------------
+Mon Aug 28 21:55:36 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.23
+- Support Bluestore on importing non-DeepSea clusters
+- Add deepsea_minions validation to engulf
+- Improve cluster network detection in engulf
+- Add pyc files to rpm
+- Create qa subpackage
+- Fix Stage 5 storage node removal
+- Reimplement mon_host and mon_initial_members
+- Fixes for test environment
+- Notify admin about public, cluster setting 
+- Minor corrections, updates to monitoring, runners
+
+-------------------------------------------------------------------
+Fri Aug 18 14:22:44 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.22
+- Rename ceph_tgt to deepsea_minions
+- Minor promethus fix, add ganesha role to policy example
+
+-------------------------------------------------------------------
+Thu Aug 17 22:40:58 UTC 2017 - ejackson@suse.com
+- Version 0.7.21
+- Monitoring updates
+- Revert rgw.sls removal from /srv/pillar/ceph/init.sls
+- Add python-rados dependency to spec
+
+-------------------------------------------------------------------
 Wed Aug 16 21:14:51 UTC 2017 - ejackson@suse.com
 - Version 0.7.20
 - Update README for DEV_ENV

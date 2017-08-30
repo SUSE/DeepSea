@@ -1,5 +1,5 @@
 {
-  "overwrite": false,
+  "overwrite": true,
   "dashboard": {
     "__requires": [
       {
@@ -79,7 +79,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "ceph_rbd_image_bytes_provisioned{image=~\"$image\"}",
+                "expr": "ceph_rbd_image_bytes_provisioned{image=~\"$image\",pool=~\"$pool\"}",
                 "intervalFactor": 2,
                 "legendFormat": "Bytes provisioned",
                 "metric": "ceph_rbd_image_bytes_provisioned",
@@ -87,7 +87,7 @@
                 "step": 40
               },
               {
-                "expr": "ceph_rbd_image_bytes_used{image=~\"$image\"}",
+                "expr": "ceph_rbd_image_bytes_used{image=~\"$image\",pool=~\"$pool\"}",
                 "intervalFactor": 2,
                 "legendFormat": "Bytes used",
                 "metric": "ceph_rbd_image_bytes_used",
@@ -221,6 +221,29 @@
           "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
           "refresh": 2,
           "type": "interval"
+        },
+        {
+          "allFormat": "glob",
+          "allValue": null,
+          "current": {},
+          "datasource": "Prometheus",
+          "hide": 0,
+          "hideLabel": false,
+          "includeAll": true,
+          "label": "Pool",
+          "multi": true,
+          "multiFormat": "glob",
+          "name": "pool",
+          "options": [],
+          "query": "label_values(ceph_rbd_image_bytes_used, pool)",
+          "refresh": 1,
+          "regex": "",
+          "sort": 0,
+          "tagValuesQuery": "",
+          "tags": [],
+          "tagsQuery": "",
+          "type": "query",
+          "useTags": false
         },
         {
           "allFormat": "glob",

@@ -3,8 +3,7 @@
 /etc/ceph/ceph.conf:
   file:
     - managed
-    - source:
-        - salt://ceph/configuration/files/ceph.conf.j2
+    - source: salt://ceph/configuration/cache/ceph.conf
     - template: jinja
     - user: root
     - group: root

@@ -7,7 +7,6 @@ role-master/cluster/admin*.sls
 role-admin/cluster/admin*.sls
 
 # MON
-role-mon/stack/default/ceph/minions/mon*.yml
 role-mon/cluster/mon*.sls
 
 # MGR (mgrs are usually colocated with mons)
@@ -17,11 +16,13 @@ role-mgr/cluster/mon*.sls
 role-mds/cluster/mds*.sls
 
 # IGW
-role-igw/stack/default/ceph/minions/igw*.yml
 role-igw/cluster/igw*.sls
 
 # RGW
 role-rgw/cluster/rgw*.sls
+
+# NFS
+role-ganesha/cluster/ganesha*.sls
 
 # openATTIC
 role-openattic/cluster/openattic*.sls

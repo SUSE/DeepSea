@@ -1,24 +1,24 @@
 sync:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.sync
 
 repo:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.repo
 
 common packages:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.packages.common
 
 mines:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.mines
 
@@ -45,7 +45,7 @@ wait until the cluster has recovered before processing {{ host }}:
 
 check if all processes are still running after processing {{ host }}:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.processes
     - failhard: True
@@ -127,13 +127,13 @@ finishing remaining minions:
 
 updates:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates
 
 restart:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('ceph_tgt') }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates.restart
 
