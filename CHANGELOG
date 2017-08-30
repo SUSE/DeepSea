@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Aug 30 22:39:52 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.24
+- Fix ceph.conf generation
+- Fix proposal runner 
+
+-------------------------------------------------------------------
 Mon Aug 28 21:55:36 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.23
