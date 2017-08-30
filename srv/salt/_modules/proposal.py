@@ -32,7 +32,8 @@ class Proposal(object):
         self.data_r = kwargs.get('ratio', self.DEFAULT_DATA_R)
         assert type(self.data_r) is int and self.data_r >= 1
 
-        self.db_r = kwargs.get('db-ratio', kwargs.get('db_ratio',self.DEFAULT_DB_R))
+        self.db_r = kwargs.get('db-ratio', kwargs.get('db_ratio',
+                                                      self.DEFAULT_DB_R))
         assert type(self.db_r) is int and self.db_r >= 1
 
         data_filter = kwargs.get('data', '0')
@@ -66,6 +67,8 @@ class Proposal(object):
 
         self.add_leftover_as_standalone = kwargs.get('leftovers',
                                                      False)
+        self.incomplete_ratio_groups = kwargs.get('incomplete-ratio-groups',
+                                                  False)
 
     # TODO better name
     def create(self):
@@ -135,7 +138,8 @@ class Proposal(object):
             wal_disk = wal_disks.pop()
             for i in range(0, self.db_r):
                 data_dbs = self._get_one_external_proposal(data_disks,
-                                                           db_disks)
+                                                           db_disks,
+                                                           self.data_r)
                 for data_db in data_dbs:
                     for data in data_db:
                         external.append({data: {data_db[data]:
@@ -160,14 +164,19 @@ class Proposal(object):
             return external
         while journal_disks and len(data_disks) >= self.data_r:
             external.extend(self._get_one_external_proposal(data_disks,
-                                                            journal_disks))
+                                                            journal_disks,
+                                                            self.data_r))
+        if self.incomplete_ratio_groups and journal_disks and data_disks:
+            external.extend(self._get_one_external_proposal(data_disks,
+                                                            journal_disks,
+                                                            len(data_disks)))
         return external
 
-    def _get_one_external_proposal(self, data_disks, journal_disks):
+    def _get_one_external_proposal(self, data_disks, journal_disks, data_r):
         p = []
         journal_disk = journal_disks.pop()
         log.info('consuming {} as journal'.format(journal_disk['device']))
-        for i in range(0, self.data_r):
+        for i in range(0, data_r):
             data_disk = data_disks.pop()
             p.append({self._device(data_disk):
                       self._device(journal_disk)})

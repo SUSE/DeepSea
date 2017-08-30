@@ -52,6 +52,7 @@ only query minions whose minion id starts with 'data1'.
 List of recognized parameters and their defaults:
     leftovers=False - Set to True to propose leftover drives as
                                  standalone OSDs.
+    incomplete-ratio-groups=False - TBA
     standalone=False
     nvme-ssd=False
     nvme-spinner=False
@@ -91,6 +92,7 @@ target = deepsea_minions.DeepseaMinions()
 std_args = {
     'leftovers': False,
     'standalone': False,
+    'incomplete-ratio-groups': False,
     'nvme-ssd-spinner': False,
     'nvme-ssd': False,
     'nvme-spinner': False,
