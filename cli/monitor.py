@@ -8,6 +8,7 @@ from __future__ import print_function
 import logging
 import operator
 
+from .common import PrettyPrinter as PP
 from .saltevent import SaltEventProcessor
 from .saltevent import EventListener
 from .saltevent import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
@@ -97,6 +98,7 @@ class Stage(object):
         self.current_step = 0
         self.start_event = None
         self.end_event = None
+        self._dynamic_steps = {}
 
         self._steps = []
         _curr_state = None
@@ -141,6 +143,9 @@ class Stage(object):
     def start_step(self, event):
         assert self._executing
 
+        if self.current_step >= len(self._steps):
+            return None
+
         if isinstance(event, NewRunnerEvent):
             curr_step = self._steps[self.current_step]
             if isinstance(curr_step.step, SaltRunner):
@@ -159,6 +164,18 @@ class Stage(object):
         else:
             assert False
 
+        # this step is not part of stage parsed steps
+        if isinstance(event, NewRunnerEvent):
+            step = Stage.Step(None, event.fun[7:], -1)
+            step.start(event)
+            self._dynamic_steps[event.jid] = step
+            return step
+        elif isinstance(event, NewJobEvent):
+            step = Stage.TargetedStep(None, event.fun, -1)
+            step.start(event)
+            self._dynamic_steps[event.jid] = step
+            return step
+
         return None
 
     def finish_step(self, event):
@@ -168,6 +185,9 @@ class Stage(object):
             event (saltevent.SaltEvent): the step object
         """
         assert self._executing
+
+        if self.current_step >= len(self._steps):
+            return None
 
         if isinstance(event, RetRunnerEvent):
             curr_step = self._steps[self.current_step]
@@ -187,6 +207,18 @@ class Stage(object):
         else:
             assert False
 
+        # this step is not part of stage parsed steps
+        if isinstance(event, RetRunnerEvent):
+            if event.jid in self._dynamic_steps:
+                step = self._dynamic_steps[event.jid]
+                step.finish(event)
+                return step
+        elif isinstance(event, RetJobEvent):
+            if event.jid in self._dynamic_steps:
+                step = self._dynamic_steps[event.jid]
+                step.finish(event)
+                return step
+
         return None
 
     def state_result_step(self, event):
@@ -197,18 +229,26 @@ class Stage(object):
         """
         assert self._executing
 
+        if self.current_step >= len(self._steps):
+            return None
+
         curr_step = self._steps[self.current_step]
         assert not curr_step.finished
 
         if event.jid == curr_step.jid:
             # we still need to verify if state result matches current sub step
             # curr_step.finish_sub_step(event.result)
+            # PP.println(PP.yellow(event))
+            # PP.println(PP.yellow(PP.format_dict(event.raw_event)))
             pass
 
         return curr_step
 
     def check_if_current_step_will_run(self):
         assert self._executing
+
+        if self.current_step >= len(self._steps):
+            return None
 
         curr_step = self._steps[self.current_step]
         for dep in curr_step.step.on_success_deps:
@@ -297,11 +337,11 @@ class MonitorListener(object):
         """
         pass
 
-    def step_state_result(self, step):
+    def step_state_result(self, event):
         """
         This function is called when a Salt state result is received
         Args:
-            step (Stage.Step): the step object
+            step (saltevent.StateResultEvent): the event object
         """
         pass
 
@@ -327,7 +367,7 @@ class Monitor(object):
             self.monitor = monitor
 
         def handle_new_runner_event(self, event):
-            if 'pillar' in event.fun:
+            if 'pillar' in event.fun or 'saltutil.find_job' in event.fun:
                 return
             logger.debug("handle: %s", event)
             if event.fun == 'runner.state.orch':
@@ -336,7 +376,7 @@ class Monitor(object):
                 self.monitor.start_step(event)
 
         def handle_ret_runner_event(self, event):
-            if 'pillar' in event.fun:
+            if 'pillar' in event.fun or 'saltutil.find_job' in event.fun:
                 return
             logger.debug("handle: %s", event)
             if event.fun == 'runner.state.orch':
@@ -345,13 +385,13 @@ class Monitor(object):
                 self.monitor.end_step(event)
 
         def handle_new_job_event(self, event):
-            if 'pillar' in event.fun:
+            if 'pillar' in event.fun or 'saltutil.find_job' in event.fun or 'grains' in event.fun:
                 return
             logger.debug("handle: %s", event)
             self.monitor.start_step(event)
 
         def handle_ret_job_event(self, event):
-            if 'pillar' in event.fun:
+            if 'pillar' in event.fun or 'saltutil.find_job' in event.fun or 'grains' in event.fun:
                 return
             logger.debug("handle: %s", event)
             self.monitor.end_step(event)
@@ -408,7 +448,7 @@ class Monitor(object):
         self._running_stage.finish(event)
         tmp_stage = self._running_stage
         self._running_stage = None
-        logger.info("End stage: %s jid=%s success=%s", tmp_stage, tmp_stage.jid, event.success)
+        logger.info("End stage: %s jid=%s success=%s", tmp_stage.name, tmp_stage.jid, event.success)
         self._fire_event('stage_finished', tmp_stage)
 
     def start_step(self, event):
@@ -421,12 +461,15 @@ class Monitor(object):
             # not inside a running stage, igore step
             return
         step = self._running_stage.start_step(event)
-        logger.debug("started step: %s", step)
         if not step:
             return
         if isinstance(step, Stage.TargetedStep):
+            logger.info("Started State step: [%s/%s] name=%s on=%s", step.order,
+                        self._running_stage.total_steps(), step.name, step.targets.keys())
             self._fire_event('step_state_started', step)
         else:
+            logger.info("Started Runner step: [%s/%s] name=%s", step.order,
+                        self._running_stage.total_steps(), step.name)
             self._fire_event('step_runner_started', step)
 
     def end_step(self, event):
@@ -442,10 +485,19 @@ class Monitor(object):
         if not step:
             return
         if isinstance(step, Stage.TargetedStep):
+            logger.info("Finished State step: [%s/%s] name=%s in=%s success=%s", step.order,
+                        self._running_stage.total_steps(), step.name, event.minion,
+                        step.targets[event.minion]['success'])
+            if not step.targets[event.minion]['success']:
+                logger.info("State step error:\n%s", PP.format_dict(event.raw_event))
             self._fire_event('step_state_minion_finished', step, event.minion)
             if step.finished:
                 self._fire_event('step_state_finished', step)
         else:
+            logger.info("Finished Runner step: [%s/%s] name=%s success=%s", step.order,
+                        self._running_stage.total_steps(), step.name, event.success)
+            if not event.success:
+                logger.info("State step error:\n%s", PP.format_dict(event.raw_event))
             self._fire_event('step_runner_finished', step)
 
         skipped = self._running_stage.check_if_current_step_will_run()
@@ -460,15 +512,16 @@ class Monitor(object):
         if not self._running_stage:
             # not inside a running stage, igore step
             return
-        step = self._running_stage.state_result_step(event)
-        if not step:
-            return
-        self._fire_event('step_state_result', step)
+        # step = self._running_stage.state_result_step(event)
+        # if not step:
+        #     return
+        self._fire_event('step_state_result', event)
 
     def start(self):
         """
         Start the monitoring thread
         """
+        logger.info("Starting the DeepSea event monitoring")
         self._processor.start()
 
     def stop(self):

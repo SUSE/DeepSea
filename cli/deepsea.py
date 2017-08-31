@@ -15,7 +15,7 @@ import click
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
-from .monitors.terminal_outputter import ThreadedStepListPrinter, SimplePrinter
+from .monitors.terminal_outputter import StepListPrinter, SimplePrinter
 from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
 
 
@@ -57,7 +57,7 @@ def _run_monitor(simple_output):
     Run the DeepSea stage monitor and progress visualizer
     """
     mon = Monitor()
-    listener = SimplePrinter() if simple_output else ThreadedStepListPrinter()
+    listener = SimplePrinter() if simple_output else StepListPrinter()
     mon.add_listener(listener)
 
     logger = logging.getLogger(__name__)
@@ -217,4 +217,5 @@ def main():
     cli.add_command(monitor)
     cli.add_command(stage)
     stage.add_command(stage_show)
-    cli()
+    # pylint: disable=E1120,E1123
+    cli(prog_name='deepsea')

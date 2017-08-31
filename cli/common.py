@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import contextlib
+import pprint
 import sys
 
 
@@ -24,6 +25,8 @@ class PrettyPrinter(object):
     """
     Helper class to pretty print
     """
+
+    _PP = pprint.PrettyPrinter(indent=1)
 
     class Colors(object):
         """
@@ -208,6 +211,13 @@ class PrettyPrinter(object):
         Flush stdout
         """
         sys.stdout.flush()
+
+    @staticmethod
+    def format_dict(dict_obj):
+        """
+        Formats a dict structure using pprint formatter
+        """
+        return PrettyPrinter._PP.pformat(dict_obj)
 
 
 def print_progress_bar(progress_array, iteration, prefix='', suffix='', bar_length=100):
