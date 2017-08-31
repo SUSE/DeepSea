@@ -130,22 +130,31 @@ class Radosgw(object):
                 rgw_names = cached[minion]['rgw_configurations'].keys()
 
         conf_file_dir = "/srv/salt/ceph/configuration/files/"
-        rgw_conf_files = [os.path.join(conf_file_dir,"ceph.conf." + rgw_name) for rgw_name in rgw_names]
-
+        rgw_conf_files = []
         for rgw_name in rgw_names:
-            rgw_conf_file_path = os.path.join(conf_file_dir, "ceph.conf."+ rgw_name)
-            if os.path.exists(rgw_conf_file_path) and os.path.isfile(rgw_conf_file_path):
-                with open(rgw_conf_file_path) as rgw_conf_file:
-                    for line in rgw_conf_file:
-                        if line:
-                            match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
-                            if match:
-                                port = int(match.group(1))
-                                ssl = match.group(2)
+            # Check for user created configurations
+            pathname = "{}/ceph.conf.d/ceph.conf.{}".format(conf_file_dir, rgw_name)
+            if os.path.exists(pathname):
+                print "adding ", pathname
+                rgw_conf_files.append(pathname)
+                continue
 
-                            match = re.search(r'rgw.*admin.*entry.*=\s*(\w+)', line)
-                            if match:
-                                admin_path = match.group(1)
+            pathname = "{}/ceph.conf.{}".format(conf_file_dir, rgw_name)
+            if os.path.exists(pathname):
+                rgw_conf_files.append(pathname)
+
+        for pathname in rgw_conf_files:
+            with open(pathname) as rgw_conf_file:
+                for line in rgw_conf_file:
+                    if line:
+                        match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
+                        if match:
+                            port = int(match.group(1))
+                            ssl = match.group(2)
+
+                        match = re.search(r'rgw.*admin.*entry.*=\s*(\w+)', line)
+                        if match:
+                            admin_path = match.group(1)
 
             local = salt.client.LocalClient()
             fqdns = local.cmd('I@roles:'+ rgw_name, 'grains.item', ['fqdn'], expr_form="compound")
