@@ -9,6 +9,7 @@ stage prep dependencies suse:
       - pciutils
       - gptfdisk
       - python-boto
+      - iperf
     - fire_event: True
 
 {% elif os == 'Ubuntu' %}
@@ -20,6 +21,7 @@ stage prep dependencies ubuntu:
       - pciutils
       - gdisk
       - python-boto
+      - iperf
     - fire_event: True
 
 {% else %}
