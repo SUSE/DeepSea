@@ -91,6 +91,8 @@ class TestRadosgw():
         assert result == rg.credentials
 
     @patch('salt.client.LocalClient', autospec=True)
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
@@ -110,9 +112,12 @@ class TestRadosgw():
 
         fs.CreateFile('cache/client.rgw.rgw1.json',
             contents='''[client.rgw.rgw1]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
+        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+            contents='''[client.rgw.rgw1]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/client.rgw.rgw1.json')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
 
         assert result == rg.credentials
 
@@ -177,6 +182,8 @@ class TestRadosgw():
         assert result == rg.credentials
 
     @patch('salt.client.LocalClient', autospec=True)
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
     @patch('__builtin__.open', new=f_open)
@@ -196,9 +203,12 @@ class TestRadosgw():
 
         fs.CreateFile('cache/client.rgw.json',
             contents='''[client.rgw]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
+        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+            contents='''[client.rgw.rgw1]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/client.rgw.json')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
 
         assert result == rg.credentials
 
