@@ -121,7 +121,6 @@ def from_(pillar, *args, **kwargs):
 
     if 'attr' in kwargs:
         args = re.split(',\s*', kwargs['attr'])
-        print args
 
     # When search matches no minions, salt prints to stdout.  Suppress stdout.
     _stdout = sys.stdout
@@ -134,16 +133,19 @@ def from_(pillar, *args, **kwargs):
     results = []
     sys.stdout = _stdout
     for master in result:
-        for role in result[master].keys():
-            minion_list = minions(roles=role)
-            for minion in minion_list:
-                grains_result = local.cmd(minion , 'grains.item',  list(args)).values()[0]
-                small = [ role ]
-                for arg in list(args):
-                    small.append(grains_result[arg])
-                results.append(small)
+        if result[master]:
+            for role in result[master].keys():
+                minion_list = minions(roles=role)
+                for minion in minion_list:
+                    grains_result = local.cmd(minion , 'grains.item',  list(args)).values()[0]
+                    small = [ role ]
+                    for arg in list(args):
+                        small.append(grains_result[arg])
+                    results.append(small)
                 
-    return results
+    if results:
+        return results
+    return [ [ None ] * (1 + len(args)) ]
 
 __func_alias__ = {
                  'from_': 'from',
