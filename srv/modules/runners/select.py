@@ -108,13 +108,13 @@ def attr(host = False, **kwargs):
         pairs = [ [k,v] for k, v in minions.items() ]
     return pairs
 
-def from_(pillar, *args, **kwargs):
+def from_(pillar, role, *args, **kwargs):
     """
     Return a list of roles and corresponding grains for the provided pillar
-    argument.
+    argument or role argument.
 
-    salt-run select.from rgw_configurations host fqdn
-    salt-run select.from pillar=data, attr="host, fqdn"
+    salt-run select.from rgw_configurations rgw host fqdn
+    salt-run select.from pillar=data, role=rgw, attr="host, fqdn"
 
     Note: Support the second form because Jinja hates us.
     """
@@ -128,20 +128,28 @@ def from_(pillar, *args, **kwargs):
 
     local = salt.client.LocalClient()
     search = "I@roles:master"
-    result = local.cmd(search , 'pillar.get', [ pillar ], expr_form="compound")
+    try:
+        roles = local.cmd(search , 'pillar.get', [ pillar ], expr_form="compound").values()[0].keys()
+    except:
+        roles = []
+
+    sys.stdout = _stdout
+
+    if not roles:
+        # With no pillar variable, check for minions with assigned role
+        result = minions(roles=role)
+        if result:
+            roles = [ role ]
 
     results = []
-    sys.stdout = _stdout
-    for master in result:
-        if result[master]:
-            for role in result[master].keys():
-                minion_list = minions(roles=role)
-                for minion in minion_list:
-                    grains_result = local.cmd(minion , 'grains.item',  list(args)).values()[0]
-                    small = [ role ]
-                    for arg in list(args):
-                        small.append(grains_result[arg])
-                    results.append(small)
+    for _role in roles:
+        minion_list = minions(roles=_role)
+        for minion in minion_list:
+            grains_result = local.cmd(minion , 'grains.item',  list(args)).values()[0]
+            small = [ _role ]
+            for arg in list(args):
+                small.append(grains_result[arg])
+            results.append(small)
                 
     if results:
         return results
