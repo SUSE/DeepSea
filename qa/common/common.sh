@@ -19,6 +19,10 @@ else
     exit 1
 fi
 
+# show salt RPM version in log and fail if salt is not installed
+rpm -q salt-master
+rpm -q salt-minion
+
 # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
 echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 
