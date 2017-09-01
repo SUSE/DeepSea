@@ -203,7 +203,15 @@ role-rgw-ssl/cluster/*.sls slice=[:1]
 EOF
 }
 
-
+# NOTE: RGW does not coexist well with openATTIC
+function policy_cfg_openattic_with_rgw {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+EOF
+}
 
 function policy_cfg_igw {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
