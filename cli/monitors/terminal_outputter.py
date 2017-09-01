@@ -274,6 +274,68 @@ class StepListPrinter(MonitorListener):
     FAIL = PP.red(u"\u274C")
     WAITING = PP.orange(u"\u23F3")
 
+    def print_step(self, step, depth=0):
+        """
+        Prints a single step
+        Args:
+            step (StepListPrinter.Step): the step object
+            depth (int): the step depth, if depth > 0 it's a substep
+        """
+        step_order_width = 9
+        step_desc_width = 60
+        indent = 2
+
+        if depth == 0:
+            # root step
+            if step.step.order > 0:
+                step_order = "[{}/{}]".format(step.step.order, self.total_steps)
+            else:
+                step_order = "[init]"
+
+            rest = step_order_width - len(step_order)
+            rest = 0 if rest < 0 else rest
+            offset = len(step_order) + rest + 1
+
+        else:
+            prefix_indent = step_order_width + indent * depth
+            offset = prefix_indent + 4
+
+        desc_width = step_desc_width - (offset - step_order_width)
+
+        if not step.reprint:
+            step.reprint = True
+        elif depth == 0:
+            step.clean(desc_width)
+
+        if depth == 0:
+            PP.print(PP.bold("{}{} ".format(step_order, " " * rest)))
+        else:
+            PP.print("{} |_ ".format(" " * prefix_indent))
+
+        step.print(offset, desc_width, depth)
+
+    @staticmethod
+    def format_desc(desc, width):
+        """
+        Breaks the string into an array of strings of max length width
+        """
+        result = []
+        while len(desc) > width:
+            idx = desc[:width].rfind(' ')
+            if idx != -1:
+                result.append(desc[0:idx])
+                desc = desc[idx+1:]
+            else:
+                idx = desc[width-1:].find(' ')
+                if idx != -1:
+                    idx = idx + (width - 1)
+                    result.append(desc[:idx])
+                    desc = desc[idx+1:]
+                else:
+                    break
+        result.append(desc)
+        return result
+
     class Step(object):
         def __init__(self, printer, step):
             self.printer = printer
@@ -281,6 +343,7 @@ class StepListPrinter(MonitorListener):
             self.finished = False
             self.reprint = False
             self.substeps = OrderedDict()
+            self.args = step.args_str
             if step.start_event:
                 self.start_ts = datetime.datetime.strptime(step.start_event.stamp,
                                                            "%Y-%m-%dT%H:%M:%S.%f")
@@ -289,28 +352,6 @@ class StepListPrinter(MonitorListener):
 
             if step.skipped:
                 self.finished = True
-
-            self.args = ""
-            first = True
-            for arg in step.start_event.args:
-                if isinstance(arg, dict):
-                    for key, val in arg.items():
-                        if key in ['concurrent', 'saltenv', '__kwarg__', 'queue']:
-                            continue
-                        if first:
-                            self.args += "{}={}".format(key, val)
-                            first = False
-                        else:
-                            self.args += ", {}={}".format(key, val)
-                    first = True
-                else:
-                    if arg == step.name:
-                        continue
-                    if first:
-                        first = True
-                        self.args += "{}".format(arg)
-                    else:
-                        self.args += ", {}".format(arg)
 
         def start_runner_substep(self, step):
             self.substeps[step.jid] = StepListPrinter.Runner(self.printer, step)
@@ -322,19 +363,22 @@ class StepListPrinter(MonitorListener):
             self.substeps[step.jid].finished = True
 
         # pylint: disable=W0613
-        def print(self, substep=False, indent=0):
+        def print(self, offset, desc_width, depth):
             """
             Prints the status of a step
             """
-            if not self.reprint:
-                self.reprint = True
-            elif not substep:
-                self.clean()
+            # if not self.reprint:
+            #     self.reprint = True
+            # else:
+            #     self.clean(desc_width)
 
-        def clean(self):
+        def clean(self, desc_width):
             """
             Prepare for re-print of step
             """
+            raise NotImplementedError()
+
+        def clean_count(self, desc_width):
             raise NotImplementedError()
 
         @staticmethod
@@ -348,35 +392,44 @@ class StepListPrinter(MonitorListener):
         def __init__(self, printer, step):
             super(StepListPrinter.Runner, self).__init__(printer, step)
 
-        def clean(self):
+        def clean_count(self, desc_width):
+            total = 0
+            for substep in self.substeps.values():
+                total += substep.clean_count(desc_width-5)
+            total += 1
+            if self.args and len(self.step.name) + len(self.args)+2 >= desc_width:
+                total += len(StepListPrinter.format_desc(self.args, desc_width))
+            return total
+
+        def clean(self, desc_width):
             for substep in self.substeps.values():
                 if substep.reprint:
-                    substep.clean()
+                    substep.clean(desc_width-5)
             PP.print("\x1B[A\x1B[K")
-            if self.args:
-                PP.print("\x1B[A\x1B[K")
+            if self.args and len(self.step.name) + len(self.args)+2 >= desc_width:
+                PP.print("\x1B[A\x1B[K" * len(StepListPrinter.format_desc(self.args, desc_width)))
 
-        def print(self, substep=False, indent=0):
-            super(StepListPrinter.Runner, self).print(substep, indent)
+        def print(self, offset, desc_width, depth):
+            super(StepListPrinter.Runner, self).print(offset, desc_width, depth)
 
-            if not substep:
-                if self.step.order > 0:
-                    PP.p_bold("{:12}".format("[{}/{}]: ".format(self.step.order,
-                                                                self.printer.total_steps)))
+            if len(self.step.name) + len(self.args)+2 < desc_width:
+                if self.args:
+                    desc_length = len(self.step.name) + len(self.args) + 2
+                    PP.print(PP.blue("{}({})".format(self.step.name, self.args)))
                 else:
-                    PP.p_bold("{:12}".format("[init]: "))
+                    desc_length = len(self.step.name)
+                    PP.print(PP.blue("{}".format(self.step.name)))
+                PP.print(PP.blue("{} ".format("." * (desc_width - desc_length))))
+                print_args = False
             else:
-                PP.print("{}".format(' ' * indent))
-                PP.print(PP.grey("{:12}|_ ".format('')))
-
-            if not substep:
-                PP.print(PP.blue("{:.<55} ".format(self.step.name)))
-            else:
-                PP.print(PP.blue("{:.<50} ".format(self.step.name)))
+                desc_length = len(self.step.name)
+                PP.print(PP.blue("{}".format(self.step.name)))
+                PP.print(PP.blue("{} ".format("." * (desc_width - desc_length))))
+                print_args = True
 
             if self.step.finished:
                 if self.step.skipped:
-                    PP.println(PP.grey(' skipped'))
+                    PP.println(PP.grey("skipped"))
                 else:
                     PP.print(StepListPrinter.OK if self.step.success
                              else StepListPrinter.FAIL)
@@ -389,15 +442,20 @@ class StepListPrinter(MonitorListener):
                 PP.print(StepListPrinter.WAITING)
                 PP.println(" ({})".format(StepListPrinter.Step.ftime(ts-self.start_ts)))
 
-            if self.args:
-                if not substep:
-                    PP.println(PP.blue("{:12}({}) ".format('', self.args)))
-                else:
-                    PP.print("{}".format(' ' * indent))
-                    PP.println(PP.blue("{:15}({}) ".format('', self.args)))
+            if self.args and print_args:
+                lines = StepListPrinter.format_desc(self.args, desc_width-2)
+                lines[-1] += ")"
+                first = True
+                for line in lines:
+                    PP.print(" " * offset)
+                    if first:
+                        PP.println(PP.blue("({}".format(line)))
+                        first = False
+                    else:
+                        PP.println(PP.blue(" {}".format(line)))
 
             for substep in self.substeps.values():
-                substep.print(True, indent+2)
+                self.printer.print_step(substep, depth+1)
 
     class State(Step):
         def __init__(self, printer, step):
@@ -410,62 +468,80 @@ class StepListPrinter(MonitorListener):
             """
             self.state_results.append({'event': event, 'reprint': False})
 
-        def clean(self):
+        def clean_count(self, desc_width):
+            total = 0
+            if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
+                total += len(StepListPrinter.format_desc(self.args, desc_width))
+            if self.step.skipped:
+                total += 1
+            else:
+                for substep in self.substeps.values():
+                    total += substep.clean_count(desc_width-5)
+                for state_res in self.state_results:
+                    if state_res['reprint']:
+                        total += 1
+                total += len(self.step.targets)+1
+            return total
+
+        def clean(self, desc_width):
+            if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
+                PP.print("\x1B[A\x1B[K" *
+                         len(StepListPrinter.format_desc(self.args, desc_width)))
+
             if self.step.skipped:
                 PP.print("\x1B[A\x1B[K")
             else:
                 for substep in self.substeps.values():
                     if substep.reprint:
-                        substep.clean()
+                        substep.clean(desc_width-5)
                 for state_res in self.state_results:
                     if state_res['reprint']:
                         PP.print("\x1B[A\x1B[K")
-                if self.args:
-                    PP.print("\x1B[A\x1B[K")
+
                 PP.print("\x1B[A\x1B[K" * (len(self.step.targets)+1))
 
-        def print(self, substep=False, indent=0):
-            super(StepListPrinter.State, self).print(substep, indent)
+        def print(self, offset, desc_width, depth):
+            super(StepListPrinter.State, self).print(offset, desc_width, depth)
+
+            if len(self.step.name) + len(self.args)+2 < desc_width:
+                if self.args:
+                    PP.print(PP.orange("{}({}) on".format(self.step.name, self.args)))
+                else:
+                    PP.print(PP.orange("{} on".format(self.step.name)))
+                print_args = False
+            else:
+                PP.print(PP.orange("{}".format(self.step.name)))
+                print_args = True
 
             if self.step.skipped:
-                PP.p_bold("{:12}".format("[{}/{}]: "
-                          .format(self.step.order, self.printer.total_steps)))
-                PP.print(PP.orange("{:.<55}".format(self.step.name)))
                 PP.println(PP.grey(' skipped'))
+            else:
+                PP.println()
+
+            if self.args and print_args:
+                lines = StepListPrinter.format_desc(self.args, desc_width-2)
+                lines[-1] += ")"
+                if not self.step.skipped:
+                    lines[-1] += " on"
+                first = True
+                for line in lines:
+                    PP.print(" " * offset)
+                    if first:
+                        PP.println(PP.orange("({}".format(line)))
+                        first = False
+                    else:
+                        PP.println(PP.orange(" {}".format(line)))
+
+            if self.step.skipped:
                 return
 
-            if not substep:
-                if self.step.order > 0:
-                    PP.p_bold("{:12}".format("[{}/{}]: ".format(self.step.order,
-                                                                self.printer.total_steps)))
-                else:
-                    PP.p_bold("{:12}".format("[init]: "))
-            else:
-                PP.print("{:12}{}".format('', ' ' * indent))
-                PP.print(PP.grey("|_ "))
-
-            PP.print(PP.orange("{}".format(self.step.name)))
-
-            if self.args:
-                PP.println()
-                if not substep:
-                    PP.println(PP.orange("{:12}({}) on".format('', self.args)))
-                else:
-                    PP.print("{}".format(' ' * indent))
-                    PP.println(PP.orange("{:15}({}) on".format('', self.args)))
-            else:
-                PP.println(PP.orange(" on"))
-
-            for step in self.substeps.values():
-                step.print(True, indent+2)
+            for substep in self.substeps.values():
+                self.printer.print_step(substep, depth+1)
 
             for target, data in self.step.targets.items():
-                if not substep:
-                    PP.print("{:12}{}".format('', ' ' * indent))
-                    PP.print(PP.cyan("{:.<55} ".format(target)))
-                else:
-                    PP.print("{:15}{}".format('', ' ' * indent))
-                    PP.print(PP.cyan("{:.<50} ".format(target)))
+                PP.print(" " * offset)
+                PP.print(PP.cyan(target))
+                PP.print(PP.cyan("{} ".format("." * (desc_width - len(target)))))
                 if data['finished']:
                     PP.print(StepListPrinter.OK if data['success']
                              else StepListPrinter.FAIL)
@@ -478,6 +554,7 @@ class StepListPrinter(MonitorListener):
                     PP.print(StepListPrinter.WAITING)
                     PP.println(" ({})"
                                .format(StepListPrinter.Step.ftime(ts-self.start_ts)))
+
                 for state_res in self.state_results:
                     event = state_res['event']
                     state_res['reprint'] = True
@@ -486,16 +563,15 @@ class StepListPrinter(MonitorListener):
                             msg = event.name
                         else:
                             msg = "{}: {}".format(event.state_id, event.name)
-                        if not substep:
-                            PP.print("{:14}{}|_ ".format('', ' ' * indent))
-                            PP.print(PP.grey("{:.<50}".format(msg)))
-                        else:
-                            PP.print("{:17}{}|_ ".format('', ' ' * indent))
-                            PP.print(PP.grey("{:.<47}".format(msg)))
+                        PP.print(" " * offset)
+                        PP.print(PP.grey("  |_ {}".format(msg)))
+                        msg_rest = desc_width - (len(msg) + 3) - 2
+                        msg_rest = 0 if msg_rest < 0 else msg_rest
+                        PP.print(PP.grey("{} ".format("." * msg_rest)))
                         if event.result:
-                            PP.println(u" {}".format(StepListPrinter.OK))
+                            PP.println(u"{}".format(StepListPrinter.OK))
                         else:
-                            PP.println(u" {}".format(StepListPrinter.FAIL))
+                            PP.println(u"{}".format(StepListPrinter.FAIL))
 
     class PrinterThread(threading.Thread):
         def __init__(self, printer):
@@ -515,7 +591,7 @@ class StepListPrinter(MonitorListener):
                 time.sleep(0.5)
                 with self.printer.print_lock:
                     if self.printer.step:
-                        self.printer.step.print()
+                        self.printer.print_step(self.printer.step)
 
             PP.print("\x1B[?25h")  # shows cursor
 
@@ -637,7 +713,7 @@ class StepListPrinter(MonitorListener):
             else:
                 self.step = StepListPrinter.Runner(self, step)
                 PP.println()
-            self.step.print()
+            self.print_step(self.step)
 
     def step_runner_finished(self, step):
         if not step.success:
@@ -649,7 +725,7 @@ class StepListPrinter(MonitorListener):
                 self.step.finish_substep(step)
             else:
                 self.step.finished = True
-            self.step.print()
+            self.print_step(self.step)
 
             if self.step.step.jid == step.jid:
                 self.step = None
@@ -662,7 +738,7 @@ class StepListPrinter(MonitorListener):
                 self.step = StepListPrinter.State(self, step)
                 PP.println()
 
-            self.step.print()
+            self.print_step(self.step)
 
     def step_state_minion_finished(self, step, minion):
         if not step.targets[minion]['success']:
@@ -675,7 +751,7 @@ class StepListPrinter(MonitorListener):
                 self.step.finish_substep(step)
             else:
                 self.step.finished = True
-            self.step.print()
+            self.print_step(self.step)
 
     def step_state_finished(self, step):
         with self.print_lock:
@@ -687,4 +763,4 @@ class StepListPrinter(MonitorListener):
             assert self.step
             assert isinstance(self.step, StepListPrinter.State)
             self.step.add_state_result(event)
-            self.step.print()
+            self.print_step(self.step)

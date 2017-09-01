@@ -2,6 +2,7 @@
 """
 DeepSea stage's progress monitor
 """
+# pylint: disable=W1699
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -43,10 +44,31 @@ class Stage(object):
             self.start_event = None
             self.end_event = None
             self.skipped = False
+            self.args_str = ""
 
         def start(self, event):
             self.jid = event.jid
             self.start_event = event
+            first = True
+            for arg in event.args:
+                if isinstance(arg, dict):
+                    for key, val in arg.items():
+                        if key in ['concurrent', 'saltenv', '__kwarg__', 'queue']:
+                            continue
+                        if first:
+                            self.args_str += "{}={}".format(key, val)
+                            first = False
+                        else:
+                            self.args_str += ", {}={}".format(key, val)
+                    first = True
+                else:
+                    if arg == self.name:
+                        continue
+                    if first:
+                        first = True
+                        self.args_str += "{}".format(arg)
+                    else:
+                        self.args_str += ", {}".format(arg)
 
         def finish(self, event):
             self.success = event.success
@@ -464,12 +486,13 @@ class Monitor(object):
         if not step:
             return
         if isinstance(step, Stage.TargetedStep):
-            logger.info("Started State step: [%s/%s] name=%s on=%s", step.order,
-                        self._running_stage.total_steps(), step.name, step.targets.keys())
+            logger.info("Started State step: [%s/%s] name=%s(%s) on=%s", step.order,
+                        self._running_stage.total_steps(), step.name, step.args_str,
+                        step.targets.keys())
             self._fire_event('step_state_started', step)
         else:
-            logger.info("Started Runner step: [%s/%s] name=%s", step.order,
-                        self._running_stage.total_steps(), step.name)
+            logger.info("Started Runner step: [%s/%s] name=%s(%s)", step.order,
+                        self._running_stage.total_steps(), step.name, step.args_str)
             self._fire_event('step_runner_started', step)
 
     def end_step(self, event):
@@ -485,17 +508,18 @@ class Monitor(object):
         if not step:
             return
         if isinstance(step, Stage.TargetedStep):
-            logger.info("Finished State step: [%s/%s] name=%s in=%s success=%s", step.order,
-                        self._running_stage.total_steps(), step.name, event.minion,
-                        step.targets[event.minion]['success'])
+            logger.info("Finished State step: [%s/%s] name=%s(%s) in=%s success=%s", step.order,
+                        self._running_stage.total_steps(), step.name, step.args_str,
+                        event.minion, step.targets[event.minion]['success'])
             if not step.targets[event.minion]['success']:
                 logger.info("State step error:\n%s", PP.format_dict(event.raw_event))
             self._fire_event('step_state_minion_finished', step, event.minion)
             if step.finished:
                 self._fire_event('step_state_finished', step)
         else:
-            logger.info("Finished Runner step: [%s/%s] name=%s success=%s", step.order,
-                        self._running_stage.total_steps(), step.name, event.success)
+            logger.info("Finished Runner step: [%s/%s] name=%s(%s) success=%s", step.order,
+                        self._running_stage.total_steps(), step.name, step.args_str,
+                        event.success)
             if not event.success:
                 logger.info("State step error:\n%s", PP.format_dict(event.raw_event))
             self._fire_event('step_runner_finished', step)
