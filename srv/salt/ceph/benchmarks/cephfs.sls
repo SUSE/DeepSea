@@ -11,6 +11,8 @@ prep clients:
     - tgt_type: compound
     - sls:
       - ceph.cephfs.benchmarks.prepare_clients
+    - pillar:
+        'mount_mon_hosts': {{ salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='mon') | join(',') }}
 
 one subdir:
   salt.state:
