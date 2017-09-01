@@ -80,7 +80,6 @@ class Stage(object):
             super(Stage.TargetedStep, self).__init__(step, name, order)
             self.targets = None
             self.sub_steps = []
-            self.curr_sub_step = 0
 
         # pylint: disable=W0221
         def start(self, event):
@@ -89,27 +88,35 @@ class Stage(object):
             for target in event.targets:
                 self.targets[target] = {
                     'finished': False,
-                    'success': None
+                    'success': None,
+                    'states': [Stage.Step(s.step, s.name, s.order) for s in self.sub_steps]
                 }
 
         def finish(self, event):
-            self.targets[event.minion] = {
-                'finished': True,
-                'success': event.success and event.retcode == 0,
-                'event': event
-            }
+            self.targets[event.minion]['finished'] = True
+            self.targets[event.minion]['success'] = event.success and event.retcode == 0
+            self.targets[event.minion]['event'] = event
+
             if reduce(operator.__and__, [t['finished'] for t in self.targets.values()]):
                 self.success = reduce(
                     operator.__and__, [t['success'] for t in self.targets.values()])
                 self.finished = True
 
-        def current_sub_step(self):
-            return self.sub_steps[self.curr_sub_step]
-
-        def finish_sub_step(self, result):
-            self.sub_steps[self.curr_sub_step].start(self.jid)
-            self.sub_steps[self.curr_sub_step].finish(result)
-            self.curr_sub_step += 1
+        def state_result(self, event):
+            for sstep in self.targets[event.minion]['states']:
+                if isinstance(sstep.step, SaltModule):
+                    if sstep.name == event.name:
+                        sstep.success = event.result
+                        sstep.finished = True
+                        sstep.end_event = event
+                elif isinstance(sstep.step, SaltBuiltIn):
+                    name = sstep.step.get_arg('name')
+                    if not name:
+                        name = sstep.step.desc
+                    if name == event.name:
+                        sstep.success = event.result
+                        sstep.finished = True
+                        sstep.end_event = event
 
     def __init__(self, name, steps):
         self.name = name
@@ -171,7 +178,7 @@ class Stage(object):
         if isinstance(event, NewRunnerEvent):
             curr_step = self._steps[self.current_step]
             if isinstance(curr_step.step, SaltRunner):
-                if curr_step.name == event.fun[7:]:
+                if not curr_step.jid and curr_step.name == event.fun[7:]:
                     curr_step.start(event)
                     return curr_step
 
@@ -179,7 +186,7 @@ class Stage(object):
             curr_step = self._steps[self.current_step]
             if isinstance(curr_step, Stage.TargetedStep):
                 step_name = event.args[0] if event.fun == 'state.sls' else event.fun
-                if curr_step.name == step_name:
+                if not curr_step.jid and curr_step.name == step_name:
                     curr_step.start(event)
                     return curr_step
 
@@ -190,11 +197,22 @@ class Stage(object):
         if isinstance(event, NewRunnerEvent):
             step = Stage.Step(None, event.fun[7:], -1)
             step.start(event)
+            for ex_step in self._dynamic_steps.values():
+                if (ex_step.name == step.name and not ex_step.finished and
+                        ex_step.args_str == step.args_str):
+                    # possible parsing generated duplicate
+                    return None
             self._dynamic_steps[event.jid] = step
             return step
         elif isinstance(event, NewJobEvent):
-            step = Stage.TargetedStep(None, event.fun, -1)
+            step_name = event.args[0] if event.fun == 'state.sls' else event.fun
+            step = Stage.TargetedStep(None, step_name, -1)
             step.start(event)
+            for ex_step in self._dynamic_steps.values():
+                if (ex_step.name == step.name and ex_step.targets.keys() == event.targets and
+                        ex_step.args_str == step.args_str):
+                    # possible parsing generated duplicate
+                    return None
             self._dynamic_steps[event.jid] = step
             return step
 
@@ -258,13 +276,10 @@ class Stage(object):
         assert not curr_step.finished
 
         if event.jid == curr_step.jid:
-            # we still need to verify if state result matches current sub step
-            # curr_step.finish_sub_step(event.result)
-            # PP.println(PP.yellow(event))
-            # PP.println(PP.yellow(PP.format_dict(event.raw_event)))
-            pass
+            curr_step.state_result(event)
+            return curr_step
 
-        return curr_step
+        return None
 
     def check_if_current_step_will_run(self):
         assert self._executing
@@ -310,11 +325,12 @@ class MonitorListener(object):
         """
         pass
 
-    def stage_parsing_finished(self, stage):
+    def stage_parsing_finished(self, stage, output):
         """
         This function is called when a stage parsing finished
         Args:
             stage (Stage): the stage object or None if a parsing error occurred
+            output (str): the stdout output of parsing
         """
         pass
 
@@ -359,11 +375,12 @@ class MonitorListener(object):
         """
         pass
 
-    def step_state_result(self, event):
+    def step_state_result(self, step, event):
         """
         This function is called when a Salt state result is received
         Args:
-            step (saltevent.StateResultEvent): the event object
+            step (Stage.TargetedStep): the step upon this state result was stored
+            event (saltevent.StateResultEvent): the event object
         """
         pass
 
@@ -425,7 +442,6 @@ class Monitor(object):
     def __init__(self):
         self._processor = SaltEventProcessor()
         self._processor.add_listener(Monitor.DeepSeaEventListener(self))
-
         self._running_stage = None
         self.monitor_listeners = []
 
@@ -452,8 +468,9 @@ class Monitor(object):
         stage_name = event.args[0]
         self._fire_event('stage_started', stage_name)
         self._fire_event('stage_parsing_started', stage_name)
-        self._running_stage = Stage(stage_name, SLSParser.parse_state_steps(stage_name))
-        self._fire_event('stage_parsing_finished', self._running_stage)
+        parsed_steps, out = SLSParser.parse_state_steps(stage_name, False)
+        self._running_stage = Stage(stage_name, parsed_steps)
+        self._fire_event('stage_parsing_finished', self._running_stage, out)
         self._running_stage.start(event)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)
 
@@ -536,10 +553,10 @@ class Monitor(object):
         if not self._running_stage:
             # not inside a running stage, igore step
             return
-        # step = self._running_stage.state_result_step(event)
-        # if not step:
-        #     return
-        self._fire_event('step_state_result', event)
+        step = self._running_stage.state_result_step(event)
+        if not step:
+            return
+        self._fire_event('step_state_result', step, event)
 
     def start(self):
         """

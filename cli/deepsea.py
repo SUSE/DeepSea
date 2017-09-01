@@ -107,7 +107,7 @@ def _run_show_stage_steps(stage_name, cache):
     Runs stage parser and prints the list of steps
     """
     PP.p_header("Parsing stage: {}".format(stage_name))
-    steps = SLSParser.parse_state_steps(stage_name, False, cache)
+    steps, _ = SLSParser.parse_state_steps(stage_name, False, False, cache)
     print()
     PP.p_bold("List of steps for stage {}:".format(stage_name))
     print()

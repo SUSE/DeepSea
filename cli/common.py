@@ -15,10 +15,19 @@ def redirect_stdout(target):
     """
     Redirects the stdout to the target channel
     """
-    original = sys.stdout
     sys.stdout = target
     yield
-    sys.stdout = original
+    sys.stdout = sys.__stdout__
+
+
+@contextlib.contextmanager
+def redirect_stderr(target):
+    """
+    Redirects the stderr to the target channel
+    """
+    sys.stderr = target
+    yield
+    sys.stderr = sys.__stderr__
 
 
 class PrettyPrinter(object):

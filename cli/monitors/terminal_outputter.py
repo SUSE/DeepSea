@@ -54,8 +54,11 @@ class SimplePrinter(MonitorListener):
     def stage_parsing_started(self, stage_name):
         PP.print("Parsing stage {} steps... ".format(stage_name))
 
-    def stage_parsing_finished(self, stage):
+    def stage_parsing_finished(self, stage, output):
         PP.println("done")
+        PP.println()
+        PP.println("Stage initialization output:")
+        PP.println(output.strip())
         PP.println()
         self.total_steps = stage.total_steps()
 
@@ -206,6 +209,17 @@ class SimplePrinter(MonitorListener):
     def step_state_finished(self, step):
         self.current_step.pop()
 
+    def step_state_result(self, step, event):
+        if self.current_step:
+            if not self.current_step[-1]['endl']:
+                self.current_step[-1]['endl'] = True
+                PP.println()
+        if event.name == event.state_id:
+            PP.println("         |_  {} on {}".format(event.name, event.minion))
+        else:
+            PP.println("         |_  {}: {} on {}".format(event.state_id, event.name,
+                                                          event.minion))
+
     @staticmethod
     def format_runner_event(event):
         if event.fun.startswith('runner.'):
@@ -251,17 +265,6 @@ class SimplePrinter(MonitorListener):
                     args += ", {}".format(arg)
         # return "{}({}) on({})".format(fun_name, args, ", ".join(event.targets))
         return "{}({})".format(fun_name, args)
-
-    def step_state_result(self, event):
-        if self.current_step:
-            if not self.current_step[-1]['endl']:
-                self.current_step[-1]['endl'] = True
-                PP.println()
-        if event.name == event.state_id:
-            PP.println("         |_  {} on {}".format(event.name, event.minion))
-        else:
-            PP.println("         |_  {}: {} on {}".format(event.state_id, event.name,
-                                                          event.minion))
 
 
 class StepListPrinter(MonitorListener):
@@ -360,6 +363,9 @@ class StepListPrinter(MonitorListener):
             self.substeps[step.jid] = StepListPrinter.State(self.printer, step)
 
         def finish_substep(self, step):
+            if step.jid not in self.substeps:
+                logger.info("missed start event for this substep: %s", step.end_event)
+                return
             self.substeps[step.jid].finished = True
 
         # pylint: disable=W0613
@@ -378,9 +384,6 @@ class StepListPrinter(MonitorListener):
             """
             raise NotImplementedError()
 
-        def clean_count(self, desc_width):
-            raise NotImplementedError()
-
         @staticmethod
         def ftime(tr):
             if tr.seconds > 0:
@@ -391,15 +394,6 @@ class StepListPrinter(MonitorListener):
     class Runner(Step):
         def __init__(self, printer, step):
             super(StepListPrinter.Runner, self).__init__(printer, step)
-
-        def clean_count(self, desc_width):
-            total = 0
-            for substep in self.substeps.values():
-                total += substep.clean_count(desc_width-5)
-            total += 1
-            if self.args and len(self.step.name) + len(self.args)+2 >= desc_width:
-                total += len(StepListPrinter.format_desc(self.args, desc_width))
-            return total
 
         def clean(self, desc_width):
             for substep in self.substeps.values():
@@ -468,21 +462,6 @@ class StepListPrinter(MonitorListener):
             """
             self.state_results.append({'event': event, 'reprint': False})
 
-        def clean_count(self, desc_width):
-            total = 0
-            if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
-                total += len(StepListPrinter.format_desc(self.args, desc_width))
-            if self.step.skipped:
-                total += 1
-            else:
-                for substep in self.substeps.values():
-                    total += substep.clean_count(desc_width-5)
-                for state_res in self.state_results:
-                    if state_res['reprint']:
-                        total += 1
-                total += len(self.step.targets)+1
-            return total
-
         def clean(self, desc_width):
             if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
                 PP.print("\x1B[A\x1B[K" *
@@ -494,11 +473,10 @@ class StepListPrinter(MonitorListener):
                 for substep in self.substeps.values():
                     if substep.reprint:
                         substep.clean(desc_width-5)
-                for state_res in self.state_results:
-                    if state_res['reprint']:
-                        PP.print("\x1B[A\x1B[K")
 
-                PP.print("\x1B[A\x1B[K" * (len(self.step.targets)+1))
+                for target in self.step.targets.values():
+                    PP.print("\x1B[A\x1B[K" * (len(target['states'])+1))
+                PP.print("\x1B[A\x1B[K")
 
         def print(self, offset, desc_width, depth):
             super(StepListPrinter.State, self).print(offset, desc_width, depth)
@@ -555,23 +533,20 @@ class StepListPrinter(MonitorListener):
                     PP.println(" ({})"
                                .format(StepListPrinter.Step.ftime(ts-self.start_ts)))
 
-                for state_res in self.state_results:
-                    event = state_res['event']
-                    state_res['reprint'] = True
-                    if event.minion == target:
-                        if event.name == event.state_id:
-                            msg = event.name
-                        else:
-                            msg = "{}: {}".format(event.state_id, event.name)
-                        PP.print(" " * offset)
-                        PP.print(PP.grey("  |_ {}".format(msg)))
-                        msg_rest = desc_width - (len(msg) + 3) - 2
-                        msg_rest = 0 if msg_rest < 0 else msg_rest
-                        PP.print(PP.grey("{} ".format("." * msg_rest)))
-                        if event.result:
+                for state_res in data['states']:
+                    msg = state_res.step.pretty_string()
+                    PP.print(" " * offset)
+                    PP.print(PP.grey("  |_ {}".format(msg)))
+                    msg_rest = desc_width - (len(msg) + 3) - 2
+                    msg_rest = 0 if msg_rest < 0 else msg_rest
+                    PP.print(PP.grey("{} ".format("." * msg_rest)))
+                    if state_res.finished:
+                        if state_res.success:
                             PP.println(u"{}".format(StepListPrinter.OK))
                         else:
                             PP.println(u"{}".format(StepListPrinter.FAIL))
+                    else:
+                        PP.println(StepListPrinter.WAITING)
 
     class PrinterThread(threading.Thread):
         def __init__(self, printer):
@@ -617,10 +592,13 @@ class StepListPrinter(MonitorListener):
         PP.print(PP.info("Parsing {} steps... ".format(stage_name)))
         PP.println(StepListPrinter.WAITING)
 
-    def stage_parsing_finished(self, stage):
+    def stage_parsing_finished(self, stage, output):
         PP.print("\x1B[A\x1B[K")
         PP.print(PP.info("Parsing {} steps... ".format(stage.name)))
         PP.println(StepListPrinter.OK)
+        PP.println()
+        PP.println(PP.bold("Stage initialization output:"))
+        PP.println(output.strip())
         PP.println()
 
         self.stage = stage
@@ -712,7 +690,8 @@ class StepListPrinter(MonitorListener):
                 self.step.start_runner_substep(step)
             else:
                 self.step = StepListPrinter.Runner(self, step)
-                PP.println()
+                if step.order > 0:
+                    PP.println()
             self.print_step(self.step)
 
     def step_runner_finished(self, step):
@@ -723,9 +702,9 @@ class StepListPrinter(MonitorListener):
         with self.print_lock:
             if self.step and self.step.step.jid != step.jid:
                 self.step.finish_substep(step)
-            else:
+            elif self.step:
                 self.step.finished = True
-            self.print_step(self.step)
+                self.print_step(self.step)
 
             if self.step.step.jid == step.jid:
                 self.step = None
@@ -736,7 +715,8 @@ class StepListPrinter(MonitorListener):
                 self.step.start_state_substep(step)
             else:
                 self.step = StepListPrinter.State(self, step)
-                PP.println()
+                if step.order > 0:
+                    PP.println()
 
             self.print_step(self.step)
 
@@ -749,16 +729,16 @@ class StepListPrinter(MonitorListener):
         with self.print_lock:
             if self.step and self.step.step.jid != step.jid:
                 self.step.finish_substep(step)
-            else:
+            elif self.step:
                 self.step.finished = True
-            self.print_step(self.step)
+                self.print_step(self.step)
 
     def step_state_finished(self, step):
         with self.print_lock:
-            if self.step.step.jid == step.jid:
+            if self.step and self.step.step.jid == step.jid:
                 self.step = None
 
-    def step_state_result(self, event):
+    def step_state_result(self, step, event):
         with self.print_lock:
             assert self.step
             assert isinstance(self.step, StepListPrinter.State)
