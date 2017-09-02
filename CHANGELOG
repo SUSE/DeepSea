@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Fri Sep  1 15:28:05 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.26
+- Handle missing instance of ceph.conf for rgw
+
+-------------------------------------------------------------------
+Thu Aug 31 21:43:33 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.25
+- Fix net.iperf
+- Fix ceph.conf for rgw
+
+-------------------------------------------------------------------
 Wed Aug 30 22:39:52 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.24
