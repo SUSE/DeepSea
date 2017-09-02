@@ -81,20 +81,22 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         p_result = _create_client(public_addresses)
         _create_server(cluster_addresses)
         c_result = _create_client(cluster_addresses)
+        p_sort = _add_unit(sorted(p_result.items(),
+                                  key=operator.itemgetter(1)))
+        c_sort = _add_unit(sorted(c_result.items(),
+                                  key=operator.itemgetter(1)))
 
         if output:
-            result.update({'Public Network': p_result})
-            result.update({'Cluster Network': c_result})
+            result.update({'Public Network': p_sort})
+            result.update({'Cluster Network': c_sort})
             return result
         else:
-            sort_result = sorted(p_result.items(), key=operator.itemgetter(1))
             result.update({'Public Network':
-                           {"Slowest 2 hosts": dict(sort_result[:2]),
-                            "Fastest 2 hosts": dict(sort_result[-2:])}})
-            sort_result = sorted(c_result.items(), key=operator.itemgetter(1))
+                           {"Slowest 2 hosts": p_sort[:2],
+                            "Fastest 2 hosts": p_sort[-2:]}})
             result.update({'Cluster Network':
-                           {"Slowest 2 hosts": dict(sort_result[:2]),
-                            "Fastest 2 hosts": dict(sort_result[-2:])}})
+                           {"Slowest 2 hosts": c_sort[:2],
+                            "Fastest 2 hosts": c_sort[-2:]}})
             return result
     else:
         search = deepsea_minions.DeepseaMinions().deepsea_minions
@@ -117,14 +119,21 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
             pass
         _create_server(addresses)
         result = _create_client(addresses)
-        # log.debug( "Sorted {} ".format(
-        #       sorted( server_results.items(), key=operator.itemgetter(1))))
+        sort_result = _add_unit(sorted(result.items(),
+                                       key=operator.itemgetter(1)))
         if output:
-            return result
+            return sort_result
         else:
-            sort_result = sorted(result.items(), key=operator.itemgetter(1))
-            return {"Slowest 2 hosts": dict(sort_result[:2]),
-                    "Fastest 2 hosts": dict(sort_result[-2:])}
+            return {"Slowest 2 hosts": sort_result[:2],
+                    "Fastest 2 hosts": sort_result[-2:]}
+
+
+def _add_unit(records):
+    stuff = []
+    for host in enumerate(records):
+        log.debug("Host {} Speed {}".format(host[1][0], host[1][1]))
+        stuff.append([host[1][0],  "{} Mbits/sec".format(host[1][1])])
+    return stuff
 
 
 def _create_server(addresses):
@@ -439,6 +448,8 @@ def _summarize_iperf(results):
                 # print "filter:\n{}".format(result[host]['filter'])
                 server_results[result[host]['server']] +=\
                         " " + result[host]['filter']
+                log.debug("Speed {}".
+                          format(server_results[result[host]['server']]))
             elif result[host]['failed']:
                 # print "failed:\n{}".format(result[host]['failed'])
                 server_results[result[host]['server']] +=\
@@ -446,7 +457,7 @@ def _summarize_iperf(results):
             elif result[host]['errored']:
                 # print "errored :\n{}".format(result[host]['errored'])
                 server_results[result[host]['server']] +=\
-                        " Error to execute iperf from {} check installation.".format(host)
+                        " {} iperf error check installation.".format(host)
 
     for key, result in server_results.iteritems():
         total = 0
@@ -455,8 +466,8 @@ def _summarize_iperf(results):
         try:
             for v in speed:
                 total += float(v.strip())
-            server_results[key] = str(total) + " Mbits/sec"
-            # server_results[key] = str(total)
+            # server_results[key] = str(total) + " Mbits/sec"
+            server_results[key] = int(total)
         except ValueError:
             continue
     return server_results
