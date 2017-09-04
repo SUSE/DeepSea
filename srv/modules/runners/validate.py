@@ -43,13 +43,20 @@ class bcolors:
 class PrettyPrinter:
 
     def add(self, name, passed, errors, warnings):
+        format_str=""
         # Need to make colors optional, but looks better currently
         for attr in passed.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
+            format_str="{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, passed[attr], bcolors.ENDC)
+            log.info("VALIDATE " + format_str)
+            print format_str
         for attr in errors.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
+            format_str="{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.FAIL, errors[attr], bcolors.ENDC)
+            log.error("VALIDATE " + format_str)
+            print format_str
         for attr in warnings.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, warnings[attr], bcolors.ENDC)
+            format_str="{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, warnings[attr], bcolors.ENDC)
+            log.warning("VALIDATE " + format_str)
+            print format_str
 
     def print_result(self):
         pass
