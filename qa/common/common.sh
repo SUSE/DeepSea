@@ -258,7 +258,7 @@ function cat_global_conf {
 }
 
 function cat_ceph_conf {
-  cat /etc/ceph/ceph.conf
+  salt '*' cmd.run "cat /etc/ceph/ceph.conf"
 }
 
 function admin_auth_status {
