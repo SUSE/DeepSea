@@ -205,12 +205,25 @@ EOF
 
 # NOTE: RGW does not coexist well with openATTIC
 function policy_cfg_openattic_with_rgw {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+  local TOTALNODES=$(json_total_nodes)
+  test ! -z "$TOTALNODES"
+  if [ "x$TOTALNODES" = "x1" ] ; then
+    echo "Only one node in cluster; colocating rgw and openattic roles"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (colocate with openattic on first node)
+role-rgw/cluster/*.sls slice=[:1]
+EOF
+  else
+    echo "Deploying rgw and openattic roles on separate nodes"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - openattic (first node)
 role-openattic/cluster/*.sls slice=[:1]
 # Role assignment - rgw (second node)
 role-rgw/cluster/*.sls slice=[1:2]
 EOF
+  fi
 }
 
 function policy_cfg_igw {
