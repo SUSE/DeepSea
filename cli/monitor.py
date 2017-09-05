@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import logging
 import operator
+import threading
 
 from .common import PrettyPrinter as PP
 from .saltevent import SaltEventProcessor
@@ -89,7 +90,8 @@ class Stage(object):
                 self.targets[target] = {
                     'finished': False,
                     'success': None,
-                    'states': [Stage.Step(s.step, s.name, s.order) for s in self.sub_steps]
+                    'states': [Stage.Step(s.step, s.name, s.order) for s in self.sub_steps
+                               if s.step.target == target]
                 }
 
         def finish(self, event):
@@ -105,7 +107,8 @@ class Stage(object):
         def state_result(self, event):
             for sstep in self.targets[event.minion]['states']:
                 if isinstance(sstep.step, SaltModule):
-                    if sstep.name == event.name:
+                    logger.info("state_result: SaltModule step=%s event=%s", sstep.name, event.name)
+                    if sstep.name == event.name or sstep.name == event.state_id:
                         sstep.success = event.result
                         sstep.finished = True
                         sstep.end_event = event
@@ -113,7 +116,8 @@ class Stage(object):
                     name = sstep.step.get_arg('name')
                     if not name:
                         name = sstep.step.desc
-                    if name == event.name:
+                    logger.info("state_result: SaltBuiltIn step=%s event=%s", name, event.name)
+                    if name == event.name or name == event.state_id:
                         sstep.success = event.result
                         sstep.finished = True
                         sstep.end_event = event
@@ -175,15 +179,15 @@ class Stage(object):
         if self.current_step >= len(self._steps):
             return None
 
+        curr_step = self._steps[self.current_step]
+
         if isinstance(event, NewRunnerEvent):
-            curr_step = self._steps[self.current_step]
             if isinstance(curr_step.step, SaltRunner):
                 if not curr_step.jid and curr_step.name == event.fun[7:]:
                     curr_step.start(event)
                     return curr_step
 
         elif isinstance(event, NewJobEvent):
-            curr_step = self._steps[self.current_step]
             if isinstance(curr_step, Stage.TargetedStep):
                 step_name = event.args[0] if event.fun == 'state.sls' else event.fun
                 if not curr_step.jid and curr_step.name == step_name:
@@ -193,26 +197,35 @@ class Stage(object):
         else:
             assert False
 
+        if curr_step.end_event is not None:
+            # only allow dynamic steps as substeps after the first step
+            return None
+
         # this step is not part of stage parsed steps
         if isinstance(event, NewRunnerEvent):
             step = Stage.Step(None, event.fun[7:], -1)
             step.start(event)
-            for ex_step in self._dynamic_steps.values():
-                if (ex_step.name == step.name and not ex_step.finished and
-                        ex_step.args_str == step.args_str):
-                    # possible parsing generated duplicate
-                    return None
+            if self.current_step == 0 and curr_step.start_event is None:
+                # check for duplicates before starting step 1
+                for ex_step in self._dynamic_steps.values():
+                    if (ex_step.name == step.name and
+                            ex_step.args_str == step.args_str):
+                        logger.info("FOUND DUPLICATE: %s(%s)", ex_step.name, ex_step.args_str)
+                        # possible parsing generated duplicate
+                        return None
             self._dynamic_steps[event.jid] = step
             return step
         elif isinstance(event, NewJobEvent):
             step_name = event.args[0] if event.fun == 'state.sls' else event.fun
             step = Stage.TargetedStep(None, step_name, -1)
             step.start(event)
-            for ex_step in self._dynamic_steps.values():
-                if (ex_step.name == step.name and ex_step.targets.keys() == event.targets and
-                        ex_step.args_str == step.args_str):
-                    # possible parsing generated duplicate
-                    return None
+            if self.current_step == 0 and curr_step.start_event is None:
+                # check for duplicates before starting step 1
+                for ex_step in self._dynamic_steps.values():
+                    if (ex_step.name == step.name and ex_step.targets.keys() == event.targets and
+                            ex_step.args_str == step.args_str):
+                        # possible parsing generated duplicate
+                        return None
             self._dynamic_steps[event.jid] = step
             return step
 
@@ -393,10 +406,20 @@ class MonitorListener(object):
         pass
 
 
-class Monitor(object):
+class Monitor(threading.Thread):
     """
     Stage monitoring class
     """
+
+    class Event(object):
+        def __init__(self, monitor, func, event):
+            self.monitor = monitor
+            self.func = func
+            self.event = event
+
+        def call(self):
+            logger.debug("handle: %s", self.event)
+            getattr(self.monitor, self.func)(self.event)
 
     class DeepSeaEventListener(EventListener):
         """
@@ -408,42 +431,96 @@ class Monitor(object):
         def handle_new_runner_event(self, event):
             if 'pillar' in event.fun or 'saltutil.find_job' in event.fun:
                 return
-            logger.debug("handle: %s", event)
+            logger.debug("buffer: %s", event)
             if event.fun == 'runner.state.orch':
-                self.monitor.start_stage(event)
+                self.monitor.append_event(Monitor.Event(self.monitor, 'start_stage', event))
             else:
-                self.monitor.start_step(event)
+                self.monitor.append_event(Monitor.Event(self.monitor, 'start_step', event))
 
         def handle_ret_runner_event(self, event):
             if 'pillar' in event.fun or 'saltutil.find_job' in event.fun:
                 return
-            logger.debug("handle: %s", event)
+            logger.debug("buffer: %s", event)
             if event.fun == 'runner.state.orch':
-                self.monitor.end_stage(event)
+                self.monitor.append_event(Monitor.Event(self.monitor, 'end_stage', event))
             else:
-                self.monitor.end_step(event)
+                self.monitor.append_event(Monitor.Event(self.monitor, 'end_step', event))
 
         def handle_new_job_event(self, event):
             if 'pillar' in event.fun or 'saltutil.find_job' in event.fun or 'grains' in event.fun:
                 return
-            logger.debug("handle: %s", event)
-            self.monitor.start_step(event)
+            if event.fun == 'deepsea.render_sls':
+                return
+            logger.debug("buffer: %s", event)
+            self.monitor.append_event(Monitor.Event(self.monitor, 'start_step', event))
 
         def handle_ret_job_event(self, event):
             if 'pillar' in event.fun or 'saltutil.find_job' in event.fun or 'grains' in event.fun:
                 return
-            logger.debug("handle: %s", event)
-            self.monitor.end_step(event)
+            if event.fun == 'deepsea.render_sls':
+                return
+            logger.debug("buffer: %s", event)
+            self.monitor.append_event(Monitor.Event(self.monitor, 'end_step', event))
 
         def handle_state_result_event(self, event):
-            logger.debug("handle: %s", event)
-            self.monitor.state_result_step(event)
+            logger.debug("buffer: %s", event)
+            self.monitor.append_event(Monitor.Event(self.monitor, 'state_result_step', event))
 
-    def __init__(self):
+    def __init__(self, show_state_steps):
+        super(Monitor, self).__init__()
         self._processor = SaltEventProcessor()
         self._processor.add_listener(Monitor.DeepSeaEventListener(self))
+        self._show_state_steps = show_state_steps
         self._running_stage = None
-        self.monitor_listeners = []
+        self._monitor_listeners = []
+        self._event_lock = threading.Lock()
+        self._event_cond = threading.Condition(self._event_lock)
+        self._event_buffer = []
+        self._running = False
+
+    def append_event(self, event):
+        with self._event_cond:
+            self._event_buffer.append(event)
+            self._event_cond.notify()
+
+    def start(self):
+        """
+        Start the monitoring thread
+        """
+        logger.info("Starting the DeepSea event monitoring")
+        self._processor.start()
+        super(Monitor, self).start()
+
+    def stop(self):
+        """
+        Stop the monitoring thread
+        """
+        logger.info("Stopping the DeepSea event monitoring")
+        self._running = False
+        self._processor.stop()
+
+    def wait_to_finish(self):
+        """
+        Blocks until the Salt event processor thread finishes
+        """
+        self._processor.join()
+        self.join()
+
+    def is_running(self):
+        """
+        Checks wheather the Salt event process is still runnning
+        """
+        return self._processor.is_running() and self._running
+
+    def run(self):
+        self._running = True
+        while self._running:
+            with self._event_cond:
+                if self._event_buffer:
+                    event = self._event_buffer.pop(0)
+                    event.call()
+                else:
+                    self._event_cond.wait(0.2)
 
     def add_listener(self, listener):
         """
@@ -452,11 +529,11 @@ class Monitor(object):
             listener (MonitorListener): the listener object
         """
         assert isinstance(listener, MonitorListener)
-        self.monitor_listeners.append(listener)
+        self._monitor_listeners.append(listener)
 
     def _fire_event(self, event, *args):
         logger.debug("fire event: %s", event)
-        for listener in self.monitor_listeners:
+        for listener in self._monitor_listeners:
             getattr(listener, event)(*args)
 
     def start_stage(self, event):
@@ -468,7 +545,7 @@ class Monitor(object):
         stage_name = event.args[0]
         self._fire_event('stage_started', stage_name)
         self._fire_event('stage_parsing_started', stage_name)
-        parsed_steps, out = SLSParser.parse_state_steps(stage_name, False)
+        parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps, True, False)
         self._running_stage = Stage(stage_name, parsed_steps)
         self._fire_event('stage_parsing_finished', self._running_stage, out)
         self._running_stage.start(event)
@@ -556,30 +633,5 @@ class Monitor(object):
         step = self._running_stage.state_result_step(event)
         if not step:
             return
+        logger.info("State Result: %s", event.raw_event)
         self._fire_event('step_state_result', step, event)
-
-    def start(self):
-        """
-        Start the monitoring thread
-        """
-        logger.info("Starting the DeepSea event monitoring")
-        self._processor.start()
-
-    def stop(self):
-        """
-        Stop the monitoring thread
-        """
-        logger.info("Stopping the DeepSea event monitoring")
-        self._processor.stop()
-
-    def wait_to_finish(self):
-        """
-        Blocks until the Salt event processor thread finishes
-        """
-        self._processor.join()
-
-    def is_running(self):
-        """
-        Checks wheather the Salt event process is still runnning
-        """
-        return self._processor.is_running()

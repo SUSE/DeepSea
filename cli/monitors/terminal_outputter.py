@@ -14,6 +14,7 @@ import time
 
 from ..common import PrettyPrinter as PP
 from ..monitor import MonitorListener
+from ..saltevent import NewRunnerEvent, NewJobEvent
 
 # pylint: disable=C0111
 # pylint: disable=C0103
@@ -686,7 +687,7 @@ class StepListPrinter(MonitorListener):
 
     def step_runner_started(self, step):
         with self.print_lock:
-            if self.step:
+            if self.step and isinstance(self.step.step.start_event, NewJobEvent):
                 self.step.start_runner_substep(step)
             else:
                 self.step = StepListPrinter.Runner(self, step)
@@ -711,7 +712,7 @@ class StepListPrinter(MonitorListener):
 
     def step_state_started(self, step):
         with self.print_lock:
-            if self.step:
+            if self.step and isinstance(self.step.step.start_event, NewRunnerEvent):
                 self.step.start_state_substep(step)
             else:
                 self.step = StepListPrinter.State(self, step)

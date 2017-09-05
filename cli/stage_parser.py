@@ -11,6 +11,9 @@ import os
 import pickle
 import StringIO
 
+from collections import OrderedDict, defaultdict
+from concurrent.futures import ThreadPoolExecutor
+
 import salt.client
 
 from .common import redirect_stdout, redirect_stderr
@@ -23,6 +26,7 @@ logger = logging.getLogger(__name__)
 __opts__ = salt.config.minion_config('/etc/salt/minion')
 __opts__['file_client'] = 'local'
 __caller__ = salt.client.Caller(mopts=__opts__)
+__local__ = salt.client.LocalClient()
 
 
 class OrchestrationNotFound(Exception):
@@ -30,6 +34,9 @@ class OrchestrationNotFound(Exception):
     No orchestration file found exception
     """
     pass
+
+
+executor = ThreadPoolExecutor(max_workers=5)
 
 
 class SLSRenderer(object):
@@ -48,10 +55,73 @@ class SLSRenderer(object):
         out = StringIO.StringIO()
         with redirect_stderr(err):
             with redirect_stdout(out):
-                result = __caller__.cmd('slsutil.renderer', file_name, print_event=False)
-        logger.info("Parsed SLS file %s, stdout\n%s", file_name, out.getvalue())
-        logger.debug("Parsed SLS file %s, stderr\n%s", file_name, err.getvalue())
+                result = __caller__.cmd('slsutil.renderer', file_name)
+        logger.info("Rendered SLS file %s, stdout\n%s", file_name, out.getvalue())
+        logger.debug("Rendered SLS file %s, stderr\n%s", file_name, err.getvalue())
         return result, out.getvalue(), err.getvalue()
+
+    @staticmethod
+    def _deserialize_ordered_dict(udict):
+        """
+        Constructs an OrdereredDict from a standard python dictionary
+        """
+        if not isinstance(udict, dict) and not isinstance(udict, list):
+            return udict
+
+        if isinstance(udict, list):
+            return [SLSRenderer._deserialize_ordered_dict(e) for e in udict]
+
+        result = OrderedDict()
+        kv_array = [(key, val) for key, val in udict.items()]
+        kv_array.sort(key=lambda (_, val): val['__order__'])
+        for key, val in kv_array:
+            result[key] = SLSRenderer._deserialize_ordered_dict(val['__val__'])
+        return result
+
+    @staticmethod
+    def render_state(state_name, target):
+        """
+        This function makes use of slsutil salt module to render sls files in the target minions
+        Args:
+            file_name (str): the sls file path
+            target (str): the minion id
+        """
+        result = __local__.cmd(target, 'deepsea.render_sls', [state_name], expr_form="compound")
+        nres = {}
+        for key, val in result.items():
+            nres[key] = SLSRenderer._deserialize_ordered_dict(val)
+        logger.info("Rendered state %s for minions=%s", state_name, nres.keys())
+        return nres
+
+    @staticmethod
+    def render_states(target_states):
+        """
+        This function makes use of slsutil salt module to render state sls in the target minions
+        Args:
+            target_states (dict): dictionary where key is the minion target and value the
+                                  list of states
+        """
+        result = {}
+        for target, states in target_states.items():
+            logger.info("Rendering states=%s on=%s", states, target)
+            out = __local__.cmd(target, 'deepsea.render_sls', [states], expr_form="compound")
+            for key, val in out.items():
+                for state_name, content in val.items():
+                    if state_name not in result:
+                        result[state_name] = {}
+                    result[state_name][key] = SLSRenderer._deserialize_ordered_dict(content)
+        for key, val in result.items():
+            logger.info("Rendered state %s for minions=%s", key, val.keys())
+        return result
+
+    @staticmethod
+    def async_render(file_name):
+        """
+        Asynchronous version of SLSRenderer.render function
+
+        Returns Future
+        """
+        return executor.submit(SLSRenderer.render, file_name)
 
 
 class SLSParser(object):
@@ -121,25 +191,106 @@ class SLSParser(object):
         return "{}.{}".format(parent_state, include)
 
     @staticmethod
-    def _traverse_state(state_name, stages_only, only_visible_steps, cache):
+    def _traverse_state_dict(state_dict, minion, only_visible_steps):
+        """
+        Parses the all steps (actions) triggered by the execution of a state file.
+        It recursevely follows "include" directives, and state files.
+        Args:
+            state_name (str): the salt state name, e.g., ceph.stage.1
+            only_visible_steps (bool): wheather to parse state declarations that have
+                                       fire_event=True
+            cache (bool): wheather load/store the results in a cache file
+
+        Returns:
+            list(StepType): a list of steps
+        """
+        result = []
+        for key, steps in state_dict.items():
+            if isinstance(steps, dict):
+                for fun, args in steps.items():
+                    logger.debug("Parsing step: desc={} fun={} step={}"
+                                 .format(key, fun, args))
+                    if fun == 'module.run':
+                        module = SaltModule(key, minion, args)
+                        if not only_visible_steps or module.get_arg('fire_event'):
+                            result.append(module)
+                    else:
+                        builtin = SaltBuiltIn(key, fun, minion, args)
+                        if not only_visible_steps or builtin.get_arg('fire_event'):
+                            result.append(builtin)
+
+        return result
+
+    @staticmethod
+    def _traverse_state(state_name, target, only_visible_steps, cache):
+        """
+        Parses the all steps (actions) triggered by the execution of a state file.
+        It recursevely follows "include" directives, and state files.
+        Args:
+            state_name (str): the salt state name, e.g., ceph.stage.1
+            only_visible_steps (bool): wheather to parse state declarations that have
+                                       fire_event=True
+            cache (bool): wheather load/store the results in a cache file
+
+        Returns:
+            list(StepType): a list of steps
+        """
+
+        cache_file_path = '{}/{}_{}_{}_{}.bin'.format(SLSParser._CACHE_DIR_PATH_,
+                                                      SLSParser._CACHE_FILE_PREFIX_,
+                                                      state_name, only_visible_steps, target)
+        if cache:
+            if os.path.exists(cache_file_path):
+                logger.info("state %s found in cache, loading from cache...", state_name)
+                # pylint: disable=W8470
+                with open(cache_file_path, mode='rb') as binfile:
+                    return pickle.load(binfile)
+
+        result = []
+        # path = SLSParser._state_file_path(state_name)
+        logger.info("Parsing state: %s", state_name)
+        state_dict_minions = SLSRenderer.render_state(state_name, target)
+        for minion, state_dict in state_dict_minions.items():
+            for key, steps in state_dict.items():
+                if isinstance(steps, dict):
+                    for fun, args in steps.items():
+                        logger.debug("Parsing step: desc={} fun={} step={}"
+                                     .format(key, fun, args))
+                        if fun == 'module.run':
+                            module = SaltModule(key, minion, args)
+                            if not only_visible_steps or module.get_arg('fire_event'):
+                                result.append(module)
+                        else:
+                            builtin = SaltBuiltIn(key, fun, minion, args)
+                            if not only_visible_steps or builtin.get_arg('fire_event'):
+                                result.append(builtin)
+
+        if cache:
+            # pylint: disable=W8470
+            with open(cache_file_path, mode='wb') as binfile:
+                pickle.dump(result, binfile)
+
+        return result
+
+    @staticmethod
+    def _traverse_stage(state_name, stages_only, only_visible_steps, cache):
         """
         Parses the all steps (actions) triggered by the execution of a state file.
         It recursevely follows "include" directives, and state files.
         Args:
             state_name (str): the salt state name, e.g., ceph.stage.1
             stages_only (bool): only parse stages sls files
-            only_visible_steps (bool): wheather to parse state declarations that have fire_event=True
+            only_visible_steps (bool): wheather to parse state declarations that have
+                                       fire_event=True
             cache (bool): wheather load/store the results in a cache file
 
         Returns:
             list(StepType): a list of steps
         """
-        if stages_only and not state_name.startswith('ceph.stage'):
-            return [], ""
-
-        cache_file_path = '{}/{}_{}_{}.bin'.format(SLSParser._CACHE_DIR_PATH_,
-                                                   SLSParser._CACHE_FILE_PREFIX_,
-                                                   stages_only, state_name)
+        cache_file_path = '{}/{}_{}_{}_{}.bin'.format(SLSParser._CACHE_DIR_PATH_,
+                                                      SLSParser._CACHE_FILE_PREFIX_,
+                                                      stages_only, only_visible_steps,
+                                                      state_name)
         if cache:
             if os.path.exists(cache_file_path):
                 logger.info("state %s found in cache, loading from cache...", state_name)
@@ -149,15 +300,15 @@ class SLSParser(object):
 
         result = []
         path = SLSParser._state_file_path(state_name)
-        state_dict, out, _ = SLSRenderer.render(path)
         logger.info("Parsing state file: %s", path)
+        state_dict, out, _ = SLSRenderer.render(path)
         for key, steps in state_dict.items():
             if key == 'include':
                 for inc in state_dict['include']:
                     logger.debug("Handling include of: parent={} include={}"
                                  .format(state_name, inc))
                     include_state_name = SLSParser._gen_state_name_from_include(state_name, inc)
-                    sub_res, sub_out = SLSParser._traverse_state(include_state_name, stages_only,
+                    sub_res, sub_out = SLSParser._traverse_stage(include_state_name, stages_only,
                                                                  only_visible_steps, cache)
                     result.extend(sub_res)
                     if sub_out:
@@ -169,21 +320,39 @@ class SLSParser(object):
                         if fun == 'salt.state':
                             state = SaltState(key, args)
                             result.append(state)
-                            sub_res, sub_out = SLSParser._traverse_state(state.state, stages_only,
-                                                                         only_visible_steps, cache)
-                            result.extend(sub_res)
-                            if sub_out:
-                                out += "\n{}".format(sub_out)
+                            # if not stages_only:
+                            #     sub_res = SLSParser._traverse_state(state.state, state.target,
+                            #                                         only_visible_steps, cache)
+                            #     result.extend(sub_res)
                         elif fun == 'salt.runner':
                             result.append(SaltRunner(key, args))
                         elif fun == 'module.run':
-                            module = SaltModule(key, args)
+                            module = SaltModule(key, None, args)
+                            module.target = module.get_arg('tgt')
                             if not only_visible_steps or module.get_arg('fire_event'):
                                 result.append(module)
                         else:
-                            builtin = SaltBuiltIn(key, fun, args)
+                            builtin = SaltBuiltIn(key, fun, None, args)
+                            builtin.target = builtin.get_arg('tgt')
                             if not only_visible_steps or builtin.get_arg('fire_event'):
                                 result.append(builtin)
+
+        if not stages_only:
+            render_states = defaultdict(list)
+            for state in result:
+                if isinstance(state, SaltState) and not state.rendered:
+                    render_states[state.target].append(state.state)
+
+            rendered_states = SLSRenderer.render_states(render_states)
+            nresult = []
+            for state in result:
+                nresult.append(state)
+                if isinstance(state, SaltState) and not state.rendered:
+                    state.rendered = True
+                    for minion, state_dict in rendered_states[state.state].items():
+                        nresult.extend(SLSParser._traverse_state_dict(state_dict, minion,
+                                                                      only_visible_steps))
+            result = nresult
 
         if cache:
             # pylint: disable=W8470
@@ -231,7 +400,8 @@ class SLSParser(object):
             list(StepType): a list of steps
             str: the parsing stdout
         """
-        result, out = SLSParser._traverse_state(state_name, stages_only, only_visible_steps, cache)
+        result, out = SLSParser._traverse_stage(state_name, stages_only, only_visible_steps,
+                                                cache)
 
         def process_requisite_directive(step, directive):
             """
@@ -331,6 +501,7 @@ class SaltState(SaltStep):
         if not self.state:
             self.state = self.get_arg('name')
         self.target = self.get_arg('tgt')
+        self.rendered = False
 
     def __str__(self):
         return "SaltState(desc: {}, state: {}, target: {})".format(self.desc, self.state,
@@ -353,9 +524,10 @@ class SaltModule(SaltStep):
     """
     Class to represent a Salt module step
     """
-    def __init__(self, desc, args):
+    def __init__(self, desc, target, args):
         super(SaltModule, self).__init__(desc, args)
         self.fun = self.get_arg('name')
+        self.target = target
 
     def pretty_string(self):
         def process_args(args):
@@ -400,9 +572,10 @@ class SaltBuiltIn(SaltStep):
     Built-in commands like cmd.run and file.managed need
     to be condensed.
     """
-    def __init__(self, desc, fun, args):
+    def __init__(self, desc, fun, target, args):
         super(SaltBuiltIn, self).__init__(desc, args)
         self.fun = fun
+        self.target = target
         self.args = dict()
         for arg in args:
             if isinstance(arg, dict):

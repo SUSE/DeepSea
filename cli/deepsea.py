@@ -52,11 +52,11 @@ def _setup_logging(log_level, log_file):
     })
 
 
-def _run_monitor(simple_output):
+def _run_monitor(show_state_steps, simple_output):
     """
     Run the DeepSea stage monitor and progress visualizer
     """
-    mon = Monitor()
+    mon = Monitor(show_state_steps)
     listener = SimplePrinter() if simple_output else StepListPrinter()
     mon.add_listener(listener)
 
@@ -102,12 +102,13 @@ def _run_monitor(simple_output):
         mon.wait_to_finish()
 
 
-def _run_show_stage_steps(stage_name, cache):
+def _run_show_stage_steps(stage_name, only_stage_steps, only_visible_steps, use_cache):
     """
     Runs stage parser and prints the list of steps
     """
     PP.p_header("Parsing stage: {}".format(stage_name))
-    steps, _ = SLSParser.parse_state_steps(stage_name, False, False, cache)
+    steps, _ = SLSParser.parse_state_steps(stage_name, only_stage_steps, only_visible_steps,
+                                           use_cache)
     print()
     PP.p_bold("List of steps for stage {}:".format(stage_name))
     print()
@@ -183,31 +184,48 @@ def _run_show_stage_steps(stage_name, cache):
               type=click.Path(dir_okay=False),
               help="the file path for the log to be stored (default: /var/log/deepsea.log)")
 def cli(log_level, log_file):
+    """
+    CLI entry point
+    """
     _setup_logging(log_level, log_file)
 
 
 @click.command(short_help='starts DeepSea progress monitor')
+@click.option('--show-state-steps', is_flag=True, help="shows state visible steps progress")
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
-def monitor(clear_cache, simple_output):
+def monitor(show_state_steps, clear_cache, simple_output):
+    """
+    CLI 'monitor' command
+    """
     if clear_cache:
         SLSParser.clean_cache(None)
-    _run_monitor(simple_output)
+    _run_monitor(show_state_steps, simple_output)
 
 
 @click.group(short_help='stage related commands')
 def stage():
+    """
+    CLI 'stage' group command
+    """
     pass
 
 
 @click.command(name='show', short_help='show DeepSea stage steps')
 @click.argument('stage_name', 'the DeepSea stage name')
+@click.option('--only-stage-steps', is_flag=True,
+              help="this will disable state files steps from being parsed")
+@click.option('--only-visible-steps', is_flag=True,
+              help="only show the steps that will generate events in the Salt Event Bus")
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
 @click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
-def stage_show(stage_name, clear_cache, no_cache):
+def stage_show(stage_name, only_stage_steps, only_visible_steps, clear_cache, no_cache):
+    """
+    CLI 'stage show' command
+    """
     if clear_cache:
         SLSParser.clean_cache(None)
-    _run_show_stage_steps(stage_name, not no_cache)
+    _run_show_stage_steps(stage_name, only_stage_steps, only_visible_steps, not no_cache)
 
 
 def main():
