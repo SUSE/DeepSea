@@ -13,6 +13,7 @@ prep clients:
       - ceph.cephfs.benchmarks.prepare_clients
     - pillar:
         'mount_mon_hosts': {{ salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='mon') | join(',') }}
+        'mount_opts': -o name=deepsea_cephfs_bench,secretfile=/etc/ceph/ceph.client.deepsea_cephfs_bench.secret,{{ salt['pillar.get']('benchmark:extra_mount_opts') }}
 
 one subdir:
   salt.state:

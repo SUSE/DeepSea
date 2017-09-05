@@ -6,3 +6,5 @@ benchmark:
   # location where run logs end up on the master node
   log-file-directory: /var/log/ceph_bench_logs
   default-collection: simple.yml
+  # extra mount options for each client to use
+  extra_mount_opts: nocrc
