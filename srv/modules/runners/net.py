@@ -442,8 +442,8 @@ def _summarize_iperf(results):
     for result in results:
         for host in result:
             log.debug("Server {}".format(result[host]['server']))
-        if not result[host]['server'] in server_results:
-            server_results.update({result[host]['server']: ""})
+            if not result[host]['server'] in server_results:
+                server_results.update({result[host]['server']: ""})
             if result[host]['succeeded']:
                 # print "filter:\n{}".format(result[host]['filter'])
                 server_results[result[host]['server']] +=\
