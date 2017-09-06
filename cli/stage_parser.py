@@ -106,6 +106,12 @@ class SLSRenderer(object):
             logger.info("Rendering states=%s on=%s", states, target)
             out = __local__.cmd(target, 'deepsea.render_sls', [states], expr_form="compound")
             for key, val in out.items():
+                if isinstance(val, str):
+                    logger.info("call to deepsea module returned: %s", val)
+                    if val.endswith("is not available."):
+                        logger.info("deepsea module not available: syncing modules")
+                        __local__.cmd(target, 'saltutil.sync_modules', [], expr_form="compound")
+                        return SLSRenderer.render_states(target_states)
                 for state_name, content in val.items():
                     if state_name not in result:
                         result[state_name] = {}
