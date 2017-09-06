@@ -205,6 +205,8 @@ class SLSParser(object):
             list(StepType): a list of steps
         """
         result = []
+        if not state_dict:
+            return result
         for key, steps in state_dict.items():
             if isinstance(steps, dict):
                 for fun, args in steps.items():
@@ -320,10 +322,6 @@ class SLSParser(object):
                         if fun == 'salt.state':
                             state = SaltState(key, args)
                             result.append(state)
-                            # if not stages_only:
-                            #     sub_res = SLSParser._traverse_state(state.state, state.target,
-                            #                                         only_visible_steps, cache)
-                            #     result.extend(sub_res)
                         elif fun == 'salt.runner':
                             result.append(SaltRunner(key, args))
                         elif fun == 'module.run':

@@ -52,11 +52,11 @@ def _setup_logging(log_level, log_file):
     })
 
 
-def _run_monitor(show_state_steps, simple_output):
+def _run_monitor(show_state_steps, show_dynamic_steps, simple_output):
     """
     Run the DeepSea stage monitor and progress visualizer
     """
-    mon = Monitor(show_state_steps)
+    mon = Monitor(show_state_steps, show_dynamic_steps)
     listener = SimplePrinter() if simple_output else StepListPrinter()
     mon.add_listener(listener)
 
@@ -192,15 +192,16 @@ def cli(log_level, log_file):
 
 @click.command(short_help='starts DeepSea progress monitor')
 @click.option('--show-state-steps', is_flag=True, help="shows state visible steps progress")
+@click.option('--show-dynamic-steps', is_flag=True, help="shows runtime generated steps")
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
-def monitor(show_state_steps, clear_cache, simple_output):
+def monitor(show_state_steps, show_dynamic_steps, clear_cache, simple_output):
     """
     CLI 'monitor' command
     """
     if clear_cache:
         SLSParser.clean_cache(None)
-    _run_monitor(show_state_steps, simple_output)
+    _run_monitor(show_state_steps, show_dynamic_steps, simple_output)
 
 
 @click.group(short_help='stage related commands')

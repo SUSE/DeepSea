@@ -122,7 +122,7 @@ class Stage(object):
                         sstep.finished = True
                         sstep.end_event = event
 
-    def __init__(self, name, steps):
+    def __init__(self, name, steps, enable_dynamic):
         self.name = name
         self._parsed_steps = steps
         self.jid = None
@@ -131,6 +131,7 @@ class Stage(object):
         self.current_step = 0
         self.start_event = None
         self.end_event = None
+        self._enable_dynamic = enable_dynamic
         self._dynamic_steps = {}
 
         self._steps = []
@@ -197,6 +198,9 @@ class Stage(object):
         else:
             assert False
 
+        if not self._enable_dynamic:
+            return None
+
         if curr_step.end_event is not None:
             # only allow dynamic steps as substeps after the first step
             return None
@@ -259,6 +263,9 @@ class Stage(object):
 
         else:
             assert False
+
+        if not self._enable_dynamic:
+            return None
 
         # this step is not part of stage parsed steps
         if isinstance(event, RetRunnerEvent):
@@ -466,11 +473,12 @@ class Monitor(threading.Thread):
             logger.debug("buffer: %s", event)
             self.monitor.append_event(Monitor.Event(self.monitor, 'state_result_step', event))
 
-    def __init__(self, show_state_steps):
+    def __init__(self, show_state_steps, show_dynamic_steps):
         super(Monitor, self).__init__()
         self._processor = SaltEventProcessor()
         self._processor.add_listener(Monitor.DeepSeaEventListener(self))
         self._show_state_steps = show_state_steps
+        self._show_dynamic_steps = show_dynamic_steps
         self._running_stage = None
         self._monitor_listeners = []
         self._event_lock = threading.Lock()
@@ -545,8 +553,9 @@ class Monitor(threading.Thread):
         stage_name = event.args[0]
         self._fire_event('stage_started', stage_name)
         self._fire_event('stage_parsing_started', stage_name)
-        parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps, True, False)
-        self._running_stage = Stage(stage_name, parsed_steps)
+        parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps,
+                                                        True, False)
+        self._running_stage = Stage(stage_name, parsed_steps, self._show_dynamic_steps)
         self._fire_event('stage_parsing_finished', self._running_stage, out)
         self._running_stage.start(event)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)
