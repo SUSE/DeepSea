@@ -45,7 +45,7 @@ wait until the cluster has recovered before processing {{ host }}:
 
 check if all processes are still running after processing {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.processes
     - failhard: True
