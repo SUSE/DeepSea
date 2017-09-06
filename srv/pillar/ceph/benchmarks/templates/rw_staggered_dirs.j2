@@ -1,0 +1,15 @@
+[global]
+directory={{ dir }}/{{ client }}
+size={{ filesize }}
+
+{% for op in operations %}
+{% for bs in blocksizes %}
+{% for worker in range(0, number_of_workers) %}
+[worker{{ worker }}_{{ bs }}_{{ op }}]
+  rw={{ op }}
+  blocksize={{ bs }}
+  startdelay={{ worker_stagger_delay * loop.index0 }}
+
+{% endfor %}
+{% endfor %}
+{% endfor %}

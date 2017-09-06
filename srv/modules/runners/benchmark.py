@@ -37,7 +37,7 @@ class Fio(object):
         the public_network
         '''
         public_network = list(local_client.cmd(
-            client_glob, 'pillar.get',
+            'I@roles:mon', 'pillar.get',
             ['public_network'], expr_form='compound').values())[0]
 
         minion_ip_lists = local_client.cmd(
@@ -64,9 +64,7 @@ class Fio(object):
         self.cmd_global_args = ['--output-format=json']
 
         # store client addresses preformatted for user with fio
-        self.clients = []
-        self.clients.extend(
-            ['--client={}'.format(client) for client in clients])
+        self.clients = clients
 
         self.bench_dir = bench_dir
         self.log_dir = log_dir
@@ -87,39 +85,40 @@ class Fio(object):
             datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
         os.makedirs(job_log_dir)
         log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
-        jobfile = self._parse_job(job_spec, job_name, job_log_dir)
+        client_jobs = []
         '''
         create a list that alternates between --client arguments and job files
         e.g. [--client=host1, jobfile, --client=host2, jobfile]
         fio expects a job file for every remote agent
         '''
-        client_jobs = [None] * 2 * len(self.clients)
-        client_jobs[::2] = self.clients
-        client_jobs[1::2] = [jobfile] * len(self.clients)
+        for client in self.clients:
+            jobfile = self._parse_job(job_spec, job_name, job_log_dir, client)
+            client_jobs.extend(['--client={}'.format(client)])
+            client_jobs.extend([jobfile])
 
         output = subprocess.check_output(
             [self.cmd] + self.cmd_global_args + log_args + client_jobs)
 
         return output
 
-    def _parse_job(self, job_spec, job_name, job_log_dir):
+    def _parse_job(self, job_spec, job_name, job_log_dir, client):
         # parse yaml and get job spec
-        job = self._get_job_parameters(job_spec, job_log_dir)
+        job = self._get_job_parameters(job_spec, job_log_dir, client)
 
         # which template does the job want
         template = self.jinja_env.get_template(job['template'])
 
         # popluate template and return job file location
-        return self._populate_and_write_job(template, job, job_name)
+        return self._populate_and_write_job(template, job, job_name, client)
 
-    def _populate_and_write_job(self, template, job, job_name):
-        jobfile = '{}/{}'.format(self.job_dir, job_name)
+    def _populate_and_write_job(self, template, job, job_name, client):
+        jobfile = '{}/{}_{}'.format(self.job_dir, job_name, client)
 
         # render template and save job file
         template.stream(job).dump(jobfile)
         return jobfile
 
-    def _get_job_parameters(self, job_spec, job_log_dir):
+    def _get_job_parameters(self, job_spec, job_log_dir, client):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
                 job = yaml.load(yml)
@@ -133,7 +132,8 @@ class Fio(object):
         write_hist_log={logdir}/output
         write_iops_log={logdir}/output
         '''.format(logdir=job_log_dir)
-        job.update({'dir': self.work_dir, 'output_options': output_options})
+        job.update({'dir': self.work_dir, 'output_options': output_options,
+                    'client': client})
         return job
 
 
