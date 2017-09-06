@@ -590,7 +590,8 @@ class Validate(object):
         local = salt.client.LocalClient()
         for node in self.data.keys():
             if ('roles' in self.data[node] and
-                'openattic' in self.data[node]['roles']):
+                'openattic' in self.data[node]['roles'] and
+                'rgw' in self.data[node]['roles']):
                 # Would use file.contains if it supported '='
                 result = local.cmd(node, 'file.contains_regex', [ '/etc/ceph/ceph.conf', 'port\=80'], expr_form="glob")
                 if result[node]:
