@@ -178,7 +178,7 @@ class SimplePrinter(MonitorListener):
             self.errors[step.name][minion] = step.targets[minion]['event']
 
         if step.order > 0:
-            PP.print("             in {}... ".format(minion))
+            PP.print("         {}... ".format(minion))
         else:
             PP.print("               in {}... ".format(minion))
         if step.targets[minion]['success']:
@@ -195,10 +195,14 @@ class SimplePrinter(MonitorListener):
                 self.current_step[-1]['endl'] = True
                 PP.println()
         if event.name == event.state_id:
-            PP.println("         |_  {} on {}".format(event.name, event.minion))
+            PP.print("         |_  {}: {} ".format(event.minion, event.name))
         else:
-            PP.println("         |_  {}: {} on {}".format(event.state_id, event.name,
-                                                          event.minion))
+            PP.print("         |_  {}: {}({}) ".format(event.minion, event.state_id, event.name))
+
+        if event.result:
+            PP.println("ok")
+        else:
+            PP.println("fail")
 
     @staticmethod
     def format_runner_event(event):
@@ -434,13 +438,6 @@ class StepListPrinter(MonitorListener):
     class State(Step):
         def __init__(self, printer, step):
             super(StepListPrinter.State, self).__init__(printer, step)
-            self.state_results = []
-
-        def add_state_result(self, event):
-            """
-            Appends a state result, only valid for State steps
-            """
-            self.state_results.append({'event': event, 'reprint': False})
 
         def clean(self, desc_width):
             if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
@@ -722,5 +719,4 @@ class StepListPrinter(MonitorListener):
         with self.print_lock:
             assert self.step
             assert isinstance(self.step, StepListPrinter.State)
-            self.step.add_state_result(event)
             self.print_step(self.step)

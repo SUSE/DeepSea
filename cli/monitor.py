@@ -107,7 +107,6 @@ class Stage(object):
         def state_result(self, event):
             for sstep in self.targets[event.minion]['states']:
                 if isinstance(sstep.step, SaltModule):
-                    logger.info("state_result: SaltModule step=%s event=%s", sstep.name, event.name)
                     if sstep.name == event.name or sstep.name == event.state_id:
                         sstep.success = event.result
                         sstep.finished = True
@@ -116,7 +115,6 @@ class Stage(object):
                     name = sstep.step.get_arg('name')
                     if not name:
                         name = sstep.step.desc
-                    logger.info("state_result: SaltBuiltIn step=%s event=%s", name, event.name)
                     if name == event.name or name == event.state_id:
                         sstep.success = event.result
                         sstep.finished = True
@@ -636,11 +634,13 @@ class Monitor(threading.Thread):
             skipped = self._running_stage.check_if_current_step_will_run()
 
     def state_result_step(self, event):
+        if not self._show_state_steps:
+            return
         if not self._running_stage:
             # not inside a running stage, igore step
             return
         step = self._running_stage.state_result_step(event)
         if not step:
             return
-        logger.info("State Result: %s", event.raw_event)
+        logger.debug("State Result: %s", event.raw_event)
         self._fire_event('step_state_result', step, event)

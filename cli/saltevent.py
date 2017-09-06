@@ -113,8 +113,8 @@ class StateResultEvent(SaltEvent):
         self.name = raw_event['data']['data']['ret']['name']
 
     def __str__(self):
-        return "StateResult(name: {}, minion: {} result: {})".format(self.name,
-                                                                     self.minion, self.result)
+        return "StateResult(id: {} name: {} minion: {} result: {})" \
+               .format(self.state_id, self.name, self.minion, self.result)
 
 
 class EventListener(object):
