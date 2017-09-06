@@ -642,5 +642,5 @@ class Monitor(threading.Thread):
         step = self._running_stage.state_result_step(event)
         if not step:
             return
-        logger.debug("State Result: %s", event.raw_event)
+        logger.info("State Result: %s: %s result=%s", event.state_id, event.name, event.result)
         self._fire_event('step_state_result', step, event)
