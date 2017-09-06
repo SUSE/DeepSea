@@ -11,9 +11,9 @@ import operator
 import threading
 
 from .common import PrettyPrinter as PP
-from .saltevent import SaltEventProcessor
-from .saltevent import EventListener
-from .saltevent import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
+from .salt_event import SaltEventProcessor
+from .salt_event import EventListener
+from .salt_event import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
 from .stage_parser import SLSParser, SaltRunner, SaltState, SaltModule, SaltBuiltIn
 
 

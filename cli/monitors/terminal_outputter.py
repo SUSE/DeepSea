@@ -14,7 +14,7 @@ import time
 
 from ..common import PrettyPrinter as PP
 from ..monitor import MonitorListener
-from ..saltevent import NewRunnerEvent, NewJobEvent
+from ..salt_event import NewRunnerEvent, NewJobEvent
 
 # pylint: disable=C0111
 # pylint: disable=C0103
