@@ -405,7 +405,7 @@ class StepListPrinter(MonitorListener):
                 PP.print(PP.blue("{} ".format("." * (desc_width - desc_length))))
                 print_args = True
 
-            if self.step.finished:
+            if self.finished:
                 if self.step.skipped:
                     PP.println(PP.grey("skipped"))
                 else:
@@ -460,16 +460,22 @@ class StepListPrinter(MonitorListener):
 
             if len(self.step.name) + len(self.args)+2 < desc_width:
                 if self.args:
-                    PP.print(PP.orange("{}({}) on".format(self.step.name, self.args)))
+                    desc_length = len(self.step.name) + len(self.args) + 2
+                    PP.print(PP.orange("{}({})".format(self.step.name, self.args)))
                 else:
-                    PP.print(PP.orange("{} on".format(self.step.name)))
+                    desc_length = len(self.step.name)
+                    PP.print(PP.orange("{}".format(self.step.name)))
+                if not self.step.skipped:
+                    PP.print(PP.orange(" on"))
                 print_args = False
             else:
+                desc_length = len(self.step.name)
                 PP.print(PP.orange("{}".format(self.step.name)))
                 print_args = True
 
             if self.step.skipped:
-                PP.println(PP.grey(' skipped'))
+                PP.print(PP.orange("{} ".format("." * (desc_width - desc_length))))
+                PP.println(PP.grey('skipped'))
             else:
                 PP.println()
 
@@ -547,17 +553,21 @@ class StepListPrinter(MonitorListener):
 
             PP.print("\x1B[?25h")  # shows cursor
 
-    def __init__(self):
+    def __init__(self, clear_screen=True):
         super(StepListPrinter, self).__init__()
+        self._clear_screen = clear_screen
         self.stage = None
         self.total_steps = None
         self.errors = None
         self.step = None
         self.thread = None
         self.print_lock = threading.Lock()
+        self.init_output = None
+        self.init_output_printed = False
 
     def stage_started(self, stage_name):
-        os.system('clear')
+        if self._clear_screen:
+            os.system('clear')
         PP.p_bold("Starting stage: ")
         PP.println(PP.light_purple(stage_name))
 
@@ -574,9 +584,10 @@ class StepListPrinter(MonitorListener):
         PP.print(PP.info("Parsing {} steps... ".format(stage.name)))
         PP.println(StepListPrinter.OK)
         PP.println()
-        PP.println(PP.bold("Stage initialization output:"))
-        PP.println(output.strip())
-        PP.println()
+        # PP.println(PP.bold("Stage initialization output:"))
+        # PP.println(output.strip())
+        # PP.println()
+        self.init_output = output.strip()
 
         self.stage = stage
         self.total_steps = stage.total_steps()
@@ -590,6 +601,11 @@ class StepListPrinter(MonitorListener):
         self.thread = None
 
         PP.println("\x1B[K")
+
+        if not self.init_output_printed and self.init_output:
+            PP.println(PP.bold("Stage initialization output:"))
+            PP.println(self.init_output)
+            PP.println()
 
         if not self.errors and not stage.success:
             PP.println(PP.bold("Stage execution failed: "))
@@ -667,9 +683,19 @@ class StepListPrinter(MonitorListener):
                 self.step.start_runner_substep(step)
             else:
                 self.step = StepListPrinter.Runner(self, step)
-                if step.order > 0:
+                if step.order == 1:
+                    PP.println()
+                    # first step, need to output initialization stdout
+                    if self.init_output:
+                        PP.println(PP.bold("Stage initialization output:"))
+                        PP.println(self.init_output)
+                    self.init_output_printed = True
+                    PP.println()
+                elif step.order > 1:
                     PP.println()
             self.print_step(self.step)
+            if step.skipped:
+                self.step = None
 
     def step_runner_finished(self, step):
         if not step.success:
@@ -692,10 +718,19 @@ class StepListPrinter(MonitorListener):
                 self.step.start_state_substep(step)
             else:
                 self.step = StepListPrinter.State(self, step)
-                if step.order > 0:
+                if step.order == 1:
                     PP.println()
-
+                    # first step, need to output initialization stdout
+                    if self.init_output:
+                        PP.println(PP.bold("Stage initialization output:"))
+                        PP.println(self.init_output)
+                    self.init_output_printed = True
+                    PP.println()
+                elif step.order > 1:
+                    PP.println()
             self.print_step(self.step)
+            if step.skipped:
+                self.step = None
 
     def step_state_minion_finished(self, step, minion):
         if not step.targets[minion]['success']:

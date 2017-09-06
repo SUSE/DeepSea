@@ -16,6 +16,7 @@ import click
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
 from .monitors.terminal_outputter import StepListPrinter, SimplePrinter
+from .stage_executor import run_stage
 from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
 
 
@@ -229,6 +230,18 @@ def stage_show(stage_name, only_stage_steps, only_visible_steps, clear_cache, no
     _run_show_stage_steps(stage_name, only_stage_steps, only_visible_steps, not no_cache)
 
 
+@click.command(name='run', short_help='run DeepSea stage')
+@click.argument('stage_name', 'the DeepSea stage name')
+@click.option('--hide-state-steps', is_flag=True, help="shows state visible steps progress")
+@click.option('--hide-dynamic-steps', is_flag=True, help="shows runtime generated steps")
+@click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
+def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
+    """
+    CLI 'stage run' command
+    """
+    run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
+
+
 def main():
     """
     CLI main function
@@ -236,5 +249,6 @@ def main():
     cli.add_command(monitor)
     cli.add_command(stage)
     stage.add_command(stage_show)
+    stage.add_command(stage_run)
     # pylint: disable=E1120,E1123
     cli(prog_name='deepsea')

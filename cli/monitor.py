@@ -483,6 +483,14 @@ class Monitor(threading.Thread):
         self._event_cond = threading.Condition(self._event_lock)
         self._event_buffer = []
         self._running = False
+        self._stage_steps = {}
+
+    def parse_stage(self, stage_name):
+        self._fire_event('stage_started', stage_name)
+        self._fire_event('stage_parsing_started', stage_name)
+        parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps,
+                                                        True, False)
+        self._stage_steps[stage_name] = (parsed_steps, out)
 
     def append_event(self, event):
         with self._event_cond:
@@ -497,13 +505,16 @@ class Monitor(threading.Thread):
         self._processor.start()
         super(Monitor, self).start()
 
-    def stop(self):
+    def stop(self, wait=False):
         """
         Stop the monitoring thread
         """
         logger.info("Stopping the DeepSea event monitoring")
         self._running = False
         self._processor.stop()
+
+        if wait:
+            self.wait_to_finish()
 
     def wait_to_finish(self):
         """
@@ -549,12 +560,18 @@ class Monitor(threading.Thread):
             event (NewRunnerEvent): the DeepSea state.orch start event
         """
         stage_name = event.args[0]
-        self._fire_event('stage_started', stage_name)
-        self._fire_event('stage_parsing_started', stage_name)
-        parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps,
-                                                        True, False)
+        if stage_name in self._stage_steps:
+            parsed_steps, out = self._stage_steps[stage_name]
+        else:
+            self._fire_event('stage_started', stage_name)
+            self._fire_event('stage_parsing_started', stage_name)
+            parsed_steps, out = SLSParser.parse_state_steps(stage_name,
+                                                            not self._show_state_steps,
+                                                            True, False)
         self._running_stage = Stage(stage_name, parsed_steps, self._show_dynamic_steps)
+
         self._fire_event('stage_parsing_finished', self._running_stage, out)
+
         self._running_stage.start(event)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)
 
@@ -628,8 +645,12 @@ class Monitor(threading.Thread):
         skipped = self._running_stage.check_if_current_step_will_run()
         while skipped:
             if isinstance(skipped, Stage.TargetedStep):
+                logger.info("Skipping state step: [%s/%s] name=%s(%s)", skipped.order,
+                            self._running_stage.total_steps(), skipped.name, skipped.args_str)
                 self._fire_event('step_state_started', skipped)
             else:
+                logger.info("Skipping runner step: [%s/%s] name=%s(%s)", skipped.order,
+                            self._running_stage.total_steps(), skipped.name, skipped.args_str)
                 self._fire_event('step_runner_started', skipped)
             skipped = self._running_stage.check_if_current_step_will_run()
 
