@@ -21,27 +21,6 @@ from ..saltevent import NewRunnerEvent, NewJobEvent
 logger = logging.getLogger(__name__)
 
 
-class ProgressBarPrinter(MonitorListener):
-    """
-    This class takes care of printing DeepSea execution in the terminal as progress bar
-    """
-    def print_progress(self):
-        """
-        Prints a progress bar
-        """
-        # PP.println("\x1B[K")
-        # progress_array = [step.success for step in self._steps]
-        # if self._current_step >= len(self._steps):
-        #     suffix = (PP.green(PP.bold(u"\u2713")) if self.success else
-        #               PP.red(PP.bold(u"\u274C")))
-        # else:
-        #     suffix = PP.orange("running {}".format(self._steps[self._current_step].name))
-        # print_progress(progress_array, self._current_step, self.name[5:],
-        #                suffix, 50)
-        # PP.print("\x1B[A")
-        pass
-
-
 class SimplePrinter(MonitorListener):
     def __init__(self):
         self.total_steps = None
