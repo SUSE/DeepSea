@@ -285,6 +285,8 @@ class StepListPrinter(MonitorListener):
 
         else:
             prefix_indent = step_order_width + indent * depth
+            if depth > 1:
+                prefix_indent += 3
             offset = prefix_indent + 4
 
         desc_width = step_desc_width - (offset - step_order_width)
@@ -340,17 +342,28 @@ class StepListPrinter(MonitorListener):
             if step.skipped:
                 self.finished = True
 
+        def _find_running_substep(self):
+            for substep in self.substeps.values():
+                if not substep.finished:
+                    return substep
+            return self
+
         def start_runner_substep(self, step):
-            self.substeps[step.jid] = StepListPrinter.Runner(self.printer, step)
+            substep = self._find_running_substep()
+            substep.substeps[step.jid] = StepListPrinter.Runner(self.printer, step)
 
         def start_state_substep(self, step):
-            self.substeps[step.jid] = StepListPrinter.State(self.printer, step)
+            substep = self._find_running_substep()
+            substep.substeps[step.jid] = StepListPrinter.State(self.printer, step)
 
         def finish_substep(self, step):
-            if step.jid not in self.substeps:
-                logger.info("missed start event for this substep: %s", step.end_event)
-                return
-            self.substeps[step.jid].finished = True
+            if step.jid in self.substeps:
+                self.substeps[step.jid].finished = True
+                return True
+            for substep in self.substeps.values():
+                if substep.finish_substep(step):
+                    return True
+            return False
 
         # pylint: disable=W0613
         def print(self, offset, desc_width, depth):
@@ -584,9 +597,6 @@ class StepListPrinter(MonitorListener):
         PP.print(PP.info("Parsing {} steps... ".format(stage.name)))
         PP.println(StepListPrinter.OK)
         PP.println()
-        # PP.println(PP.bold("Stage initialization output:"))
-        # PP.println(output.strip())
-        # PP.println()
         self.init_output = output.strip()
 
         self.stage = stage
@@ -679,7 +689,8 @@ class StepListPrinter(MonitorListener):
 
     def step_runner_started(self, step):
         with self.print_lock:
-            if self.step and isinstance(self.step.step.start_event, NewJobEvent):
+            if self.step:
+                # substep starting
                 self.step.start_runner_substep(step)
             else:
                 self.step = StepListPrinter.Runner(self, step)
@@ -704,17 +715,18 @@ class StepListPrinter(MonitorListener):
 
         with self.print_lock:
             if self.step and self.step.step.jid != step.jid:
-                self.step.finish_substep(step)
+                # maybe it's a substep
+                if not self.step.finish_substep(step):
+                    logger.error("substep jid=%s not found: event=\n%s", step.jid, step.end_event)
             elif self.step:
                 self.step.finished = True
                 self.print_step(self.step)
-
             if self.step.step.jid == step.jid:
                 self.step = None
 
     def step_state_started(self, step):
         with self.print_lock:
-            if self.step and isinstance(self.step.step.start_event, NewRunnerEvent):
+            if self.step:
                 self.step.start_state_substep(step)
             else:
                 self.step = StepListPrinter.State(self, step)
@@ -740,14 +752,16 @@ class StepListPrinter(MonitorListener):
 
         with self.print_lock:
             if self.step and self.step.step.jid != step.jid:
-                self.step.finish_substep(step)
+                # maybe it's a substep
+                if not self.step.finish_substep(step):
+                    logger.error("substep jid=%s not found: event=\n%s", step.jid, step.end_event)
             elif self.step:
-                self.step.finished = True
                 self.print_step(self.step)
 
     def step_state_finished(self, step):
         with self.print_lock:
             if self.step and self.step.step.jid == step.jid:
+                self.step.finished = True
                 self.step = None
 
     def step_state_result(self, step, event):
