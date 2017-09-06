@@ -1,0 +1,9 @@
+template: rw_staggered_dirs.j2
+filesize: 1g
+blocksizes:
+  - 1m
+number_of_workers: 16
+# each worker starts 4 seconds after the last
+worker_stagger_delay: 4
+operations:
+  - readwrite
