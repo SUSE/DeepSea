@@ -82,9 +82,9 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         _create_server(cluster_addresses)
         c_result = _create_client(cluster_addresses)
         p_sort = _add_unit(sorted(p_result.items(),
-                                  key=operator.itemgetter(1)))
+                                  key=operator.itemgetter(1), reverse=True))
         c_sort = _add_unit(sorted(c_result.items(),
-                                  key=operator.itemgetter(1)))
+                                  key=operator.itemgetter(1), reverse=True))
 
         if output:
             result.update({'Public Network': p_sort})
@@ -92,11 +92,11 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
             return result
         else:
             result.update({'Public Network':
-                           {"Slowest 2 hosts": p_sort[:2],
-                            "Fastest 2 hosts": p_sort[-2:]}})
+                           {"Slowest 2 hosts": p_sort[-2:],
+                            "Fastest 2 hosts": p_sort[:2]}})
             result.update({'Cluster Network':
-                           {"Slowest 2 hosts": c_sort[:2],
-                            "Fastest 2 hosts": c_sort[-2:]}})
+                           {"Slowest 2 hosts": c_sort[-2:],
+                            "Fastest 2 hosts": c_sort[:2]}})
             return result
     else:
         search = deepsea_minions.DeepseaMinions().deepsea_minions
@@ -120,12 +120,13 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         _create_server(addresses)
         result = _create_client(addresses)
         sort_result = _add_unit(sorted(result.items(),
-                                       key=operator.itemgetter(1)))
+                                       key=operator.itemgetter(1),
+                                       reverse=True))
         if output:
             return sort_result
         else:
-            return {"Slowest 2 hosts": sort_result[:2],
-                    "Fastest 2 hosts": sort_result[-2:]}
+            return {"Slowest 2 hosts": sort_result[-2:],
+                    "Fastest 2 hosts": sort_result[:2]}
 
 
 def _add_unit(records):
