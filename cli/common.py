@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import contextlib
+import os
 import pprint
 import sys
 
@@ -28,6 +29,17 @@ def redirect_stderr(target):
     sys.stderr = target
     yield
     sys.stderr = sys.__stderr__
+
+
+def check_root_privileges():
+    """
+    This function checks if the current user is root.
+    If the user is not root it exits immediately.
+    """
+    if os.getuid() != 0:
+        # check if root user
+        PrettyPrinter.println(PrettyPrinter.red("Root privileges are required to run this tool"))
+        sys.exit(1)
 
 
 class PrettyPrinter(object):
