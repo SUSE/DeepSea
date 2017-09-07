@@ -9,6 +9,8 @@ usage:
 
 pyc:
 	find srv/ -name '*.py' -exec python -m py_compile {} \;
+	# deepsea-cli
+	python setup.py build
 
 copy-files:
 	# salt-master config files
@@ -545,6 +547,9 @@ install: copy-files
 	systemctl restart salt-master
 	zypper -n install salt-api
 	systemctl restart salt-api
+	# deepsea-cli
+	zypper install -n python-setuptools python-click
+	python setup.py install --root=$(DESTDIR)/
 
 rpm: tarball test
 	rpmbuild -bb deepsea.spec
