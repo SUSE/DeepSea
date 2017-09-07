@@ -45,16 +45,34 @@ BuildArch:      noarch
 A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 
+#################################################################################
+# subpackages
+#################################################################################
+%package cli
+Summary:        DeepSea CLI
+Group:          Systems/Filesystems
+BuildRequires:  python-setuptools
+Requires:       deepsea = %{version}-%{release}
+Requires:       python-setuptools
+Requires:       python-click
+Requires:       deepsea
+BuildArch:      noarch
+
+%description cli
+DeepSea command line interface tool.
+
 %prep
 %setup
 
 %build
 make DESTDIR=%{buildroot} pyc
+python setup.py build
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
 %__rm -f %{buildroot}/%{_mandir}/man?/*.gz
 %__gzip %{buildroot}/%{_mandir}/man?/deepsea.*
+python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %post
 if [ $1 -eq 1 ] ; then
@@ -525,5 +543,11 @@ the README for more information.
 
 %files qa
 %{_libexecdir}/deepsea/qa
+
+%files cli
+%defattr(-,root,root,-)
+%{_bindir}/deepsea
+%{python_sitelib}/deepsea/
+%{python_sitelib}/deepsea-%{version}-py%{python_version}.egg-info
 
 %changelog
