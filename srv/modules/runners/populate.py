@@ -492,11 +492,9 @@ class CephRoles(object):
 
         _rgws = local.cmd(self.search , 'pillar.get', [ 'rgw_configurations' ], expr_form="compound")
         for node in _rgws.keys():
-            # Check the first one
             if _rgws[node]:
                 return _rgws[node]
-            else:
-                return [ 'rgw' ]
+        return [ 'rgw' ]
 
     def _ganesha_configurations(self):
         """
