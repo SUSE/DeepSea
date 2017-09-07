@@ -7,4 +7,5 @@ from __future__ import print_function
 
 from .deepsea import main
 
-main()
+if __name__ == "__main__":
+    main()

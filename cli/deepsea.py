@@ -8,6 +8,7 @@ from __future__ import print_function
 import logging.config
 import logging
 import os
+import pkg_resources
 import signal
 import sys
 import time
@@ -178,12 +179,13 @@ def _run_show_stage_steps(stage_name, only_stage_steps, only_visible_steps, use_
 
 
 @click.group(name="deepsea")
-@click.option('--log-level', default='info',
+@click.option('-l', '--log-level', default='info',
               type=click.Choice(["info", "error", "debug", "silent"]),
               help="set log level (default: info)")
 @click.option('--log-file', default='/var/log/deepsea.log',
               type=click.Path(dir_okay=False),
               help="the file path for the log to be stored (default: /var/log/deepsea.log)")
+@click.version_option(pkg_resources.get_distribution('deepsea'), message="%(version)s")
 def cli(log_level, log_file):
     """
     CLI entry point
