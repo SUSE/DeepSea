@@ -25,7 +25,7 @@ EXPORT
 
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles=role) != [] %}
 
-{% for user in salt['rgw.users'](role) %}
+{% for user in salt['rgw.users']() %}
 EXPORT
 {
 	Export_ID={{ loop.index + 1 }};

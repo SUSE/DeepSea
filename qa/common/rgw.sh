@@ -3,13 +3,10 @@
 #
 
 function rgw_demo_users {
-  local RGWSLS=/srv/pillar/ceph/rgw.sls
+  local RGWSLS=/srv/salt/ceph/rgw/users/users.d/users.yml
   cat << EOF >> $RGWSLS
-rgw_configurations:
-  rgw:
-    users:
-      - { uid: "demo", name: "Demo", email: "demo@demo.nil" }
-      - { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
+- { uid: "demo", name: "Demo", email: "demo@demo.nil" }
+- { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
 EOF
   cat $RGWSLS
 }

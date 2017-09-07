@@ -404,8 +404,11 @@ copy-files:
 	install -m 644 srv/salt/ceph/rgw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rgw/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/users
 	install -m 644 srv/salt/ceph/rgw/users/*.sls $(DESTDIR)/srv/salt/ceph/rgw/users/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/users/users.d
+	install -m 644 srv/salt/ceph/rgw/users/users.d/README $(DESTDIR)/srv/salt/ceph/rgw/users/users.d
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/files
 	install -m 644 srv/salt/ceph/rgw/files/*.j2 $(DESTDIR)/srv/salt/ceph/rgw/files/
+	install -m 644 srv/salt/ceph/rgw/files/*.yml $(DESTDIR)/srv/salt/ceph/rgw/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
