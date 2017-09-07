@@ -4,12 +4,15 @@ from setuptools import setup
 
 
 def _get_deepsea_version():
-    with open('deepsea.spec', 'r') as f:
-        for line in f:
-            if line.startswith("Version:"):
-                match = re.match('^Version:(.*)', line)
-                if match:
-                    return match.group(1).strip()
+    try:
+        with open('deepsea.spec', 'r') as f:
+            for line in f:
+                if line.startswith("Version:"):
+                    match = re.match('^Version:(.*)', line)
+                    if match:
+                        return match.group(1).strip()
+    except IOError:
+        return "(dev-version)"
 
 setup(
     name='deepsea',
