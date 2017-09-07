@@ -178,30 +178,45 @@ class Stage(object):
         if self.current_step >= len(self._steps):
             return None
 
-        curr_step = self._steps[self.current_step]
+        curr_step = None
+        for i in range(0, 2):
+            if self.current_step+i >= len(self._steps):
+                break
 
-        if isinstance(event, NewRunnerEvent):
-            if isinstance(curr_step.step, SaltRunner):
-                if not curr_step.jid and curr_step.name == event.fun[7:]:
-                    curr_step.start(event)
-                    return curr_step
+            prev_step = curr_step
+            curr_step = self._steps[self.current_step+i]
 
-        elif isinstance(event, NewJobEvent):
-            if isinstance(curr_step, Stage.TargetedStep):
-                step_name = event.args[0] if event.fun == 'state.sls' else event.fun
-                if not curr_step.jid and curr_step.name == step_name:
-                    curr_step.start(event)
-                    return curr_step
+            if isinstance(event, NewRunnerEvent):
+                if isinstance(curr_step.step, SaltRunner):
+                    if not curr_step.jid and curr_step.name == event.fun[7:]:
+                        curr_step.start(event)
+                        self.current_step += i
+                        if i == 0:
+                            return curr_step, None, None
+                        else:
+                            return prev_step, curr_step, None
 
-        else:
-            assert False
+            elif isinstance(event, NewJobEvent):
+                if isinstance(curr_step, Stage.TargetedStep):
+                    step_name = event.args[0] if event.fun == 'state.sls' else event.fun
+                    if not curr_step.jid and curr_step.name == step_name:
+                        curr_step.start(event)
+                        self.current_step += i
+                        if i == 0:
+                            return curr_step, None, None
+                        else:
+                            return prev_step, curr_step, None
+
+            else:
+                assert False
 
         if not self._enable_dynamic:
-            return None
+            return None, None, None
 
+        curr_step = self._steps[self.current_step]
         if curr_step.end_event is not None:
             # only allow dynamic steps as substeps after the first step
-            return None
+            return None, None, None
 
         # this step is not part of stage parsed steps
         if isinstance(event, NewRunnerEvent):
@@ -214,9 +229,9 @@ class Stage(object):
                             ex_step.args_str == step.args_str):
                         logger.info("FOUND DUPLICATE: %s(%s)", ex_step.name, ex_step.args_str)
                         # possible parsing generated duplicate
-                        return None
+                        return None, None, None
             self._dynamic_steps[event.jid] = step
-            return step
+            return None, None, step
         elif isinstance(event, NewJobEvent):
             step_name = event.args[0] if event.fun == 'state.sls' else event.fun
             step = Stage.TargetedStep(None, step_name, -1)
@@ -227,9 +242,9 @@ class Stage(object):
                     if (ex_step.name == step.name and ex_step.targets.keys() == event.targets and
                             ex_step.args_str == step.args_str):
                         # possible parsing generated duplicate
-                        return None
+                        return None, None, None
             self._dynamic_steps[event.jid] = step
-            return step
+            return None, None, step
 
         return None
 
@@ -600,9 +615,27 @@ class Monitor(threading.Thread):
         if not self._running_stage:
             # not inside a running stage, igore step
             return
-        step = self._running_stage.start_step(event)
-        if not step:
+        step, nstep, dstep = self._running_stage.start_step(event)
+        if not step and not nstep and not dstep:
             return
+
+        if nstep:
+            if isinstance(step, Stage.TargetedStep):
+                logger.info("State step finished without 'ret' event: [%s/%s] name=%s(%s) on=%s",
+                            step.order,
+                            self._running_stage.total_steps(), step.name, step.args_str,
+                            step.targets.keys())
+                self._fire_event('step_state_finished', step)
+            else:
+                logger.info("Runner step finished without 'ret' event:: [%s/%s] name=%s(%s)",
+                            step.order, self._running_stage.total_steps(), step.name,
+                            step.args_str)
+                self._fire_event('step_runner_finished', step)
+            step = nstep
+
+        if dstep:
+            step = dstep
+
         if isinstance(step, Stage.TargetedStep):
             logger.info("Started State step: [%s/%s] name=%s(%s) on=%s", step.order,
                         self._running_stage.total_steps(), step.name, step.args_str,
