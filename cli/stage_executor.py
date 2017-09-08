@@ -11,22 +11,32 @@ which is equivalent to:
 """
 from __future__ import absolute_import
 
+import logging
 import os
+import signal
 import subprocess
+import threading
 import time
+import sys
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
 from .monitors.terminal_outputter import SimplePrinter, StepListPrinter
 
 
-class StageExecutor(object):
+# pylint: disable=C0103
+logger = logging.getLogger(__name__)
+
+
+class StageExecutor(threading.Thread):
     """
     Executes a stage in its own process
     """
     def __init__(self, stage_name):
         super(StageExecutor, self).__init__()
         self.stage_name = stage_name
+        self.proc = None
+        self.retcode = None
 
     def run(self):
         """
@@ -34,9 +44,22 @@ class StageExecutor(object):
         """
         # pylint: disable=W8470
         with open(os.devnull, "w") as fnull:
-            ret = subprocess.call(["salt-run", "state.orch", self.stage_name], stdout=fnull,
-                                  stderr=fnull)
-        return ret
+            self.proc = subprocess.Popen(["salt-run", "state.orch", self.stage_name],
+                                         stdout=fnull, stderr=fnull)
+            self.retcode = self.proc.wait()
+
+    def interrupt(self):
+        """
+        Sends SIGINT signal to the salt-run process
+        """
+        if self.proc:
+            self.proc.send_signal(signal.SIGINT)
+
+    def is_running(self):
+        """
+        Checks if the salt-run process is running
+        """
+        return self.proc is not None and self.retcode is None
 
 
 def run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
@@ -62,7 +85,33 @@ def run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     mon.start()
 
     executor = StageExecutor(stage_name)
-    ret = executor.run()
+
+    # pylint: disable=W0613
+    def sigint_handler(*args):
+        """
+        SIGINT signal handler
+        """
+        logger.debug("SIGINT, stopping stage executor")
+        if executor.is_running():
+            executor.interrupt()
+        else:
+            if mon.is_running():
+                mon.stop(True)
+            sys.exit(0)
+
+    signal.signal(signal.SIGINT, sigint_handler)
+
+    executor.start()
+
+    if sys.version_info > (3, 0):
+        logger.debug("Python 3: blocking main thread on join()")
+        executor.join()
+    else:
+        logger.debug("Python 2: polling for monitor.is_running() %s", mon.is_running())
+        while executor.is_running():
+            time.sleep(1)
+        executor.join()
+
     time.sleep(1)
     mon.stop(True)
-    return ret
+    return executor.retcode
