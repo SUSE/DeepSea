@@ -34,6 +34,7 @@ run_stage_3
 ceph_cluster_status
 run_stage_4
 ceph_cluster_status
+rgw_user_and_bucket_list
 ceph_health_test
 rgw_curl_test
 
