@@ -824,6 +824,10 @@ class OSDPartitions(object):
         When these get resolved, change the logic
         """
 
+        if ((self.osd.wal or self.osd.db) and self.osd.encryption):
+            log.warn("You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf")
+            return
+
         if self.osd.wal and self.osd.db:
             if self.osd.wal_size:
                 if self.osd.wal == self.osd.device:
@@ -832,7 +836,7 @@ class OSDPartitions(object):
                     # Create wal of wal_size on wal device
                     self.create(self.osd.wal, [('wal', self.osd.wal_size)])
             else:
-                log.error("No size specified for wal {}".format(self.osd.wal))
+                log.warn("No size specified for wal {}. Using default sizes.".format(self.osd.wal))
 
             if self.osd.db_size:
                 if self.osd.wal == self.osd.device:
@@ -841,7 +845,7 @@ class OSDPartitions(object):
                     # Create db of db_size on db device
                     self.create(self.osd.db, [('db', self.osd.db_size)])
             else:
-                log.error("No size specified for db {}".format(self.osd.db))
+                log.warn("No size specified for db {}. Using default sizes".format(self.osd.db))
         else:
             # This situation seems unintentional - use faster media for
             # the wal or db but not the other.  Help newbies out by
@@ -1060,94 +1064,53 @@ class OSDCommands(object):
 
     def _bluestore_args(self):
         """
-        Bluestore OSDs can support multiple forms
-          OSD device
-          OSD device, wal device
-          OSD device, wal partition
-          OSD device, db device
-          OSD device, db partition
-          OSD device, wal device, db device
-          OSD device, wal partition, db device
-          OSD device, wal device, db partition
-          OSD device, wal partition, db partition
-          OSD partition
-          OSD partition, wal device
-          OSD partition, wal partition
-          OSD partition, db device
-          OSD partition, db partition
-          OSD partition, wal device, db device
-          OSD partition, wal partition, db device
-          OSD partition, wal device, db partition
-          OSD partition, wal partition, db partition
-
+        if wal_size or db_size and wal and or db and no encryption:
+          create partitions and specify /dev/wal_or_db<part_id>
+        elif encryption and db/wal_size:
+          you can only set the sizes via the ceph.conf (limitation)
+          (we can't create partitions ahead of time (we could -- not implemented))
+        else:
+          let ceph-disk create partitions
         """
         args = ""
-        if self.osd.wal and self.osd.db:
-            if self.is_partitioned(self.osd.wal):
+        if not self.osd.encryption:
+
+            # WAL cornercase with sizes
+            if self.osd.wal and self.osd.wal_size and self.osd.wal != self.osd.device:
                 partition = self.highest_partition(self.osd.wal, 'wal')
                 if partition:
-                    args = "--block.wal {}{} ".format(self.osd.wal, partition)
+                    args += "--block.wal {}{} ".format(self.osd.wal, partition)
                 else:
-                    args = "--block.wal {} ".format(self.osd.wal)
-            else:
-                args = "--block.wal {} ".format(self.osd.wal)
+                    args += "--block.wal {} ".format(self.osd.wal)
 
-            if self.is_partitioned(self.osd.db):
-                partition = self.highest_partition(self.osd.db, 'db')
+            # DB cornercase with sizes
+            if self.osd.db and self.osd.db_size and self.osd.db != self.osd.device:
+                partition = self.highest_partition(self.osd.wal, 'db')
                 if partition:
                     args += "--block.db {}{} ".format(self.osd.db, partition)
                 else:
                     args += "--block.db {} ".format(self.osd.db)
-            else:
+
+            # Generic case withouth sizes 
+            if self.osd.wal and not (self.osd.wal_size or self.osd.db_size):
+                args += "--block.wal {} ".format(self.osd.wal)
+            if self.osd.db and not (self.osd.wal_size or self.osd.db_size):
                 args += "--block.db {} ".format(self.osd.db)
-        else:
-            if self.osd.wal:
-                log.debug("wal: {}".format(self.osd.wal))
-                if self.is_partitioned(self.osd.wal):
-                    partition = self.highest_partition(self.osd.wal, 'wal')
-                    if partition:
-                        args += "--block.wal {}{} ".format(self.osd.wal, partition)
-                    else:
-                        args += "--block.wal {} ".format(self.osd.wal)
-                    log.debug("args: {}".format(args))
 
-                    partition = self.highest_partition(self.osd.wal, 'db')
-                    if partition:
-                        args += "--block.db {}{} ".format(self.osd.wal, partition)
-                    else:
-                        args += "--block.db {} ".format(self.osd.wal)
-                    log.debug("args: {}".format(args))
-                else:
-                    if self.osd.wal == self.osd.device:
-                        log.warn("Separate wal partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.wal))
-                    else:
-                        args += "--block.wal {} --block.db {} ".format(self.osd.wal, self.osd.wal)
+        if self.osd.encryption and (self.osd.wal_size or self.osd.db_size):
+            log.warn("""Your specified wal/db_sizes will not be respected. 
+                           Configure the default sizes via the ceph.conf with
+                           bluestore block db size = size
+                           bluestore block wal size = size""")
 
+        if self.osd.encryption:
             if self.osd.db:
-                if self.is_partitioned(self.osd.db):
-                    partition = self.highest_partition(self.osd.db, 'db')
-                    if partition:
-                        args += "--block.db {}{} ".format(self.osd.db, partition)
-                    else:
-                        args += "--block.db {} ".format(self.osd.db)
+                args += "--block.db {} ".format(self.osd.db)
+            if self.osd.wal:
+                args += "--block.wal {} ".format(self.osd.wal)
 
-                    partition = self.highest_partition(self.osd.db, 'wal')
-                    if partition:
-                        args += "--block.wal {}{} ".format(self.osd.db, partition)
-                    else:
-                        args += "--block.wal {} ".format(self.osd.db)
-                else:
-                    if self.osd.db == self.osd.device:
-                        log.warn("Separate db partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.db))
-                    else:
-                        args += "--block.wal {} --block.db {} ".format(self.osd.db, self.osd.db)
-
-        # if the device is already partitioned
-        # but the partitionnumber is not 1
-        # this will fail
-        #
-        # Bluestore OSDs set the first partition to Ceph OSD
-        # Supporting unconventional Bluestore OSDs feels unwise
+        # fails if the device is already partitioned but the partitionnumber is not 1
+        # should never be partitioned..
         if self.is_partitioned(self.osd.device):
             if 'nvme' in self.osd.device:
                 args += "{}p1".format(self.osd.device)
@@ -1156,7 +1119,6 @@ class OSDCommands(object):
         else:
             args += "{}".format(self.osd.device)
         return args
-
 
     def prepare(self):
         """
@@ -1822,7 +1784,7 @@ def is_prepared(device):
     osdc = OSDCommands(config)
     partition = osdc.highest_partition(readlink(device), 'osd')
     if partition == 0:
-        log.error("Do not know which partition to check on {}".format(device))
+        log.debug("Do not know which partition to check on {}".format(device))
         return False
 
     log.debug("Checking partition {} on device {}".format(partition, device))
