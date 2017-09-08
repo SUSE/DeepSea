@@ -26,6 +26,7 @@ import ipaddress
 import logging
 import deepsea_minions
 import validate
+import operator
 
 import sys
 
@@ -477,7 +478,7 @@ class CephRoles(object):
         self.search = target.deepsea_minions
 
         self.networks = self._networks(self.servers)
-        self.public_networks, self.cluster_networks = self.public_cluster(self.networks)
+        self.public_networks, self.cluster_networks = self.public_cluster(self.networks.copy())
 
         self.available_roles = [ 'storage' ]
 
@@ -686,25 +687,86 @@ class CephRoles(object):
         Other strategies could include prioritising private addresses or
         interface speeds.  However, this will be wrong for somebody.
         """
+        public_networks = []
+        cluster_networks = []
+
         priorities = []
         for network in networks:
             quantity = len(networks[network])
-            priorities.append( (quantity, network) )
+            priorities.append((quantity, network))
 
         if not priorities:
             raise ValueError("No network exists on at least 4 nodes")
 
         priorities = sorted(priorities, cmp=network_sort)
-        public_networks = list()
-        cluster_networks = list()
 
-        for idx, (quantity, network) in enumerate(priorities):
-            if idx == 0 and quantity > 1:
+        # first step, find public networks using hostname -i in all minions
+        public_addrs = []
+        local = salt.client.LocalClient()
+        cmd_result = local.cmd(self.search , 'cmd.run', ['hostname -i'])
+        for _, addrs in cmd_result.items():
+            addr_list = addrs.split(' ')
+            public_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
+                                 for addr in addr_list if not addr.startswith('127.')])
+        for _, network in priorities:
+            if reduce(operator.__or__, [addr in network for addr in public_addrs], False):
                 public_networks.append(network)
-            elif idx == 1 and quantity > 1:
+        for network in public_networks:
+            networks.pop(network)
+
+        # second step, find cluster network by checking which network salt-master does not belong
+        master_addrs = []
+        master_minion = None
+        cmd_result = local.cmd(self.search, 'pillar.get', ['master_minion'])
+        for _, value in cmd_result.items():
+            master_minion = value
+            break
+        if not master_minion:
+            raise Exception("No master_minion found in pillar")
+        cmd_result = local.cmd(master_minion , 'grains.get', ['ipv4'])
+        for _, addr_list in cmd_result.items():
+            master_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
+                                for addr in addr_list if not addr.startswith('127.')])
+        for _, network in priorities:
+            if network not in networks:
+                continue
+            if reduce(operator.__and__, [addr not in network for addr in master_addrs], True) and \
+               len(networks[network]) > 1:
                 cluster_networks.append(network)
-            elif quantity == 1:
+        for network in cluster_networks:
+            networks.pop(network)
+
+        # third step, map remaining networks
+        priorities = []
+        for network in networks:
+            quantity = len(networks[network])
+            priorities.append((quantity, network))
+        priorities = sorted(priorities, cmp=network_sort)
+        for idx, (quantity, network) in enumerate(priorities):
+            if cluster_networks or quantity == 1:
                 public_networks.append(network)
+            else:
+                if not public_networks:
+                    public_networks.append(network)
+                else:
+                    cluster_networks.append(network)
+
+        # fourth step, remove redudant public networks
+        filtered_list = []
+        cmd_result = local.cmd(self.search , 'grains.get', ['ipv4'])
+        for network in public_networks:
+            to_remove = []
+            for key, addr_list in cmd_result.items():
+                if reduce(operator.__or__,
+                          [ipaddress.ip_address(u'{}'.format(addr)) in network for addr in addr_list],
+                          False):
+                    to_remove.append(key)
+            for key in to_remove:
+                cmd_result.pop(key)
+            filtered_list.append(network)
+            if not cmd_result:
+                break
+        public_networks = filtered_list
 
         if not cluster_networks:
             cluster_networks = public_networks
