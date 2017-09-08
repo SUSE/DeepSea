@@ -34,8 +34,9 @@ class StageExecutor(object):
         """
         # pylint: disable=W8470
         with open(os.devnull, "w") as fnull:
-            subprocess.call(["salt-run", "state.orch", self.stage_name], stdout=fnull,
-                            stderr=fnull)
+            ret = subprocess.call(["salt-run", "state.orch", self.stage_name], stdout=fnull,
+                                  stderr=fnull)
+        return ret
 
 
 def run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
@@ -61,6 +62,7 @@ def run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     mon.start()
 
     executor = StageExecutor(stage_name)
-    executor.run()
+    ret = executor.run()
     time.sleep(1)
     mon.stop(True)
+    return ret

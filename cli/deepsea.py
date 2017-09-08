@@ -8,11 +8,12 @@ from __future__ import print_function
 import logging.config
 import logging
 import os
-import pkg_resources
 import signal
 import sys
 import time
 import click
+
+import pkg_resources
 
 from .common import PrettyPrinter as PP
 from .monitor import Monitor
@@ -250,7 +251,8 @@ def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
 
         $ salt-run state.orch <stage_name>
     """
-    run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
+    ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
+    sys.exit(ret)
 
 
 def main():
