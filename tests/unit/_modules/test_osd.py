@@ -710,6 +710,61 @@ class TestOSDPartitions():
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
         mock_log.warn.assert_any_call('DB size is unsupported for same device of /dev/sdx')
 
+    @mock.patch('srv.salt._modules.osd.log')
+    def test_bluestore_partitions_wal_and_db_encrypted_log(self, mock_log, osdp_o):
+        """
+        Given I defined a wal and a db
+        And I encrypt with dmcrypt
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        """
+        kwargs = {'format': 'bluestore',
+                  'wal': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'db': '/dev/sdwal',
+                  'wal_size': '1000',
+                  'db_size': 10000}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+        obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
+
+    @mock.patch('srv.salt._modules.osd.log')
+    def test_bluestore_partitions_wal_encrypted_log(self, mock_log, osdp_o):
+        """
+        Given I defined a wal 
+        And I encrypt with dmcrypt
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        """
+        kwargs = {'format': 'bluestore',
+                  'wal': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'wal_size': '1000',
+                  'db_size': 10000}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+        obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
+
+    @mock.patch('srv.salt._modules.osd.log')
+    def test_bluestore_partitions_db_encrypted_log(self, mock_log, osdp_o):
+        """
+        Given I defined a db
+        And I encrypt with dmcrypt
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        """
+        kwargs = {'format': 'bluestore',
+                  'encryption': 'dmcrypt',
+                  'db': '/dev/sdwal',
+                  'wal_size': '1000',
+                  'db_size': 10000}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+        obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
+
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_bluestore_partitions_wal_and_db_all_size_no_eq(self, create_mock, osdp_o):
         """
@@ -1780,6 +1835,85 @@ class TestOSDCommands():
         hp_mock.side_effect = [1,2]
         ret = obj._bluestore_args()
         assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/sdx1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
+    def test_bluestore_args_15(self, hp_mock, ip_mock, osdc_o):
+        """
+        Given there is a wal and db defined
+        And we encrypt with dmcrypt
+        And the wal is partitioned
+        And there are actually partitions(1)
+        And the db is partitioned
+        And there are actually partitions (2)
+
+        And the device is partitioned
+        And and the device is not a NVME
+        Expect args to be:
+
+        --block.wal /dev/sdwal --block.db /dev/sddb /dev/sdx1
+
+        """
+        kwargs = {'wal': '/dev/sdwal',
+                  'db': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'device': '/dev/sdx'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True, True, True]
+        hp_mock.side_effect = [1,2]
+        ret = obj._bluestore_args()
+        assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb /dev/sdx1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
+    def test_bluestore_args_16(self, hp_mock, ip_mock, osdc_o):
+        """
+        Given there is a wal and db defined
+        And we encrypt with dmcrypt
+        And the wal is not partitioned
+        And the db is not partitioned
+
+        And the device is not partitioned
+        And and the device is not a NVME
+        Expect args to be:
+
+        --block.wal /dev/sdwal --block.db /dev/sddb /dev/sdx
+
+        """
+        kwargs = {'wal': '/dev/sdwal',
+                  'db': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'device': '/dev/sdx'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [False]
+        hp_mock.side_effect = [0,0]
+        ret = obj._bluestore_args()
+        assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb /dev/sdx"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
+    def test_bluestore_args_17(self, hp_mock, ip_mock, osdc_o):
+        """
+        Given there is no wal and db defined
+        And we encrypt with dmcrypt
+
+        And the device is not partitioned
+        And and the device is not a NVME
+        Expect args to be:
+
+        /dev/sdx
+
+        """
+        kwargs = {'encryption': 'dmcrypt',
+                  'device': '/dev/sdx'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [False]
+        hp_mock.side_effect = [0,0]
+        ret = obj._bluestore_args()
+        assert ret == "/dev/sdx"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands._fsid')
     @mock.patch('srv.salt._modules.osd.OSDCommands._cluster_name')
