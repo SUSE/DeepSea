@@ -261,6 +261,10 @@ EOF
 # functions that print status information
 #
 
+function cat_deepsea_log {
+  cat /var/log/deepsea.log
+}
+
 function cat_salt_config {
   cat /etc/salt/master
   cat /etc/salt/minion

@@ -18,14 +18,33 @@ function _report_stage_failure_and_die {
 
 function _run_stage {
   local stage_num=$1
+  local cli=$2
+  test -z "$cli" && cli="classic"
   local stage_log_path="/tmp/stage.${stage_num}.log"
 
   echo ""
   echo "*********************************************"
   echo "********** Running DeepSea Stage $stage_num **********"
+
+  # CLI case
+  if [ "x$cli" = "xcli" ] ; then
+      echo "************ using DeepSea CLI **************"
+      echo "*********************************************"
+      echo ""
+      deepsea \
+          --log-file=/var/log/salt/deepsea.log \
+          --log-level=debug \
+          stage \
+          run \
+          ceph.stage.${stage_num} \
+          --simple-output
+      return
+  fi
+
   echo "*********************************************"
   echo ""
 
+  # non-CLI ("classic") case
   echo -n "" > $stage_log_path
   salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 > $stage_log_path
   STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
