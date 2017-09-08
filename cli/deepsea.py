@@ -105,11 +105,24 @@ def _run_monitor(show_state_steps, show_dynamic_steps, simple_output):
         mon.wait_to_finish()
 
 
+def _validate_stage_file_exists(stage_name):
+    """
+    Verifies if the stage file corresponding to the stage_name arg really exists
+    """
+    # check if stage exists
+    stage_file = "/srv/salt/{}".format(stage_name.replace('.', '/'))
+    if not os.path.exists(stage_file) and not os.path.exists("{}.sls".format(stage_file)):
+        PP.println("{}: Stage {} does not exist".format(PP.red("ERROR"),
+                                                        PP.cyan(stage_name)))
+        sys.exit(1)
+
 
 def _run_show_stage_steps(stage_name, hide_state_steps, only_visible_steps, use_cache):
     """
     Runs stage parser and prints the list of steps
     """
+    _validate_stage_file_exists(stage_name)
+
     PP.p_header("Parsing stage: {}".format(stage_name))
     steps, _ = SLSParser.parse_state_steps(stage_name, hide_state_steps, only_visible_steps,
                                            use_cache)
@@ -251,6 +264,8 @@ def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
 
         $ salt-run state.orch <stage_name>
     """
+    _validate_stage_file_exists(stage_name)
+
     ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
     sys.exit(ret)
 

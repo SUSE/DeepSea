@@ -71,13 +71,6 @@ def run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
         hide_dynamic_steps (bool): don't show runtime generated steps
         simple_output (bool): use the minimal outputter
     """
-    # check if stage exists
-    stage_file = "/srv/salt/{}".format(stage_name.replace('.', '/'))
-    if not os.path.exists(stage_file) and not os.path.exists("{}.sls".format(stage_file)):
-        PP.println("{}: Stage {} does not exist".format(PP.red("ERROR"),
-                                                        PP.cyan(stage_name)))
-        return
-
     mon = Monitor(not hide_state_steps, not hide_dynamic_steps)
     printer = SimplePrinter() if simple_output else StepListPrinter(False)
     mon.add_listener(printer)
