@@ -35,6 +35,7 @@ cat /etc/sysconfig/nfs-ganesha
 rm -rf /var/log/ganesha/ganesha.log
 systemctl restart nfs-ganesha.service
 systemctl is-active nfs-ganesha.service
+rpm -q nfs-ganesha
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $GANESHANODE
