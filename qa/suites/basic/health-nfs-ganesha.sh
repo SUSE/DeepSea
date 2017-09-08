@@ -108,6 +108,7 @@ for v in "" "3" "4" ; do
             echo "Not testing RGW FSAL on NFSv3"
         else
             rgw_curl_test
+            rgw_user_and_bucket_list
             rgw_validate_demo_users
             nfs_ganesha_write_test rgw "$v"
         fi

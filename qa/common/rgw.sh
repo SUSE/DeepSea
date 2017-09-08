@@ -14,6 +14,20 @@ EOF
   cat $RGWSLS
 }
 
+function rgw_user_and_bucket_list {
+  #
+  # just list rgw users and buckets
+  #
+  local TESTSCRIPT=/tmp/rgw_user_and_bucket_list.sh
+  local RGWNODE=$(_first_x_node rgw)
+  cat << EOF > $TESTSCRIPT
+radosgw-admin user list
+radosgw-admin bucket list
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $RGWNODE
+}
+
 function rgw_validate_demo_users {
   #
   # prove the demo users from rgw_demo_users were really set up
@@ -23,10 +37,8 @@ function rgw_validate_demo_users {
   cat << EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-radosgw-admin user list
 radosgw-admin user info --uid=demo
 radosgw-admin user info --uid=demo1
-radosgw-admin bucket list
 echo "Result: OK"
 EOF
   _run_test_script_on_node $TESTSCRIPT $RGWNODE
