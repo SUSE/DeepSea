@@ -686,8 +686,7 @@ class TestOSDPartitions():
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
         obj._bluestore_partitions(obj.osd.device)
-        mock_log.warn.assert_called_with('WAL size is unsupported for same device of /dev/sdx')
-        mock_log.warn.assert_called_once()
+        mock_log.warn.assert_called_with('No size specified for db /dev/sdx. Using default sizes')
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_wal_and_db_log_db_size(self, mock_log, osdp_o):
@@ -709,6 +708,61 @@ class TestOSDPartitions():
         obj._bluestore_partitions(obj.osd.device)
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
         mock_log.warn.assert_any_call('DB size is unsupported for same device of /dev/sdx')
+
+    @mock.patch('srv.salt._modules.osd.log')
+    def test_bluestore_partitions_wal_and_db_encrypted_log(self, mock_log, osdp_o):
+        """
+        Given I defined a wal and a db
+        And I encrypt with dmcrypt
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        """
+        kwargs = {'format': 'bluestore',
+                  'wal': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'db': '/dev/sdwal',
+                  'wal_size': '1000',
+                  'db_size': 10000}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+        obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
+
+    @mock.patch('srv.salt._modules.osd.log')
+    def test_bluestore_partitions_wal_encrypted_log(self, mock_log, osdp_o):
+        """
+        Given I defined a wal 
+        And I encrypt with dmcrypt
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        """
+        kwargs = {'format': 'bluestore',
+                  'wal': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'wal_size': '1000',
+                  'db_size': 10000}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+        obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
+
+    @mock.patch('srv.salt._modules.osd.log')
+    def test_bluestore_partitions_db_encrypted_log(self, mock_log, osdp_o):
+        """
+        Given I defined a db
+        And I encrypt with dmcrypt
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        Expect to call log() ( and leave the partition creation to ceph-disk )
+        """
+        kwargs = {'format': 'bluestore',
+                  'encryption': 'dmcrypt',
+                  'db': '/dev/sdwal',
+                  'wal_size': '1000',
+                  'db_size': 10000}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdp_o(osd_config)
+        obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_bluestore_partitions_wal_and_db_all_size_no_eq(self, create_mock, osdp_o):
@@ -750,8 +804,8 @@ class TestOSDPartitions():
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
         obj._bluestore_partitions(obj.osd.device)
+        mock_log.warn.assert_called_with('No size specified for wal /dev/sdwal. Using default sizes.')
         create_mock.assert_any_call('/dev/sddb', [('db', 'dbsize')])
-        mock_log.error.assert_any_call('No size specified for wal /dev/sdwal')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
@@ -791,8 +845,8 @@ class TestOSDPartitions():
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
         obj._bluestore_partitions(obj.osd.device)
-        mock_log.error.assert_any_call('No size specified for wal /dev/sdwal')
-        mock_log.error.assert_any_call('No size specified for db /dev/sddb')
+        mock_log.warn.assert_called()
+        mock_log.warn.assert_called()
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_only_wal_and_size(self, mock_log, osdp_o):
@@ -1387,122 +1441,11 @@ class TestOSDCommands():
         assert ret == "/dev/sdx"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args(self, hp_mock, ip_mock, osdc_o):
+    def test_bluestore_args(self, ip_mock, osdc_o):
         """
         Given there is a wal and db defined
-        And the wal is partitioned
-        And there are actually partitions(1)
-        And the db is partitioned
-        And there are actually partitions (2)
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True, True]
-        hp_mock.side_effect = [1,2]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_1(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is a wal and db defined
-        And the wal is partitioned
-        And there are no partitions <-
-        And the db is partitioned
-        And there are actually partitions (2)
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sdwal --block.db /dev/sddb2 /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True, True]
-        hp_mock.side_effect = [None, 2]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb2 /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_2(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is a wal and db defined
-        And the wal is partitioned
-        And there are actually partitions (1)
-        And the db is partitioned
-        And there are no partitions <-
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sdwal1 --block.db /dev/sddb /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True, True]
-        hp_mock.side_effect = [1, None]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_3(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is a wal and db defined
-        And the wal is not partitioned <-
-        And there are actually partitions (2)
-        And the db is partitioned
-        And there are actually partitions (1)
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sdwal --block.db /dev/sddb1 /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [False, True, True]
-        hp_mock.side_effect = [2]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb2 /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_4(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is a wal and db defined
-        And the wal is not partitioned <-
-        And there are actually partitions (2)
-        And the db is not partitioned <-
-        And there are actually partitions (1)
+        And there is no wal_size or db_size defined
+        Encryption is not set.
 
         And the device is partitioned
         And and the device is a NVME
@@ -1516,270 +1459,275 @@ class TestOSDCommands():
                   'device': '/dev/nvme0n1'}
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
-        ip_mock.side_effect = [False, False, True]
-        hp_mock.side_effect = []
+        ip_mock.side_effect = [True]
         ret = obj._bluestore_args()
         assert ret == "--block.wal /dev/sdwal --block.db /dev/sddb /dev/nvme0n1p1"
 
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
     @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_5(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a wal definded
-        And the wal is partitioned
-        And there are actually partitions (2)
-        And the db is colocated on the wal
-        and the highest partition is (3)
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sdwal2 --block.db /dev/sdwal3 /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': None,
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True]
-        hp_mock.side_effect = [2,3]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal2 --block.db /dev/sdwal3 /dev/nvme0n1p1"
-
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_6(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a wal definded
-        And the wal is partitioned
-        And there are actually partitions (2)
-        And the db is colocated on the wal
-        and the highest partition is None
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sdwal2 --block.db /dev/sdwal /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': None,
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True]
-        hp_mock.side_effect = [2,None]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal2 --block.db /dev/sdwal /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_7(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a wal definded
-        And the wal is not partitioned
-        And the wal is eq the device
-
-        And the device is partitioned
-        And the device is a NVME
-        Expect args to be:
-
-        /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': '/dev/nvme0n1',
-                  'db': None,
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [False, True]
-        hp_mock.side_effect = [None,None]
-        ret = obj._bluestore_args()
-        assert ret == "/dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_8(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a wal definded
-        And the wal is not partitioned
-        And the wal is not eq the device
-
-        And the device is partitioned
-        And the device is a NVME
-        Expect args to be:
-
-        """
-        kwargs = {'wal': '/dev/sdwal',
-                  'db': None,
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [False, True]
-        hp_mock.side_effect = [None,None]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal --block.db /dev/sdwal /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_9(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a db definded
-        And the db is partitioned
-        And there are actually partitions (2)
-        And the wal is colocated on the wal
-        and the highest partition is (3)
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.db /dev/sddb2 --block.wal /dev/sddb3 /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': None,
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True]
-        hp_mock.side_effect = [2,3]
-        ret = obj._bluestore_args()
-        assert ret == "--block.db /dev/sddb2 --block.wal /dev/sddb3 /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_10(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a db definded
-        And the db is partitioned
-        And there are actually partitions (2)
-        And the wal is colocated on the db
-        and the highest partition is None
-
-        And the device is partitioned
-        And and the device is a NVME
-        Expect args to be:
-
-        --block.db /dev/sddb2 --block.wal /dev/sddb /dev/nvme0n1p1
-
-        """
-        kwargs = {'wal': None,
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True]
-        hp_mock.side_effect = [2,None]
-        ret = obj._bluestore_args()
-        assert ret == "--block.db /dev/sddb2 --block.wal /dev/sddb /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_11(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a db definded
-        And the db is not partitioned
-        And the db is eq the device
-
-        And the device is partitioned
-        And the device is a NVME
-        Expect args to be:
-
-        /dev/nvme0n1p1"
-
-        """
-        kwargs = {'wal': None,
-                  'db': '/dev/nvme0n1',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [False, True]
-        hp_mock.side_effect = [None,None]
-        ret = obj._bluestore_args()
-        assert ret == "/dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_12(self, hp_mock, ip_mock, osdc_o):
-        """
-        Given there is only a db definded
-        And the db is not partitioned
-        And the db is not eq the device
-
-        And the device is partitioned
-        And the device is a NVME
-        Expect args to be:
-
-        --block.wal /dev/sddb --block.db /dev/sddb /dev/nvme0n1p1"
-
-        """
-        kwargs = {'wal': None,
-                  'db': '/dev/sddb',
-                  'device': '/dev/nvme0n1'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdc_o(osd_config)
-        ip_mock.side_effect = [False, True]
-        hp_mock.side_effect = [None,None]
-        ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sddb --block.db /dev/sddb /dev/nvme0n1p1"
-
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
-    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_13(self, hp_mock, ip_mock, osdc_o):
+    def test_bluestore_args_1(self, ip_mock, hp_mock, osdc_o):
         """
         Given there is a wal and db defined
-        And the wal is partitioned
-        And there are actually partitions(1)
-        And the db is partitioned
-        And there are actually partitions (2)
+        And there IS wal_size and db_size defined
+        And there are partitions (1,1)
+        Encryption is not set.
 
-        And the device is not partitioned
+        And the device is partitioned
         And and the device is a NVME
         Expect args to be:
 
-        --block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1
+        --block.wal /dev/sdwal1 --block.db /dev/sddb1 /dev/nvme0n1p1
 
         """
         kwargs = {'wal': '/dev/sdwal',
+                  'wal_size': '2G',
                   'db': '/dev/sddb',
+                  'db_size': '1G',
                   'device': '/dev/nvme0n1'}
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True, False]
-        hp_mock.side_effect = [1,2]
+        ip_mock.side_effect = [True]
+        hp_mock.side_effect = [1, 1]
         ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/nvme0n1"
+        assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb1 /dev/nvme0n1p1"
 
-    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
     @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
-    def test_bluestore_args_14(self, hp_mock, ip_mock, osdc_o):
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_2(self, ip_mock, hp_mock, osdc_o):
         """
-        Given there is a wal and db defined
-        And the wal is partitioned
-        And there are actually partitions(1)
-        And the db is partitioned
-        And there are actually partitions (2)
+        Given there is NO wal but a db defined
+        And there IS NO wal_size but a db_size defined
+        And there are partitions (1)
+        Encryption is not set.
 
         And the device is partitioned
-        And and the device is not a NVME
+        And and the device is a NVME
         Expect args to be:
 
-        --block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/sdx
+        --block.db /dev/sddb1 /dev/nvme0n1p1
+
+        """
+        kwargs = {'db': '/dev/sddb',
+                  'db_size': '1G',
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        hp_mock.side_effect = [1]
+        ret = obj._bluestore_args()
+        assert ret == "--block.db /dev/sddb1 /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_2_1(self, ip_mock, hp_mock, osdc_o):
+        """
+        Given there is NO wal but a db defined
+        And there is wal_size and a db_size defined
+        And there are partitions (1)
+        Encryption is not set.
+
+        And the device is partitioned
+        And and the device is a NVME
+        Expect args to be:
+
+        --block.db /dev/sddb1 /dev/nvme0n1p1
+
+        """
+        kwargs = {'db': '/dev/sddb',
+                  'db_size': '1G',
+                  'wal_size': '2G',
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        hp_mock.side_effect = [1]
+        ret = obj._bluestore_args()
+        assert ret == "--block.db /dev/sddb1 /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_3(self, ip_mock, osdc_o):
+        """
+        Given there is only a wal definded
+        And there is no wal_size or db_size defined
+
+        And the device is partitioned
+        And and the device is a NVME
+        Expect args to be:
+
+        --block.wal /dev/sdwal /dev/nvme0n1p1
+
+        """
+        kwargs = {'wal': '/dev/sdwal',
+                  'db': None,
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        ret = obj._bluestore_args()
+        assert ret == "--block.wal /dev/sdwal /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_4(self, ip_mock, hp_mock, osdc_o):
+        """
+        Given there is NO db but a wal defined
+        And there IS NO db_size but a wal_size defined
+        And there are partitions (1)
+        Encryption is not set.
+
+        And the device is partitioned
+        And and the device is a NVME
+        Expect args to be:
+
+        --block.db /dev/sdwal1 /dev/nvme0n1p1
+
+        """
+        kwargs = {'wal': '/dev/sdwal',
+                  'wal_size': '1G',
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        hp_mock.side_effect = [1]
+        ret = obj._bluestore_args()
+        assert ret == "--block.wal /dev/sdwal1 /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_5(self, ip_mock, hp_mock, osdc_o):
+        """
+        Given there is a db and a wal defined
+        And there is db_size and wal_size defined
+        Encryption is set.
+
+        And the device is partitioned
+        And and the device is a NVME
+        Expect args to be:
+
+        --block.db /dev/sddb --block.wal /dev/sdwal /dev/nvme0n1p1
+
+        """
+        kwargs = {'wal': '/dev/sdwal',
+                  'wal_size': '1G',
+                  'db_size': '1G',
+                  'db': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        hp_mock.side_effect = [1]
+        ret = obj._bluestore_args()
+        assert ret == "--block.db /dev/sddb --block.wal /dev/sdwal /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_6(self, ip_mock, osdc_o):
+        """
+        Given there is only a db definded
+        And there is no wal_size or db_size defined
+        And Encryption is set
+
+        And the device is partitioned
+        And and the device is a NVME
+        Expect args to be:
+
+        --block.db /dev/sddb /dev/nvme0n1p1
+
+        """
+        kwargs = {'wal': None,
+                  'db': '/dev/sddb',
+                  'encryption': 'dmcrypt',
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        ret = obj._bluestore_args()
+        assert ret == "--block.db /dev/sddb /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_7(self, ip_mock, osdc_o):
+        """
+        Given there is only a wal definded
+        And there is no wal_size or db_size defined
+        And Encryption is set
+
+        And the device is partitioned
+        And and the device is a NVME
+        Expect args to be:
+
+        --block.db /dev/sddb /dev/nvme0n1p1
+
+        """
+        kwargs = {'wal': '/dev/sdwal',
+                  'db': None,
+                  'encryption': 'dmcrypt',
+                  'device': '/dev/nvme0n1'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ip_mock.side_effect = [True]
+        ret = obj._bluestore_args()
+        assert ret == "--block.wal /dev/sdwal /dev/nvme0n1p1"
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
+    def test_bluestore_args_8(self, ip_mock, osdc_o):
+        """
+        Given there is only a wal definded
+        And there is wal_size defined
+        And Encryption is set
+
+        And the device is partitioned
+        And and the device is a standard disk
+        Expect args to be:
+        --block.wal /dev/sdwal --block.db /dev/sddb /dev/sdx
 
         """
         kwargs = {'wal': '/dev/sdwal',
                   'db': '/dev/sddb',
+                  'encryption': 'dmcrypt',
                   'device': '/dev/sdx'}
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
-        ip_mock.side_effect = [True, True, True]
-        hp_mock.side_effect = [1,2]
+        ip_mock.side_effect = [True]
         ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb2 /dev/sdx1"
+        assert ret == "--block.db /dev/sddb --block.wal /dev/sdwal /dev/sdx1"
+
+    def test_bluestore_args_9(self, osdc_o):
+        """
+        Given there is a not wal and no db defined
+        And Encryption is set
+
+        And the device is not partitioned
+        And and the device is not a NVME
+        Expect args to be:
+
+        /dev/sdx
+
+        """
+        kwargs = {'encryption': 'dmcrypt',
+                  'device': '/dev/sdx'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj._bluestore_args()
+        assert ret == "/dev/sdx"
+
+    def test_bluestore_args_10(self, osdc_o):
+        """
+        Given there is a not wal and no db defined
+        And Encryption is not set
+
+        And the device is not partitioned
+        And and the device is not a NVME
+        Expect args to be:
+
+        /dev/sdx
+
+        """
+        kwargs = {'encryption': None,
+                  'device': '/dev/sdx'}
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj._bluestore_args()
+        assert ret == "/dev/sdx"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands._fsid')
     @mock.patch('srv.salt._modules.osd.OSDCommands._cluster_name')
