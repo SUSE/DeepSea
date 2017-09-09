@@ -29,14 +29,16 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [--fsal={cephfs,rgw,both}]"
+    echo "  ${0} [-h,--help] [--cli] [--fsal={cephfs,rgw,both}]"
     echo
     echo "Options:"
+    echo "    --cli      Use DeepSea CLI"
     echo "    --fsal     Defaults to cephfs"
+    echo "    --help     Display this usage message"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "fsal:" \
+TEMP=$(getopt -o h --long "cli,fsal:" \
      -n 'health-nfs-ganesha.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -45,11 +47,13 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 eval set -- "$TEMP"
 
 # process options
+CLI=""
 FSAL=cephfs
 while true ; do
     case "$1" in
-        -h|--help) usage ;;    # does not return
+        --cli) CLI="cli" ; shift ;;
         --fsal) FSAL=$2 ; shift ; shift ;;
+        -h|--help) usage ;;    # does not return
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
@@ -67,8 +71,8 @@ echo "Testing deployment with FSAL ->$FSAL<-"
 assert_enhanced_getopt
 install_deps
 cat_salt_config
-run_stage_0
-run_stage_1
+run_stage_0 "$CLI"
+run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_client
 if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
@@ -80,12 +84,12 @@ if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
 fi
 policy_cfg_nfs_ganesha
 cat_policy_cfg
-run_stage_2
+run_stage_2 "$CLI"
 ceph_conf_small_cluster
-run_stage_3
+run_stage_3 "$CLI"
 ceph_cluster_status
 nfs_ganesha_no_root_squash
-run_stage_4
+run_stage_4 "$CLI"
 ceph_cluster_status
 ceph_health_test
 nfs_ganesha_cat_config_file
