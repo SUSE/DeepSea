@@ -34,7 +34,7 @@ function usage {
 }
 
 TEMP=$(getopt -o h --long "cli" \
-     -n 'health-ok.sh' -- "$@")
+     -n 'health-mds.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 

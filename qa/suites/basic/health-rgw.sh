@@ -26,16 +26,17 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli]"
+    echo "  ${0} [-h,--help] [--cli] [--ssl]"
     echo
     echo "Options:"
     echo "    --cli      Use DeepSea CLI"
     echo "    --help     Display this usage message"
+    echo "    --ssl      Use SSL (https, port 443) with RGW"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli" \
-     -n 'health-ok.sh' -- "$@")
+TEMP=$(getopt -o h --long "cli,ssl" \
+     -n 'health-rgw.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 
@@ -44,10 +45,12 @@ eval set -- "$TEMP"
 
 # process options
 CLI=""
+SSL=""
 while true ; do
     case "$1" in
         --cli) CLI="cli" ; shift ;;
         -h|--help) usage ;;    # does not return
+        --ssl) SSL="ssl" ; shift ;;
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
@@ -56,20 +59,33 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
-run_stage_0
-run_stage_1
+run_stage_0 "$CLI"
+if [ -n "$SSL" ] ; then
+    echo "Testing RGW deployment with SSL"
+    rgw_ssl_init
+else
+    echo "Testing RGW deployment (no SSL)"
+fi
+run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_no_client
-policy_cfg_rgw
+if [ -n "$SSL" ] ; then
+    policy_cfg_rgw_ssl
+else
+    policy_cfg_rgw
+fi
 cat_policy_cfg
-run_stage_2
+run_stage_2 "$CLI"
 ceph_conf_small_cluster
-run_stage_3
+run_stage_3 "$CLI"
 ceph_cluster_status
-run_stage_4
+run_stage_4 "$CLI"
 ceph_cluster_status
 rgw_user_and_bucket_list
 ceph_health_test
 rgw_curl_test
+if [ -n "$SSL" ] ; then
+    rgw_curl_test_ssl
+fi
 
 echo "OK"
