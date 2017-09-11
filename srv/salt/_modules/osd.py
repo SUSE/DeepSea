@@ -810,6 +810,13 @@ class OSDPartitions(object):
         When these get resolved, change the logic
         """
 
+        # ceph-disk excepts just the device name as an --block.wal and --block.db argument
+        # which makes sense because it needs to create the partition with cryptsetup and
+        # args provided via the ceph.conf
+        if (self.osd.wal or self.osd.db) and self.osd.encryption:
+            log.warn("You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf")
+            return
+
         if self.osd.wal and self.osd.db:
             if self.osd.wal_size:
                 if self.osd.wal == self.osd.device:
@@ -1069,64 +1076,80 @@ class OSDCommands(object):
         """
         args = ""
         if self.osd.wal and self.osd.db:
-            if self.is_partitioned(self.osd.wal):
-                partition = self.highest_partition(self.osd.wal, 'wal')
-                if partition:
-                    args = "--block.wal {}{} ".format(self.osd.wal, partition)
+            # Independently of the drive being partitioned,
+            # do not scan for highest_partitions but rather
+            # provide the entire block to ceph-disk.
+            # ceph-disk handles the encrypted block/partition creation
+            if not self.osd.encryption:
+                if self.is_partitioned(self.osd.wal):
+                    partition = self.highest_partition(self.osd.wal, 'wal')
+                    if partition:
+                        args = "--block.wal {}{} ".format(self.osd.wal, partition)
+                    else:
+                        args = "--block.wal {} ".format(self.osd.wal)
                 else:
                     args = "--block.wal {} ".format(self.osd.wal)
             else:
                 args = "--block.wal {} ".format(self.osd.wal)
 
-            if self.is_partitioned(self.osd.db):
-                partition = self.highest_partition(self.osd.db, 'db')
-                if partition:
-                    args += "--block.db {}{} ".format(self.osd.db, partition)
-                else:
-                    args += "--block.db {} ".format(self.osd.db)
-            else:
-                args += "--block.db {} ".format(self.osd.db)
-        else:
-            if self.osd.wal:
-                log.debug("wal: {}".format(self.osd.wal))
-                if self.is_partitioned(self.osd.wal):
-                    partition = self.highest_partition(self.osd.wal, 'wal')
-                    if partition:
-                        args += "--block.wal {}{} ".format(self.osd.wal, partition)
-                    else:
-                        args += "--block.wal {} ".format(self.osd.wal)
-                    log.debug("args: {}".format(args))
-
-                    partition = self.highest_partition(self.osd.wal, 'db')
-                    if partition:
-                        args += "--block.db {}{} ".format(self.osd.wal, partition)
-                    else:
-                        args += "--block.db {} ".format(self.osd.wal)
-                    log.debug("args: {}".format(args))
-                else:
-                    if self.osd.wal == self.osd.device:
-                        log.warn("Separate wal partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.wal))
-                    else:
-                        args += "--block.wal {} --block.db {} ".format(self.osd.wal, self.osd.wal)
-
-            if self.osd.db:
+            if not self.osd.encryption:
                 if self.is_partitioned(self.osd.db):
                     partition = self.highest_partition(self.osd.db, 'db')
                     if partition:
                         args += "--block.db {}{} ".format(self.osd.db, partition)
                     else:
                         args += "--block.db {} ".format(self.osd.db)
-
-                    partition = self.highest_partition(self.osd.db, 'wal')
-                    if partition:
-                        args += "--block.wal {}{} ".format(self.osd.db, partition)
-                    else:
-                        args += "--block.wal {} ".format(self.osd.db)
                 else:
-                    if self.osd.db == self.osd.device:
-                        log.warn("Separate db partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.db))
+                    args += "--block.db {} ".format(self.osd.db)
+            else:
+                args += "--block.db {} ".format(self.osd.db)
+        else:
+            if self.osd.wal:
+                if not self.osd.encryption:
+                    log.debug("wal: {}".format(self.osd.wal))
+                    if self.is_partitioned(self.osd.wal):
+                        partition = self.highest_partition(self.osd.wal, 'wal')
+                        if partition:
+                            args += "--block.wal {}{} ".format(self.osd.wal, partition)
+                        else:
+                            args += "--block.wal {} ".format(self.osd.wal)
+                        log.debug("args: {}".format(args))
+
+                        partition = self.highest_partition(self.osd.wal, 'db')
+                        if partition:
+                            args += "--block.db {}{} ".format(self.osd.wal, partition)
+                        else:
+                            args += "--block.db {} ".format(self.osd.wal)
+                        log.debug("args: {}".format(args))
                     else:
-                        args += "--block.wal {} --block.db {} ".format(self.osd.db, self.osd.db)
+                        if self.osd.wal == self.osd.device:
+                            log.warn("Separate wal partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.wal))
+                        else:
+                            args += "--block.wal {} --block.db {} ".format(self.osd.wal, self.osd.wal)
+                else:
+                    args += "--block.wal {} ".format(self.osd.wal)
+
+            if self.osd.db:
+                if not self.osd.encryption:
+                    if self.is_partitioned(self.osd.db):
+                        partition = self.highest_partition(self.osd.db, 'db')
+                        if partition:
+                            args += "--block.db {}{} ".format(self.osd.db, partition)
+                        else:
+                            args += "--block.db {} ".format(self.osd.db)
+
+                        partition = self.highest_partition(self.osd.db, 'wal')
+                        if partition:
+                            args += "--block.wal {}{} ".format(self.osd.db, partition)
+                        else:
+                            args += "--block.wal {} ".format(self.osd.db)
+                    else:
+                        if self.osd.db == self.osd.device:
+                            log.warn("Separate db partition on {} unnecessary - triggers ceph-disk bug".format(self.osd.db))
+                        else:
+                            args += "--block.wal {} --block.db {} ".format(self.osd.db, self.osd.db)
+                else:
+                    args += "--block.db {} ".format(self.osd.db)
 
         # if the device is already partitioned
         # but the partitionnumber is not 1
@@ -1142,7 +1165,6 @@ class OSDCommands(object):
         else:
             args += "{}".format(self.osd.device)
         return args
-
 
     def prepare(self):
         """
@@ -1822,7 +1844,7 @@ def is_prepared(device):
     osdc = OSDCommands(config)
     partition = osdc.highest_partition(readlink(device), 'osd')
     if partition == 0:
-        log.error("Do not know which partition to check on {}".format(device))
+        log.debug("Do not know which partition to check on {}".format(device))
         return False
 
     log.debug("Checking partition {} on device {}".format(partition, device))
