@@ -48,7 +48,7 @@ def configuration(role):
 
 
 
-def users(realm='default'):
+def users(realm='default', contains=None):
     """
     Return the list of users for a realm.
     """
@@ -58,6 +58,8 @@ def users(realm='default'):
     proc.wait()
     log.debug("rc: {}".format(proc.returncode))
     if proc.returncode != '0':
+        if contains:
+            return [ item for item in json.loads(proc.stdout.read()) if contains in item]
         return json.loads(proc.stdout.read())
     return []
 
@@ -129,6 +131,7 @@ def access_key(user, pathname="/srv/salt/ceph/rgw/cache"):
 def secret_key(user, pathname="/srv/salt/ceph/rgw/cache"):
     return _key(user, 'secret_key', pathname)
 
+
 def endpoints(cluster='ceph'):
     result = []
 
@@ -161,7 +164,6 @@ def endpoints(cluster='ceph'):
     port = '7480'  # civetweb default port
     ssl = ''
     admin_path = 'admin'
-
     rgw_names = ['rgw']
     for minion in cached:
         if 'rgw_configurations' in cached[minion]:
@@ -169,17 +171,17 @@ def endpoints(cluster='ceph'):
             rgw_names = cached[minion]['rgw_configurations']
 
     conf_file_dir = "/srv/salt/ceph/configuration/files/"
-    rgw_conf_files = []
+    rgw_conf_files = {}
     for rgw_name in rgw_names:
         # Check for user created configurations
         pathname = "{}/ceph.conf.d/{}.conf".format(conf_file_dir, rgw_name)
         if os.path.exists(pathname):
-            rgw_conf_files.append(pathname)
+            rgw_conf_files[pathname] = rgw_name
             continue
 
         pathname = "{}/{}.conf".format(conf_file_dir, rgw_name)
         if os.path.exists(pathname):
-            rgw_conf_files.append(pathname)
+            rgw_conf_files[pathname] = rgw_name
 
     for pathname in rgw_conf_files:
         with open(pathname) as rgw_conf_file:
@@ -195,8 +197,10 @@ def endpoints(cluster='ceph'):
                         admin_path = match.group(1)
 
         local = salt.client.LocalClient()
-        fqdns = local.cmd('I@roles:'+ rgw_name, 'grains.item', ['fqdn'], expr_form="compound")
+        
+        fqdns = local.cmd('I@roles:'+ rgw_conf_files[pathname], 'grains.item', ['fqdn'], expr_form="compound")
         for _, grains in fqdns.items():
+            log.warning("fqdns: {}".format(fqdns))
             result.append({
                 'host': grains['fqdn'],
                 'port': port,

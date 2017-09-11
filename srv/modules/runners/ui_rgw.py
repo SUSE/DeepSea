@@ -94,7 +94,7 @@ class Radosgw(object):
     def endpoints(cluster='ceph'):
         result = []
         local = salt.client.LocalClient()
-        for master_node in local.cmd('*', "pillar.get", ["master_minion"]):
+        for master_node in local.cmd('*', "pillar.get", ["master_minion"]).values():
             result = local.cmd(master_node, 'rgw.endpoints', ['cluster=ceph'])[master_node]
             break
         return result

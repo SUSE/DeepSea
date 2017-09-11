@@ -35,12 +35,12 @@ class TestRadosgw():
 
         fs.CreateFile('cache/client.rgw.rgw1.json',
             contents='''[client.rgw.rgw1]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
-        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+        fs.CreateFile('/srv/salt/ceph/configuration/files/rgw.conf',
             contents='''[client.rgw.rgw1]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         result = rgw.endpoints()[0]
         fs.RemoveFile('cache/client.rgw.rgw1.json')
-        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
         assert cmp(expected, result) == 0
 
@@ -64,12 +64,12 @@ class TestRadosgw():
         }
 
         fs.CreateFile('cache/client.rgw.rgw1.json')
-        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+        fs.CreateFile('/srv/salt/ceph/configuration/files/rgw.conf',
             contents='''[client.rgw.rgw1]\nrgw_frontends = civetweb port=443s ssl_certificate=/etc/ceph/private/keyandcert.pem\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         result = rgw.endpoints()[0]
         fs.RemoveFile('cache/client.rgw.rgw1.json')
-        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
         assert cmp(expected, result) == 0
 
@@ -93,12 +93,12 @@ class TestRadosgw():
         }
 
         fs.CreateFile('cache/client.rgw.rgw1.json')
-        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+        fs.CreateFile('/srv/salt/ceph/configuration/files/rgw.conf',
             contents='''[client.rgw.rgw1]\nrgw_frontends = civetweb port=443s\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\nrgw admin entry = sys\n''')
 
         result = rgw.endpoints()[0]
         fs.RemoveFile('cache/client.rgw.rgw1.json')
-        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
         assert cmp(expected, result) == 0
 
@@ -123,12 +123,12 @@ class TestRadosgw():
 
         fs.CreateFile('cache/client.rgw.json',
             contents='''[client.rgw]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
-        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+        fs.CreateFile('/srv/salt/ceph/configuration/files/rgw.conf',
             contents='''[client.rgw.rgw1]\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         result = rgw.endpoints()[0]
         fs.RemoveFile('cache/client.rgw.json')
-        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
         assert cmp(expected, result) == 0
 
@@ -152,12 +152,12 @@ class TestRadosgw():
         }
 
         fs.CreateFile('cache/client.rgw.json')
-        fs.CreateFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw',
+        fs.CreateFile('/srv/salt/ceph/configuration/files/rgw.conf',
             contents='''[client.rgw.rgw1]\nrgw_frontends = civetweb port=443s ssl_certificate=/etc/ceph/private/keyandcert.pem\nkey = 12345\ncaps mon = "allow rwx"\ncaps osd = "allow rwx"\n''')
 
         result = rgw.endpoints()[0]
         fs.RemoveFile('cache/client.rgw.json')
-        fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.rgw')
+        fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
         assert cmp(expected, result) == 0
 
@@ -177,8 +177,5 @@ class TestRadosgw():
         mpu.get_minion_pillar.return_value = { "minionA": { "rgw_endpoint": "http://abc.def/admin" }}
         result = rgw.endpoints()[0]
 
-        print "\nresult: ", result
-        print "\nexpected: ", expected
-        print "\n"
         assert cmp(expected, result) == 0
 

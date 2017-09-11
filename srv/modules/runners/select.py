@@ -129,7 +129,7 @@ def from_(pillar, role, *args, **kwargs):
     local = salt.client.LocalClient()
     search = "I@roles:master"
     try:
-        roles = local.cmd(search , 'pillar.get', [ pillar ], expr_form="compound").values()[0].keys()
+        roles = local.cmd(search , 'pillar.get', [ pillar ], expr_form="compound").values()[0]
     except:
         roles = []
 
