@@ -1,0 +1,69 @@
+.TH deepsea-stage-run 1 "DeepSea CLI man page"
+.SH NAME
+deepsea-stage-run - Run DeepSea stages with real-time, user-friendly output.
+
+.SH SYNOPSIS
+deepsea stage run [--help] [--hide-dynamic-steps] [--hide-state-steps]
+                  [--simple-output]
+                  <stage_name>
+
+.SH DESCRIPTION
+Runs a DeepSea stage, showing its execution progress in real-time.
+
+This commands is an alternative to the Salt-based commands for running DeepSea
+stages (or any DeepSea orchestration state file). For instance:
+.RS
+.B deepsea stage run ceph.stage.0
+.RE
+is equivalent to:
+.RE
+.RS
+.B salt-run state.orch ceph.stage.0
+
+.RE
+The stage name
+.I <stage_name>
+corresponds to the way Salt orchestration state files are
+referenced. For example, stage
+.B deploy,
+which corresponds to the directoy located in
+.B /srv/salt/ceph/stage/deploy,
+is referenced as
+.B ceph.stage.deploy
+
+.SH OPTIONS
+.B --help
+.RS
+Shows the help message.
+
+.RE
+.B --hide-dynamic-steps
+.RS
+Disables the visualization of dynamic steps.
+
+.RE
+.B --hide-state-steps
+.RS
+Disables the visualization of Salt state intermediate steps. This
+may speed up the initialization time for running a stage.
+
+.RE
+.B --simple-output
+.RS
+Enables a minimalistic visualization layout without colors.
+Useful when redirecting the monitor output to a text file.
+
+.SH EXAMPLES
+Run stage
+.B 0
+.RS
+.B deepsea stage run ceph.stage.0
+
+.RE
+Run stage
+.B radosgw
+.RS
+.B deepsea stage run ceph.stage.radosgw
+
+.SH SEE ALSO
+.BR deepsea.commands(1)

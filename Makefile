@@ -62,6 +62,8 @@ copy-files:
 	# man pages
 	install -d -m 755 $(DESTDIR)/usr/share/man/man7
 	install -m 644 man/deepsea.*.7 $(DESTDIR)/usr/share/man/man7
+	install -d -m 755 $(DESTDIR)/usr/share/man/man1
+	install -m 644 man/deepsea*.1 $(DESTDIR)/usr/share/man/man1
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
 	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
