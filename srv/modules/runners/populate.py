@@ -703,7 +703,7 @@ class CephRoles(object):
         # first step, find public networks using hostname -i in all minions
         public_addrs = []
         local = salt.client.LocalClient()
-        cmd_result = local.cmd(self.search , 'cmd.run', ['hostname -i'])
+        cmd_result = local.cmd(self.search , 'cmd.run', ['hostname -i'], expr_form="compound")
         for _, addrs in cmd_result.items():
             addr_list = addrs.split(' ')
             public_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
@@ -717,13 +717,13 @@ class CephRoles(object):
         # second step, find cluster network by checking which network salt-master does not belong
         master_addrs = []
         master_minion = None
-        cmd_result = local.cmd(self.search, 'pillar.get', ['master_minion'])
+        cmd_result = local.cmd(self.search, 'pillar.get', ['master_minion'], expr_form="compound")
         for _, value in cmd_result.items():
             master_minion = value
             break
         if not master_minion:
             raise Exception("No master_minion found in pillar")
-        cmd_result = local.cmd(master_minion , 'grains.get', ['ipv4'])
+        cmd_result = local.cmd(master_minion , 'grains.get', ['ipv4'], expr_form="compound")
         for _, addr_list in cmd_result.items():
             master_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
                                 for addr in addr_list if not addr.startswith('127.')])
@@ -753,7 +753,7 @@ class CephRoles(object):
 
         # fourth step, remove redudant public networks
         filtered_list = []
-        cmd_result = local.cmd(self.search , 'grains.get', ['ipv4'])
+        cmd_result = local.cmd(self.search , 'grains.get', ['ipv4'], expr_form="compound")
         for network in public_networks:
             to_remove = []
             for key, addr_list in cmd_result.items():
