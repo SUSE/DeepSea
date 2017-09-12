@@ -1,11 +1,12 @@
 template: rw_single_file.j2
 filesize: 1g
-blocksizes:
+runtime: 60
+bs:
   - 4k
   - 1m
   - 4m
   - 8m
 number_of_workers: 1
-operations:
+op:
   - rw
   - randrw
