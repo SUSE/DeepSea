@@ -135,10 +135,25 @@ mon allow pool delete = true
 EOF
 }
 
+#
+# functions for generating osd profiles
+#
+
+function proposal_populate_dmcrypt {
+    salt-run proposal.populate encryption='dmcrypt' name='dmcrypt'
+}
 
 #
 # functions for generating policy.cfg
 #
+
+function policy_cfg_encryption {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Hardware Profile
+profile-dmcrypt/cluster/*.sls
+profile-dmcrypt/stack/default/ceph/minions/*yml
+EOF
+}
 
 function policy_cfg_base {
   cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
@@ -165,6 +180,7 @@ profile-default/cluster/*.sls
 profile-default/stack/default/ceph/minions/*yml
 EOF
 }
+
 
 function policy_cfg_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg

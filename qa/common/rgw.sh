@@ -90,7 +90,20 @@ EOF
     cat $GLOBALYML
 }
 
-
+function validate_rados_put {
+    local TESTSCRIPT=/tmp/test_rados_put.sh
+    cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+ceph osd pool create write_test 128 128
+echo "dummy_content" > verify.txt
+rados -p write_test put test_object verify.txt
+rados -p write_test get test_object verify_returned.txt
+test `cat verify.txt` = `cat verify_returned.txt`
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
+}
 
 function rgw_ssl_init {
     local CERTDIR=/srv/salt/ceph/rgw/cert
