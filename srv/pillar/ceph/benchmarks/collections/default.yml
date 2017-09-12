@@ -1,5 +1,5 @@
 fs:
   - fio/rw_single_file.yml
-  - fio/rw_many_files.yml
+  # - fio/rw_many_files.yml
 rbd:
   - fio/base_rbd.yml

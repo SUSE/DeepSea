@@ -105,7 +105,7 @@ class Fio(object):
                 client_jobs.extend(['--client={}'.format(client)])
                 client_jobs.extend([jobfile])
 
-            log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
+            log_args = ['--output={}/{}.json'.format(job_log_dir, jobname)]
             output.append(subprocess.check_output(
                 [self.cmd] + self.cmd_global_args + log_args + client_jobs))
 
