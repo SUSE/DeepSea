@@ -12,6 +12,7 @@ import jinja2
 import os
 import subprocess
 import sys
+import time
 import yaml
 
 log = logging.getLogger(__name__)
@@ -105,9 +106,10 @@ class Fio(object):
                 client_jobs.extend(['--client={}'.format(client)])
                 client_jobs.extend([jobfile])
 
-            log_args = ['--output={}/{}.json'.format(job_log_dir, jobname)]
+            log_args = ['--output={}/{}.json'.format(job_log_dir, job_name)]
             output.append(subprocess.check_output(
                 [self.cmd] + self.cmd_global_args + log_args + client_jobs))
+            time.sleep(60)
 
         return output
 
