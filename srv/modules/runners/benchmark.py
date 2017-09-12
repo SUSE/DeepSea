@@ -7,6 +7,7 @@ import ast
 import logging
 import datetime
 import ipaddress
+from itertools import product
 import jinja2
 import os
 import subprocess
@@ -85,6 +86,10 @@ class Fio(object):
             datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
         os.makedirs(job_log_dir)
         log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
+
+        job = self._get_job_parameters(job_spec, job_log_dir, '')
+        job_product = self._get_exploded_job(job)
+
         client_jobs = []
         '''
         create a list that alternates between --client arguments and job files
@@ -100,6 +105,18 @@ class Fio(object):
             [self.cmd] + self.cmd_global_args + log_args + client_jobs)
 
         return output
+
+    def _get_exploded_job(self, job):
+        list_entries = {v for k, v in job.values() if isinstance(v, list)}
+        list_keys = list_entries.keys()
+        scalar_values = {k: v for k, v in job.items() if not isinstance(v, list)}
+        perms = list(product(*list_entries.values()))
+        res = []
+        for perm in perms:
+            job = scalar_values
+            for i in range(0, len(list_entries)):
+                job.update({list_keys[i]: perm[i]})
+            res.append(job)
 
     def _parse_job(self, job_spec, job_name, job_log_dir, client):
         # parse yaml and get job spec
