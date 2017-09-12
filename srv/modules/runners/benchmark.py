@@ -127,10 +127,10 @@ class Fio(object):
                 log.error(error)
                 raise error
         output_options = '''
-        write_bw_log={logdir}/output
-        write_lat_log={logdir}/output
-        write_hist_log={logdir}/output
-        write_iops_log={logdir}/output
+        #write_bw_log={logdir}/output
+        #write_lat_log={logdir}/output
+        #write_hist_log={logdir}/output
+        #write_iops_log={logdir}/output
         '''.format(logdir=job_log_dir)
         job.update({'dir': self.work_dir, 'output_options': output_options,
                     'client': client})
