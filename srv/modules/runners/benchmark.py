@@ -87,27 +87,31 @@ class Fio(object):
         os.makedirs(job_log_dir)
         log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
 
-        job = self._get_job_parameters(job_spec, job_log_dir, '')
+        job = self._get_job_parameters(job_spec, job_log_dir)
+        # parse yaml and get job spec
         job_product = self._get_exploded_job(job)
 
-        client_jobs = []
-        '''
-        create a list that alternates between --client arguments and job files
-        e.g. [--client=host1, jobfile, --client=host2, jobfile]
-        fio expects a job file for every remote agent
-        '''
-        for client in self.clients:
-            jobfile = self._parse_job(job_spec, job_name, job_log_dir, client)
-            client_jobs.extend(['--client={}'.format(client)])
-            client_jobs.extend([jobfile])
+        output = []
+        for job in job_product:
+            client_jobs = []
+            '''
+            create a list that alternates between --client arguments and job files
+            e.g. [--client=host1, jobfile, --client=host2, jobfile]
+            fio expects a job file for every remote agent
+            '''
+            for client in self.clients:
+                job.update({'client': client})
+                jobfile = self._parse_job(job, job_name, job_log_dir, client)
+                client_jobs.extend(['--client={}'.format(client)])
+                client_jobs.extend([jobfile])
 
-        output = subprocess.check_output(
-            [self.cmd] + self.cmd_global_args + log_args + client_jobs)
+            output.append(subprocess.check_output(
+                [self.cmd] + self.cmd_global_args + log_args + client_jobs))
 
         return output
 
     def _get_exploded_job(self, job):
-        list_entries = {v for k, v in job.values() if isinstance(v, list)}
+        list_entries = {k: v for k, v in job.items() if isinstance(v, list)}
         list_keys = list_entries.keys()
         scalar_values = {k: v for k, v in job.items() if not isinstance(v, list)}
         perms = list(product(*list_entries.values()))
@@ -117,11 +121,9 @@ class Fio(object):
             for i in range(0, len(list_entries)):
                 job.update({list_keys[i]: perm[i]})
             res.append(job)
+        return res
 
-    def _parse_job(self, job_spec, job_name, job_log_dir, client):
-        # parse yaml and get job spec
-        job = self._get_job_parameters(job_spec, job_log_dir, client)
-
+    def _parse_job(self, job, job_name, job_log_dir, client):
         # which template does the job want
         template = self.jinja_env.get_template(job['template'])
 
@@ -135,7 +137,7 @@ class Fio(object):
         template.stream(job).dump(jobfile)
         return jobfile
 
-    def _get_job_parameters(self, job_spec, job_log_dir, client):
+    def _get_job_parameters(self, job_spec, job_log_dir):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
                 job = yaml.load(yml)
@@ -149,8 +151,9 @@ class Fio(object):
         #write_hist_log={logdir}/output
         #write_iops_log={logdir}/output
         '''.format(logdir=job_log_dir)
-        job.update({'dir': self.work_dir, 'output_options': output_options,
-                    'client': client})
+        job.update({'dir': self.work_dir,
+                    'output_options': output_options,
+                   })
         return job
 
 
