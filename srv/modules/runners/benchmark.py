@@ -85,7 +85,6 @@ class Fio(object):
             job_name,
             datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
         os.makedirs(job_log_dir)
-        log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
 
         job = self._get_job_parameters(job_spec, job_log_dir)
         # parse yaml and get job spec
@@ -99,12 +98,14 @@ class Fio(object):
             e.g. [--client=host1, jobfile, --client=host2, jobfile]
             fio expects a job file for every remote agent
             '''
+            job_name = '{}_{}'.format(job['op'], job['bs'])
             for client in self.clients:
                 job.update({'client': client})
                 jobfile = self._parse_job(job, job_name, job_log_dir, client)
                 client_jobs.extend(['--client={}'.format(client)])
                 client_jobs.extend([jobfile])
 
+            log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
             output.append(subprocess.check_output(
                 [self.cmd] + self.cmd_global_args + log_args + client_jobs))
 
@@ -117,7 +118,8 @@ class Fio(object):
         perms = list(product(*list_entries.values()))
         res = []
         for perm in perms:
-            job = scalar_values
+            job = {}
+            job.update(scalar_values)
             for i in range(0, len(list_entries)):
                 job.update({list_keys[i]: perm[i]})
             res.append(job)
