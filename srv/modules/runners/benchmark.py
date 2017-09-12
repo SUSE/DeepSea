@@ -109,10 +109,10 @@ class Fio(object):
         template = self.jinja_env.get_template(job['template'])
 
         # popluate template and return job file location
-        return self._populate_and_write_job(template, job, job_name, client)
+        return self._populate_and_write_job(template, job, job_name, client, job_log_dir)
 
-    def _populate_and_write_job(self, template, job, job_name, client):
-        jobfile = '{}/{}_{}'.format(self.job_dir, job_name, client)
+    def _populate_and_write_job(self, template, job, job_name, client, job_log_dir):
+        jobfile = '{}/{}_{}'.format(job_log_dir, job_name, client)
 
         # render template and save job file
         template.stream(job).dump(jobfile)
