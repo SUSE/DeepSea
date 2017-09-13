@@ -1,0 +1,65 @@
+.TH deepsea-stage-dry-run 1 "DeepSea CLI man page"
+.SH NAME
+deepsea-stage-dry-run - Shows DeepSea stage execution steps
+
+.SH SYNOPSIS
+deepsea stage dry-run [--help] [--hide-state-steps] [--only-visible-steps]
+                      [--clear-cache] [--no-cache]
+                      <stage_name>
+
+.SH DESCRIPTION
+Parses a DeepSea stage and generates a detailed report showing all steps in order of execution.
+
+This command can be used to understand what a stage will do, without actually
+running the stage. For instance, it shows the total number of steps; the type
+of each step,
+either
+.I Runner,
+.I State,
+or
+.I Module;
+in which minion each step will execute; and other relevant information.
+
+.SH OPTIONS
+.B --help
+.RS
+Shows the help message.
+
+.RE
+.B --hide-state-steps
+.RS
+Disables the parsing of Salt state intermediate steps.
+
+.RE
+.B --only-visible-steps
+.RS
+Only show steps that have
+.B fire_event=True
+in their Salt configuration.
+
+By default, all steps defined in each state file are shown.
+This option only takes effect if
+.B --hide-state-steps
+was not enabled.
+
+.RE
+.B --clear-cache
+.RS
+Deletes all cache files that resulted from previous executions of this command.
+
+.RE
+.B --no-cache
+.RS
+Disables caching of stage parsing results.
+
+.SH EXAMPLES
+Show stage
+.B 0
+.RS
+.B deepsea stage dry-run ceph.stage.0
+
+.RE
+Show stage
+.B radosgw
+.RS
+.B deepsea stage dry-run ceph.stage.radosgw

@@ -32,12 +32,15 @@ Url:            https://github.com/suse/deepsea
 Source0:        %{name}-%{version}.tar.bz2
 
 BuildRequires:  salt-master
+BuildRequires:  python-setuptools
 Requires:       salt-master
 Requires:       salt-minion
 Requires:       salt-api
 Requires:       python-ipaddress
 Requires:       python-netaddr
 Requires:       python-rados
+Requires:       python-setuptools
+Requires:       python-click
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
@@ -50,11 +53,14 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %build
 make DESTDIR=%{buildroot} pyc
+# rewrite version number in deepsea.spec that lives inside the tarball
+sed -i 's/^Version:.*/Version: %{version}/g' deepsea.spec
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
 %__rm -f %{buildroot}/%{_mandir}/man?/*.gz
 %__gzip %{buildroot}/%{_mandir}/man?/deepsea.*
+python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %post
 if [ $1 -eq 1 ] ; then
@@ -73,6 +79,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 
 %files
 %defattr(-,root,root,-)
+%{_bindir}/deepsea
+%{python_sitelib}/deepsea/
+%{python_sitelib}/deepsea-%{version}-py%{python_version}.egg-info
 /srv/modules/pillar/stack.py*
 %dir /srv/modules/runners
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
@@ -300,6 +309,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/processes
 %{_mandir}/man7/deepsea.commands.7.gz
 %{_mandir}/man7/deepsea.minions.7.gz
+%{_mandir}/man1/deepsea*.1.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls

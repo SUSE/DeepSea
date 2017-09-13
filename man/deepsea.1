@@ -1,0 +1,86 @@
+.TH deepsea 1 "DeepSea CLI man page"
+.SH NAME
+DeepSea CLI
+
+.SH SYNOPSIS
+deepsea [--version] [--help] [-l <log_level> | --log-level=<log_level>]
+        [--log-file=<path>]
+        <command> [<args>]
+
+.SH DESCRIPTION
+DeepSea CLI is a command-line tool for running DeepSea stages and visualizing
+their execution progress.
+
+Two modes are supported for visualizing a stage's execution progress.
+.RS
+.RE
+.B 1) monitoring mode:
+visualizes the execution progress of a DeepSea stage triggered by a
+.B salt-run
+command issued in another terminal session; and
+.RS
+.RE
+.B 2) stand-alone mode:
+runs a DeepSea stage while providing real-time visualization of its component
+steps as they are executed.
+
+.SH OPTIONS
+.B --help
+.RS
+Shows the help message.
+
+.RE
+.B --version
+.RS
+Show installed DeepSea version.
+
+.RE
+.B -l <log_level>, --log-level=<log_level>
+.RS
+Sets log level. Possible values are:
+.B info
+.B error
+.B debug
+.B silent
+
+Defaults to:
+.B info
+
+.RE
+.B --log-file=<path>
+.RS
+Sets the log file location.
+
+Defaults to
+.B /var/log/deepsea.log
+
+.SH COMMANDS
+.B monitor
+.RS
+Starts the stage execution monitor. See
+.BR deepsea-monitor(1)
+
+.RE
+.B stage run
+.RS
+Runs a DeepSea stage and shows its execution progress. See
+.BR deepsea-stage-run(1)
+
+.RE
+.B stage dry-run
+.RS
+Shows the execution steps of a DeepSea stage. See
+.BR deepsea-stage-show(1)
+
+.RE
+.B salt-run state.orch
+.RS
+.B stage run
+alias.
+.RE
+.RS
+Runs a DeepSea stage and shows its execution progress. See
+.BR deepsea-stage-run(1)
+
+.SH SEE ALSO
+.BR deepsea.commands(1)
