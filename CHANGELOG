@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Wed Sep 13 21:19:15 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.27
+- Improved RGW dashboards
+- deepsea command for viewing orchestrations
+- Minor fixes in populate runner
+- Separate RGW users, add system user
+- benchmark improvements
+- fix oA, RGW port validation
+- fix sort order for net.iperf
+- qa tests for encrypted disks, oA/RGW deployment
+
+-------------------------------------------------------------------
 Fri Sep  1 15:28:05 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.26
