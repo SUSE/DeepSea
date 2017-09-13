@@ -21,7 +21,7 @@ source $BASEDIR/common/common.sh
 
 function usage {
     set +x
-    echo "${0} - script for testing HEALTH_OK deployment"
+    echo "${0} - script for testing CephFS deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"

@@ -25,7 +25,7 @@ source $BASEDIR/common/nfs-ganesha.sh
 
 function usage {
     set +x
-    echo "${0} - script for testing NFS Ganesha deployment"
+    echo "${0} - script for testing NFS-Ganesha deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
