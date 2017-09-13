@@ -270,13 +270,42 @@ def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     sys.exit(ret)
 
 
+@click.group(name='salt-run')
+def salt_run():
+    """
+    stage command alias
+    """
+    pass
+
+
+@click.command(name='state.orch')
+@click.argument('stage_name', 'the DeepSea stage name')
+@click.option('--hide-state-steps', is_flag=True, help="shows state visible steps progress")
+@click.option('--hide-dynamic-steps', is_flag=True, help="shows runtime generated steps")
+@click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
+def state_orch(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
+    """
+    Runs a DeepSea stage
+
+    This command is equivalent to run:
+
+        $ salt-run state.orch <stage_name>
+    """
+    _validate_stage_file_exists(stage_name)
+
+    ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
+    sys.exit(ret)
+
+
 def main():
     """
     CLI main function
     """
     cli.add_command(monitor)
     cli.add_command(stage)
+    cli.add_command(salt_run)
     stage.add_command(stage_dryrun)
     stage.add_command(stage_run)
+    salt_run.add_command(state_orch)
     # pylint: disable=E1120,E1123
     cli(prog_name='deepsea')
