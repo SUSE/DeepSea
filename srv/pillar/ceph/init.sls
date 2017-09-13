@@ -5,5 +5,4 @@
 
 {% include 'ceph/deepsea_minions.sls' ignore missing %}
 
-{% include 'ceph/rgw.sls' ignore missing %}
 

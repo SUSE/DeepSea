@@ -1,0 +1,12 @@
+
+realm:
+  default:
+{% if salt['file.file_exists']('/srv/salt/ceph/rgw/users/system.user.yml') %}
+{% include "ceph/rgw/users/system.user.yml" %}
+{% else %}
+{% include "ceph/rgw/files/system.user.yml" %}
+{% endif %}
+{% for file in salt['file.find']('/srv/salt/ceph/rgw/users/users.d', type='f', name='*.yml') %}
+{% macro include_indent() %}{% include file %}{% endmacro %}
+{{ include_indent() | indent(6, true) }}
+{% endfor %}

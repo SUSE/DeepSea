@@ -1,0 +1,8 @@
+Initial Users
+
+The /srv/salt/ceph/rgw/files/users.j2 will include any rgw users created in
+this directory.  Add users to one or more files with a yml extension.  For example, create two demo users by adding these entries to a file or individual files.
+
+- { uid: "demo", name: "Demo", email: "demo@demo.nil" }
+- { uid: "demo1", name: "Demo1", email: "demo1@demo.nil" }
+

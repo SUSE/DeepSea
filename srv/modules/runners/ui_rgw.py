@@ -127,7 +127,7 @@ class Radosgw(object):
         for minion in cached:
             if 'rgw_configurations' in cached[minion]:
                 # TODO: where is the master minion when we need it
-                rgw_names = cached[minion]['rgw_configurations'].keys()
+                rgw_names = cached[minion]['rgw_configurations']
 
         conf_file_dir = "/srv/salt/ceph/configuration/files/"
         rgw_conf_files = []
@@ -135,7 +135,6 @@ class Radosgw(object):
             # Check for user created configurations
             pathname = "{}/ceph.conf.d/ceph.conf.{}".format(conf_file_dir, rgw_name)
             if os.path.exists(pathname):
-                print "adding ", pathname
                 rgw_conf_files.append(pathname)
                 continue
 

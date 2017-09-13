@@ -37,45 +37,41 @@ def configuration(role):
     the ganesha roles silver and silver-common will both return silver.
     """
     if role == 'ganesha':
-        role = 'rgw'
+        return 'rgw'
     if 'roles' in __pillar__:
         if 'rgw_configurations' in __pillar__:
-            for rgw_config in  __pillar__['rgw_configurations'].keys():
+            for rgw_config in  __pillar__['rgw_configurations']:
                 if rgw_config in role:
                     return rgw_config
-    return 
+    return
 
 
 
-def users(role):
+def users(realm='default'):
     """
-    Return the list of users.  Consider the default rgw and ganesha roles
-    equivalent.
+    Return the list of users for a realm.
     """
-    if 'roles' in __pillar__:
-        if 'rgw_configurations' in __pillar__:
-            if role == 'ganesha' or role == 'rgw':
-                # Special case for default names
-                users = [ u['uid'] for u in __pillar__['rgw_configurations']['rgw']['users'] ]
-                log.info("users: {}".format(users))
-                return users
-            if role in __pillar__['rgw_configurations']:
-                users = [ u['uid'] for u in __pillar__['rgw_configurations'][role]['users'] ]
-                log.info("users: {}".format(users))
-                return users
-        if 'rgw' in __pillar__['roles']:
-            return []
+    cmd = "radosgw-admin user list --rgw-realm={}".format(realm)
+    log.info("cmd: {}".format(cmd))
+    proc = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
+    proc.wait()
+    log.debug("rc: {}".format(proc.returncode))
+    if proc.returncode != '0':
+        return json.loads(proc.stdout.read())
     return []
 
-def add_users(pathname="/srv/salt/ceph/rgw/cache"):
+def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/files/users.j2"):
     """
-    Write each user to its own file
+    Write each user to its own file.
     """
-    if 'rgw_configurations' not in __pillar__:
+    users = __salt__['slsutil.renderer'](jinja)
+    log.debug("users rendered: {}".format(users))
+
+    if users is None or 'realm' not in users:
         return
-    
-    for role in __pillar__['rgw_configurations']:
-        for user in __pillar__['rgw_configurations'][role]['users']:
+
+    for realm in users['realm']:
+        for user in users['realm'][realm]:
             if 'uid' not in user or 'name' not in user:
                 raise ValueError('ERROR: please specify both uid and name')
 
@@ -128,7 +124,7 @@ def create_bucket(**kwargs):
 
 def _key(user, field, pathname):
     """
-    Read the filename and return the key value.  
+    Read the filename and return the key value.
     """
     data = None
     filename = "{}/user.{}.json".format(pathname, user)
@@ -143,7 +139,7 @@ def _key(user, field, pathname):
 
 def access_key(user, pathname="/srv/salt/ceph/rgw/cache"):
     if not user:
-        raise ValueError("ERROR: no user specified") 
+        raise ValueError("ERROR: no user specified")
     return _key(user, 'access_key', pathname)
 
 def secret_key(user, pathname="/srv/salt/ceph/rgw/cache"):
