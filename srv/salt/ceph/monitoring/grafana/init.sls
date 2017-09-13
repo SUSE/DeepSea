@@ -77,9 +77,34 @@ add rbd dashboard:
           -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
           -d @/srv/salt/ceph/monitoring/grafana/files/ceph-rbd.json
 
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') %}
+
+add rgw dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-rgw.json
+
 add rgw-users dashboard:
   cmd.run:
     - name: |
         curl -s -H "Content-Type: application/json" \
           -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
           -d @/srv/salt/ceph/monitoring/grafana/files/ceph-rgw-users.json
+
+{% else %}
+
+remove rgw dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XDELETE http://admin:admin@localhost:3000/api/dashboards/db/ceph-object-gateway
+
+remove rgw-users dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XDELETE http://admin:admin@localhost:3000/api/dashboards/db/ceph-object-gateway-users
+
+{% endif %}

@@ -6,7 +6,7 @@
         "type": "grafana",
         "id": "grafana",
         "name": "Grafana",
-        "version": "3.1.1"
+        "version": "4.1.0"
       },
       {
         "type": "panel",
@@ -24,7 +24,7 @@
     "annotations": {
       "list": []
     },
-    "description": "Ceph Object Gateway user usage.",
+    "description": "Ceph Object Gateway status.",
     "editable": false,
     "gnetId": null,
     "graphTooltip": 0,
@@ -35,33 +35,32 @@
     "rows": [
       {
         "collapse": false,
-        "height": 253,
+        "height": 200,
         "panels": [
           {
             "aliasColors": {},
             "bars": false,
             "datasource": "Prometheus",
-            "decimals": null,
+            "decimals": 0,
             "fill": 1,
             "id": 1,
             "legend": {
-              "alignAsTable": false,
+              "alignAsTable": true,
               "avg": false,
-              "current": false,
+              "current": true,
               "hideEmpty": false,
               "hideZero": false,
               "max": false,
               "min": false,
               "rightSide": false,
               "show": true,
-              "sideWidth": null,
               "total": false,
-              "values": false
+              "values": true
             },
             "lines": true,
             "linewidth": 2,
             "links": [],
-            "nullPointMode": "null as zero",
+            "nullPointMode": "connected",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -72,29 +71,93 @@
             "steppedLine": true,
             "targets": [
               {
-                "expr": "ceph_rgw_user_usage_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
-                "hide": false,
+                "expr": "ceph_rgw_user_count",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Total",
-                "metric": "",
                 "refId": "A",
-                "step": 3600
-              },
-              {
-                "expr": "ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Successful",
-                "metric": "",
-                "refId": "B",
-                "step": 3600
+                "step": 7200
               }
             ],
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Operations - $category",
+            "title": "Users",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "short",
+                "label": "",
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              },
+              {
+                "format": "short",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ]
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "decimals": 0,
+            "fill": 1,
+            "id": 2,
+            "legend": {
+              "alignAsTable": true,
+              "avg": true,
+              "current": true,
+              "max": true,
+              "min": true,
+              "rightSide": false,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "span": 6,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+              {
+                "expr": "ceph_rgw_bucket_count",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Total",
+                "refId": "A",
+                "step": 7200
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Buckets",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -117,95 +180,7 @@
                 "show": true
               },
               {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": false
-              }
-            ]
-          },
-          {
-            "aliasColors": {},
-            "bars": false,
-            "datasource": "Prometheus",
-            "decimals": null,
-            "fill": 1,
-            "id": 2,
-            "legend": {
-              "alignAsTable": false,
-              "avg": false,
-              "current": false,
-              "hideEmpty": false,
-              "hideZero": false,
-              "max": false,
-              "min": false,
-              "rightSide": false,
-              "show": true,
-              "sideWidth": null,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 2,
-            "links": [],
-            "nullPointMode": "null as zero",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "span": 6,
-            "stack": false,
-            "steppedLine": true,
-            "targets": [
-              {
-                "expr": "ceph_rgw_user_usage_sent_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Bytes sent",
-                "metric": "",
-                "refId": "C",
-                "step": 3600
-              },
-              {
-                "expr": "ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "Bytes received",
-                "metric": "",
-                "refId": "D",
-                "step": 3600
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "Bandwidth - $category",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": "0",
-                "show": true
-              },
-              {
-                "format": "bytes",
+                "format": "short",
                 "label": null,
                 "logBase": 1,
                 "max": null,
@@ -218,8 +193,8 @@
         "repeat": null,
         "repeatIteration": null,
         "repeatRowId": null,
-        "showTitle": true,
-        "title": "Owner: $owner",
+        "showTitle": false,
+        "title": "",
         "titleSize": "h6"
       }
     ],
@@ -236,15 +211,15 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "text": "1h",
-            "value": "1h"
+            "text": "auto",
+            "value": "$__auto_interval"
           },
           "hide": 0,
           "label": "Interval",
           "name": "interval",
           "options": [
             {
-              "selected": false,
+              "selected": true,
               "text": "auto",
               "value": "$__auto_interval"
             },
@@ -264,7 +239,7 @@
               "value": "30m"
             },
             {
-              "selected": true,
+              "selected": false,
               "text": "1h",
               "value": "1h"
             },
@@ -302,72 +277,12 @@
           "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
           "refresh": 2,
           "type": "interval"
-        },
-        {
-          "allValue": null,
-          "current": {},
-          "datasource": "Prometheus",
-          "hide": 2,
-          "includeAll": false,
-          "label": "Username",
-          "multi": false,
-          "name": "owner",
-          "options": [],
-          "query": "label_values(ceph_rgw_user_usage_ops_total, owner)",
-          "refresh": 1,
-          "regex": "",
-          "sort": 1,
-          "tagValuesQuery": "",
-          "tags": [],
-          "tagsQuery": "",
-          "type": "query",
-          "useTags": false
-        },
-        {
-          "allValue": null,
-          "current": {},
-          "datasource": "Prometheus",
-          "hide": 0,
-          "includeAll": false,
-          "label": "Bucket",
-          "multi": false,
-          "name": "bucket",
-          "options": [],
-          "query": "label_values(ceph_rgw_user_usage_ops_total{owner='$owner'}, bucket)",
-          "refresh": 1,
-          "regex": "",
-          "sort": 1,
-          "tagValuesQuery": "",
-          "tags": [],
-          "tagsQuery": "",
-          "type": "query",
-          "useTags": false
-        },
-        {
-          "allValue": null,
-          "current": {},
-          "datasource": "Prometheus",
-          "hide": 0,
-          "includeAll": false,
-          "label": "Category",
-          "multi": false,
-          "name": "category",
-          "options": [],
-          "query": "label_values(ceph_rgw_user_usage_ops_total, category)",
-          "refresh": 1,
-          "regex": "^(?!set_attrs$).*",
-          "sort": 1,
-          "tagValuesQuery": "",
-          "tags": [],
-          "tagsQuery": "",
-          "type": "query",
-          "useTags": false
         }
       ]
     },
     "time": {
-      "from": "now-24h",
-      "to": "now"
+      "from": "now/d",
+      "to": "now/d"
     },
     "timepicker": {
       "refresh_intervals": [
@@ -395,7 +310,7 @@
       ]
     },
     "timezone": "browser",
-    "title": "Ceph - Object Gateway users",
-    "version": 2
+    "title": "Ceph - Object Gateway",
+    "version": 1
   }
 }
