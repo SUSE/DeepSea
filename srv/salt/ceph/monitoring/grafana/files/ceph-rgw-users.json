@@ -6,7 +6,7 @@
         "type": "grafana",
         "id": "grafana",
         "name": "Grafana",
-        "version": "3.1.1"
+        "version": "4.1.0"
       },
       {
         "type": "panel",
@@ -35,7 +35,7 @@
     "rows": [
       {
         "collapse": false,
-        "height": 253,
+        "height": 231,
         "panels": [
           {
             "aliasColors": {},
@@ -43,7 +43,8 @@
             "datasource": "Prometheus",
             "decimals": null,
             "fill": 1,
-            "id": 1,
+            "height": "230px",
+            "id": 4,
             "legend": {
               "alignAsTable": false,
               "avg": false,
@@ -61,7 +62,7 @@
             "lines": true,
             "linewidth": 2,
             "links": [],
-            "nullPointMode": "null as zero",
+            "nullPointMode": "connected",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -72,7 +73,7 @@
             "steppedLine": true,
             "targets": [
               {
-                "expr": "ceph_rgw_user_usage_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "expr": "sum(ceph_rgw_user_usage_ops_total{owner='$owner'})",
                 "hide": false,
                 "interval": "$interval",
                 "intervalFactor": 1,
@@ -82,7 +83,7 @@
                 "step": 3600
               },
               {
-                "expr": "ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "expr": "sum(ceph_rgw_user_usage_successful_ops_total{owner='$owner'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Successful",
@@ -94,7 +95,7 @@
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Operations - $category",
+            "title": "Overall operations",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -132,7 +133,8 @@
             "datasource": "Prometheus",
             "decimals": null,
             "fill": 1,
-            "id": 2,
+            "height": "230px",
+            "id": 5,
             "legend": {
               "alignAsTable": false,
               "avg": false,
@@ -150,7 +152,7 @@
             "lines": true,
             "linewidth": 2,
             "links": [],
-            "nullPointMode": "null as zero",
+            "nullPointMode": "connected",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -161,7 +163,7 @@
             "steppedLine": true,
             "targets": [
               {
-                "expr": "ceph_rgw_user_usage_sent_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "expr": "sum(ceph_rgw_user_usage_sent_bytes_total{owner='$owner'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Bytes sent",
@@ -170,7 +172,7 @@
                 "step": 3600
               },
               {
-                "expr": "ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "expr": "sum(ceph_rgw_user_usage_received_bytes_total{owner='$owner'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Bytes received",
@@ -182,7 +184,198 @@
             "thresholds": [],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Bandwidth - $category",
+            "title": "Overall bandwidth",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              },
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "Overall",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": 250,
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "decimals": null,
+            "fill": 1,
+            "height": "230px",
+            "id": 6,
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "hideEmpty": false,
+              "hideZero": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "sideWidth": null,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "span": 6,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+              {
+                "expr": "sum(ceph_rgw_user_usage_ops_total{owner='$owner',bucket='$bucket'})",
+                "hide": false,
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Total",
+                "metric": "",
+                "refId": "A",
+                "step": 3600
+              },
+              {
+                "expr": "sum(ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket'})",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Successful",
+                "metric": "",
+                "refId": "B",
+                "step": 3600
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Operations",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "none",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              },
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ]
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "decimals": null,
+            "fill": 1,
+            "height": "230px",
+            "id": 7,
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "hideEmpty": false,
+              "hideZero": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "sideWidth": null,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "span": 6,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+              {
+                "expr": "sum(ceph_rgw_user_usage_sent_bytes_total{owner='$owner',bucket='$bucket'})",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Bytes sent",
+                "metric": "",
+                "refId": "C",
+                "step": 3600
+              },
+              {
+                "expr": "sum(ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket'})",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Bytes received",
+                "metric": "",
+                "refId": "D",
+                "step": 3600
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Bandwidth",
             "tooltip": {
               "shared": true,
               "sort": 0,
@@ -219,7 +412,198 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": true,
-        "title": "Owner: $owner",
+        "title": "Bucket: $bucket",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": 253,
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "decimals": null,
+            "fill": 1,
+            "height": "230px",
+            "id": 1,
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "hideEmpty": false,
+              "hideZero": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "sideWidth": null,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "span": 6,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+              {
+                "expr": "ceph_rgw_user_usage_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "hide": false,
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Total",
+                "metric": "",
+                "refId": "A",
+                "step": 3600
+              },
+              {
+                "expr": "ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Successful",
+                "metric": "",
+                "refId": "B",
+                "step": 3600
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Operations",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "none",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              },
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ]
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "datasource": "Prometheus",
+            "decimals": null,
+            "fill": 1,
+            "height": "230px",
+            "id": 2,
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "hideEmpty": false,
+              "hideZero": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "sideWidth": null,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 2,
+            "links": [],
+            "nullPointMode": "connected",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "span": 6,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+              {
+                "expr": "ceph_rgw_user_usage_sent_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Bytes sent",
+                "metric": "",
+                "refId": "C",
+                "step": 3600
+              },
+              {
+                "expr": "ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "Bytes received",
+                "metric": "",
+                "refId": "D",
+                "step": 3600
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Bandwidth",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              },
+              {
+                "format": "bytes",
+                "label": null,
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": false
+              }
+            ]
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": true,
+        "title": "Bucket: $bucket, Category: $category",
         "titleSize": "h6"
       }
     ],
@@ -236,15 +620,15 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "text": "1h",
-            "value": "1h"
+            "text": "auto",
+            "value": "$__auto_interval"
           },
           "hide": 0,
           "label": "Interval",
           "name": "interval",
           "options": [
             {
-              "selected": false,
+              "selected": true,
               "text": "auto",
               "value": "$__auto_interval"
             },
@@ -264,7 +648,7 @@
               "value": "30m"
             },
             {
-              "selected": true,
+              "selected": false,
               "text": "1h",
               "value": "1h"
             },
@@ -315,7 +699,7 @@
           "options": [],
           "query": "label_values(ceph_rgw_user_usage_ops_total, owner)",
           "refresh": 1,
-          "regex": "",
+          "regex": "/.+/",
           "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
@@ -335,7 +719,7 @@
           "options": [],
           "query": "label_values(ceph_rgw_user_usage_ops_total{owner='$owner'}, bucket)",
           "refresh": 1,
-          "regex": "",
+          "regex": "/.+/",
           "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
@@ -355,7 +739,7 @@
           "options": [],
           "query": "label_values(ceph_rgw_user_usage_ops_total, category)",
           "refresh": 1,
-          "regex": "^(?!set_attrs$).*",
+          "regex": "^(?!set_attrs$).+",
           "sort": 1,
           "tagValuesQuery": "",
           "tags": [],
@@ -366,7 +750,7 @@
       ]
     },
     "time": {
-      "from": "now-24h",
+      "from": "now-12h",
       "to": "now"
     },
     "timepicker": {
@@ -396,6 +780,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway users",
-    "version": 2
+    "version": 3
   }
 }
