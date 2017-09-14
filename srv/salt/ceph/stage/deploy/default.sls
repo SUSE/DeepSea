@@ -118,6 +118,13 @@ osd auth:
     - sls: ceph.osd.auth
     - failhard: True
 
+sysctl:
+  salt.state:
+    - tgt: 'I@roles:storage and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.sysctl
+    - failhard: True
+
 storage:
   salt.state:
     - tgt: 'I@roles:storage and I@cluster:ceph'
