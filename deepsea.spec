@@ -107,6 +107,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/files/ceph.conf.d
+%dir /srv/salt/ceph/configuration/files/ceph.conf.checksum
+%dir %attr(0700, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.checksum
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/configuration/create
 %dir /srv/salt/ceph/diagnose

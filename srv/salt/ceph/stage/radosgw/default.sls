@@ -18,8 +18,19 @@ rgw users:
     - tgt: "I@roles:{{ config }} and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.rgw
+{% endfor %}
+
+{% if salt.saltutil.runner('changed.rgw') == True %}
+{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+
+restart {{config}}:
+  salt.state:
+    - tgt: "I@roles:{{ config }} and I@cluster:ceph"
+    - tgt_type: compound
+    - sls: ceph.rgw.restart
 
 {% endfor %}
+{% endif %}
 
 {% set endpoint = salt.saltutil.runner('ui_rgw.endpoints')[0] %}
 rgw demo buckets:

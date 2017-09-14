@@ -104,6 +104,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.import $(DESTDIR)/srv/salt/ceph/configuration/files/
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
+	install -d -m 644 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.d/README $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	# state files - diagnose
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/diagnose
@@ -544,6 +545,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openattic/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/osd/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install: copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
