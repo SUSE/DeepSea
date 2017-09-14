@@ -6,3 +6,4 @@ deepsea_minions: 'G@deepsea:*'
 # deepsea_minions: '*'
 # Choose custom Salt targeting
 # deepsea_minions: 'ses*'
+# deepsea_minions: 'ceph* or salt'
