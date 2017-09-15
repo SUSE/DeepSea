@@ -176,8 +176,11 @@ function policy_cfg_mon_flex {
   elif [ "$TOTALNODES" -eq 2 ] ; then
     echo "2-node cluster; deploying 1 mon and 1 mgr"
     policy_cfg_one_mon
-  else
+  elif [ "$TOTALNODES" -ge 3 ] ; then
     policy_cfg_three_mons
+  else
+    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
+    exit 1
   fi
 }
 
@@ -244,8 +247,7 @@ EOF
 }
 
 function policy_cfg_openattic_with_rgw {
-  local TOTALNODES=$(json_total_nodes)
-  test -n "$TOTALNODES"
+  local TOTALNODES=$(json_total_nodes) test -n "$TOTALNODES"
   if [ "$TOTALNODES" -eq 1 ] ; then
     echo "Only one node in cluster; colocating rgw and openattic roles"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
@@ -254,7 +256,7 @@ role-openattic/cluster/*.sls slice=[:1]
 # Role assignment - rgw (colocate with openattic on first node)
 role-rgw/cluster/*.sls slice=[:1]
 EOF
-  else
+  elif [ "$TOTALNODES" -ge 2 ] ; then
     echo "Deploying rgw and openattic roles on separate nodes"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - openattic (first node)
@@ -262,6 +264,9 @@ role-openattic/cluster/*.sls slice=[:1]
 # Role assignment - rgw (second node)
 role-rgw/cluster/*.sls slice=[1:2]
 EOF
+  else
+    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
+    exit 1
   fi
 }
 
@@ -304,7 +309,7 @@ role-igw/cluster/*.sls slice=[2:3]
 # Role assignment - ganesha (third node)
 role-ganesha/cluster/*.sls slice=[2:3]
 EOF
-  else
+  elif [ "$TOTALNODES" -ge 4 ] ; then
     echo "Deploying openattic, rgw, igw, and ganesha on separate nodes"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - openattic (first node)
@@ -316,6 +321,9 @@ role-igw/cluster/*.sls slice=[2:3]
 # Role assignment - ganesha (fourth node)
 role-ganesha/cluster/*.sls slice=[3:4]
 EOF
+  else
+    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
+    exit 1
   fi
 }
 
