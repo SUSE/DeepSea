@@ -273,6 +273,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/tools/fio
 %dir /srv/salt/ceph/tools/fio/files
 %dir /srv/salt/ceph/sync
+%dir /srv/salt/ceph/sysctl
+%dir /srv/salt/ceph/sysctl/files
 %dir /srv/salt/ceph/setosdflags
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
@@ -495,6 +497,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/removal/*.sls
 %config /srv/salt/ceph/stage/services/*.sls
 %config /srv/salt/ceph/sync/*.sls
+%config /srv/salt/ceph/sysctl/*.sls
+%config /srv/salt/ceph/sysctl/files/*.conf
 %config /srv/salt/ceph/setosdflags/*.sls
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
