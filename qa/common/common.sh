@@ -175,7 +175,6 @@ role-admin/cluster/*.sls
 # Role assignment - mon
 role-mon/cluster/*.sls slice=[:1]
 role-mgr/cluster/*.sls slice=[:1]
-role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }
 
@@ -193,7 +192,6 @@ role-admin/cluster/*.sls
 # Role assignment - mon
 role-mon/cluster/*.sls slice=[:3]
 role-mgr/cluster/*.sls slice=[:3]
-#role-mon/stack/default/ceph/minions/*.yml slice=[:3]
 EOF
 }
 
