@@ -14,6 +14,8 @@ import time
 
 from ..common import PrettyPrinter as PP
 from ..monitor import MonitorListener
+from ..stage_parser import StateRenderingException
+
 
 # pylint: disable=C0111
 # pylint: disable=C0103
@@ -33,7 +35,23 @@ class SimplePrinter(MonitorListener):
     def stage_parsing_started(self, stage_name):
         PP.print("Parsing stage {} steps... ".format(stage_name))
 
-    def stage_parsing_finished(self, stage, output):
+    def stage_parsing_finished(self, stage, output, exception):
+        if exception:
+            PP.println("fail")
+            PP.println()
+            if isinstance(exception, StateRenderingException):
+                PP.println("An error occurred when rendering one of the following states:")
+                for state in exception.states:
+                    PP.print("    - {}".format(state))
+                    PP.println(" ({})".format("/srv/salt/{}".format(state.replace(".", "/"))))
+            else:
+                PP.println("An error occurred while rendering the stage file:")
+                PP.println("    {}".format(exception.stage_file))
+            PP.println()
+            PP.println("Error description:")
+            PP.println(exception.pretty_error_desc_str())
+            return
+
         PP.println("done")
         PP.println()
         PP.println("Stage initialization output:")
@@ -576,6 +594,7 @@ class StepListPrinter(MonitorListener):
     def __init__(self, clear_screen=True):
         super(StepListPrinter, self).__init__()
         self._clear_screen = clear_screen
+        self.stage_name = None
         self.stage = None
         self.total_steps = None
         self.errors = None
@@ -591,6 +610,7 @@ class StepListPrinter(MonitorListener):
         PP.p_bold("Starting stage: ")
         PP.println(SP.STAGE(stage_name))
 
+        self.stage_name = stage_name
         self.errors = OrderedDict()
         self.stage = None
         self.total_steps = None
@@ -599,9 +619,25 @@ class StepListPrinter(MonitorListener):
         PP.print(SP.INFO("Parsing {} steps... ".format(stage_name)))
         PP.println(SP.WAITING)
 
-    def stage_parsing_finished(self, stage, output):
+    def stage_parsing_finished(self, stage, output, exception):
         PP.print("\x1B[A\x1B[K")
-        PP.print(SP.INFO("Parsing {} steps... ".format(stage.name)))
+        PP.print(SP.INFO("Parsing {} steps... ".format(self.stage_name)))
+        if exception:
+            PP.println(SP.FAIL)
+            PP.println()
+            if isinstance(exception, StateRenderingException):
+                PP.println(PP.bold("An error occurred when rendering one of the following "
+                                   "states:"))
+                for state in exception.states:
+                    PP.print(PP.cyan("    - {}".format(state)))
+                    PP.println(" ({})".format("/srv/salt/{}".format(state.replace(".", "/"))))
+            else:
+                PP.println(PP.bold("An error occurred while rendering the stage file:"))
+                PP.println(PP.cyan("    {}".format(exception.stage_file)))
+            PP.println()
+            PP.println(PP.bold("Error description:"))
+            PP.println(PP.red(exception.pretty_error_desc_str()))
+            return
         PP.println(SP.OK)
         PP.println()
         self.init_output = output.strip()

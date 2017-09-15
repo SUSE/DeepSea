@@ -19,9 +19,9 @@ import threading
 import time
 import sys
 
-from .common import PrettyPrinter as PP
 from .monitor import Monitor
 from .monitors.terminal_outputter import SimplePrinter, StepListPrinter
+from .stage_parser import RenderingException
 
 
 # pylint: disable=C0103
@@ -74,9 +74,12 @@ def run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     mon = Monitor(not hide_state_steps, not hide_dynamic_steps)
     printer = SimplePrinter() if simple_output else StepListPrinter(False)
     mon.add_listener(printer)
-    mon.parse_stage(stage_name)
-    mon.start()
+    try:
+        mon.parse_stage(stage_name)
+    except RenderingException:
+        return 2
 
+    mon.start()
     executor = StageExecutor(stage_name)
 
     # pylint: disable=W0613
