@@ -179,6 +179,24 @@ role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }
 
+function policy_cfg_three_mons {
+  cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
+# Cluster assignment
+cluster-ceph/cluster/*.sls
+# Common configuration
+config/stack/default/global.yml
+config/stack/default/ceph/cluster.yml
+# Role assignment - master
+role-master/cluster/${SALT_MASTER}*.sls
+# Role assignment - admin
+role-admin/cluster/*.sls
+# Role assignment - mon
+role-mon/cluster/*.sls slice=[:3]
+role-mgr/cluster/*.sls slice=[:3]
+#role-mon/stack/default/ceph/minions/*.yml slice=[:3]
+EOF
+}
+
 function policy_cfg_no_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
@@ -219,11 +237,10 @@ role-rgw-ssl/cluster/*.sls slice=[:1]
 EOF
 }
 
-# NOTE: RGW does not coexist well with openATTIC
 function policy_cfg_openattic_with_rgw {
   local TOTALNODES=$(json_total_nodes)
-  test ! -z "$TOTALNODES"
-  if [ "x$TOTALNODES" = "x1" ] ; then
+  test -n "$TOTALNODES"
+  if [ "$TOTALNODES" -eq 1 ] ; then
     echo "Only one node in cluster; colocating rgw and openattic roles"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - openattic (first node)
@@ -238,6 +255,60 @@ EOF
 role-openattic/cluster/*.sls slice=[:1]
 # Role assignment - rgw (second node)
 role-rgw/cluster/*.sls slice=[1:2]
+EOF
+  fi
+}
+
+function policy_cfg_openattic_rgw_igw_nfs {
+  local TOTALNODES=$(json_total_nodes)
+  test -n "$TOTALNODES"
+  if [ "$TOTALNODES" -eq 1 ] ; then
+    echo "Only one node in cluster; colocating rgw, igw, ganesha with openattic"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (colocate with openattic on first node)
+role-rgw/cluster/*.sls slice=[:1]
+# Role assignment - igw (colocate with openattic on first node)
+role-igw/cluster/*.sls slice=[:1]
+# Role assignment - ganesha (colocate with openattic on first node)
+role-ganesha/cluster/*.sls slice=[:1]
+EOF
+  elif [ "$TOTALNODES" -eq 2 ] ; then
+    echo "Two nodes in cluster; deploying openattic one one node, rgw+igw+ganesha on the other"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+# Role assignment - igw (second node)
+role-igw/cluster/*.sls slice=[1:2]
+# Role assignment - ganesha (second node)
+role-ganesha/cluster/*.sls slice=[1:2]
+EOF
+  elif [ "$TOTALNODES" -eq 3 ] ; then
+    echo "Three nodes in cluster; deploying openattic one one node, rgw on second, igw+ganesha on third"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+# Role assignment - igw (third node)
+role-igw/cluster/*.sls slice=[2:3]
+# Role assignment - ganesha (third node)
+role-ganesha/cluster/*.sls slice=[2:3]
+EOF
+  else
+    echo "Deploying openattic, rgw, igw, and ganesha on separate nodes"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+# Role assignment - igw (third node)
+role-igw/cluster/*.sls slice=[2:3]
+# Role assignment - ganesha (fourth node)
+role-ganesha/cluster/*.sls slice=[3:4]
 EOF
   fi
 }

@@ -2,13 +2,13 @@
 #
 # DeepSea integration test "suites/basic/health-openattic.sh"
 #
-# This script runs DeepSea stages 0-4 to deploy a Ceph cluster with RGW and
-# openATTIC.  After stage 4 completes, it sends a GET request to the RGW node
-# using curl, and tests that: (a) the response contains the string "anonymous"
-# and (b) the response is legal XML.
+# This script runs DeepSea stages 0-4 to deploy a Ceph cluster with RADOS Gateway,
+# iSCSI Gateway, NFS-Ganesha, and openATTIC. After stage 4 completes, it should
+# use openATTIC REST API calls to validate functionality, but this is still a 
+# FIXME/TODO item.
 #
 # This script makes the following assumption beyond those listed in qa/README:
-# - minimum of 2 nodes in cluster
+# - minimum of 3 nodes in cluster
 #
 # On success, the script returns 0. On failure, for whatever reason, the script
 # returns non-zero.
@@ -59,9 +59,9 @@ install_deps
 cat_salt_config
 run_stage_0
 run_stage_1
-policy_cfg_base
+policy_cfg_three_mons
+policy_cfg_openattic_rgw_igw_nfs
 policy_cfg_no_client
-policy_cfg_openattic_with_rgw
 cat_policy_cfg
 run_stage_2
 ceph_conf_small_cluster
