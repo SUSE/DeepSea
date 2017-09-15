@@ -1,6 +1,9 @@
-# the rbd exporter uses jq
-jq:
-  pkg.installed
+# the rbd exporter uses cron and jq
+install rbd exporter dependencies:
+  pkg.installed:
+    - pkgs:
+      - cron
+      - jq
 
 rbd text exporter:
   file.managed:
