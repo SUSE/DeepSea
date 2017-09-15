@@ -61,9 +61,11 @@ run_stage_0 "$CLI"
 run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_mon_flex
+policy_cfg_mds
 policy_cfg_openattic_rgw_igw_nfs
 policy_cfg_no_client
 cat_policy_cfg
+rgw_demo_users
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
 run_stage_3 "$CLI"
