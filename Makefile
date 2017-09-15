@@ -555,7 +555,7 @@ install: copy-files
 	zypper -n install salt-api
 	systemctl restart salt-api
 	# deepsea-cli
-	zypper install -n python-setuptools python-click
+	zypper -n install python-setuptools python-click
 	python setup.py install --root=$(DESTDIR)/
 
 rpm: tarball test
