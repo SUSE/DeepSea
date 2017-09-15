@@ -22,15 +22,16 @@ function _run_stage {
   test -z "$cli" && cli="classic"
   local stage_log_path="/tmp/stage.${stage_num}.log"
 
+  set +x
   echo ""
   echo "*********************************************"
   echo "********** Running DeepSea Stage $stage_num **********"
+  echo "*********************************************"
+  set -x
 
   # CLI case
   if [ "x$cli" = "xcli" ] ; then
-      echo "************ using DeepSea CLI **************"
-      echo "*********************************************"
-      echo ""
+      echo "using DeepSea CLI"
       deepsea \
           --log-file=/var/log/salt/deepsea.log \
           --log-level=debug \
@@ -40,9 +41,6 @@ function _run_stage {
           --simple-output
       return
   fi
-
-  echo "*********************************************"
-  echo ""
 
   # non-CLI ("classic") case
   echo -n "" > $stage_log_path
