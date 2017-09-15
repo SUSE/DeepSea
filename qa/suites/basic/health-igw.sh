@@ -55,17 +55,17 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
-run_stage_0
-run_stage_1
+run_stage_0 "$CLI"
+run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_client
 policy_cfg_igw
 cat_policy_cfg
-run_stage_2
+run_stage_2 "$CLI"
 ceph_conf_small_cluster
-run_stage_3
+run_stage_3 "$CLI"
 ceph_cluster_status
-run_stage_4
+run_stage_4 "$CLI"
 ceph_cluster_status
 ceph_health_test
 iscsi_kludge # see bsc#1049669

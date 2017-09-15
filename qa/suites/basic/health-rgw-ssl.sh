@@ -56,18 +56,18 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
-run_stage_0
+run_stage_0 "$CLI"
 rgw_ssl_init
-run_stage_1
+run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_no_client
 policy_cfg_rgw_ssl
 cat_policy_cfg
-run_stage_2
+run_stage_2 "$CLI"
 ceph_conf_small_cluster
-run_stage_3
+run_stage_3 "$CLI"
 ceph_cluster_status
-run_stage_4
+run_stage_4 "$CLI"
 rgw_user_and_bucket_list
 ceph_cluster_status
 ceph_health_test
