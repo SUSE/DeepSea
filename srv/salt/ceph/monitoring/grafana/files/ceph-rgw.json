@@ -19,6 +19,12 @@
         "id": "prometheus",
         "name": "Prometheus",
         "version": "1.0.0"
+      },
+      {
+        "type": "panel",
+        "id": "table",
+        "name": "Table",
+        "version": ""
       }
     ],
     "annotations": {
@@ -194,7 +200,227 @@
         "repeatIteration": null,
         "repeatRowId": null,
         "showTitle": false,
-        "title": "",
+        "title": "Row title",
+        "titleSize": "h6"
+      },
+      {
+        "collapse": false,
+        "height": 250,
+        "panels": [
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "datasource": "Prometheus",
+            "filterNull": false,
+            "fontSize": "100%",
+            "hideTimeOverride": true,
+            "id": 3,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 1,
+              "desc": true
+            },
+            "span": 3,
+            "styles": [
+              {
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 0,
+                "pattern": "/.*/",
+                "thresholds": [],
+                "type": "number",
+                "unit": "none"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "sort_desc(count by(owner)(sum by (owner,bucket)(ceph_rgw_user_usage_ops_total)))",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "{{owner}}",
+                "refId": "A",
+                "step": 7200
+              }
+            ],
+            "timeFrom": "1h",
+            "timeShift": null,
+            "title": "Top 10 - Buckets",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "datasource": "Prometheus",
+            "filterNull": false,
+            "fontSize": "100%",
+            "hideTimeOverride": true,
+            "id": 6,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 1,
+              "desc": true
+            },
+            "span": 3,
+            "styles": [
+              {
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 0,
+                "pattern": "/.*/",
+                "thresholds": [],
+                "type": "number",
+                "unit": "none"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_ops_total) by (owner)))",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "{{owner}}",
+                "refId": "A",
+                "step": 7200
+              }
+            ],
+            "timeFrom": "1h",
+            "timeShift": null,
+            "title": "Top 10 - Operations",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "datasource": "Prometheus",
+            "filterNull": false,
+            "fontSize": "100%",
+            "hideTimeOverride": true,
+            "id": 4,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 1,
+              "desc": true
+            },
+            "span": 3,
+            "styles": [
+              {
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 0,
+                "pattern": "/.*/",
+                "thresholds": [],
+                "type": "number",
+                "unit": "bytes"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_sent_bytes_total) by (owner)))",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "{{owner}}",
+                "refId": "A",
+                "step": 7200
+              }
+            ],
+            "timeFrom": "1h",
+            "timeShift": null,
+            "title": "Top 10 - Bandwidth (Sent)",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "datasource": "Prometheus",
+            "filterNull": false,
+            "fontSize": "100%",
+            "hideTimeOverride": true,
+            "id": 5,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 1,
+              "desc": true
+            },
+            "span": 3,
+            "styles": [
+              {
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 0,
+                "pattern": "/.*/",
+                "thresholds": [],
+                "type": "number",
+                "unit": "decbytes"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_received_bytes_total) by (owner)))",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "{{owner}}",
+                "refId": "A",
+                "step": 7200
+              }
+            ],
+            "timeFrom": "1h",
+            "timeShift": null,
+            "title": "Top 10 - Bandwidth (Received)",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          }
+        ],
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": true,
+        "title": "Top 10",
         "titleSize": "h6"
       }
     ],
@@ -311,6 +537,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway",
-    "version": 1
+    "version": 2
   }
 }
