@@ -59,6 +59,7 @@ run_stage_0 "$CLI"
 run_stage_1 "$CLI"
 proposal_populate_dmcrypt
 policy_cfg_base
+policy_cfg_mon_flex
 policy_cfg_encryption
 cat_policy_cfg
 run_stage_2 "$CLI"

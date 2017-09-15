@@ -59,7 +59,8 @@ install_deps
 cat_salt_config
 run_stage_0 "$CLI"
 run_stage_1 "$CLI"
-policy_cfg_three_mons
+policy_cfg_base
+policy_cfg_mon_flex
 policy_cfg_openattic_rgw_igw_nfs
 policy_cfg_no_client
 cat_policy_cfg

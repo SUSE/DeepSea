@@ -153,14 +153,6 @@ function proposal_populate_dmcrypt {
 # functions for generating policy.cfg
 #
 
-function policy_cfg_encryption {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-dmcrypt/cluster/*.sls
-profile-dmcrypt/stack/default/ceph/minions/*yml
-EOF
-}
-
 function policy_cfg_base {
   cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
 # Cluster assignment
@@ -172,24 +164,34 @@ config/stack/default/ceph/cluster.yml
 role-master/cluster/${SALT_MASTER}*.sls
 # Role assignment - admin
 role-admin/cluster/*.sls
-# Role assignment - mon
+EOF
+}
+
+function policy_cfg_mon_flex {
+  local TOTALNODES=$(json_total_nodes)
+  test -n "$TOTALNODES"
+  if [ "$TOTALNODES" -eq 1 ] ; then
+    echo "Only one node in cluster; deploying 1 mon and 1 mgr"
+    policy_cfg_one_mon
+  elif [ "$TOTALNODES" -eq 2 ] ; then
+    echo "2-node cluster; deploying 1 mon and 1 mgr"
+    policy_cfg_one_mon
+  else
+    policy_cfg_three_mons
+  fi
+}
+
+function policy_cfg_one_mon {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - 1 mon, 1 mgr
 role-mon/cluster/*.sls slice=[:1]
 role-mgr/cluster/*.sls slice=[:1]
 EOF
 }
 
 function policy_cfg_three_mons {
-  cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
-# Cluster assignment
-cluster-ceph/cluster/*.sls
-# Common configuration
-config/stack/default/global.yml
-config/stack/default/ceph/cluster.yml
-# Role assignment - master
-role-master/cluster/${SALT_MASTER}*.sls
-# Role assignment - admin
-role-admin/cluster/*.sls
-# Role assignment - mon
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - 3 mons, 3 mgrs
 role-mon/cluster/*.sls slice=[:3]
 role-mgr/cluster/*.sls slice=[:3]
 EOF
@@ -203,7 +205,6 @@ profile-default/stack/default/ceph/minions/*yml
 EOF
 }
 
-
 function policy_cfg_client {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
@@ -212,14 +213,21 @@ profile-default/stack/default/ceph/minions/*yml slice=[:-1]
 EOF
 }
 
+function policy_cfg_encryption {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Hardware Profile
+profile-dmcrypt/cluster/*.sls
+profile-dmcrypt/stack/default/ceph/minions/*yml
+EOF
+}
+
 function policy_cfg_mds {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - mds
+# Role assignment - mds (all but last node)
 role-mds/cluster/*.sls slice=[:-1]
 EOF
 }
 
-# NOTE: RGW does not coexist well with openATTIC
 function policy_cfg_rgw {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - rgw (first node)

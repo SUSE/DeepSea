@@ -58,8 +58,9 @@ cat_salt_config
 run_stage_0 "$CLI"
 run_stage_1 "$CLI"
 policy_cfg_base
-policy_cfg_client
+policy_cfg_mon_flex
 policy_cfg_igw
+policy_cfg_client
 cat_policy_cfg
 run_stage_2 "$CLI"
 ceph_conf_small_cluster

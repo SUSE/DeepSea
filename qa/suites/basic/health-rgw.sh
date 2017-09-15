@@ -68,12 +68,13 @@ else
 fi
 run_stage_1 "$CLI"
 policy_cfg_base
-policy_cfg_no_client
+policy_cfg_mon_flex
 if [ -n "$SSL" ] ; then
     policy_cfg_rgw_ssl
 else
     policy_cfg_rgw
 fi
+policy_cfg_no_client
 cat_policy_cfg
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
