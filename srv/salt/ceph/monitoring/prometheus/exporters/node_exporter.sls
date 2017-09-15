@@ -1,4 +1,4 @@
-node exporter package:
+install node exporter package:
   pkg.installed:
     - name: golang-github-prometheus-node_exporter
     - fire_event: True
@@ -12,8 +12,11 @@ set node exporter service args:
               -collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/) \
               -collector.textfile.directory=/var/lib/prometheus/node-exporter"
 
-smartmontools:
-  pkg.installed
+install smartmontools and cron packages:
+  pkg.installed:
+    - pkgs:
+      - cron
+      - smartmontools
 
 smartmon text exporter:
   file.managed:
