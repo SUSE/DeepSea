@@ -440,3 +440,18 @@ EOF
   # FIXME: assert script not running on the iSCSI gateway node
   _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
+
+function validate_rgw_cert_perm {
+    local TESTSCRIPT=/tmp/test_rados_put.sh
+    local RGWNODE=$(_first_x_node rgw-ssl)
+    cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+RGW_PEM=/etc/ceph/rgw.pem
+test -f "$RGW_PEM"
+test "$(stat -c'%U' $RGW_PEM)" == "ceph"
+test "$(stat -c'%G' $RGW_PEM)" == "ceph"
+test "$(stat -c'%a' $RGW_PEM)" -eq 600
+EOF
+    _run_test_script_on_node $TESTSCRIPT $RGWNODE
+}

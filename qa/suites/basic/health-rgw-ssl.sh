@@ -73,5 +73,6 @@ ceph_cluster_status
 ceph_health_test
 rgw_curl_test
 rgw_curl_test_ssl
+validate_rgw_cert_perm
 
 echo "OK"
