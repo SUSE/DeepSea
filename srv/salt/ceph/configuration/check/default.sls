@@ -6,7 +6,7 @@ nop:
 {% set client = config + "." + grains['host'] %}
 check {{ config }}:
   file.exists:
-    - name: /srv/salt/ceph/configuration/files/ceph.conf.{{ config }}
+    - name: /srv/salt/ceph/configuration/files/ceph.conf.d/{{ config }}.conf
     - failhard: True
 
 {% endfor %}

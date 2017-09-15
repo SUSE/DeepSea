@@ -4,6 +4,7 @@
 import os.path
 import hashlib
 import logging
+import salt.client
 
 """
 This runner is here to detect config changes in the
@@ -20,8 +21,9 @@ class Config(object):
         self.checksum_file = self.checksum_dir + service_name + '.conf'
         self.service_name = service_name
         self.service_conf_files = [self.conf_dir + service_name + '.conf']
-        self.extra_files()
         self.dependencies = self.dependencies()
+        self.rgw_configurations()
+        log.debug("dependencies: {}".format(self.dependencies))
 
     def dependencies(self):
         """
@@ -30,26 +32,30 @@ class Config(object):
         hence the service should also be restarted.
         # TODO for other services and complete tree
         """
-        return { 'rgw': ['rgw', 'global_'],
-                 'mds': ['mds'],
+        return { 'mds': ['mds'],
                  'mon': ['mon'],
                  'osd': ['osd'],
                  'client': ['client'],
-                 'global_': ['global_'],
+                 'global': ['global'],
                }
 
-    def extra_files(self):
+    def rgw_configurations(self):
         """
-        As we are not consistent in using the ceph.conf.d directory for
-        all the configs, we need this workaround until the initial issue
-        is fixed. REF: TODO: Deepsea issue reference
+        RadosGW allows custom configurations.  Include these roles with a
+        dependency on the global.conf.  Default to 'rgw' if not set.
         """
-        if self.service_name == 'rgw':
-            self.service_conf_files.append(self.base_dir + 'ceph.conf.rgw')
-            self.service_conf_files.append(self.base_dir + 'ceph.conf.rgw-ssl')
-
-        if self.service_name == 'global_':
-            self.service_conf_files = [self.conf_dir + 'global.conf']
+        local = salt.client.LocalClient()
+        try:
+            roles = local.cmd("I@roles:master", 'pillar.get', [ 'rgw_configurations' ], expr_form="compound").values()[0]
+        except:
+            pass
+        if not roles:
+            roles = [ 'rgw' ]
+        for role in roles:
+            if role == self.service_name:
+                self.dependencies[role] = [ role, 'global' ]
+                for dep in self.dependencies[role][1:]:
+                    self.service_conf_files.append(self.conf_dir + dep + '.conf')
 
     def create_checksum(self):
         """
@@ -65,15 +71,18 @@ class Config(object):
         if checksums:
             return checksums
         log.debug("No file found to generate a checksum from. Looked for {}".format(self.service_conf_files))
+        if os.path.exists(self.checksum_file):
+            os.remove(self.checksum_file)
         return None
 
     def write_checksum(self, md5):
         """
         Write md5 to corresponding checksum file.
         """
-        log.debug("Writing md5 checksum to {}".format(self.checksum_file))
-        with open(self.checksum_file, 'w') as fd:
-            fd.write(md5)
+        if md5:
+            log.debug("Writing md5 checksum {} to {}".format(md5, self.checksum_file))
+            with open(self.checksum_file, 'w') as fd:
+                fd.write(md5 + '\n')
 
     def read_checksum(self):
         """
@@ -82,7 +91,7 @@ class Config(object):
         if os.path.exists(self.checksum_file):
             log.debug("Reading existing md5 checksum from {}".format(self.checksum_file))
             with open(self.checksum_file, 'r') as fd:
-                md5 = fd.readline()
+                md5 = fd.readline().rstrip()
             return md5
         log.debug("No existing checksum for {}".format(self.checksum_file))
         return None
@@ -91,10 +100,11 @@ class Config(object):
         """
         Compare md5s and return status
         """
-        current_cs = self.create_checksum()
+        log.info("Checking service {}".format(self.service_name))
         previous_cs = self.read_checksum()
-        if not current_cs:
-            log.debug("There is not config to read from. Looked for {}".format(self.service_conf_files))
+        current_cs = self.create_checksum()
+        if not (current_cs or previous_cs):
+            log.info("No config file {}".format(self.service_conf_files))
             return False
         if current_cs == previous_cs:
             log.info("No change in configuration detected for service {}".format(self.service_name))
@@ -110,6 +120,8 @@ def requires_conf_change(service):
     in the its config, retrun True
     """
     cfg = Config(service)
+    if service not in cfg.dependencies:
+        return "Service {} not defined".format(service)
     for deps in cfg.dependencies[service]:
         if Config(deps).has_change():
             return True
@@ -128,11 +140,14 @@ def mon():
     return requires_conf_change('mon')
 
 def global_():
-    return requires_conf_change('global_')
+    return requires_conf_change('global')
 
 def client():
     return requires_conf_change('client')
 
-__func_alias__ = { 
+def config(service):
+    return requires_conf_change(service)
+
+__func_alias__ = {
                   'global_': 'global'
                  }
