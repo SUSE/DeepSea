@@ -72,7 +72,8 @@ run_stage_3 "$CLI"
 ceph_cluster_status
 run_stage_4 "$CLI"
 ceph_cluster_status
-ceph_health_test
 rgw_curl_test
+rgw_user_and_bucket_list
+ceph_health_test
 
 echo "OK"
