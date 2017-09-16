@@ -84,8 +84,10 @@ class Fio(object):
             self.target,
             'fio',
             job_name,
-            datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
+            datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S'))
         os.makedirs(job_log_dir)
+
+        runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
 
         job = self._get_job_parameters(job_spec, job_log_dir)
         # parse yaml and get job spec
@@ -99,7 +101,7 @@ class Fio(object):
             e.g. [--client=host1, jobfile, --client=host2, jobfile]
             fio expects a job file for every remote agent
             '''
-            job_name = '{}_{}'.format(job['op'], job['bs'])
+            job_name = '{}_{}_{}'.format(job['number_of_workers'], job['op'], job['bs'])
             for client in self.clients:
                 job.update({'client': client})
                 jobfile = self._parse_job(job, job_name, job_log_dir, client)
@@ -109,6 +111,12 @@ class Fio(object):
             log_args = ['--output={}/{}.json'.format(job_log_dir, job_name)]
             output.append(subprocess.check_output(
                 [self.cmd] + self.cmd_global_args + log_args + client_jobs))
+            minion = runner.cmd('select.one_minion', ['cluster=ceph',
+                                'roles=client-cephfs'],
+                               print_event=False)
+            print('using {} to cleanup bench files'.format(minion))
+            local_client.cmd(minion, 'cmd.run', ['rm',
+                                                 '{}/*'.format(self.work_dir)])
             time.sleep(60)
 
         return output
