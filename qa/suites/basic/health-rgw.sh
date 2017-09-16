@@ -76,17 +76,19 @@ else
 fi
 policy_cfg_no_client
 cat_policy_cfg
+rgw_demo_users
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
 run_stage_3 "$CLI"
 ceph_cluster_status
 run_stage_4 "$CLI"
 ceph_cluster_status
-rgw_user_and_bucket_list
-ceph_health_test
 rgw_curl_test
 if [ -n "$SSL" ] ; then
     rgw_curl_test_ssl
 fi
+rgw_user_and_bucket_list
+rgw_validate_demo_users
+ceph_health_test
 
 echo "OK"
