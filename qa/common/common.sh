@@ -402,7 +402,9 @@ function ceph_cluster_status {
 # core validation tests
 #
 
-function ceph_version_sanity_test {
+function ceph_version_test {
+# test that ceph RPM version matches "ceph --version"
+# for a loose definition of "matches"
   rpm -q ceph
   local RPM_NAME=$(rpm -q ceph)
   local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
@@ -420,6 +422,21 @@ function ceph_health_test {
   salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
   # last line: determines return value of function
   ! grep -q 'Timeout expired' $LOGFILE
+}
+
+function rados_write_test {
+    local TESTSCRIPT=/tmp/test_rados_put.sh
+    cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+ceph osd pool create write_test 128 128
+echo "dummy_content" > verify.txt
+rados -p write_test put test_object verify.txt
+rados -p write_test get test_object verify_returned.txt
+test `cat verify.txt` = `cat verify_returned.txt`
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
 }
 
 function cephfs_mount_and_sanity_test {

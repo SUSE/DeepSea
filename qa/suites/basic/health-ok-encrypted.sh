@@ -67,6 +67,6 @@ ceph_conf_small_cluster
 run_stage_3 "$CLI"
 ceph_cluster_status
 ceph_health_test
-validate_rados_put
+rados_write_test
 
 echo "OK"

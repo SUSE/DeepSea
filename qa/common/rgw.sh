@@ -18,6 +18,7 @@ function rgw_user_and_bucket_list {
   local TESTSCRIPT=/tmp/rgw_user_and_bucket_list.sh
   local RGWNODE=$(_first_x_node rgw)
   cat << EOF > $TESTSCRIPT
+set -ex
 radosgw-admin user list
 radosgw-admin bucket list
 echo "Result: OK"
@@ -97,21 +98,6 @@ rgw_configurations:
       - { uid: "admin", name: "Admin", email: "admin@demo.nil", system: True }
 EOF
     cat $GLOBALYML
-}
-
-function validate_rados_put {
-    local TESTSCRIPT=/tmp/test_rados_put.sh
-    cat << 'EOF' > $TESTSCRIPT
-set -ex
-trap 'echo "Result: NOT_OK"' ERR
-ceph osd pool create write_test 128 128
-echo "dummy_content" > verify.txt
-rados -p write_test put test_object verify.txt
-rados -p write_test get test_object verify_returned.txt
-test `cat verify.txt` = `cat verify_returned.txt`
-echo "Result: OK"
-EOF
-    _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
 }
 
 function rgw_ssl_init {
