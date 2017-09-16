@@ -60,7 +60,7 @@ run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_mon_flex
 policy_cfg_igw
-policy_cfg_client
+policy_cfg_storage 1 # last node will be "client" (not storage)
 cat_policy_cfg
 run_stage_2 "$CLI"
 ceph_conf_small_cluster

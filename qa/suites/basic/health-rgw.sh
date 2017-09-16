@@ -75,7 +75,7 @@ if [ -n "$SSL" ] ; then
 else
     policy_cfg_rgw
 fi
-policy_cfg_no_client
+policy_cfg_storage 0 # "0" means all nodes will have storage role
 cat_policy_cfg
 rgw_demo_users
 run_stage_2 "$CLI"

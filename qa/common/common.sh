@@ -200,28 +200,33 @@ role-mgr/cluster/*.sls slice=[:3]
 EOF
 }
 
-function policy_cfg_no_client {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-default/cluster/*.sls
-profile-default/stack/default/ceph/minions/*yml
-EOF
-}
+function policy_cfg_storage {
+  # first argument is number of non-storage ("client") nodes; defaults to 0
+  # second argument controls whether OSDs are encrypted; default not encrypted
+  local CLIENTS=$1
+  test -z "$CLIENTS" && CLIENTS=0
+  local ENCRYPTION=$2
 
-function policy_cfg_client {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-default/cluster/*.sls slice=[:-1]
-profile-default/stack/default/ceph/minions/*yml slice=[:-1]
-EOF
-}
+  local PROFILE="default"
+  if [ -n "$ENCRYPTION" ] ; then
+     PROFILE="dmcrypt"
+  fi
 
-function policy_cfg_encryption {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+  if [ "$CLIENTS" -eq 0 ] ; then
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-dmcrypt/cluster/*.sls
-profile-dmcrypt/stack/default/ceph/minions/*yml
+profile-$PROFILE/cluster/*.sls
+profile-$PROFILE/stack/default/ceph/minions/*yml
 EOF
+  elif [ "$CLIENTS" -ge 1 ] ; then
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Hardware Profile
+profile-default/cluster/*.sls slice=[:-$CLIENTS]
+profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENTS]
+EOF
+  else
+    echo "Unexpected number of clients ->$CLIENTS<-; bailing out!"
+  fi
 }
 
 function policy_cfg_mds {

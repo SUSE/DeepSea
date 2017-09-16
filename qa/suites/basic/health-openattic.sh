@@ -63,7 +63,7 @@ policy_cfg_base
 policy_cfg_mon_flex
 policy_cfg_mds
 policy_cfg_openattic_rgw_igw_nfs
-policy_cfg_no_client
+policy_cfg_storage 0 # "0" means all nodes will have storage role
 cat_policy_cfg
 rgw_demo_users
 run_stage_2 "$CLI"

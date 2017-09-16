@@ -60,7 +60,7 @@ run_stage_1 "$CLI"
 proposal_populate_dmcrypt
 policy_cfg_base
 policy_cfg_mon_flex
-policy_cfg_encryption
+policy_cfg_storage 0 encryption # "0" means all nodes will have storage role
 cat_policy_cfg
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
