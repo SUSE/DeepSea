@@ -2,10 +2,11 @@
 #
 # DeepSea integration test "suites/basic/health-rgw.sh"
 #
-# This script runs DeepSea stages 0-4 to deploy a Ceph cluster with RGW.  After
-# stage 4 completes, it sends a GET request to the RGW node using curl, and
-# tests that: (a) the response contains the string "anonymous" and (b) the
-# response is legal XML.
+# This script runs DeepSea stages 0-4 to deploy a Ceph cluster with RGW (and
+# optionally RGW+SSL). After stage 4 completes, it sends a GET request to the
+# RGW node using curl (optionally using SSL endpoint), and tests that: (a) the
+# response contains the string "anonymous" and (b) the response is legal XML.
+# The script also deploys some RGW demo users.
 #
 # The script makes no assumptions beyond those listed in qa/README.
 #
@@ -68,24 +69,28 @@ else
 fi
 run_stage_1 "$CLI"
 policy_cfg_base
-policy_cfg_no_client
+policy_cfg_mon_flex
 if [ -n "$SSL" ] ; then
     policy_cfg_rgw_ssl
 else
     policy_cfg_rgw
 fi
+policy_cfg_storage 0 # "0" means all nodes will have storage role
 cat_policy_cfg
+rgw_demo_users
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
 run_stage_3 "$CLI"
 ceph_cluster_status
 run_stage_4 "$CLI"
 ceph_cluster_status
-rgw_user_and_bucket_list
-ceph_health_test
 rgw_curl_test
 if [ -n "$SSL" ] ; then
     rgw_curl_test_ssl
+    validate_rgw_cert_perm
 fi
+rgw_user_and_bucket_list
+rgw_validate_demo_users
+ceph_health_test
 
 echo "OK"

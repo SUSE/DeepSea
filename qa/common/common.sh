@@ -153,14 +153,6 @@ function proposal_populate_dmcrypt {
 # functions for generating policy.cfg
 #
 
-function policy_cfg_encryption {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-dmcrypt/cluster/*.sls
-profile-dmcrypt/stack/default/ceph/minions/*yml
-EOF
-}
-
 function policy_cfg_base {
   cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
 # Cluster assignment
@@ -172,38 +164,78 @@ config/stack/default/ceph/cluster.yml
 role-master/cluster/${SALT_MASTER}*.sls
 # Role assignment - admin
 role-admin/cluster/*.sls
-# Role assignment - mon
+EOF
+}
+
+function policy_cfg_mon_flex {
+  local TOTALNODES=$(json_total_nodes)
+  test -n "$TOTALNODES"
+  if [ "$TOTALNODES" -eq 1 ] ; then
+    echo "Only one node in cluster; deploying 1 mon and 1 mgr"
+    policy_cfg_one_mon
+  elif [ "$TOTALNODES" -eq 2 ] ; then
+    echo "2-node cluster; deploying 1 mon and 1 mgr"
+    policy_cfg_one_mon
+  elif [ "$TOTALNODES" -ge 3 ] ; then
+    policy_cfg_three_mons
+  else
+    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
+    exit 1
+  fi
+}
+
+function policy_cfg_one_mon {
+  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - 1 mon, 1 mgr
 role-mon/cluster/*.sls slice=[:1]
 role-mgr/cluster/*.sls slice=[:1]
-role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 EOF
 }
 
-function policy_cfg_no_client {
+function policy_cfg_three_mons {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-default/cluster/*.sls
-profile-default/stack/default/ceph/minions/*yml
+# Role assignment - 3 mons, 3 mgrs
+role-mon/cluster/*.sls slice=[:3]
+role-mgr/cluster/*.sls slice=[:3]
 EOF
 }
 
+function policy_cfg_storage {
+  # first argument is number of non-storage ("client") nodes; defaults to 0
+  # second argument controls whether OSDs are encrypted; default not encrypted
+  local CLIENTS=$1
+  test -z "$CLIENTS" && CLIENTS=0
+  local ENCRYPTION=$2
 
-function policy_cfg_client {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+  local PROFILE="default"
+  if [ -n "$ENCRYPTION" ] ; then
+     PROFILE="dmcrypt"
+  fi
+
+  if [ "$CLIENTS" -eq 0 ] ; then
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-default/cluster/*.sls slice=[:-1]
-profile-default/stack/default/ceph/minions/*yml slice=[:-1]
+profile-$PROFILE/cluster/*.sls
+profile-$PROFILE/stack/default/ceph/minions/*yml
 EOF
+  elif [ "$CLIENTS" -ge 1 ] ; then
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Hardware Profile
+profile-default/cluster/*.sls slice=[:-$CLIENTS]
+profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENTS]
+EOF
+  else
+    echo "Unexpected number of clients ->$CLIENTS<-; bailing out!"
+  fi
 }
 
 function policy_cfg_mds {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - mds
+# Role assignment - mds (all but last node)
 role-mds/cluster/*.sls slice=[:-1]
 EOF
 }
 
-# NOTE: RGW does not coexist well with openATTIC
 function policy_cfg_rgw {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - rgw (first node)
@@ -219,11 +251,9 @@ role-rgw-ssl/cluster/*.sls slice=[:1]
 EOF
 }
 
-# NOTE: RGW does not coexist well with openATTIC
 function policy_cfg_openattic_with_rgw {
-  local TOTALNODES=$(json_total_nodes)
-  test ! -z "$TOTALNODES"
-  if [ "x$TOTALNODES" = "x1" ] ; then
+  local TOTALNODES=$(json_total_nodes) test -n "$TOTALNODES"
+  if [ "$TOTALNODES" -eq 1 ] ; then
     echo "Only one node in cluster; colocating rgw and openattic roles"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - openattic (first node)
@@ -231,7 +261,7 @@ role-openattic/cluster/*.sls slice=[:1]
 # Role assignment - rgw (colocate with openattic on first node)
 role-rgw/cluster/*.sls slice=[:1]
 EOF
-  else
+  elif [ "$TOTALNODES" -ge 2 ] ; then
     echo "Deploying rgw and openattic roles on separate nodes"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - openattic (first node)
@@ -239,6 +269,66 @@ role-openattic/cluster/*.sls slice=[:1]
 # Role assignment - rgw (second node)
 role-rgw/cluster/*.sls slice=[1:2]
 EOF
+  else
+    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
+    exit 1
+  fi
+}
+
+function policy_cfg_openattic_rgw_igw_nfs {
+  local TOTALNODES=$(json_total_nodes)
+  test -n "$TOTALNODES"
+  if [ "$TOTALNODES" -eq 1 ] ; then
+    echo "Only one node in cluster; colocating rgw, igw, ganesha with openattic"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (colocate with openattic on first node)
+role-rgw/cluster/*.sls slice=[:1]
+# Role assignment - igw (colocate with openattic on first node)
+role-igw/cluster/*.sls slice=[:1]
+# Role assignment - ganesha (colocate with openattic on first node)
+role-ganesha/cluster/*.sls slice=[:1]
+EOF
+  elif [ "$TOTALNODES" -eq 2 ] ; then
+    echo "Two nodes in cluster; deploying openattic one one node, rgw+igw+ganesha on the other"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+# Role assignment - igw (second node)
+role-igw/cluster/*.sls slice=[1:2]
+# Role assignment - ganesha (second node)
+role-ganesha/cluster/*.sls slice=[1:2]
+EOF
+  elif [ "$TOTALNODES" -eq 3 ] ; then
+    echo "Three nodes in cluster; deploying openattic one one node, rgw on second, igw+ganesha on third"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+# Role assignment - igw (third node)
+role-igw/cluster/*.sls slice=[2:3]
+# Role assignment - ganesha (third node)
+role-ganesha/cluster/*.sls slice=[2:3]
+EOF
+  elif [ "$TOTALNODES" -ge 4 ] ; then
+    echo "Deploying openattic, rgw, igw, and ganesha on separate nodes"
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - openattic (first node)
+role-openattic/cluster/*.sls slice=[:1]
+# Role assignment - rgw (second node)
+role-rgw/cluster/*.sls slice=[1:2]
+# Role assignment - igw (third node)
+role-igw/cluster/*.sls slice=[2:3]
+# Role assignment - ganesha (fourth node)
+role-ganesha/cluster/*.sls slice=[3:4]
+EOF
+  else
+    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
+    exit 1
   fi
 }
 
@@ -312,12 +402,28 @@ function ceph_cluster_status {
   ceph -s
 }
 
+function ceph_log_grep_enoent_eaccess {
+  set +e
+  grep -rH "Permission denied" /var/log/ceph
+  grep -rH "No such file or directory" /var/log/ceph
+  set -e
+}
+
+function systemd_ceph_osd_target_wants {
+  set +e
+  ls -l /etc/systemd/system/ceph-osd.target.wants
+  ls -l /run/systemd/system/ceph-osd.target.wants
+  set -e
+}
+
 
 #
 # core validation tests
 #
 
-function ceph_version_sanity_test {
+function ceph_version_test {
+# test that ceph RPM version matches "ceph --version"
+# for a loose definition of "matches"
   rpm -q ceph
   local RPM_NAME=$(rpm -q ceph)
   local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
@@ -335,6 +441,21 @@ function ceph_health_test {
   salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
   # last line: determines return value of function
   ! grep -q 'Timeout expired' $LOGFILE
+}
+
+function rados_write_test {
+    local TESTSCRIPT=/tmp/test_rados_put.sh
+    cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+ceph osd pool create write_test 128 128
+echo "dummy_content" > verify.txt
+rados -p write_test put test_object verify.txt
+rados -p write_test get test_object verify_returned.txt
+test `cat verify.txt` = `cat verify_returned.txt`
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
 }
 
 function cephfs_mount_and_sanity_test {
@@ -452,6 +573,7 @@ test -f "$RGW_PEM"
 test "$(stat -c'%U' $RGW_PEM)" == "ceph"
 test "$(stat -c'%G' $RGW_PEM)" == "ceph"
 test "$(stat -c'%a' $RGW_PEM)" -eq 600
+echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $RGWNODE
 }

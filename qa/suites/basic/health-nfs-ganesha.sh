@@ -74,7 +74,7 @@ cat_salt_config
 run_stage_0 "$CLI"
 run_stage_1 "$CLI"
 policy_cfg_base
-policy_cfg_client
+policy_cfg_mon_flex
 if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
     policy_cfg_mds
 fi
@@ -83,6 +83,7 @@ if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
     rgw_demo_users
 fi
 policy_cfg_nfs_ganesha
+policy_cfg_storage 1 # last node will be "client" (not storage)
 cat_policy_cfg
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
