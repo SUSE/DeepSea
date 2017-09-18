@@ -31,6 +31,10 @@ def check(**kwargs):
     running = True
     results = {}
 
+    if 'rgw_configurations' in __pillar__:
+        for rgw_config in __pillar__['rgw_configurations']:
+            processes[rgw_config] = ['radosgw']
+
     if 'roles' in __pillar__:
         for role in kwargs.get('roles', __pillar__['roles']):
             for process in processes[role]:
