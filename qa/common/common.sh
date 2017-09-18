@@ -402,6 +402,13 @@ function ceph_cluster_status {
   ceph -s
 }
 
+function ceph_log_grep_enoent_eaccess {
+  set +e
+  grep -rH "Permission denied" /var/log/ceph
+  grep -rH "No such file or directory" /var/log/ceph
+  set -e
+}
+
 
 #
 # core validation tests

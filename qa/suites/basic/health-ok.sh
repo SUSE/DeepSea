@@ -67,6 +67,7 @@ ceph_conf_small_cluster
 run_stage_3 "$CLI"
 ceph_cluster_status
 ceph_health_test
+ceph_log_grep_enoent_eaccess
 rados_write_test
 
 echo "OK"
