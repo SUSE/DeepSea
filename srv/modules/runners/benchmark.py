@@ -109,12 +109,13 @@ class Fio(object):
                 client_jobs.extend([jobfile])
 
             log_args = ['--output={}/{}.json'.format(job_log_dir, job_name)]
+            print('Running job {}'.format(job_name))
             output.append(subprocess.check_output(
                 [self.cmd] + self.cmd_global_args + log_args + client_jobs))
             minion = runner.cmd('select.one_minion', ['cluster=ceph',
                                 'roles=client-cephfs'],
                                print_event=False)
-            print('using {} to cleanup bench files'.format(minion))
+            print('Job done...using {} to cleanup bench files'.format(minion))
             local_client.cmd(minion, 'cmd.run', ['rm',
                                                  '{}/*'.format(self.work_dir)])
             time.sleep(60)

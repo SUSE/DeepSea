@@ -1,9 +1,10 @@
 template: rw_single_file.j2
 filesize: 5g
-runtime: 120
+runtime: 300
 ramp_time: 60
 bs:
   - 4k
+  - 64k
   - 1m
   - 4m
   - 8m
