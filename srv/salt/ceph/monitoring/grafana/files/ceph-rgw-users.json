@@ -80,7 +80,7 @@
                 "legendFormat": "Total",
                 "metric": "",
                 "refId": "A",
-                "step": 3600
+                "step": 60
               },
               {
                 "expr": "sum(ceph_rgw_user_usage_successful_ops_total{owner='$owner'})",
@@ -89,7 +89,7 @@
                 "legendFormat": "Successful",
                 "metric": "",
                 "refId": "B",
-                "step": 3600
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -169,7 +169,7 @@
                 "legendFormat": "Bytes sent",
                 "metric": "",
                 "refId": "C",
-                "step": 3600
+                "step": 60
               },
               {
                 "expr": "sum(ceph_rgw_user_usage_received_bytes_total{owner='$owner'})",
@@ -178,7 +178,7 @@
                 "legendFormat": "Bytes received",
                 "metric": "",
                 "refId": "D",
-                "step": 3600
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -271,7 +271,7 @@
                 "legendFormat": "Total",
                 "metric": "",
                 "refId": "A",
-                "step": 3600
+                "step": 60
               },
               {
                 "expr": "sum(ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket'})",
@@ -280,7 +280,7 @@
                 "legendFormat": "Successful",
                 "metric": "",
                 "refId": "B",
-                "step": 3600
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -360,7 +360,7 @@
                 "legendFormat": "Bytes sent",
                 "metric": "",
                 "refId": "C",
-                "step": 3600
+                "step": 60
               },
               {
                 "expr": "sum(ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket'})",
@@ -369,7 +369,7 @@
                 "legendFormat": "Bytes received",
                 "metric": "",
                 "refId": "D",
-                "step": 3600
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -462,7 +462,7 @@
                 "legendFormat": "Total",
                 "metric": "",
                 "refId": "A",
-                "step": 3600
+                "step": 60
               },
               {
                 "expr": "ceph_rgw_user_usage_successful_ops_total{owner='$owner',bucket='$bucket',category='$category'}",
@@ -471,7 +471,7 @@
                 "legendFormat": "Successful",
                 "metric": "",
                 "refId": "B",
-                "step": 3600
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -551,7 +551,7 @@
                 "legendFormat": "Bytes sent",
                 "metric": "",
                 "refId": "C",
-                "step": 3600
+                "step": 60
               },
               {
                 "expr": "ceph_rgw_user_usage_received_bytes_total{owner='$owner',bucket='$bucket',category='$category'}",
@@ -560,7 +560,7 @@
                 "legendFormat": "Bytes received",
                 "metric": "",
                 "refId": "D",
-                "step": 3600
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -620,20 +620,21 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "text": "auto",
-            "value": "$__auto_interval"
+            "selected": true,
+            "text": "1m",
+            "value": "1m"
           },
           "hide": 0,
           "label": "Interval",
           "name": "interval",
           "options": [
             {
-              "selected": true,
+              "selected": false,
               "text": "auto",
               "value": "$__auto_interval"
             },
             {
-              "selected": false,
+              "selected": true,
               "text": "1m",
               "value": "1m"
             },
@@ -780,6 +781,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway users",
-    "version": 3
+    "version": 4
   }
 }
