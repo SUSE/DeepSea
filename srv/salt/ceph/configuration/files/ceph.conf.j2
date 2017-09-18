@@ -18,17 +18,17 @@ cluster_network = {{ salt['pillar.get']('cluster_network') }}
 mon_health_preluminous_compat = true
 mon health preluminous compat warning = false
 
-{% include "ceph/configuration/files/ceph.conf.rbd" %}
+{% include "ceph/configuration/files/rbd.conf" %}
 
 {% include "ceph/configuration/files/ceph.conf.d/global.conf" ignore missing %}
 
 {% for config,host,fqdn in salt.saltutil.runner('select.from', pillar='rgw_configurations', role='rgw', attr='host, fqdn') %}
 {% if config is not none %}
 {% set client = config + "." + host %}
-{% if salt['file.file_exists']("/srv/salt/ceph/configuration/files/ceph.conf.d/ceph.conf." + config) %}
-{% include "ceph/configuration/files/ceph.conf.d/ceph.conf." + config %}
+{% if salt['file.file_exists']("/srv/salt/ceph/configuration/files/ceph.conf.d/" + config + ".conf") %}
+{% include "ceph/configuration/files/ceph.conf.d/" + config + ".conf" %}
 {% else %}
-{% include "ceph/configuration/files/ceph.conf." + config %}
+{% include "ceph/configuration/files/" + config + ".conf" %}
 {% endif %}
 {% endif %}
 {% endfor %}
