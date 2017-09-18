@@ -82,7 +82,7 @@
                 "intervalFactor": 1,
                 "legendFormat": "Total",
                 "refId": "A",
-                "step": 7200
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -157,7 +157,7 @@
                 "intervalFactor": 1,
                 "legendFormat": "Total",
                 "refId": "A",
-                "step": 7200
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -250,7 +250,7 @@
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
                 "refId": "A",
-                "step": 7200
+                "step": 60
               }
             ],
             "timeFrom": "1h",
@@ -302,7 +302,7 @@
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
                 "refId": "A",
-                "step": 7200
+                "step": 60
               }
             ],
             "timeFrom": "1h",
@@ -354,7 +354,7 @@
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
                 "refId": "A",
-                "step": 7200
+                "step": 60
               }
             ],
             "timeFrom": "1h",
@@ -406,7 +406,7 @@
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
                 "refId": "A",
-                "step": 7200
+                "step": 60
               }
             ],
             "timeFrom": "1h",
@@ -437,20 +437,21 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "text": "auto",
-            "value": "$__auto_interval"
+            "selected": true,
+            "text": "1m",
+            "value": "1m"
           },
           "hide": 0,
           "label": "Interval",
           "name": "interval",
           "options": [
             {
-              "selected": true,
+              "selected": false,
               "text": "auto",
               "value": "$__auto_interval"
             },
             {
-              "selected": false,
+              "selected": true,
               "text": "1m",
               "value": "1m"
             },
@@ -537,6 +538,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway",
-    "version": 2
+    "version": 3
   }
 }
