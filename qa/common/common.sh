@@ -409,6 +409,13 @@ function ceph_log_grep_enoent_eaccess {
   set -e
 }
 
+function systemd_ceph_osd_target_wants {
+  set +e
+  ls -l /etc/systemd/system/ceph-osd.target.wants
+  ls -l /run/systemd/system/ceph-osd.target.wants
+  set -e
+}
+
 
 #
 # core validation tests
