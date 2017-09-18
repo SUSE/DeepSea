@@ -573,6 +573,7 @@ test -f "$RGW_PEM"
 test "$(stat -c'%U' $RGW_PEM)" == "ceph"
 test "$(stat -c'%G' $RGW_PEM)" == "ceph"
 test "$(stat -c'%a' $RGW_PEM)" -eq 600
+echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $RGWNODE
 }
