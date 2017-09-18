@@ -1,14 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import argparse
 import json
 import prometheus_client
-import socket
 import subprocess
 import sys
 import syslog
-import time
 
 class CephRgwCollector(object):
     def _exec_rgw_admin(self, args):
@@ -95,32 +92,15 @@ class CephRgwCollector(object):
         for metric in self._metrics.values():
             yield metric
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-p', '--port',
-        metavar='port',
-        required=False,
-        type=int,
-        help='Listen locally to this port',
-        default=9156)
-    return parser.parse_args()
-
 def main():
     try:
-        args = parse_args()
-        # Register collector and start HTTP server.
-        prometheus_client.REGISTRY.register(CephRgwCollector())
-        prometheus_client.start_http_server(args.port)
-        # Print message to STDOUT and syslog.
-        message = 'Listening on http://{}:{}\n'.format(socket.getfqdn(),
-            args.port)
-        sys.stdout.write(message)
-        syslog.syslog(syslog.LOG_INFO, message)
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        exit(0)
+        # Create a new registry, otherwise unwanted default collectors are
+        # added automatically.
+        registry = prometheus_client.CollectorRegistry(auto_describe=True)
+        # Register our own collector and write metrics to STDOUT.
+        registry.register(CephRgwCollector())
+        sys.stdout.write(prometheus_client.generate_latest(registry))
+        sys.stdout.flush()
     except Exception as e:
         syslog.syslog(syslog.LOG_ERR, str(e))
         exit(1)
