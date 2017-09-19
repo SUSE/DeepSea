@@ -18,19 +18,18 @@ rgw users:
     - tgt: "I@roles:{{ config }} and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.rgw
-
 {% endfor %}
 
-{% set endpoint = salt.saltutil.runner('ui_rgw.endpoints')[0] %}
-rgw demo buckets:
+{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+{% if salt.saltutil.runner('changed.config', service=config) == True %}
+
+restart {{config}}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: "I@roles:{{ config }} and I@cluster:ceph"
     - tgt_type: compound
-    - sls: ceph.rgw.buckets
-    - pillar:
-        'rgw_host': {{ endpoint['host'] }}
-        'rgw_port': {{ endpoint['port'] }}
-        'rgw_ssl': {{ endpoint['ssl'] }}
+    - sls: ceph.rgw.restart
 
 {% endif %}
+{% endfor %}
 
+{% endif %}

@@ -107,6 +107,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/files/ceph.conf.d
+%dir /srv/salt/ceph/configuration/files/ceph.conf.checksum
+%dir %attr(0700, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.checksum
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/configuration/create
 %dir /srv/salt/ceph/diagnose
@@ -339,7 +341,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/configuration/*.sls
 %config /srv/salt/ceph/configuration/check/*.sls
 %config /srv/salt/ceph/configuration/create/*.sls
-%config /srv/salt/ceph/configuration/files/ceph.conf*
+%config /srv/salt/ceph/configuration/files/*.conf
+%config /srv/salt/ceph/configuration/files/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.import
 /srv/salt/ceph/configuration/files/ceph.conf.d/README
 /srv/salt/ceph/diagnose/README.md
