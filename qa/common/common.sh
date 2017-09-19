@@ -8,6 +8,9 @@ source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
+export DEV_ENV="true"         # FIXME set only when TOTALNODES < 4
+export INTEGRATION_ENV="true" # since we can't rely on DEV_ENV always being set
+
 # determine hostname of Salt Master
 MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
 if test -s $MASTER_MINION_SLS ; then
@@ -35,8 +38,6 @@ else
     echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
     exit 1
 fi
-
-export DEV_ENV='true'
 
 
 #
