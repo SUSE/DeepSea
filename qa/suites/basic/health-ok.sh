@@ -68,7 +68,7 @@ run_stage_3 "$CLI"
 ceph_cluster_status
 ceph_health_test
 ceph_log_grep_enoent_eaccess
-systemd_ceph_osd_target_wants
+test_systemd_ceph_osd_target_wants
 rados_write_test
 
 echo "OK"
