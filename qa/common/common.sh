@@ -409,13 +409,6 @@ function ceph_log_grep_enoent_eaccess {
   set -e
 }
 
-function systemd_ceph_osd_target_wants {
-  set +e
-  ls -l /etc/systemd/system/ceph-osd.target.wants
-  ls -l /run/systemd/system/ceph-osd.target.wants
-  set -e
-}
-
 
 #
 # core validation tests
@@ -576,4 +569,30 @@ test "$(stat -c'%a' $RGW_PEM)" -eq 600
 echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $RGWNODE
+}
+
+function test_systemd_ceph_osd_target_wants {
+  #
+  # see bsc#1051598 in which ceph-disk was omitting --runtime when it enabled
+  # ceph-osd@$ID.service units
+  #
+  local TESTSCRIPT=/tmp/test_systemd_ceph_osd_target_wants.sh
+  local STORAGENODE=$(_first_x_node storage)
+  cat << 'EOF' > $TESTSCRIPT
+set -x
+CEPH_OSD_WANTS="/systemd/system/ceph-osd.target.wants"
+ETC_CEPH_OSD_WANTS="/etc$CEPH_OSD_WANTS"
+RUN_CEPH_OSD_WANTS="/run$CEPH_OSD_WANTS"
+ls -l $ETC_CEPH_OSD_WANTS
+ls -l $RUN_CEPH_OSD_WANTS
+set -e
+trap 'echo "Result: NOT_OK"' ERR
+echo "Asserting that there is no directory $ETC_CEPH_OSD_WANTS"
+test -d "$ETC_CEPH_OSD_WANTS" && false
+echo "Asserting that $RUN_CEPH_OSD_WANTS exists, is a directory, and is not empty"
+test -d "$RUN_CEPH_OSD_WANTS"
+test -n "$(ls --almost-all $RUN_CEPH_OSD_WANTS)"
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }

@@ -56,7 +56,6 @@ assert_enhanced_getopt
 install_deps
 cat_salt_config
 run_stage_0 "$CLI"
-ceph_version_test
 run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_mon_flex
@@ -68,7 +67,8 @@ run_stage_3 "$CLI"
 ceph_cluster_status
 ceph_health_test
 ceph_log_grep_enoent_eaccess
-systemd_ceph_osd_target_wants
+test_systemd_ceph_osd_target_wants
 rados_write_test
+ceph_version_test
 
 echo "OK"
