@@ -70,5 +70,6 @@ run_stage_4 "$CLI"
 ceph_cluster_status
 ceph_health_test
 cephfs_mount_and_sanity_test
+run_stage_0 "$CLI"
 
 echo "OK"

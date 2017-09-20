@@ -92,5 +92,6 @@ fi
 rgw_user_and_bucket_list
 rgw_validate_demo_users
 ceph_health_test
+run_stage_0 "$CLI"
 
 echo "OK"

@@ -72,5 +72,6 @@ ceph_health_test
 iscsi_kludge # see bsc#1049669
 igw_info
 iscsi_mount_and_sanity_test
+run_stage_0 "$CLI"
 
 echo "OK"

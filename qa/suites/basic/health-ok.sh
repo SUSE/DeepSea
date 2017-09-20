@@ -70,5 +70,6 @@ ceph_log_grep_enoent_eaccess
 test_systemd_ceph_osd_target_wants
 rados_write_test
 ceph_version_test
+run_stage_0 "$CLI"
 
 echo "OK"

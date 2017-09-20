@@ -76,5 +76,6 @@ rgw_curl_test
 rgw_user_and_bucket_list
 ceph_health_test
 ceph_version_test
+run_stage_0 "$CLI"
 
 echo "OK"
