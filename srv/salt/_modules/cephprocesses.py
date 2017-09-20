@@ -73,6 +73,12 @@ def check(results=False, quiet=False, **kwargs):
 
     return res if results else running
 
+def down(**kwargs):
+    """
+    Based on check(), return True/False if all Ceph processes that are meant to be running on a node are down.
+    """
+    return True if not check(True, True)['up'].values() else False
+
 def wait(**kwargs):
     """
     Periodically check until all services are up or until the timeout is
