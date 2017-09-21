@@ -11,10 +11,10 @@ function clean_up {
 }
 
 if mkdir /var/lock/$me.lock; then
-    echo "$me lock succeeded"
+    (>&2 echo "$me lock succeeded")
     trap clean_up EXIT SIGINT SIGTERM
 else
-    echo "$me couldn't take lock...giving up"
+    (>&2 echo "$me couldn't take lock...giving up")
     exit 1
 fi
 
@@ -37,9 +37,13 @@ do
     pools="$(ceph -c $conf osd lspools 2>/dev/null | sed 's/[[:digit:]] \([^,]*\),/\1 /g')"
     for pool in $pools
     do
-        rbd -p $pool --format json -c $conf du 2>/dev/null |
-        jq ".images[] | [.name, .provisioned_size, .used_size] | @csv" |
-        sed -e 's/^"//' -e 's/"$//' -e 's/\\"//g' | # stripe some quotes
-        awk -F , -v cluster=$cluster -v pool=$pool "$awk_cmd"
+        for img in `rbd -p $pool ls`; do
+            if rbd -p $pool info $img | grep -q "features:.*fast-diff.*"; then
+                rbd -p $pool --format json -c $conf du $img 2>/dev/null |
+                jq ".images[] | [.name, .provisioned_size, .used_size] | @csv" |
+                sed -e 's/^"//' -e 's/"$//' -e 's/\\"//g' | # stripe some quotes
+                awk -F , -v cluster=$cluster -v pool=$pool "$awk_cmd"
+            fi
+        done
     done
 done
