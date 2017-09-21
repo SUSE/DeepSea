@@ -4,6 +4,19 @@
 # data points exported for every image in all accessable clusters are
 # ceph_rbd_image_bytes_provisioned
 # ceph_rbd_image_bytes_used
+me=`basename "$0"`
+
+function clean_up {
+    rm -rf /var/lock/$me.lock
+}
+
+if mkdir /var/lock/$me.lock; then
+    echo "$me lock succeeded"
+    trap clean_up EXIT SIGINT SIGTERM
+else
+    echo "$me couldn't take lock...giving up"
+    exit 1
+fi
 
 awk_cmd='
 {
