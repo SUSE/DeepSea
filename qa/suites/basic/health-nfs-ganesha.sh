@@ -121,5 +121,6 @@ for v in "" "3" "4" ; do
     nfs_ganesha_umount
     sleep 10
 done
+run_stage_0 "$CLI"
 
 echo "OK"

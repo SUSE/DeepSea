@@ -68,5 +68,6 @@ run_stage_3 "$CLI"
 ceph_cluster_status
 ceph_health_test
 rados_write_test
+run_stage_0 "$CLI"
 
 echo "OK"
