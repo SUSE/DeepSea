@@ -6,6 +6,19 @@
 # TODO: This probably needs to be a little more complex.  The raw numbers can have more
 #       data in them than you'd think.
 #       http://arstechnica.com/civis/viewtopic.php?p=22062211
+me=`basename "$0"`
+
+function clean_up {
+    rm -rf /var/lock/$me.lock
+}
+
+if mkdir /var/lock/$me.lock; then
+    trap clean_up EXIT SIGINT SIGTERM
+    echo "$me lock succeeded"
+else
+    echo "$me couldn't take lock...giving up"
+    exit 1
+fi
 
 disks="$(/usr/sbin/smartctl --scan | awk '{print $1 "|" $3}')"
 
