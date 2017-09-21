@@ -14,7 +14,8 @@ from .common import PrettyPrinter as PP
 from .salt_event import SaltEventProcessor
 from .salt_event import EventListener
 from .salt_event import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
-from .stage_parser import SLSParser, SaltRunner, SaltState, SaltModule, SaltBuiltIn
+from .stage_parser import SLSParser, SaltRunner, SaltState, SaltModule, SaltBuiltIn, \
+                          StateRenderingException, RenderingException
 
 
 # pylint: disable=C0111
@@ -358,12 +359,14 @@ class MonitorListener(object):
         """
         pass
 
-    def stage_parsing_finished(self, stage, output):
+    def stage_parsing_finished(self, stage, output, exception):
         """
         This function is called when a stage parsing finished
         Args:
             stage (Stage): the stage object or None if a parsing error occurred
             output (str): the stdout output of parsing
+            error (stage_parser.RenderingException): the exception object in case of rendering
+                                                     error
         """
         pass
 
@@ -503,8 +506,12 @@ class Monitor(threading.Thread):
     def parse_stage(self, stage_name):
         self._fire_event('stage_started', stage_name)
         self._fire_event('stage_parsing_started', stage_name)
-        parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps,
-                                                        True, False)
+        try:
+            parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps,
+                                                            True, False)
+        except RenderingException as ex:
+            self._fire_event('stage_parsing_finished', None, None, ex)
+            raise ex
         self._stage_steps[stage_name] = (parsed_steps, out)
 
     def append_event(self, event):
@@ -580,12 +587,16 @@ class Monitor(threading.Thread):
         else:
             self._fire_event('stage_started', stage_name)
             self._fire_event('stage_parsing_started', stage_name)
-            parsed_steps, out = SLSParser.parse_state_steps(stage_name,
-                                                            not self._show_state_steps,
-                                                            True, False)
+            try:
+                parsed_steps, out = SLSParser.parse_state_steps(stage_name,
+                                                                not self._show_state_steps,
+                                                                True, False)
+            except RenderingException as ex:
+                self._fire_event('stage_parsing_finished', None, None, ex)
+                return
         self._running_stage = Stage(stage_name, parsed_steps, self._show_dynamic_steps)
 
-        self._fire_event('stage_parsing_finished', self._running_stage, out)
+        self._fire_event('stage_parsing_finished', self._running_stage, out, None)
 
         self._running_stage.start(event)
         logger.info("Start stage: %s jid=%s", self._running_stage.name, self._running_stage.jid)

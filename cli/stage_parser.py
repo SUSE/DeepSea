@@ -14,6 +14,7 @@ import StringIO
 from collections import OrderedDict, defaultdict
 
 import salt.client
+import salt.exceptions
 
 from .common import redirect_stdout, redirect_stderr
 
@@ -35,6 +36,46 @@ class OrchestrationNotFound(Exception):
     pass
 
 
+class RenderingException(Exception):
+    """
+    Exception class that represents a rendering error
+    """
+    def __init__(self, error_desc):
+        super(RenderingException, self).__init__()
+        self.error_desc = error_desc
+
+    def pretty_error_desc_str(self):
+        """
+        Returns a more user-friendly message of the exception
+        """
+        idx = self.error_desc.find("SaltRenderError:")
+        if idx != -1:
+            # SaltRenderError exception, we may remove the stack trace, only the syntax error
+            # description is usefull.
+            return self.error_desc[idx:]
+        else:
+            return self.error_desc
+
+
+class StateRenderingException(RenderingException):
+    """
+    Exception class that represents a state rendering error
+    """
+    def __init__(self, minion, states, error_desc):
+        super(StateRenderingException, self).__init__(error_desc)
+        self.minion = minion
+        self.states = states
+
+
+class StageRenderingException(RenderingException):
+    """
+    Exception class that represents a stage rendering error
+    """
+    def __init__(self, stage_file, error_desc):
+        super(StageRenderingException, self).__init__(error_desc)
+        self.stage_file = stage_file
+
+
 class SLSRenderer(object):
     """
     Helper class to render sls files
@@ -49,9 +90,18 @@ class SLSRenderer(object):
         """
         err = StringIO.StringIO()
         out = StringIO.StringIO()
+        exception = None
         with redirect_stderr(err):
             with redirect_stdout(out):
-                result = __caller__.cmd('slsutil.renderer', file_name)
+                try:
+                    result = __caller__.cmd('slsutil.renderer', file_name)
+                except salt.exceptions.SaltException as ex:
+                    exception = StageRenderingException(file_name, ex.strerror)
+
+        if exception:
+            # pylint: disable=E0702
+            raise exception
+
         logger.info("Rendered SLS file %s, stdout\n%s", file_name, out.getvalue())
         logger.debug("Rendered SLS file %s, stderr\n%s", file_name, err.getvalue())
         return result, out.getvalue(), err.getvalue()
@@ -103,6 +153,8 @@ class SLSRenderer(object):
                         else:
                             logger.error("deepsea module not available")
                             return None
+                    else:
+                        raise StateRenderingException(key, states, val)
                 for state_name, content in val.items():
                     if state_name not in result:
                         result[state_name] = {}
