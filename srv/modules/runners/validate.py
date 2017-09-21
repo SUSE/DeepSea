@@ -600,7 +600,7 @@ class Validate(object):
                 'openattic' in self.data[node]['roles'] and
                 'rgw' in self.data[node]['roles']):
                 # Would use file.contains if it supported '='
-                result = local.cmd(node, 'file.contains_regex', [ '/etc/ceph/ceph.conf', 'port\=80'], expr_form="glob")
+                result = local.cmd(node, 'file.search', [ '/etc/ceph/ceph.conf', r'port\=80\b'], expr_form="glob")
                 if result[node]:
                     msg = "rgw port conflicts with openATTIC on {} - check ceph.conf".format(node)
                     self.errors.setdefault('openattic', []).append(msg)
