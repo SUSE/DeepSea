@@ -14,9 +14,9 @@ function clean_up {
 
 if mkdir /var/lock/$me.lock; then
     trap clean_up EXIT SIGINT SIGTERM
-    echo "$me lock succeeded"
+    (>&2 echo "$me lock succeeded")
 else
-    echo "$me couldn't take lock...giving up"
+    (>&2 echo "$me couldn't take lock...giving up")
     exit 1
 fi
 
