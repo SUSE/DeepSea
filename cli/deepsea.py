@@ -15,18 +15,20 @@ import click
 
 import pkg_resources
 
+from .config import Config
 from .common import PrettyPrinter as PP
+from .common import requires_root_privileges
 from .monitor import Monitor
 from .monitors.terminal_outputter import StepListPrinter, SimplePrinter
 from .stage_executor import run_stage
 from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
 
 
-def _setup_logging(log_level, log_file):
+def _setup_logging():
     """
     Logging configuration
     """
-    if log_level == "silent":
+    if Config.LOG_LEVEL == "silent":
         return
 
     logging.config.dictConfig({
@@ -39,8 +41,8 @@ def _setup_logging(log_level, log_file):
         },
         'handlers': {
             'file': {
-                'level': log_level.upper(),
-                'filename': log_file,
+                'level': Config.LOG_LEVEL.upper(),
+                'filename': Config.LOG_FILE_PATH,
                 'class': 'logging.FileHandler',
                 'formatter': 'standard'
             },
@@ -48,7 +50,7 @@ def _setup_logging(log_level, log_file):
         'loggers': {
             '': {
                 'handlers': ['file'],
-                'level': log_level.upper(),
+                'level': Config.LOG_LEVEL.upper(),
                 'propagate': True,
             }
         }
@@ -209,13 +211,15 @@ def cli(log_level, log_file):
     running the stages directly through "stage run" command, or by monitoring
     the salt-run execution using the "monitor" command.
     """
-    _setup_logging(log_level, log_file)
+    Config.LOG_LEVEL = log_level
+    Config.LOG_FILE_PATH = log_file
 
 
-@click.command()
+@click.command(name='monitor')
 @click.option('--show-state-steps', is_flag=True, help="shows state visible steps progress")
 @click.option('--show-dynamic-steps', is_flag=True, help="shows runtime generated steps")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
+@requires_root_privileges
 def monitor(show_state_steps, show_dynamic_steps, simple_output):
     """
     Starts DeepSea progress monitor.
@@ -223,6 +227,7 @@ def monitor(show_state_steps, show_dynamic_steps, simple_output):
     This allows to visualize DeepSea execution progress when running DS stages
     using salt-run commands in other terminal sessions.
     """
+    _setup_logging()
     _run_monitor(show_state_steps, show_dynamic_steps, simple_output)
 
 
@@ -242,20 +247,23 @@ def stage():
               help="only show the steps that will generate events in the Salt Event Bus")
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
 @click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
+@requires_root_privileges
 def stage_dryrun(stage_name, hide_state_steps, only_visible_steps, clear_cache, no_cache):
     """
     CLI 'stage dry-run' command
     """
+    _setup_logging()
     if clear_cache:
         SLSParser.clean_cache(None)
     _run_show_stage_steps(stage_name, hide_state_steps, only_visible_steps, not no_cache)
 
 
-@click.command(name='run')
+@click.command(name='run', short_help='runs DeepSea stage')
 @click.argument('stage_name', 'the DeepSea stage name')
 @click.option('--hide-state-steps', is_flag=True, help="shows state visible steps progress")
 @click.option('--hide-dynamic-steps', is_flag=True, help="shows runtime generated steps")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
+@requires_root_privileges
 def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     """
     Runs a DeepSea stage
@@ -264,6 +272,7 @@ def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
 
         $ salt-run state.orch <stage_name>
     """
+    _setup_logging()
     _validate_stage_file_exists(stage_name)
 
     ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
@@ -283,6 +292,7 @@ def salt_run():
 @click.option('--hide-state-steps', is_flag=True, help="shows state visible steps progress")
 @click.option('--hide-dynamic-steps', is_flag=True, help="shows runtime generated steps")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
+@requires_root_privileges
 def state_orch(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     """
     Runs a DeepSea stage
@@ -291,6 +301,7 @@ def state_orch(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
 
         $ salt-run state.orch <stage_name>
     """
+    _setup_logging()
     _validate_stage_file_exists(stage_name)
 
     ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
