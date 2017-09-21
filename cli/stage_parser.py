@@ -23,12 +23,6 @@ from .common import redirect_stdout, redirect_stderr
 logger = logging.getLogger(__name__)
 
 
-__opts__ = salt.config.minion_config('/etc/salt/minion')
-__opts__['file_client'] = 'local'
-__caller__ = salt.client.Caller(mopts=__opts__)
-__local__ = salt.client.LocalClient()
-
-
 class OrchestrationNotFound(Exception):
     """
     No orchestration file found exception
@@ -76,10 +70,48 @@ class StageRenderingException(RenderingException):
         self.stage_file = stage_file
 
 
+class SLSRendererMetaClass(type):
+    """
+    SLSRenderer meta class
+    """
+    @property
+    def opts(cls):
+        """
+        Initializes and retrieves the Salt opts structure
+        """
+        if getattr(cls, '_OPTS_', None) is None:
+            # pylint: disable=W0201
+            cls._OPTS_ = salt.config.minion_config('/etc/salt/minion')
+            cls._OPTS_['file_client'] = 'local'
+        return cls._OPTS_
+
+    @property
+    def local(cls):
+        """
+        Initializes and retrieves the Salt local client instance
+        """
+        if getattr(cls, '_LOCAL_', None) is None:
+            # pylint: disable=W0201
+            cls._LOCAL_ = salt.client.LocalClient()
+        return cls._LOCAL_
+
+    @property
+    def caller(cls):
+        """
+        Initializes and retrieves the Salt caller client instance
+        """
+        if getattr(cls, '_CALLER_', None) is None:
+            # pylint: disable=W0201
+            cls._CALLER_ = salt.client.Caller(mopts=cls.opts)
+        return cls._CALLER_
+
+
 class SLSRenderer(object):
     """
     Helper class to render sls files
     """
+
+    __metaclass__ = SLSRendererMetaClass
 
     @staticmethod
     def render(file_name):
@@ -94,7 +126,7 @@ class SLSRenderer(object):
         with redirect_stderr(err):
             with redirect_stdout(out):
                 try:
-                    result = __caller__.cmd('slsutil.renderer', file_name)
+                    result = SLSRenderer.caller.cmd('slsutil.renderer', file_name)
                 except salt.exceptions.SaltException as ex:
                     exception = StageRenderingException(file_name, ex.strerror)
 
@@ -136,19 +168,20 @@ class SLSRenderer(object):
         result = {}
         for target, states in target_states.items():
             logger.info("Rendering states=%s on=%s", states, target)
-            # pylint: disable=W8470
+            # pylint: disable=W8470,E1101
             with open('/dev/null', 'w') as fnull:
                 with redirect_stderr(fnull):
                     with redirect_stdout(fnull):
-                        out = __local__.cmd(target, 'deepsea.render_sls', [states],
-                                            expr_form="compound")
+                        out = SLSRenderer.local.cmd(target, 'deepsea.render_sls', [states],
+                                                    expr_form="compound")
             for key, val in out.items():
                 if isinstance(val, str):
                     logger.info("call to deepsea module returned: %s", val)
                     if val.endswith("is not available."):
                         if not retry:
                             logger.info("deepsea module not available: syncing modules")
-                            __local__.cmd(target, 'saltutil.sync_modules', [], expr_form="compound")
+                            SLSRenderer.local.cmd(target, 'saltutil.sync_modules', [],
+                                                  expr_form="compound")
                             return SLSRenderer.render_states(target_states, True)
                         else:
                             logger.error("deepsea module not available")
