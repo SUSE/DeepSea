@@ -632,16 +632,33 @@ class Monitor(threading.Thread):
 
         if nstep:
             if isinstance(step, Stage.TargetedStep):
-                logger.info("State step finished without 'ret' event: [%s/%s] name=%s(%s) on=%s",
-                            step.order,
-                            self._running_stage.total_steps(), step.name, step.args_str,
-                            step.targets.keys())
-                self._fire_event('step_state_finished', step)
+                if not step.jid:
+                    # step not even started
+                    step.skipped = True
+                    logger.info("Skipping non started state step: [%s/%s] name=%s(%s)",
+                                step.order, self._running_stage.total_steps(), step.name,
+                                step.args_str)
+                    self._fire_event('step_state_started', step)
+                else:
+                    logger.info("State step finished without 'ret' event: [%s/%s] name=%s(%s) "
+                                "on=%s",
+                                step.order,
+                                self._running_stage.total_steps(), step.name, step.args_str,
+                                step.targets.keys())
+                    self._fire_event('step_state_finished', step)
             else:
-                logger.info("Runner step finished without 'ret' event:: [%s/%s] name=%s(%s)",
-                            step.order, self._running_stage.total_steps(), step.name,
-                            step.args_str)
-                self._fire_event('step_runner_finished', step)
+                if not step.jid:
+                    # step not even started
+                    step.skipped = True
+                    logger.info("Skipping non started runner step: [%s/%s] name=%s(%s)",
+                                step.order, self._running_stage.total_steps(), step.name,
+                                step.args_str)
+                    self._fire_event('step_runner_started', step)
+                else:
+                    logger.info("Runner step finished without 'ret' event:: [%s/%s] name=%s(%s)",
+                                step.order, self._running_stage.total_steps(), step.name,
+                                step.args_str)
+                    self._fire_event('step_runner_finished', step)
             step = nstep
 
         if dstep:
