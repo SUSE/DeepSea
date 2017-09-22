@@ -176,8 +176,10 @@ class SimplePrinter(MonitorListener):
                 # first step after 'init'
                 PP.println()
 
-            PP.println("[{}/{}] Executing state {}... "
-                       .format(step.order, self.total_steps, step.name))
+            PP.print("[{}/{}] Executing state {}... "
+                     .format(step.order, self.total_steps, step.name))
+            if not step.skipped:
+                PP.println()
         else:
             if self.current_step:
                 if self.current_step:
