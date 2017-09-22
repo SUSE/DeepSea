@@ -170,7 +170,7 @@ class Validate(object):
     def __dev_env(self):
         if 'DEV_ENV' in os.environ:
             return os.environ['DEV_ENV'].lower() != 'false'
-        elif len(self.data.keys()) > 1:
+        elif self.data:
             any_minion = self.data.keys()[0]
             if 'DEV_ENV' in self.data[any_minion]:
                 return self.data[any_minion]['DEV_ENV']
