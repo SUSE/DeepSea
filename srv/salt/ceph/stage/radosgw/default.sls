@@ -20,6 +20,12 @@ rgw users:
     - sls: ceph.rgw
 {% endfor %}
 
+setup prometheus rgw exporter:
+  salt.state:
+    - tgt: "{{ salt.saltutil.runner('select.one_minion', cluster='ceph', roles='rgw') }}"
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
+
 {% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 {% if salt.saltutil.runner('changed.config', service=config) == True %}
 
