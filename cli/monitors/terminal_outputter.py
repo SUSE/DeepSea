@@ -9,6 +9,7 @@ from collections import OrderedDict
 import datetime
 import logging
 import os
+import re
 import threading
 import time
 
@@ -701,15 +702,27 @@ class StepListPrinter(MonitorListener):
                     for minion, event in error.items():
                         PP.println(SP.MINION("  {}:".format(minion)))
                         ret_data = event.raw_event['data']['return']
-                        if isinstance(ret_data, dict):
-                            ret_data = ret_data.values()
                         if isinstance(ret_data, list):
-                            for substep in ret_data:
+                            ret_data = dict([(None, val) for val in ret_data])
+                        if isinstance(ret_data, dict):
+                            for key, substep in ret_data.items():
                                 if isinstance(substep, dict):
                                     if not substep['result']:
-                                        PP.println("    {}: {}"
-                                                   .format(PP.info(substep['__id__']),
-                                                           PP.red(substep['comment'])))
+                                        if '__id__' not in substep:
+                                            match = re.match(r".*\|-(.*)_\|-.*", key)
+                                            if match:
+                                                substep_id = match.group(1)
+                                            else:
+                                                substep_id = None
+                                        else:
+                                            substep_id = substep['__id__']
+                                        if substep_id:
+                                            PP.println("    {}: {}"
+                                                       .format(PP.info(substep_id),
+                                                               PP.red(substep['comment'])))
+                                        else:
+                                            PP.println("    {}"
+                                                       .format(PP.red(substep['comment'])))
                                         if 'changes' in substep:
                                             if 'stdout' in substep['changes']:
                                                 PP.println("        stdout: {}".format(
@@ -719,9 +732,12 @@ class StepListPrinter(MonitorListener):
                                                     PP.red(substep['changes']['stderr'])))
                                 else:
                                     PP.println("    {}".format(PP.red(substep)))
-                        else:
+                        elif isinstance(ret_data, str):
+                            # pylint: disable=E1101
                             for line in ret_data.split('\n'):
                                 PP.println("    {}".format(PP.red(line)))
+                        else:
+                            PP.println("    {}".format(PP.red(ret_data)))
                         logger.debug("state error in minion '%s':\n%s", minion, event.raw_event)
                 else:
                     step_file_path = "/srv/modules/runners/{}.py".format(step[:step.find('.')])
