@@ -26,6 +26,7 @@ def check(**kwargs):
                  'rgw': ['radosgw'],
                  'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
                  'admin': [],
+                 'openattic': ['openattic'],
                  'master': []}
 
     running = True
