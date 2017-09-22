@@ -104,7 +104,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.import $(DESTDIR)/srv/salt/ceph/configuration/files/
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
-	install -d -m 644 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.d/README $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	# state files - diagnose
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/diagnose
@@ -532,6 +531,7 @@ copy-files:
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openattic/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/rgw/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum
 	# At runtime, these need to be owned by salt:salt.  This won't work
 	# in a buildroot on OBS, hence the leading '-' to ignore failures
 	# and '|| true' to suppress some error output, but will work fine
