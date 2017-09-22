@@ -42,6 +42,17 @@ def check_root_privileges():
         sys.exit(1)
 
 
+def requires_root_privileges(func):
+    """
+    Function decorator to ensure function is executed by a user with root privileges.
+    """
+    # pylint: disable=C0111
+    def func_wraper(*args, **kwargs):
+        check_root_privileges()
+        return func(*args, **kwargs)
+    return func_wraper
+
+
 class PrettyPrinter(object):
     """
     Helper class to pretty print
