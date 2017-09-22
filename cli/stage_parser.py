@@ -9,9 +9,11 @@ import glob
 import logging
 import os
 import pickle
+import pwd
 import StringIO
 
 from collections import OrderedDict, defaultdict
+from multiprocessing import Process, Queue
 
 import salt.client
 import salt.exceptions
@@ -40,8 +42,11 @@ class RenderingException(Exception):
     """
     Exception class that represents a rendering error
     """
-    def __init__(self, error_desc):
-        super(RenderingException, self).__init__()
+    def __init__(self, error_desc, *args):
+        # we need to carry over all subclasses args to avoid a known bug in python2.7
+        # that occurs when pickling an Exception subclass object.
+        # See https://stackoverflow.com/questions/41808912 for more details.
+        super(RenderingException, self).__init__(error_desc, *args)
         self.error_desc = error_desc
 
     def pretty_error_desc_str(self):
@@ -62,7 +67,7 @@ class StateRenderingException(RenderingException):
     Exception class that represents a state rendering error
     """
     def __init__(self, minion, states, error_desc):
-        super(StateRenderingException, self).__init__(error_desc)
+        super(StateRenderingException, self).__init__(error_desc, states, error_desc)
         self.minion = minion
         self.states = states
 
@@ -72,7 +77,7 @@ class StageRenderingException(RenderingException):
     Exception class that represents a stage rendering error
     """
     def __init__(self, stage_file, error_desc):
-        super(StageRenderingException, self).__init__(error_desc)
+        super(StageRenderingException, self).__init__(error_desc, stage_file)
         self.stage_file = stage_file
 
 
@@ -393,8 +398,38 @@ class SLSParser(object):
             list(StepType): a list of steps
             str: the parsing stdout
         """
-        result, out = SLSParser._traverse_stage(state_name, stages_only, only_visible_steps,
-                                                cache)
+        def subproc_fun(queue):
+            """
+            Subprocess wrapper function. This function will be executed by a child process,
+            and run the stage parsing as the "salt" user.
+            """
+            # changing process user to "salt" so that any runner side-effects during SLS rendering
+            # are done with salt user as owner
+            pw = pwd.getpwnam("salt")
+            os.setgid(pw.pw_gid)
+            os.setuid(pw.pw_uid)
+
+            try:
+                result, out = SLSParser._traverse_stage(state_name, stages_only, only_visible_steps,
+                                                        cache)
+                queue.put(result)
+                queue.put(out)
+                queue.put(None)
+            except RenderingException as ex:
+                queue.put(None)
+                queue.put(None)
+                queue.put(ex)
+
+        queue = Queue()
+        p = Process(target=subproc_fun, args=[queue])
+        p.start()
+        p.join()
+        result = queue.get()
+        out = queue.get()
+        exception = queue.get()
+
+        if exception:
+            raise exception
 
         def process_requisite_directive(step, directive):
             """
