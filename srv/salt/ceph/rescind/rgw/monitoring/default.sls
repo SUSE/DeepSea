@@ -1,3 +1,7 @@
+monitoring_nop:
+  test.nop
+
+{% if 'rgw' not in salt['pillar.get']('roles') %}
 
 remove_rgw_exporter_cron_job:
   cron.absent:
@@ -11,4 +15,6 @@ remove_rgw_exporter:
 uninstall_package:
   pkg.removed:
     - name: python-prometheus-client
+{% endif %}
+
 {% endif %}
