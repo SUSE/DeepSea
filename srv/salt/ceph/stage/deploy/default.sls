@@ -101,7 +101,7 @@ setup ceph exporter:
 
 setup ceph rgw exporter:
   salt.state:
-    - tgt: 'I@roles:rgw and I@cluster:ceph'
+    - tgt: "{{ salt.saltutil.runner('select.one_minion', cluster='ceph', roles='rgw') }}"
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
 
