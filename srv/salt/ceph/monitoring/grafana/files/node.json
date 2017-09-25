@@ -308,7 +308,7 @@
             "yaxes": [
               {
                 "format": "Bps",
-                "label": "bits in (-) / bits out (+)",
+                "label": "receive (-) / send (+)",
                 "logBase": 1,
                 "max": null,
                 "min": null,
@@ -586,7 +586,7 @@
                 "transform": "negative-Y"
               }
             ],
-            "span": 8,
+            "span": 12,
             "stack": false,
             "steppedLine": false,
             "targets": [
@@ -625,79 +625,6 @@
               {
                 "format": "Bps",
                 "label": "- read / + write",
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ]
-          },
-          {
-            "aliasColors": {},
-            "bars": false,
-            "datasource": "Prometheus",
-            "fill": 1,
-            "id": 8,
-            "legend": {
-              "alignAsTable": true,
-              "avg": true,
-              "current": false,
-              "max": true,
-              "min": true,
-              "rightSide": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "span": 4,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "node_disk_io_time_ms{instance='$instance',job='node-exporter'}",
-                "intervalFactor": 1,
-                "legendFormat": "{{device}}",
-                "refId": "A",
-                "step": 60
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "IO time",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "dtdurationms",
-                "label": null,
                 "logBase": 1,
                 "max": null,
                 "min": null,
