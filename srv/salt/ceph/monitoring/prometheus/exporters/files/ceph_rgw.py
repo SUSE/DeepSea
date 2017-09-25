@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import fcntl
 import json
+import os
 import prometheus_client
 import subprocess
 import sys
@@ -93,17 +95,40 @@ class CephRgwCollector(object):
             yield metric
 
 def main():
+    exit_status = 1
     try:
-        # Create a new registry, otherwise unwanted default collectors are
-        # added automatically.
-        registry = prometheus_client.CollectorRegistry(auto_describe=True)
-        # Register our own collector and write metrics to STDOUT.
-        registry.register(CephRgwCollector())
-        sys.stdout.write(prometheus_client.generate_latest(registry))
-        sys.stdout.flush()
+        # Make sure the exporter is only running once.
+        lock_file = '/var/lock/{}.lock'.format(os.path.basename(sys.argv[0]))
+        lock_fd = os.open(lock_file, os.O_CREAT)
+        lock_success = False
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lock_success = True
+        except IOError:
+            msg = 'Failed to export metrics, another instance is running.'
+            syslog.syslog(syslog.LOG_INFO, msg)
+            sys.stderr.write(msg + '\n')
+        if lock_success:
+            # Create a new registry, otherwise unwanted default collectors are
+            # added automatically.
+            registry = prometheus_client.CollectorRegistry(auto_describe=True)
+            # Register our own collector and write metrics to STDOUT.
+            registry.register(CephRgwCollector())
+            sys.stdout.write(prometheus_client.generate_latest(registry))
+            sys.stdout.flush()
+            # Unlock the lock file.
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            exit_status = 0
     except Exception as e:
         syslog.syslog(syslog.LOG_ERR, str(e))
-        exit(1)
+    # Cleanup
+    os.close(lock_fd)
+    if lock_success:
+        try:
+            os.unlink(lock_file)
+        except:
+            pass
+    sys.exit(exit_status)
 
 if __name__ == "__main__":
     main()
