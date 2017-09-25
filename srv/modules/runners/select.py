@@ -17,7 +17,11 @@ def minions(host = False, **kwargs):
     for key in kwargs:
         if key[0] == "_":
             continue
-        criteria.append("I@{}:{}".format(key, kwargs[key]))
+        values = kwargs[key]
+        if not isinstance(values, list):
+            values = [values]
+        for value in values:
+            criteria.append("I@{}:{}".format(key, value))
 
     search = " and ".join(criteria)
 
