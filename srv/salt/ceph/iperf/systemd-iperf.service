@@ -1,8 +1,0 @@
-[Unit]
-Description=iperf server
-
-[Service]
-ExecStart=/usr/bin/iperf3 -s
-
-[Install]
-WantedBy=default.target
