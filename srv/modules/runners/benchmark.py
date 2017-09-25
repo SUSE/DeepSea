@@ -116,8 +116,7 @@ class Fio(object):
                                 'roles=client-cephfs'],
                                print_event=False)
             print('Job done...using {} to cleanup bench files'.format(minion))
-            local_client.cmd(minion, 'cmd.run', ['rm',
-                                                 '{}/*'.format(self.work_dir)])
+            local_client.cmd(minion, 'cmd.run', ['rm {}/*'.format(self.work_dir)])
             time.sleep(60)
 
         return output
