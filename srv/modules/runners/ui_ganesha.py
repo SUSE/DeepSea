@@ -127,11 +127,11 @@ class GaneshaConfParser(object):
 
     @staticmethod
     def write_block_body(block, depth=0):
-        def format_val(val):
-            if isinstance(val, int):
+        def format_val(key, val):
+            if isinstance(val, list):
+                return ', '.join([format_val(key, v) for v in val])
+            elif isinstance(val, int) or (block['block_name'] == 'CLIENT' and key == 'clients'):
                 return '{}'.format(val)
-            elif isinstance(val, list):
-                return ', '.join([format_val(v) for v in val])
             else:
                 return '"{}"'.format(val)
 
@@ -144,7 +144,7 @@ class GaneshaConfParser(object):
                     conf_str += GaneshaConfParser.write_block(blo, depth)
             elif val:
                 conf_str += GaneshaConfParser._indentation(depth)
-                conf_str += '{} = {};\n'.format(key, format_val(val))
+                conf_str += '{} = {};\n'.format(key, format_val(key, val))
         return conf_str
 
     @staticmethod
