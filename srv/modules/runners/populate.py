@@ -42,7 +42,8 @@ WHY THIS RUNNER EXISTS:
 For a set of servers, multiple Ceph configurations are possible.  Enumerating
 all of them would generate so many that the useful would be lost in the noise.
 Rather than following a template of a contrived example, this utility creates
-all the possible configuration files for each server of the existing equipment.  This should help those that can never seem to get their YAML indentation correct.
+all the possible configuration files for each server of the existing equipment.
+This should help those that can never seem to get their YAML indentation correct.
 
 Second, all the complexity of combining these files is kept in a policy.cfg at
 the root of /srv/pillar/ceph/proposals.  Assigning multiple roles to the same
