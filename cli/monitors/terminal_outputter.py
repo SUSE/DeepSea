@@ -13,7 +13,7 @@ import re
 import threading
 import time
 
-from ..common import PrettyPrinter as PP
+from ..common import PrettyPrinter as PP, check_terminal_utf8_support
 from ..monitor import MonitorListener
 from ..stage_parser import StateRenderingException
 
@@ -278,10 +278,11 @@ class StepListPrinter(MonitorListener):
     This class takes care of printing DeepSea execution in the terminal as a list of steps, but
     uses its own thread to allow the output of time clock counters for each step
     """
+    HAS_UTF8_SUPPORT = check_terminal_utf8_support()
     # pylint: disable=C0103
-    OK = PP.green(PP.bold(u"\u2713"))
-    FAIL = PP.red(u"\u274C")
-    WAITING = PP.orange(u"\u23F3")
+    OK = PP.green(PP.bold(u"\u2713")) if HAS_UTF8_SUPPORT else PP.green("OK")
+    FAIL = PP.red(u"\u274C") if HAS_UTF8_SUPPORT else PP.red("Fail")
+    WAITING = PP.orange(u"\u23F3") if HAS_UTF8_SUPPORT else PP.orange("Running")
 
     STAGE = staticmethod(PP.magenta)
     INFO = staticmethod(PP.dark_yellow)

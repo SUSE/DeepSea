@@ -53,6 +53,20 @@ def requires_root_privileges(func):
     return func_wraper
 
 
+def check_terminal_utf8_support():
+    """
+    Checks whether the terminal supports UTF-8 glyphs.
+    """
+    symbol = u"\u23F3"
+    try:
+        sys.stdout.write(symbol)
+        sys.stdout.write("\x1B[K\n")
+        sys.stdout.write("\x1B[A")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
 class PrettyPrinter(object):
     """
     Helper class to pretty print
