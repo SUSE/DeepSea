@@ -1,4 +1,27 @@
 -------------------------------------------------------------------
+Tue Sep 26 17:59:26 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.28
+- Fix ganesha config parsing
+- cli: use ascii on unsupported UTF-8 terminals
+- cli: render/substate/privilege fixes, run as salt user 
+- grafana dashboard corrections, top 10 stats
+- remove unused iperf directory
+- select.minions support multiple values
+- restart RGW gateways only when config changes
+- rgw: bucket query, demo bucket restricted to demo users
+- rgw: ssl cert permissions
+- fix validate for DEV_ENV in pillar for single node
+- monitoring: cron job lock, restrict to fast-diff images
+- improve validate openATTIC/RGW port conflict check
+- support rgw_configurations in cephprocesses module
+- enable rgw usage log
+- include cron package for Prometheus
+- set aio-max-nr, fixes OSD creation on larger nodes
+- another deepsea_minions example
+
+
+-------------------------------------------------------------------
 Wed Sep 13 21:19:15 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.27
