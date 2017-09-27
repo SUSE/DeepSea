@@ -15,7 +15,7 @@ from .salt_event import SaltEventProcessor
 from .salt_event import EventListener
 from .salt_event import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
 from .stage_parser import SLSParser, SaltRunner, SaltState, SaltModule, SaltBuiltIn, \
-                          StateRenderingException, RenderingException
+                          RenderingException
 
 
 # pylint: disable=C0111
@@ -394,6 +394,14 @@ class MonitorListener(object):
         """
         pass
 
+    def step_runner_skipped(self, step):
+        """
+        This function is called when a Salt runner is skipped from executing
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
+
     def step_state_started(self, step):
         """
         This function is called when a Salt state starts executing
@@ -423,6 +431,14 @@ class MonitorListener(object):
     def step_state_finished(self, step):
         """
         This function is called when a Salt state finishes executing in all targets
+        Args:
+            step (Stage.Step): the step object
+        """
+        pass
+
+    def step_state_skipped(self, step):
+        """
+        This function is called when a Salt state is skipped from executing
         Args:
             step (Stage.Step): the step object
         """
@@ -632,16 +648,33 @@ class Monitor(threading.Thread):
 
         if nstep:
             if isinstance(step, Stage.TargetedStep):
-                logger.info("State step finished without 'ret' event: [%s/%s] name=%s(%s) on=%s",
-                            step.order,
-                            self._running_stage.total_steps(), step.name, step.args_str,
-                            step.targets.keys())
-                self._fire_event('step_state_finished', step)
+                if not step.jid:
+                    # step not even started
+                    step.skipped = True
+                    logger.info("Skipping non started state step: [%s/%s] name=%s(%s)",
+                                step.order, self._running_stage.total_steps(), step.name,
+                                step.args_str)
+                    self._fire_event('step_state_skipped', step)
+                else:
+                    logger.info("State step finished without 'ret' event: [%s/%s] name=%s(%s) "
+                                "on=%s",
+                                step.order,
+                                self._running_stage.total_steps(), step.name, step.args_str,
+                                step.targets.keys())
+                    self._fire_event('step_state_finished', step)
             else:
-                logger.info("Runner step finished without 'ret' event:: [%s/%s] name=%s(%s)",
-                            step.order, self._running_stage.total_steps(), step.name,
-                            step.args_str)
-                self._fire_event('step_runner_finished', step)
+                if not step.jid:
+                    # step not even started
+                    step.skipped = True
+                    logger.info("Skipping non started runner step: [%s/%s] name=%s(%s)",
+                                step.order, self._running_stage.total_steps(), step.name,
+                                step.args_str)
+                    self._fire_event('step_runner_skipped', step)
+                else:
+                    logger.info("Runner step finished without 'ret' event:: [%s/%s] name=%s(%s)",
+                                step.order, self._running_stage.total_steps(), step.name,
+                                step.args_str)
+                    self._fire_event('step_runner_finished', step)
             step = nstep
 
         if dstep:
@@ -691,11 +724,11 @@ class Monitor(threading.Thread):
             if isinstance(skipped, Stage.TargetedStep):
                 logger.info("Skipping state step: [%s/%s] name=%s(%s)", skipped.order,
                             self._running_stage.total_steps(), skipped.name, skipped.args_str)
-                self._fire_event('step_state_started', skipped)
+                self._fire_event('step_state_skipped', skipped)
             else:
                 logger.info("Skipping runner step: [%s/%s] name=%s(%s)", skipped.order,
                             self._running_stage.total_steps(), skipped.name, skipped.args_str)
-                self._fire_event('step_runner_started', skipped)
+                self._fire_event('step_runner_skipped', skipped)
             skipped = self._running_stage.check_if_current_step_will_run()
 
     def state_result_step(self, event):

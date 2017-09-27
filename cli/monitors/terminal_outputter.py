@@ -142,10 +142,7 @@ class SimplePrinter(MonitorListener):
                          .format(SimplePrinter.format_runner_event(step.start_event)))
             else:
                 PP.print("[init] Executing runner {}... ".format(step.name))
-        if step.skipped:
-            PP.println("skipped")
-        else:
-            self.current_step.append({'endl': False})
+        self.current_step.append({'endl': False})
 
     def step_runner_finished(self, step):
         if not step.success:
@@ -170,6 +167,13 @@ class SimplePrinter(MonitorListener):
 
         self.current_step.pop()
 
+    def step_runner_skipped(self, step):
+        if step.order == 1:
+            # first step after 'init'
+            PP.println()
+        PP.println("[{}/{}] Executing runner {}... skipped"
+                   .format(step.order, self.total_steps, step.name))
+
     def step_state_started(self, step):
         if step.order > 0:
             if step.order == 1:
@@ -188,10 +192,7 @@ class SimplePrinter(MonitorListener):
                            .format(SimplePrinter.format_state_event(step.start_event)))
             else:
                 PP.print("[init] Executing state {}... ".format(step.name))
-        if step.skipped:
-            PP.println("skipped")
-        else:
-            self.current_step.append({'endl': True})
+        self.current_step.append({'endl': True})
 
     def step_state_minion_finished(self, step, minion):
         if not step.targets[minion]['success']:
@@ -225,6 +226,14 @@ class SimplePrinter(MonitorListener):
             PP.println("ok")
         else:
             PP.println("fail")
+
+    def step_state_skipped(self, step):
+        if step.order == 1:
+            # first step after 'init'
+            PP.println()
+
+        PP.println("[{}/{}] Executing state {}... skipped"
+                   .format(step.order, self.total_steps, step.name))
 
     @staticmethod
     def format_runner_event(event):
@@ -770,8 +779,6 @@ class StepListPrinter(MonitorListener):
                 elif step.order > 1:
                     PP.println()
             self.print_step(self.step)
-            if step.skipped:
-                self.step = None
 
     def step_runner_finished(self, step):
         if not step.success:
@@ -788,6 +795,11 @@ class StepListPrinter(MonitorListener):
                 self.print_step(self.step)
             if self.step.step.jid == step.jid:
                 self.step = None
+
+    def step_runner_skipped(self, step):
+        # the step_runner_started already handles skipped steps
+        self.step_runner_started(step)
+        self.step = None
 
     def step_state_started(self, step):
         with self.print_lock:
@@ -806,8 +818,6 @@ class StepListPrinter(MonitorListener):
                 elif step.order > 1:
                     PP.println()
             self.print_step(self.step)
-            if step.skipped:
-                self.step = None
 
     def step_state_minion_finished(self, step, minion):
         if not step.targets[minion]['success']:
@@ -834,6 +844,11 @@ class StepListPrinter(MonitorListener):
             assert self.step
             assert isinstance(self.step, StepListPrinter.State)
             self.print_step(self.step)
+
+    def step_state_skipped(self, step):
+        # the step_state_started already handles skipped steps
+        self.step_state_started(step)
+        self.step = None
 
 
 SP = StepListPrinter
