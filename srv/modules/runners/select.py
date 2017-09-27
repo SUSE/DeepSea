@@ -9,6 +9,35 @@ import re
 
 log = logging.getLogger(__name__)
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run select.minions key=value [key=value...]:\n'
+             'salt-run select.minions host=True key=value [key=value...]:\n\n'
+             '    Return an array of minions based on the target criteria\n'
+             '\n\n'
+             'salt-run select.one_minion key=value [key=value...]:\n\n'
+             '    Return a random single minion that meets the critieria\n'
+             '\n\n'
+             'salt-run select.public_addresses key=value [key=value...]:\n'
+             'salt-run select.public_addresses tuples=True key=value [key=value...]:\n'
+             'salt-run select.public_addresses tuples=True host=True key=value [key=value...]:\n\n'
+             '    Returns an array of public addresses for the specified criteria\n'
+             '\n\n'
+             'salt-run select.attr attr=value key=value [key=value...]:\n'
+             'salt-run select.attr host=True attr=value key=value [key=value...]:\n\n'
+             '    Returns an array of pillar values for the specified criteria\n'
+             '\n\n'
+             'salt-run select.from pillar=var role=default_role attr=value1,value2 :\n\n'
+             '    Returns an array of grain values that matches the pillar variable.\n'
+             '    Defaults to role if variable is not found.\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
+
 def minions(host = False, **kwargs):
     """
     Some targets needs to match all minions within a search criteria.
@@ -51,7 +80,10 @@ def one_minion(**kwargs):
 
 
 def public_addresses(tuples = False, host = False, **kwargs):
-
+    """
+    Returns an array of public addresses matching the search critieria.  
+    Can also return an array of tuples with fqdn or short name.
+    """
     criteria = []
     for key in kwargs:
         if key[0] == "_":

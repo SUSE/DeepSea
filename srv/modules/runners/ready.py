@@ -93,6 +93,19 @@ class Checks(object):
             print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, self.warnings[attr], bcolors.ENDC)
 
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run ready.check:\n'
+             'salt-run ready.check search=target:\n'
+             'salt-run ready.check fail_on_warning=False:\n\n'
+             '    Check for firewall and apparmor configurations\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def check(cluster, fail_on_warning=True, search=None, **kwargs):
     """
     Check a cluster for runtime configurations that may cause issues for an

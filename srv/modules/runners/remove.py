@@ -10,8 +10,20 @@ Runner to remove a single osd
 
 log = logging.getLogger(__name__)
 
+def help():
+    """
+    """
+    usage = ('salt-run remove.osd id:\n\n'
+             '    Removes an OSD\n'
+             '\n\n'
+    )
+    print usage
+    return ""
 
 def osd(id_, drain=False):
+    """
+    Removes an OSD gracefully
+    """
     runner_cli = salt.runner.RunnerClient(
         salt.config.client_config('/etc/salt/master'))
 
@@ -51,7 +63,7 @@ def osd(id_, drain=False):
     ret = local_cli.cmd(master_minion, 'cmd.run',
                         ['ceph osd out {}'.format(id_)])
 
-    log.info('Stoping and wiping OSD {} now'.format(id_))
+    log.info('Stopping and wiping OSD {} now'.format(id_))
 
     ret = local_cli.cmd(host, 'osd.remove', [id_])
     log.info(ret)

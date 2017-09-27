@@ -3,6 +3,19 @@ import sys
 import os
 
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run orderednodes.unique:\n'
+             'salt-run orderednodes.unique ceph:\n'
+             'salt-run orderednodes.unique cluster=ceph:\n\n'
+             '    Returns an array of sorted minions according to role\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def _preserve_order_sorted(seq):
     """
     Getting rid of duplicates in python could be solved by

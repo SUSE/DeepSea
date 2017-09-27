@@ -17,6 +17,23 @@ upgrade is safe.  All expected processes are running.
 A secondary purpose is a utility to check the current state of all processes.
 """
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run cephprocesses.check:\n\n'
+             '    Checks the process status according to assigned role\n'
+             '\n\n'
+             'salt-run cephprocesses.mon:\n\n'
+             '    Query monitors to determine if Ceph cluster is active\n'
+             '\n\n'
+             'salt-run cephprocesses.wait:\n\n'
+             '    Wait for all processes to be up according to assigned roles\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 
 def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
     """

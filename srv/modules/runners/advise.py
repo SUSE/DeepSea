@@ -16,6 +16,22 @@ and purpose but different functions.
 Note: a runner's output displays immediately unlike a module
 """
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run advise.salt_run:\n\n'
+             '    Passive message about the salt-run command\n'
+             '\n\n'
+             'salt-run advise.salt_upgrade:\n\n'
+             '    Passive message about upgrading the Salt master\n'
+             '\n\n'
+             'salt-run advise.networks:\n\n'
+             '    Passive message about public and cluster networks\n'
+             '\n\n'
+    )
+    print usage
+    return ""
 
 def salt_run():
     """
@@ -51,6 +67,9 @@ def salt_upgrade():
     return message
 
 def networks():
+    """
+    Advise the installer the current network settings.
+    """
     local = salt.client.LocalClient()
     public = set(local.cmd('*' , 'pillar.get', [ 'public_network' ]).values())
     cluster = set(local.cmd('*' , 'pillar.get', [ 'cluster_network' ]).values())
@@ -61,3 +80,4 @@ def networks():
     print "{:25}: {}{}{}".format('public network', bold, ", ".join(filter(None, public)), endc)
     print "{:25}: {}{}{}".format('cluster network', bold, ", ".join(filter(None, cluster)), endc)
     return ""
+

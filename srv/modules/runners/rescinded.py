@@ -6,6 +6,20 @@ import logging
 
 log = logging.getLogger(__name__)
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run rescinded.ids cluster:\n\n'
+             '    Returns the list of OSDs for minions that are no longer storage nodes\n'
+             '\n\n'
+             'salt-run rescinded.osds:\n\n'
+             '    Returns the list of OSDs for minions that are no longer mounted\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def ids(cluster, **kwargs):
     """
     List the OSD ids of a minion that is not a storage node
@@ -28,6 +42,7 @@ def ids(cluster, **kwargs):
 
 def osds(cluster='ceph'):
     """
+    List the OSD ids that are no longer mounted
     """
     search = "I@cluster:{} and I@roles:storage".format(cluster)
 

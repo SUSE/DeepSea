@@ -178,6 +178,23 @@ def __parse_collection(collection_file):
             raise error
 
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run benchmark.rbd work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
+             '    Run RBD benchmarks\n'
+             '\n\n'
+             'salt-run benchmark.cephfs work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
+             '    Run CephFS benchmarks\n'
+             '\n\n'
+             'salt-run benchmark.baseline work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
+             '    Run Baseline benchmarks\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def rbd(**kwargs):
     """
     Run rbd benchmark job

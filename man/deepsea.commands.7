@@ -706,17 +706,27 @@ Salt runners have different uses as well.  Some can be utilities with user frien
 Since runners execute in the context of the Salt master, these environments have access to all pillar data for all minions.  However, file operations are restricted to the Salt master user such as
 .BR salt.
 .PP
+All runners have a help function that lists the commands available with a brief description and example use. For example,
+.PP
+salt-run advise.help
+.PP
+The full list of commands is below:
+.PP
 salt-run advise.salt_run
 .RS
 .RE
 salt-run advise.salt_upgrade
+.RS
+.RE
+salt-run advise.networks
 .PP
 salt-run benchmark.baseline
 .RS
 .RE
-salt-run benchmark.run
-.PP
-salt-run cephops.set_noout
+salt-run benchmark.rbd
+.RS
+.RE
+salt-run benchmark.cephfs
 .PP
 salt-run cephprocesses.check
 .RS
@@ -726,16 +736,11 @@ salt-run cephprocesses.mon
 .RE
 salt-run cephprocesses.wait
 .PP
-salt-run configure.cluster
-.PP
 salt-run disengage.safety
 .RS
 .RE
 salt-run disengage.check
 .PP
-salt-run filequeue.help
-.RS
-.RE
 salt-run filequeue.queues
 .RS
 .RE
@@ -773,24 +778,24 @@ salt-run minions.ready
 .RE
 salt-run minions.message
 .PP
+salt-run net.get_cpu_count
+.RS
+.RE
 salt-run net.ping
+.RS
+.RE
+salt-run net.jumbo_ping
+.RS
+.RE
+salt-run net.iperf
 .PP
 salt-run orderednodes.unique
 .PP
-salt-run populate.network_sort
-.RS
-.RE
-salt-run populate.show
-.RS
-.RE
 salt-run populate.proposals
 .RS
 .RE
 salt-run populate.engulf_existing_cluster
 .PP
-salt-run proposal.help
-.RS
-.RE
 salt-run proposal.test
 .RS
 .RE
@@ -819,7 +824,13 @@ salt-run select.minions
 salt-run select.one_minion
 .RS
 .RE
+salt-run select.public_addresses
+.RS
+.RE
 salt-run select.attr
+.RS
+.RE
+salt-run select.from
 .PP
 salt-run sharedsecret.show
 .PP
@@ -872,23 +883,29 @@ salt-run ui_rgw.credentials
 .RS
 .RE
 salt-run ui_rgw.endpoints
+.RS
+.RE
+salt-run ui_rgw.token
 .PP
-salt-run validate.get_printer
-.RS
-.RE
-salt-run validate.usage
-.RS
-.RE
 salt-run validate.pillars
-.RS
-.RE
-salt-run validate.discovery
 .RS
 .RE
 salt-run validate.pillar
 .RS
 .RE
 salt-run validate.setup
+.RS
+.RE
+salt-run validate.prep
+.RS
+.RE
+salt-run validate.discovery
+.RS
+.RE
+salt-run validate.deploy
+.RS
+.RE
+salt-run validate.saltapi
 .PP
 
 .SH AUTHOR

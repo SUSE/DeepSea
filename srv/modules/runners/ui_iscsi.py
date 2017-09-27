@@ -207,6 +207,39 @@ class Iscsi(object):
             return _interfaces[canned]
 
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run ui_iscsi.populate:\n\n'
+             '    Returns the lrbd config, interfaces and images\n'
+             '\n\n'
+             'salt-run ui_iscsi.save:\n\n'
+             '    Saves the lrbd configuration\n'
+             '\n\n'
+             'salt-run ui_iscsi.config:\n\n'
+             '    Returns the lrbd configuration\n'
+             '\n\n'
+             'salt-run ui_iscsi.interfaces:\n\n'
+             '    Returns the interfaces for iSCSI gateways\n'
+             '\n\n'
+             'salt-run ui_iscsi.images:\n\n'
+             '    Returns the list of RBD images\n'
+             '\n\n'
+             'salt-run ui_iscsi.status:\n\n'
+             '    Returns the status of the service\n'
+             '\n\n'
+             'salt-run ui_iscsi.deploy:\n\n'
+             '    Calls state.orch ceph.stage.iscsi\n'
+             '\n\n'
+             'salt-run ui_iscsi.undeploy:\n\n'
+             '    Stops lrbd\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
+
 def populate(**kwargs):
     """
     Populate the iSCSI view
