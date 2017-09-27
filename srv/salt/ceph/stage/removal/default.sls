@@ -53,3 +53,15 @@ remove openattic:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.remove.openattic
+
+{% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') == []) and
+      (salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw_configurations') == []) %}
+
+# Remove the Prometheus RGW exporter if no 'rgw' node is configured.
+remove prometheus rgw exporter:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.rescind.rgw.monitoring
+
+{% endif %}

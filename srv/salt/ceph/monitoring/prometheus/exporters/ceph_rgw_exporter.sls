@@ -1,4 +1,3 @@
-{% if 'rgw' in salt['pillar.get']('roles') %}
 install_package:
   pkg.installed:
     - name: python-prometheus-client
@@ -17,4 +16,3 @@ install_rgw_exporter_cron_job:
     - name: '/var/lib/prometheus/node-exporter/ceph_rgw.py > /var/lib/prometheus/node-exporter/ceph_rgw.prom 2> /dev/null'
     - minute: '*/5'
     - identifier: 'Prometheus rgw_exporter cron job'
-{% endif %}

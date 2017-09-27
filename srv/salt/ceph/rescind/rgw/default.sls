@@ -1,4 +1,7 @@
 
+rgw nop:
+  test.nop
+
 {% if 'master' not in salt['pillar.get']('roles') and
       'rgw' not in salt['pillar.get']('roles') %}
 
@@ -12,11 +15,7 @@ uninstall ceph-radosgw:
   pkg.removed:
     - name: ceph-radosgw
 
-{% endif %}
-
 include:
-{% if 'master' not in salt['pillar.get']('roles') and
-      'rgw' not in salt['pillar.get']('roles') %}
   - .keyring
+
 {% endif %}
-  - .monitoring

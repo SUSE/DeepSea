@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import argparse
 import fcntl
 import json
 import os
@@ -10,9 +11,17 @@ import sys
 import syslog
 
 class CephRgwCollector(object):
+    def __init__(self, name):
+        self.name = name
+
     def _exec_rgw_admin(self, args):
         try:
-            out = subprocess.check_output(['radosgw-admin'] + args)
+            cmd_args = ['radosgw-admin']
+            if self.name is not None:
+                cmd_args.append('--name')
+                cmd_args.append(self.name)
+            cmd_args.extend(args)
+            out = subprocess.check_output(cmd_args)
             return json.loads(out.decode())
         except Exception as e:
             syslog.syslog(syslog.LOG_ERR, str(e))
@@ -94,9 +103,19 @@ class CephRgwCollector(object):
         for metric in self._metrics.values():
             yield metric
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-n', '--name',
+        metavar='TYPE.ID',
+        required=False,
+        type=str)
+    return parser.parse_args()
+
 def main():
     exit_status = 1
     try:
+        args = parse_args()
         # Make sure the exporter is only running once.
         lock_file = '/var/lock/{}.lock'.format(os.path.basename(sys.argv[0]))
         lock_fd = os.open(lock_file, os.O_CREAT)
@@ -111,9 +130,9 @@ def main():
         if lock_success:
             # Create a new registry, otherwise unwanted default collectors are
             # added automatically.
-            registry = prometheus_client.CollectorRegistry(auto_describe=True)
+            registry = prometheus_client.CollectorRegistry()
             # Register our own collector and write metrics to STDOUT.
-            registry.register(CephRgwCollector())
+            registry.register(CephRgwCollector(args.name))
             sys.stdout.write(prometheus_client.generate_latest(registry))
             sys.stdout.flush()
             # Unlock the lock file.
