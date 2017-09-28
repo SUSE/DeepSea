@@ -1,4 +1,3 @@
-{% if 'rgw' in salt['pillar.get']('roles') %}
 {% for lb_name in salt['pillar.get']('f5') %}
 {% set lb = salt['pillar.get']('f5')[lb_name] %}
 
@@ -12,4 +11,3 @@ add_rgw_pool_member_to_{{ lb_name }}:
          name: {{ pillar['public_address'] }}%{{ lb['routing_domain'] }}:80
          partition: {{ lb['partition'] }}
 {% endfor %}
-{% endif %}

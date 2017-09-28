@@ -1,3 +1,5 @@
+lb_f5: default-lb
+
 f5:
   lb1:
     user: admin
