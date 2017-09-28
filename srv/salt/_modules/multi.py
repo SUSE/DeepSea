@@ -16,9 +16,6 @@ except:
 
 iperf_path = which('iperf3')
 
-if iperf_path is None:
-    log.error("Error: could not find iperf3 on path")
-
 localhost_name = socket.gethostname()
 
 '''
