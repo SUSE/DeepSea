@@ -162,6 +162,7 @@ class TestHardwareDetections():
         """ Assume ret_bus_id has some value """
         wm.return_value = '/valid/path'
         ret_bus_id.return_value = True
+        po.return_value.returncode = 0
         po.return_value.stdout = output_helper.smartctl_spinner_valid['stdout']
         expect = output_helper.smartctl_spinner_valid['expected_return']
         out = hwd._query_disktype('sda', {'controller_name': 'megaraid'}, 'base')
@@ -174,6 +175,7 @@ class TestHardwareDetections():
         """ Assume ret_bus_id has some value """
         wm.return_value = '/valid/path'
         ret_bus_id.return_value = True
+        po.return_value.returncode = 0
         po.return_value.stdout = output_helper.smartctl_solid_state_valid['stdout']
         expect = output_helper.smartctl_solid_state_valid['expected_return']
         out = hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
@@ -183,14 +185,29 @@ class TestHardwareDetections():
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._return_device_bus_id')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._is_rotational')
+    def test__query_disktype_smartctl_failure(self, ir, po, ret_bus_id, wm, output_helper, hwd):
+        """ Assume ret_bus_id returns True """
+        wm.return_value = '/valid/path'
+        ret_bus_id.return_value = True
+        po.return_value.returncode = 1
+        po.return_value.stdout = output_helper.smartctl_invalid['stdout']
+        out = hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
+        assert ir.called
+
+    @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
+    @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._return_device_bus_id')
+    @mock.patch('srv.salt._modules.cephdisks.Popen')
+    @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._is_rotational')
     def test__query_disktype_invalid(self, ir, po, ret_bus_id, wm, output_helper, hwd):
         """ Assume ret_bus_id returns True """
         wm.return_value = '/valid/path'
         ret_bus_id.return_value = True
+        po.return_value.returncode = 0
         po.return_value.stdout = output_helper.smartctl_invalid['stdout']
         out = hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
         expect = output_helper.smartctl_invalid['expected_return']
         assert expect == out
+
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._return_device_bus_id')

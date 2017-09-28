@@ -113,6 +113,10 @@ class HardwareDetections(object):
                                                   raid_ctrl['controller_name'],
                                                   bus_id)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+            proc.wait()
+            if proc.returncode != 0:
+                log.info("{}\nrc: {} - {}".format(cmd, proc.returncode, proc.stderr.read()))
+                raise RuntimeError("Smartctl failure")
             for line in proc.stdout:
                 # ADD PARSING HERE TO DETECT FAILURE
                 if "A mandatory SMART command failed" in line:
