@@ -13,11 +13,10 @@ from subprocess import call, Popen, PIPE
 
 log = logging.getLogger(__name__)
 
-# For Travis -> there is available pip package for rados
 try:
     import rados
-except:
-    log.error("Rados could not be loaded")
+except ImportError:
+    pass
 
 """
 The first functions are different queries for osds.  These can be combined.

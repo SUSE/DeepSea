@@ -9,6 +9,7 @@ stage prep dependencies suse:
       - pciutils
       - gptfdisk
       - python-boto
+      - python-rados
       - iperf
     - fire_event: True
 
@@ -21,6 +22,7 @@ stage prep dependencies ubuntu:
       - pciutils
       - gdisk
       - python-boto
+      - python-rados
       - iperf
     - fire_event: True
 
