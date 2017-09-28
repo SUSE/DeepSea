@@ -1,0 +1,2 @@
+rgw_configurations:
+  - rgw-ssl

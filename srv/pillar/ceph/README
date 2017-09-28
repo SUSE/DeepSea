@@ -1,0 +1,50 @@
+== Default Configuration
+
+The Salt pillar is a key-value store.  The file format is yaml.  Most of the
+configuration is generated automatically by Stages 1 and 2.  Stage 2 places the
+results under stack/default in a hierarchy.  
+
+== Custom Configuration
+
+A separate hierarchy allows the admin to override all settings.  The hierarchy
+is 
+
+stack/global.yml
+stack/ceph/cluster.yml
+stack/ceph/roles/{{role}}.yml
+stack/ceph/minions/{{minion}}.yml
+
+DeepSea currently supports one Ceph cluster, so the cluster.yml is redundant
+with the global.yml.  The role and minion files allow setting of pillar
+variables that are only available to the intended minions.  These are rarely
+used.  When in doubt about the placement of variables, use the global.yml.
+
+For examples of contents, see /usr/share/doc/packages/deepsea/pillar/.
+
+== An Example
+
+The default time server is set to the Salt master.  This setting is configured
+in stack/default/global.yml.  To override, add the following to
+stack/global.yml:
+
+time_server: my_ntp_server
+
+Note that the stack/default/global.yml is not changed.  To apply the change to
+Salt, run
+
+salt '*' saltutil.pillar_refresh
+
+To view the change
+
+salt '*' pillar.items
+
+Notice that the time_server will have your setting.  This same strategy can be
+applied to any customizations.  Normally, an admin makes the change and reruns
+Stage 2 which calls the refresh as well.
+
+== Custom Roles
+
+Should you decide to use the custom roles for RadosGW or Ganesha, be sure to
+run Stage 1 after updating the pillar.  This is an exception until we
+reorganize some of the steps between Stage 1 and Stage 2.
+
