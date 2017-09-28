@@ -1,0 +1,10 @@
+
+rgw_configurations:
+  - rgw
+  - silver
+  - gold
+
+ganesha_configurations:
+  - silver
+  - silver-common
+  - gold
