@@ -18,20 +18,17 @@ def _get_listening_ipaddrs(proc_name):
     proc_listening_ips = []
 
     for proc in psutil.process_iter():
-	# Note that depending on psutil version, there are slight api differences, hence the
-	# try/except blocks below.
-	try:
-	    name = proc.name()
-	except:
-	    name = proc.name
-	if name == proc_name:
-	    try:
-		conns = proc.get_connections(kind="inet")
-	    except:
-		conns = proc.connections(kind="inet")
-	    for con in conns:
-		if con.status == "LISTEN":
-		    proc_listening_ips.append(con.laddr[0])
+        # Use as_dict() to avoid API changes across versions of psutil.
+        pdict = proc.as_dict(attrs=['name'])
+        if pdict['name'] == proc_name:
+            # connections() API has changed across psutil versions also.
+            try:
+                conns = proc.get_connections(kind="inet")
+            except:
+                conns = proc.connections(kind="inet")
+            for con in conns:
+                if con.status == "LISTEN":
+                    proc_listening_ips.append(con.laddr[0])
 
     return list(set(proc_listening_ips))
 
