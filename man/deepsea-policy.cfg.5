@@ -1,0 +1,211 @@
+.TH deepsea-policy.cfg 5
+.SH NAME
+deepsea policy.cfg \- configuration file for assignments
+.SH DESCRIPTION
+The
+.B policy.cfg
+is a configuration file containing four sections.  These sections are only descriptive.  These are
+.PP
+.PD 0
+.RS 4
+Cluster Assignment
+.PP
+Role Assignment
+.PP
+Profile Assignment
+.PP
+Common configuration
+.RE
+.PD
+.PP
+The contents of all sections is the same: a relative pathname to YAML files ending with sls or yml.  Globbing is optional, but normally encouraged to simplify the configuration.  The base pathname is the location of the
+.BR policy.cfg
+which is /srv/pillar/ceph/proposals.  None of the files under this directory are directly used by Salt.  This area is similar to a scratchpad where DeepSea creates many YAML fragments to fill in the blanks and allow the administrator to pick which parts to include and shape their Ceph cluster.
+.PP
+The strategy behind this approach allows minions with single or multiple roles to be managed with the same effort.  No direct modifying of YAML is necessary.
+.SH SECTIONS
+.SS Cluster Assignment
+DeepSea currently only supports one Ceph cluster in a Salt cluster.  The default name is
+.BR ceph.
+In the future, this setting should become more useful.
+.PP
+Entries in the policy.cfg often look like:
+.PP
+.RS 4
+cluster-ceph/cluster/*.sls
+.RE
+.PP
+The *.sls will match all minions constrained by
+.B deepsea-minions (7)
+but each minion could be explicitly listed.
+.SS Role Assignment
+In a Ceph cluster, a minion can perform one or more roles.  The roles are master, admin, mon, storage, mgr, mds, igw, rgw, ganesha and openattic.  All must be defined explicitly except storage.  Storage is addressed in the Profile section.
+.PP
+The roles have the following meanings:
+.RS 4
+.PD 0
+.IP master 15
+the Salt master with a Ceph admin keyring
+.IP admin 15
+installation of a Ceph admin keyring
+.IP mon 15
+the Ceph monitor
+.IP storage 15
+multiple Ceph OSDs
+.IP mgr 15
+the Ceph manager
+.IP mds 15
+the CephFS MetaData Server
+.IP igw 15
+the iSCSI GateWay
+.IP rgw 15
+the Rados GateWay
+.IP ganesha 15
+the NFS gateway for RGW or CephFS
+.IP openattic 15
+the openATTIC graphical interface
+.PD
+.RE
+.PP
+Note that the admin role has no function.  The role is mainly a convenience for specifying which minions that the admininistrator wishes to have the admin keyring.  All other roles use their own keyrings and do not require the admin keyring.
+.PP
+Also note the conflated meanings between the Salt master and the general concept of the Ceph admin node.  Both are centralized.  In DeepSea, these are one in the same but the hostname is often called
+.BR admin.
+.PP
+Entries in the policy.cfg follow this convention:
+.PP
+.RS 4
+role-NAME/cluster/MINION.sls
+.RE
+.PP
+where NAME is one of the roles above and MINION is normally the fqdn of the host.
+.SS Profile Assignment
+This section defines how drives are configured for Ceph.  This is the most complex part of the configuration.  By default,
+.B profile-default
+will contain an arrangement of devices in a ratio of 1:5 (e.g one SSD for five HDDs) or failing that, independent OSDs.  The default format is
+.BR bluestore.
+For generating other configurations, see the utility known as a Salt runner
+.B salt-run proposal.help.
+.PP
+In the configuration file itself, two pathnames are included.  The default entries are:
+.PP
+.RS 4
+profile-default/cluster/*.sls
+.RE
+.RS 4
+profile-default/stack/default/ceph/minions/*.yml
+.RE
+.PP
+The second path references each disk configuration for all the minions that had available hardware.  Each file contains unique pathnames in a data structure suitable for creating an OSD.
+.PP
+Depending on the site and the administrator preferences, these lines can be removed and replaced with a custom configuration.  Another option is multiple profiles.  One group of storage nodes can be assigned a particular type of hardware profile such as profile-archive while another group with different characteristics is assigned profile-applications.  Beware that this may require editing the CRUSH map to achieve the desired results.
+.PP
+Although partial configurations can be created across different profiles for the same minion, this may result in heartarche.  The most important point to remember is to have only one set of devices for a minion in a profile.  If the
+.BR policy.cfg
+includes the same devices for one minion from multiple profiles, failures will ensue.
+.PP
+For multiple profiles, removing the globbing and specifying which minions use which profile is often simpler.
+.PP
+.SS Common Configuration
+This section includes both a global.yml and cluster.yml.  With a single cluster these are somewhat redundant.  The entries are
+.PP
+.RS 4
+config/stack/default/global.yml
+.RE
+.RS 4
+config/stack/default/ceph/cluster.yml
+.RE
+.PP
+The global.yml contains references to the time configuration and the cluster.yml contains the network settings, available roles and the Ceph fsid.  These two lines are included unmodified.
+.SH EXAMPLES
+The simplest cluster contains five nodes for minimal fault tolerance.
+.PP
+.RS 4
+.PD 0
+## Cluster Assignment
+.PP
+cluster-ceph/cluster/admin.ceph.sls
+.PP
+cluster-ceph/cluster/node[1-4].ceph.sls
+.PP
+## Role Assignment
+.PP
+role-master/cluster/admin.ceph.sls
+.PP
+role-mon/cluster/node[1-3].ceph.sls
+.PP
+role-mgr/cluster/node[1-3].ceph.sls
+.PP
+## Profile Assignment
+.PP
+profile-default/cluster/node[1-4].ceph.sls
+.PP
+profile-default/stack/default/ceph/minions/node[1-4].ceph.yml
+.PP
+## Common
+.PP
+config/stack/default/global.yml
+.PP
+config/stack/default/ceph/cluster.yml
+.PD
+.RE
+.PP
+With no gateways, this may also be considered the least accessible.  This same example can be altered.
+.PP
+.RS 4
+.PD 0
+## Cluster Assignment
+.PP
+cluster-ceph/cluster/*.sls
+.PP
+## Role Assignment
+.PP
+role-master/cluster/admin*.sls
+.PP
+role-mon/cluster/node[1-3]*.sls
+.PP
+role-mgr/cluster/node[1-3]*.sls
+.PP
+## Profile Assignment
+.PP
+profile-default/cluster/*.sls
+.PP
+profile-default/stack/default/ceph/minions/*.yml
+.PP
+## Common
+.PP
+config/stack/default/global.yml
+.PP
+config/stack/default/ceph/cluster.yml
+.PD
+.RE
+.PP
+For five servers, these will give the same result.  The difference is that the second configuration is more generic on the addition of storage nodes.  Adding servers to the Salt cluster named node4 or foo23 will not require a configuration change assuming that the default profile is suitable for the new hardware.  Running stages will be sufficient.  Whether this is desirable is left to the preference of the administrator.
+.PP
+Note the removal of the domain names for the role assignment.  Most examples contain the hostname followed by '*' since some domains names can be lengthy.
+.SH FILTERS
+Two optional modifiers can be appended to any line, but are rarely necessary.  These are slice and re.  The slice filter will operate on an index and can be useful in virtual environments where hostnames are not known.  For example,
+.PP
+.RS 4
+role-mon/cluster/*.sls slice=[0:3]
+.RE
+.PP
+will assign the first three nodes the monitor role.
+.PP
+The re filter will apply a regular expression.  For example,
+.PP
+.RS 4
+profile-default/cluster/*.sls re=.*[^7]*.sls
+.RE
+.RS 4
+profile-default/stack/default/ceph/minions/*.yml re=.*[^7]*.yml
+.RE
+.PP
+will exclude a host named node7.
+.PP
+Globbing and multiple entires is encouraged and typically easier to maintain.  These filters remain for those that need them.
+.SH AUTHOR
+Eric Jackson <ejackson@suse.com>
+.SH SEE ALSO
+/usr/share/doc/packages/deepsea/examples,
+.BR deepsea-stages (7)

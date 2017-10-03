@@ -1,0 +1,47 @@
+.TH deepsea 7
+.SH NAME
+deepsea \- deploys and manages Ceph
+.SH GETTING HELP
+For ease of access, the DeepSea manuals are listed below.
+.SS Cli
+.IP deepsea 25
+Command line interface executable
+.PD 0
+.IP deepsea-monitor 25
+Standalone event monitor
+.IP deepsea-stage 25
+Subcommand for stage execution
+.IP deepsea-stage-run 25
+Executes stages with feedback
+.IP deepsea-stage-dry-run 25
+Displays stages
+.SS Salt
+.IP deepsea-commands 25
+Complete list of Salt commands
+.IP deepsea-minions 25
+Constrains minion selection
+.IP deepsea-stages 25
+Describes each of the stages
+.IP deepsea-policy.cfg 25
+Configuration file
+.PD
+.SH DESCRIPTION
+.B DeepSea
+is a collection of Salt files for deploying, managing and automating Ceph.  The goal is to provide the necessary tools for any Ceph service.  Besides the core functionality for monitors and osds, DeepSea supports CephFS, RadosGW, iSCSI and Ganesha.  These Ceph features are managed in a series of Stages reflecting the life cycle of a Ceph cluster.
+.SH AUTHOR
+Eric Jackson <ejackson@suse.com>
+.SH SEE ALSO
+.PD 0
+.UR https://github.com/SUSE/DeepSea
+.UE
+.PP
+.UR https://www.openattic.org/
+.UE
+.PP
+.UR https://ceph.com
+.UE
+.PP
+.UR https://docs.saltstack.com/en/latest/
+.UE
+.PD
+
