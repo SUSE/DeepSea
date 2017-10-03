@@ -80,6 +80,21 @@ def pairs():
 
     return pairs
 
+def part_pairs():
+    """
+    Return an array of partitions and paths
+    """
+    paths = [ pathname for pathname in glob.glob("/var/lib/ceph/osd/*") ]
+    pairs = []
+    with open('/proc/mounts') as mounts:
+	for line in mounts:
+	    partition, path = line.split()[:2]
+	    if path in paths:
+		m = re.match(r'^(.+)\d+$', partition)
+		part = m.group(0)
+		pairs.append([ part, path ])
+    return pairs
+
 def _filter_devices(devices, **kwargs):
     """
     Filter devices if provided.

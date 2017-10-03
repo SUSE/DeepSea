@@ -2,6 +2,9 @@
 
 import logging
 import time
+import psutil
+import os
+import pwd
 
 log = logging.getLogger(__name__)
 
@@ -13,10 +16,11 @@ A secondary purpose is a utility to check the current state of all services.
 """
 
 
-def check(**kwargs):
+def check(results=False, quiet=False, **kwargs):
     """
     Query the status of running processes for each role.  Return False if any
-    fail.
+    fail.  If results flag is set, return a dictionary of the form:
+      { 'down': [ process, ... ], 'up': { process: [ pid, ... ], ...} }
     """
     processes = {'mon': ['ceph-mon'],
                  'mgr': ['ceph-mgr'],
@@ -26,11 +30,11 @@ def check(**kwargs):
                  'rgw': ['radosgw'],
                  'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
                  'admin': [],
-                 'openattic': ['openattic'],
+                 'openattic': ['httpd-prefork'],
                  'master': []}
 
     running = True
-    results = {}
+    res = {'up': {}, 'down': []}
 
     if 'rgw_configurations' in __pillar__:
         for rgw_config in __pillar__['rgw_configurations']:
@@ -38,13 +42,42 @@ def check(**kwargs):
 
     if 'roles' in __pillar__:
         for role in kwargs.get('roles', __pillar__['roles']):
-            for process in processes[role]:
-                pid = __salt__['status.pid'](process)
-                if pid == '':
-                    log.error("ERROR: process {} for role {} is not running".format(process, role))
-                    running = False
+            # Checking running first.
+            for running_proc in psutil.process_iter():
+                # NOTE about `ps` and psutils.Process():
+                # `ps -e` determines process names by examining /proc/PID/stat,status files.  The name derived
+                # there is also found in psutil.Process.name.
+                # `ps -ef`, according to strace, appears to also reference /proc/PID/cmdline when determining
+                # process names.  We have found that some processes (ie. ceph-mgr was noted) will _sometimes_
+                # contain a process name in /proc/PIDstat/stat,status that does not match that found in /proc/PID/cmdline.
+                # In our ceph-mgr example, the process name was found to be 'exe' (which happens to also be the name a of
+                # symlink in /proc/PID that points to the executable) while the cmdline entry contained 'ceph-mgr' etc.
+                # As such, we've decided that a check based on executable path is more reliable.
+                pdict = running_proc.as_dict(attrs=['pid', 'name', 'exe', 'uids'])
+                pdict_exe = os.path.basename(pdict['exe'])
+                pdict_pid = pdict['pid']
+                # Convert the numerical UID to name.
+                pdict_uid = pwd.getpwuid(pdict['uids'].real).pw_name
+                if pdict_exe in processes[role]:
+                    # Verify httpd-worker pid belongs to openattic.
+                    if (role != 'openattic') or (role == 'openattic' and pdict_uid == 'openattic'):
+                            res['up'][pdict_exe] = res['up'][pdict_exe] + [pdict_pid] if res['up'].has_key(pdict_exe) else [pdict_pid]
 
-    return running
+            # Any processes for this role that aren't running, mark them down.
+            for proc in processes[role]:
+                if proc not in res['up']:
+                    if not quiet:
+                        log.error("ERROR: process {} for role {} is not running".format(proc, role))
+                    running = False
+                    res['down'] += [proc]
+
+    return res if results else running
+
+def down(**kwargs):
+    """
+    Based on check(), return True/False if all Ceph processes that are meant to be running on a node are down.
+    """
+    return True if not check(True, True)['up'].values() else False
 
 def wait(**kwargs):
     """
