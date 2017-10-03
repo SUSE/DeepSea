@@ -7,11 +7,13 @@ For compatibility with other Salt solutions,
 uses
 .I deepsea_minions,
 which constrains the targeting of Salt minions.
-By default DeepSea targets by grain using 'G@deepsea'. For more information on salt targeting see https://docs.saltstack.com/en/latest/topics/targeting/
+By default DeepSea targets by grain using 'G@deepsea'. For more information on salt targeting, check the
+.B SEE ALSO
+section.
 .SH METHODS
-Either reconfigure 
+Either reconfigure
 .I deepsea_minions
-to use any valid Salt target or apply grains to the desired minions.  For example, 
+to use any valid Salt target or apply grains to the desired minions.  For example,
 .PP
 .RS 4
 deepsea_minions: '*'
@@ -23,7 +25,7 @@ will target all Salt minions.  Likewise,
 deepsea_minions: 'ses*'
 .RE
 .PP
-will only target minions that begin with 
+will only target minions that begin with
 .B ses.
 .PP
 Alternatively, apply a grain to each minion and use the default deepsea_minions of
@@ -46,9 +48,12 @@ salt 'xyz.domain' grains.delval deepsea destructive=True
 For more information on Salt grains see https://docs.saltstack.com/en/latest/topics/grains/
 
 .SH FILES
-The file for 
+The file for
 .I deepsea_minions
 is /srv/pillar/ceph/deepsea_minions.sls.
+.SH SEE ALSO
+.UR https://docs.saltstack.com/en/latest/topics/targeting/
+.UE
 .SH AUTHORS
 Eric Jackson <ejackson@suse.com>
 .RS
