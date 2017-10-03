@@ -530,6 +530,56 @@ salt '*' cephprocesses.check
 .RE
 salt '*' cephprocesses.wait
 .PP
+salt '*' fs.btrfs_get_mountpoints_of_subvol subvol='@/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.btrfs_get_default_subvol path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.btrfs_subvol_exists subvol='@/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.btrfs_create_subvol subvol='@/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.btrfs_mount_subvol subvol='@/var/lib/ceph' path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.get_attrs path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.add_attrs path='/var/lib/ceph' attrs='C' [rec=True|False] [omit='/var/lib/ceph/osd']
+.RS
+.RE
+salt '*' fs.remove_attrs path='/var/lib/ceph' attrs='C' [rec=True|False] [omit='/var/lib/ceph/osd']
+.RS
+.RE
+salt '*' fs.set_attrs path='/var/lib/ceph' attrs='C' [rec=True|False] [omit='/var/lib/ceph/osd']
+.RS
+.RE
+salt '*' fs.get_mountpoint_opts mountpoint='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.get_mountpoint path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.get_mount_info path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.get_uuid dev_path='/dev/sda1'
+.RS
+.RE
+salt '*' fs.get_device_info mountpoint='/'
+.RS
+.RE
+salt '*' fs.instantiate_btrfs_subvolume subvol='@/var/lib/ceph' path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.migrate_path_to_btrfs_subvolume subvol='@/var/lib/ceph' path='/var/lib/ceph'
+.RS
+.RE
+salt '*' fs.inspect_path path='/var/lib/ceph'
+.PP
 salt 'ganehsa*' ganesha.configurations
 .RS
 .RE
