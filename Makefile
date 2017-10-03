@@ -64,7 +64,7 @@ copy-files:
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
 	# man pages
 	install -d -m 755 $(DESTDIR)/usr/share/man/man7
-	install -m 644 man/deepsea.*.7 $(DESTDIR)/usr/share/man/man7
+	install -m 644 man/deepsea*.7 $(DESTDIR)/usr/share/man/man7
 	install -d -m 755 $(DESTDIR)/usr/share/man/man1
 	install -m 644 man/deepsea*.1 $(DESTDIR)/usr/share/man/man1
 	# modules
