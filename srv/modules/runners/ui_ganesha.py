@@ -408,6 +408,35 @@ class Ganesha(object):
                     })
         return result
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run ui_ganesha.get_hosts:\n\n'
+             '    Returns the list of minions assigned the ganesha role\n'
+             '\n\n'
+             'salt-run ui_ganesha.get_fsals_available:\n\n'
+             '    Returns a list of available backends\n'
+             '\n\n'
+             'salt-run ui_ganesha.get_exports:\n\n'
+             '    Returns the list of NFS exports\n'
+             '\n\n'
+             'salt-run ui_ganesha.save_exports exports:\n\n'
+             '    Saves the json formatted list of NFS exports\n'
+             '\n\n'
+             'salt-run ui_ganesha.deploy_exports:\n\n'
+             '    Calls state.apply ceph.ganesha\n'
+             '\n\n'
+             'salt-run ui_ganesha.status_exports:\n\n'
+             '    Returns status for each minion\n'
+             '\n\n'
+             'salt-run ui_ganesha.stop_exports:\n\n'
+             '    Stops the ganesha service for each minion\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 
 def get_hosts(**kwargs):
     """

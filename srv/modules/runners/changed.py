@@ -119,6 +119,28 @@ class Config(object):
             self.write_checksum(current_cs)
             return True
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run changed.requires_conf_change service:\n'
+             'salt-run changed.config service:\n\n'
+             '    Checks whether the user configured files for the named service has changed\n'
+             '\n\n'
+             'salt-run changed.rgw:\n'
+             'salt-run changed.mds:\n'
+             'salt-run changed.osd:\n'
+             'salt-run changed.mon:\n'
+             'salt-run changed.global:\n'
+             'salt-run changed.client:\n\n'
+             '    Shortcuts for many services\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
+
+
 def requires_conf_change(service):
     """
     If any of the dependent services received a change

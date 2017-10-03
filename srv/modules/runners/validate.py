@@ -799,6 +799,34 @@ class Validate(object):
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
         self.printer.print_result()
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run validate.pillars:\n'
+             'salt-run validate.pillar ceph:\n'
+             'salt-run validate.pillar cluster=ceph:\n\n'
+             '    Verify that Stage 3/deploy will succeed\n'
+             '\n\n'
+             'salt-run validate.setup:\n\n'
+             '    Verify that Stage 0/prep will succeed\n'
+             '\n\n'
+             'salt-run validate.prep:\n\n'
+             '    Verify that Stage 1/discovery will succeed\n'
+             '\n\n'
+             'salt-run validate.discovery:\n\n'
+             '    Verify that Stage 2/configuration will succeed\n'
+             '\n\n'
+             'salt-run validate.deploy:\n\n'
+             '    Verify that Stage 4/services will succeed\n'
+             '\n\n'
+             'salt-run validate.saltapi:\n\n'
+             '    Verify that the Salt API is working\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def usage(func='None'):
     print "salt-run validate.{} cluster_name".format(func)
     print "salt-run validate.{} cluster=cluster_name".format(func)

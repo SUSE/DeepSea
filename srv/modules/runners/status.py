@@ -3,6 +3,8 @@ import pprint
 from collections import Counter
 
 def _get_data(cluster_name='ceph'):
+    """
+    """
     local = salt.client.LocalClient()
     status_report = {}
     search = "I@cluster:{}".format(cluster_name)
@@ -14,6 +16,18 @@ def _get_data(cluster_name='ceph'):
     ceph_version = local.cmd(search, 'cmd.shell', [ 'ceph --version' ], expr_form="compound")
 
     return os_codename, salt_version, ceph_version
+
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run status.report:\n\n'
+             '    Summarizes OS, Ceph and Salt versions\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 
 def report(cluster_name='ceph', stdout=True, return_data=False ):
     """

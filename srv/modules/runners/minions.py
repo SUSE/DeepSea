@@ -10,6 +10,20 @@ import logging
 
 log = logging.getLogger(__name__)
 
+def help():
+    """
+    """
+    usage = ('salt-run minions.ready:\n'
+             'salt-run minions.ready search=target:\n\n'
+             '    Check that all minions are responding\n'
+             '\n\n'
+             'salt-run minions.message content=message:\n\n'
+             '    Logs a warning message\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def ready(**kwargs):
     """
     Wait for minions to respond.  Compare test.ping results to either
@@ -76,3 +90,4 @@ def message(**kwargs):
     Pass along a message
     """
     log.warn("{}".format(kwargs['content']))
+    return ""

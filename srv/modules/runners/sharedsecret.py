@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run sharedsecret.show:\n\n'
+             '    Shows the shared secret for the Salt API\n'
+             '\n\n'
+    )
+    print usage
+    return ""
 
 def show():
     '''

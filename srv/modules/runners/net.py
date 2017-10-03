@@ -11,8 +11,35 @@ from netaddr import IPNetwork, IPAddress
 
 log = logging.getLogger(__name__)
 
+def help():
+    """
+    """
+    usage = ('salt-run net.get_cpu_count server=minion\n\n'
+             '    Returns the number of cpus for a minion\n'
+             '\n\n'
+             'salt-run net.ping:\n'
+             'salt-run net.ping ceph:\n'
+             'salt-run net.ping cluster=ceph:\n'
+             'salt-run net.ping exclude=target:\n\n'
+             '    Summarizes network connectivity between minion interfaces\n'
+             '\n\n'
+             'salt-run net.jumbo_ping:\n\n'
+             '    Summarizes network connectivity between minion interfaces for jumbo packets\n'
+             '\n\n'
+             'salt-run net.iperf:\n'
+             'salt-run net.iperf ceph:\n'
+             'salt-run net.iperf cluster=ceph:\n'
+             'salt-run net.iperf exclude=target:\n\n'
+             '    Summarizes bandwidth throughput between minion interfaces\n'
+             '\n\n'
+    )
+    print usage
+    return ""
 
 def get_cpu_count(server):
+    """
+    Returns the number of cpus for the server
+    """
     local = salt.client.LocalClient()
     result = local.cmd("S@{} or {}".format(server, server),
                        'grains.item',  ['num_cpus'], expr_form="compound")
@@ -258,7 +285,7 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                 salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1"
         ''')
         print text
-        return
+        return ""
 
     local = salt.client.LocalClient()
     if cluster:
@@ -306,6 +333,7 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
         results = local.cmd(search, 'multi.ping',
                             addresses, expr_form="compound")
     _summarize(len(addresses), results)
+    return ""
 
 
 def _address(addresses, network):

@@ -899,6 +899,21 @@ def show(**kwargs):
                             sys.stdout.write(" " + v)
                 print
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run populate.proposals:\n\n'
+             '    Generate the necessary configuration fragments for Salt\n'
+             '\n\n'
+             'salt-run populate.engulf_existing_cluster:\n\n'
+             '    Convert an existing Ceph cluster to DeepSea\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
+
 def proposals(**kwargs):
     """
     Collect the hardware profiles, all possible role assignments and common

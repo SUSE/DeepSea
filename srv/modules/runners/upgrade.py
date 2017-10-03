@@ -4,7 +4,7 @@ import salt.utils.error
 class UpgradeValidation(object):
     """
     Due to the current situation you have to upgrade
-    all monitos before ceph allows you to start any OSD
+    all monitors before ceph allows you to start any OSD
     Our current implementation of maintenance upgrades
     triggers this behavior if you happen to have
     Monitors and Storage roles assigned on the same node
@@ -48,6 +48,17 @@ class UpgradeValidation(object):
                          ******************************************"""
                     return False, msg
         return True, ""
+
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run upgrade.check:\n\n'
+             '    Performs a series of checks to verify that upgrades are possible\n'
+             '\n\n'
+    )
+    print usage
+    return ""
 
 def check():
       uvo = UpgradeValidation()

@@ -53,12 +53,31 @@ class DeepseaMinions(object):
             return matches.keys()
         return []
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run deepsea_minions.show:\n\n'
+             '    Displays deepsea_minions value\n'
+             '\n\n'
+             'salt-run deepsea_minions.matches:\n\n'
+             '    Returns an array of matched minions\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
+
 def show(**kwargs):
     """
+    Returns deepsea_minions value
     """
     target = DeepseaMinions()
     return target.deepsea_minions
 
 def matches(**kwargs):
+    """
+    Returns array of matched minions
+    """
     target = DeepseaMinions()
     return target.matches

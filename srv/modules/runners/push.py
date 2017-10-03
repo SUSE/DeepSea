@@ -61,6 +61,19 @@ stack_path = os.path.abspath('{}/../pillar/stack.py'.format(cur_file_path))
 stack = imp.load_source('pillar.stack', stack_path)
 log = logging.getLogger(__name__)
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run push.proposal:\n\n'
+             '    Reads the policy.cfg and generates the Salt configuration\n'
+             '\n\n'
+             'salt-run push.convert:\n\n'
+             '    Converts the hardware profiles from filestore to bluestore\n'
+             '\n\n'
+    )
+    print usage
+    return ""
 
 def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg", dryrun = False):
     """

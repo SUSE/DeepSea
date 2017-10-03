@@ -18,6 +18,21 @@ class SafetyFile(object):
         self.filename = "/run/salt/master/safety.{}".format(cluster)
 
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run disengage.safety:\n\n'
+             '    Touches a file to signify imminent dangerous operations\n'
+             '\n\n'
+             'salt-run disengage.check:\n\n'
+             '    Check whether the timestamp is less than a minute old\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
+
 def safety(cluster='ceph'):
     """
     Touch a file.  Need to allow cluster setting from environment.

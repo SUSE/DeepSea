@@ -100,6 +100,23 @@ class Radosgw(object):
         return result
 
 
+def help():
+    """
+    Usage
+    """
+    usage = ('salt-run ui_rgw.credentials:\n\n'
+             '    Returns access key, secret key, id and urls\n'
+             '\n\n'
+             'salt-run ui_rgw.endpoints:\n\n'
+             '    Returns array of host, port, ssl and url\n'
+             '\n\n'
+             'salt-run ui_rgw.token data:\n\n'
+             '    Returns radosgw-token result from supplied data\n'
+             '\n\n'
+    )
+    print usage
+    return ""
+
 def credentials(canned=None, **kwargs):
     """
     Return the administrative credentials for the RadosGW

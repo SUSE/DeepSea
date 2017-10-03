@@ -304,6 +304,7 @@ def help():
              '        salt-run filequeue.vacant item=abc queue=prep\n'
     )
     print usage
+    return ""
 
 
 
