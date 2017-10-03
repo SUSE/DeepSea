@@ -250,7 +250,7 @@ class Validate(object):
                 continue
             found = False
             public_network = self.data[node].get("public_network", "")
-	    net_list = Util.parse_list_from_string(public_network)
+            net_list = Util.parse_list_from_string(public_network)
             for address in self.grains[node]['ipv4']:
                 try:
                     for network in net_list:
@@ -407,7 +407,7 @@ class Validate(object):
                 'storage' in self.data[node]['roles']):
                 found = False
                 cluster_network = self.data[node].get("cluster_network", "")
-	    	net_list = Util.parse_list_from_string(cluster_network)
+                net_list = Util.parse_list_from_string(cluster_network)
                 for address in self.grains[node]['ipv4']:
                     try:
                         for network in net_list:
@@ -612,21 +612,21 @@ class Validate(object):
         Log into the salt-api and verify that a token is returned.
 
         Note: The duplicate functionality between the post section of the
-        DeepSea rpm and the salt state may come across as unnecessary.  
+        DeepSea rpm and the salt state may come across as unnecessary.
         However, some install using the Makefile and not the rpm.  Also,
         the rpm will only attempt restarts of the salt-api, but neither
         enable nor start the salt-api.  The salt state does.
 
-        In the expected case, the salt-master is restarted with the 
+        In the expected case, the salt-master is restarted with the
         sharedsecret when DeepSea is installed.  The salt-api is then
         started and enabled as part of Stage 0.  This check is really
         here for those that went a completely different path.
         """
         __opts__ = salt.config.client_config('/etc/salt/master')
-        stdout, stderr = self._popen([ 'curl', '-si', 'localhost:8000/login', 
-                                       '-H', '"Accept: application/json"', 
-                                       '-d' 'username=admin', 
-                                       '-d', 'sharedsecret={}'.format(__opts__['sharedsecret']), 
+        stdout, stderr = self._popen([ 'curl', '-si', 'localhost:8000/login',
+                                       '-H', '"Accept: application/json"',
+                                       '-d' 'username=admin',
+                                       '-d', 'sharedsecret={}'.format(__opts__['sharedsecret']),
                                        '-d', 'eauth=sharedsecret' ])
         try:
             result = json.loads(stdout[-1])
@@ -692,7 +692,7 @@ class Validate(object):
 
     def _accumulate_files_from(self, filename):
         accumulated_files = []
-	proposals_dir = "/srv/pillar/ceph/proposals"
+        proposals_dir = "/srv/pillar/ceph/proposals"
 
         with open(filename, "r") as policy:
             for line in policy:
@@ -712,51 +712,51 @@ class Validate(object):
                         log.warning("Skipping empty file {}".format(filename))
                         continue
                     accumulated_files.append(filename)
-	return accumulated_files
+        return accumulated_files
 
     def _stack_files(self, stack_dir, filetype='yml'):
-	"""
-	Lists all files under stack_dir
-	"""
-	stack_files = []
-	for drn, drns, fn in os.walk(stack_dir):
-	   for filename in fn:
-	     if filename.split('.')[-1] == filetype:
-	       stack_files.append((os.path.join(drn, filename)))
-	return stack_files
+        """
+        Lists all files under stack_dir
+        """
+        stack_files = []
+        for drn, drns, fn in os.walk(stack_dir):
+           for filename in fn:
+             if filename.split('.')[-1] == filetype:
+               stack_files.append((os.path.join(drn, filename)))
+        return stack_files
 
     def _profiles_populated(self):
-	policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
-	accum_files = self._accumulate_files_from(policy_file)
-	profiles = [ prf  for prf in accum_files if 'profile' in prf ]
-	if not profiles:
-	    message = "There are no files under the profiles directory. Probably an issue with the discovery stage."
-	    self.errors.setdefault('profiles_populated', []).append(message)
+        policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+        accum_files = self._accumulate_files_from(policy_file)
+        profiles = [ prf  for prf in accum_files if 'profile' in prf ]
+        if not profiles:
+            message = "There are no files under the profiles directory. Probably an issue with the discovery stage."
+            self.errors.setdefault('profiles_populated', []).append(message)
         self._set_pass_status('profiles_populated')
 
     def _lint_yaml_files(self):
-	"""
-	Scans for sanity of yaml files
-	"""
-	policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
-	stack_dir = '/srv/pillar/ceph/stack'
+        """
+        Scans for sanity of yaml files
+        """
+        policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+        stack_dir = '/srv/pillar/ceph/stack'
 
-	stack_dir_files = self._stack_files(stack_dir, filetype='yml')
-	accum_files = self._accumulate_files_from(policy_file)
-	
-	files = stack_dir_files + accum_files
+        stack_dir_files = self._stack_files(stack_dir, filetype='yml')
+        accum_files = self._accumulate_files_from(policy_file)
 
-	for filename in files:
-	    if os.stat(filename).st_size == 0:
-		log.warning("Skipping empty file {}".format(filename))
-		continue
-	    with open(filename, 'r') as stream:
-	      try:
-		log.debug(yaml.load(stream))
-	      except yaml.YAMLError as exc:
-		pm = exc.problem_mark
-		message = "syntax error in {} on line {} at position {}".format(pm.name, pm.line, pm.column)
-		self.errors.setdefault('yaml_syntax', []).append(message)
+        files = stack_dir_files + accum_files
+
+        for filename in files:
+            if os.stat(filename).st_size == 0:
+                log.warning("Skipping empty file {}".format(filename))
+                continue
+            with open(filename, 'r') as stream:
+              try:
+                log.debug(yaml.load(stream))
+              except yaml.YAMLError as exc:
+                pm = exc.problem_mark
+                message = "syntax error in {} on line {} at position {}".format(pm.name, pm.line, pm.column)
+                self.errors.setdefault('yaml_syntax', []).append(message)
         self._set_pass_status('yaml_syntax')
 
 
