@@ -946,30 +946,30 @@ def _replace_key_in_cluster_yml(key, val):
 
     # Read in cluster.yml
     try:
-	with open(filename) as f:
-	    cluster_yml = f.readlines()
-	    f.close()
+        with open(filename) as f:
+            cluster_yml = f.readlines()
+            f.close()
     except:
-	log.error("Failed to open {} for reading.".format(filename))
-	return False
+        log.error("Failed to open {} for reading.".format(filename))
+        return False
 
     # Replace the old fsid entry.
     cluster_yml = [ key + ": " + val if key + ":" in line else line.strip() for line in cluster_yml ]
 
     # Write out the new version.
     try:
-	with open(filename, "w") as f:
+        with open(filename, "w") as f:
             written = False
-	    for line in cluster_yml:
-		print >> f, line
+            for line in cluster_yml:
+                print >> f, line
                 if key + ":" in line:
                     written = True
             if not written:
                 print >> f, key + ": " + val
-	    f.close()
+            f.close()
     except:
-	log.error("Failed to open {} for writing.".format(filename))
-	return False
+        log.error("Failed to open {} for writing.".format(filename))
+        return False
 
     return True
 
@@ -993,35 +993,35 @@ def _get_existing_cluster_network(addrs, public_network=None):
     minion_network_interfaces = local.cmd(search, "network.interfaces", [], expr_form="compound")
     # Remove lo.
     for entry in minion_network_interfaces:
-	try:
-	    del(minion_network_interfaces[entry]["lo"])
-	except:
-	    pass
+        try:
+            del(minion_network_interfaces[entry]["lo"])
+        except:
+            pass
 
     for minion, ipaddr in addrs.items():
-	# Only continue if ipaddr is present.
-	for i in ipaddr:
-	    for intf, data in minion_network_interfaces[minion].items():
+        # Only continue if ipaddr is present.
+        for i in ipaddr:
+            for intf, data in minion_network_interfaces[minion].items():
                 if "inet" in data:
-		    for inet_data in data["inet"]:
-			if i == "0.0.0.0":
-			    # If running on 0.0.0.0, assume we can use public_network
-			    ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(i, inet_data["netmask"]))
-			    minion_networks.append(str(ip.network))
-			elif inet_data["address"] == i:
-			    ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
-			    minion_networks.append(str(ip.network))
+                    for inet_data in data["inet"]:
+                        if i == "0.0.0.0":
+                            # If running on 0.0.0.0, assume we can use public_network
+                            ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(i, inet_data["netmask"]))
+                            minion_networks.append(str(ip.network))
+                        elif inet_data["address"] == i:
+                            ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
+                            minion_networks.append(str(ip.network))
 
     # Check for consistency across all entries.
     if len(set(minion_networks)) == 1:
-	# We have equal entries.
-	network = minion_networks[0]
+        # We have equal entries.
+        network = minion_networks[0]
     else:
-	# We have multiple possible networks.  This is liable to happen with OSDs
-	# when there is a private cluster network.  Let's try to remove the public
-	# network.
-	minion_networks = [ n for n in minion_networks if n != public_network ]
-	network = minion_networks[0] if len(set(minion_networks)) == 1 else None
+        # We have multiple possible networks.  This is liable to happen with OSDs
+        # when there is a private cluster network.  Let's try to remove the public
+        # network.
+        minion_networks = [ n for n in minion_networks if n != public_network ]
+        network = minion_networks[0] if len(set(minion_networks)) == 1 else None
 
     return network
 
@@ -1039,11 +1039,11 @@ def _replace_public_network_with_existing_cluster(mon_addrs):
     """
     public_network = _get_existing_cluster_network(mon_addrs)
     if not public_network:
-	log.error("Failed to determine cluster's public_network.")
-	return { 'ret': False, 'public_network': None }
+        log.error("Failed to determine cluster's public_network.")
+        return { 'ret': False, 'public_network': None }
     else:
-	return { 'ret': _replace_key_in_cluster_yml("public_network", public_network),
-		 'public_network': public_network }
+        return { 'ret': _replace_key_in_cluster_yml("public_network", public_network),
+                 'public_network': public_network }
 
 def _replace_cluster_network_with_existing_cluster(osd_addrs, public_network=None):
     """
@@ -1055,11 +1055,11 @@ def _replace_cluster_network_with_existing_cluster(osd_addrs, public_network=Non
     """
     cluster_network = _get_existing_cluster_network(osd_addrs, public_network)
     if not cluster_network:
-	log.error("Failed to determine cluster's cluster_network.")
-	return { 'ret': False, 'cluster_network': None }
+        log.error("Failed to determine cluster's cluster_network.")
+        return { 'ret': False, 'cluster_network': None }
     else:
-	return { 'ret': _replace_key_in_cluster_yml("cluster_network", cluster_network),
-		 'cluster_network': cluster_network }
+        return { 'ret': _replace_key_in_cluster_yml("cluster_network", cluster_network),
+                 'cluster_network': cluster_network }
 
 def engulf_existing_cluster(**kwargs):
     """

@@ -175,8 +175,8 @@ def get_ceph_disks_yml(**kwargs):
     """
     Generates yml representation of Ceph filestores on a given node.
     Returns something like: {"ceph": {"storage": {"osds": {"/dev/foo":
-							    {"format": "filestore",
-							     "journal": "/dev/bar"}}}}}
+                                {"format": "filestore",
+                                 "journal": "/dev/bar"}}}}}
     """
     ceph_disk_list = Popen("ceph-disk list --format=json", stdout=PIPE, stderr=PIPE, shell=True)
     out, err = ceph_disk_list.communicate()
