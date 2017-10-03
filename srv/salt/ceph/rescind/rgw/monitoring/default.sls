@@ -1,19 +1,17 @@
-
-stop_rgw_exporter_service:
-  service.dead:
-    - name: prometheus-ceph_rgw_exporter
-    - enable: False
-
-remove_rgw_exporter_service_unit:
-  file.absent:
-   - name: /usr/lib/systemd/system/prometheus-ceph_rgw_exporter.service
+remove_rgw_exporter_cron_job:
+  cron.absent:
+    - identifier: 'Prometheus rgw_exporter cron job'
 
 remove_rgw_exporter:
   file.absent:
-    - name: /var/lib/prometheus/node-exporter/ceph_rgw.py
+    - names:
+      - /var/lib/prometheus/node-exporter/ceph_rgw.py
+      - /var/lib/prometheus/node-exporter/ceph_rgw.prom
 
 {% if 'python-prometheus-client' in salt['pkg.list_pkgs']() %}
+
 uninstall_package:
   pkg.removed:
     - name: python-prometheus-client
+
 {% endif %}

@@ -2,18 +2,26 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import fcntl
 import json
+import os
 import prometheus_client
-import socket
 import subprocess
 import sys
 import syslog
-import time
 
 class CephRgwCollector(object):
+    def __init__(self, name):
+        self.name = name
+
     def _exec_rgw_admin(self, args):
         try:
-            out = subprocess.check_output(['radosgw-admin'] + args)
+            cmd_args = ['radosgw-admin']
+            if self.name is not None:
+                cmd_args.append('--name')
+                cmd_args.append(self.name)
+            cmd_args.extend(args)
+            out = subprocess.check_output(cmd_args)
             return json.loads(out.decode())
         except Exception as e:
             syslog.syslog(syslog.LOG_ERR, str(e))
@@ -98,32 +106,48 @@ class CephRgwCollector(object):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-p', '--port',
-        metavar='port',
+        '-n', '--name',
+        metavar='TYPE.ID',
         required=False,
-        type=int,
-        help='Listen locally to this port',
-        default=9156)
+        type=str)
     return parser.parse_args()
 
 def main():
+    exit_status = 1
     try:
         args = parse_args()
-        # Register collector and start HTTP server.
-        prometheus_client.REGISTRY.register(CephRgwCollector())
-        prometheus_client.start_http_server(args.port)
-        # Print message to STDOUT and syslog.
-        message = 'Listening on http://{}:{}\n'.format(socket.getfqdn(),
-            args.port)
-        sys.stdout.write(message)
-        syslog.syslog(syslog.LOG_INFO, message)
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        exit(0)
+        # Make sure the exporter is only running once.
+        lock_file = '/var/lock/{}.lock'.format(os.path.basename(sys.argv[0]))
+        lock_fd = os.open(lock_file, os.O_CREAT)
+        lock_success = False
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lock_success = True
+        except IOError:
+            msg = 'Failed to export metrics, another instance is running.'
+            syslog.syslog(syslog.LOG_INFO, msg)
+            sys.stderr.write(msg + '\n')
+        if lock_success:
+            # Create a new registry, otherwise unwanted default collectors are
+            # added automatically.
+            registry = prometheus_client.CollectorRegistry()
+            # Register our own collector and write metrics to STDOUT.
+            registry.register(CephRgwCollector(args.name))
+            sys.stdout.write(prometheus_client.generate_latest(registry))
+            sys.stdout.flush()
+            # Unlock the lock file.
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            exit_status = 0
     except Exception as e:
         syslog.syslog(syslog.LOG_ERR, str(e))
-        exit(1)
+    # Cleanup
+    os.close(lock_fd)
+    if lock_success:
+        try:
+            os.unlink(lock_file)
+        except:
+            pass
+    sys.exit(exit_status)
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,14 @@ rgw users:
     - sls: ceph.rgw
 {% endfor %}
 
+# Install the Prometheus RGW exporter on the master node because it
+# requires the admin keyring.
+setup prometheus rgw exporter:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
+
 {% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 {% if salt.saltutil.runner('changed.config', service=config) == True %}
 
