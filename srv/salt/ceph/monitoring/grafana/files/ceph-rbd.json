@@ -36,7 +36,7 @@
     "hideControls": false,
     "id": null,
     "links": [],
-    "refresh": "15m",
+    "refresh": "30s",
     "rows": [
       {
         "collapse": false,

@@ -37,7 +37,7 @@
     "hideControls": false,
     "id": null,
     "links": [],
-    "refresh": false,
+    "refresh": "30s",
     "rows": [
       {
         "collapse": false,
@@ -508,8 +508,8 @@
       ]
     },
     "time": {
-      "from": "now/d",
-      "to": "now/d"
+      "from": "now-12h",
+      "to": "now"
     },
     "timepicker": {
       "refresh_intervals": [
