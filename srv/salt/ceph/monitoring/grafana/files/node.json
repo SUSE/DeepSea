@@ -36,7 +36,7 @@
     "hideControls": false,
     "id": null,
     "links": [],
-    "refresh": false,
+    "refresh": "30s",
     "rows": [
       {
         "collapse": false,
@@ -949,7 +949,10 @@
     ],
     "schemaVersion": 14,
     "style": "dark",
-    "tags": [],
+    "tags": [
+        "SES",
+        "deepsea"
+    ],
     "templating": {
       "list": [
         {

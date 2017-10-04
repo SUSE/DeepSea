@@ -31,7 +31,7 @@
     "hideControls": false,
     "id": null,
     "links": [],
-    "refresh": false,
+    "refresh": "30s",
     "rows": [
       {
         "collapse": false,
@@ -611,7 +611,9 @@
     "style": "dark",
     "tags": [
       "ceph",
-      "rgw"
+      "rgw",
+      "deepsea",
+      "SES"
     ],
     "templating": {
       "list": [
