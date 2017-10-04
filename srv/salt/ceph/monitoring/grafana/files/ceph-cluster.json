@@ -48,8 +48,8 @@
             "colorValue": false,
             "colors": [
               "rgba(50, 172, 45, 0.97)",
-              "rgb(255, 0, 0)",
-              "rgb(255, 200, 0)"
+              "rgb(255, 200, 0)",
+              "rgb(255, 0, 0)"
             ],
             "datasource": "Prometheus",
             "editable": true,
@@ -106,7 +106,7 @@
                 "step": 60
               }
             ],
-            "thresholds": "1",
+            "thresholds": "1,2",
             "title": "Health Status",
             "transparent": false,
             "type": "singlestat",
