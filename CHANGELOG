@@ -1,4 +1,15 @@
 -------------------------------------------------------------------
+Wed Oct  4 19:49:43 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.29
+- Minor dashboard changes
+- Subvolume support
+- New man pages, help functions
+- Fix cephprocesses, cephinspector for psutil
+- Cleanup error messages, move pillar examples to doc
+- Fix cephdisks for smartctl detection
+
+-------------------------------------------------------------------
 Tue Sep 26 17:59:26 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.28
