@@ -42,8 +42,8 @@ A Ceph monitor acts as a directory service providing maps to clients.  The OSD, 
 Ceph provides many services for existing clients.  This stage installs and configures these services which are iSCSI, CephFS, RadosGW and Ganesha.  The iSCSI gateways provide block level access to RBD images.  The CephFS service provides a POSIX filesystem.  The RadosGW presents an S3 and Swift access to objects.  Lastly, Ganesha provides NFS access to legacy clients for either CephFS or RadosGW.
 .SS Stage 5 - Removal
 This stage is necessary for the migration and removal of roles.  When the administrator unassigns or reassigns roles during Stage 2, this stage surgically removes configurations and shuts down services.
-.SH EXAMPLES
-Each orchestration command is nearly identical.
+.SH EXAMPLE
+Each orchestration command is nearly identical.  The stages have a descriptive and numerical name.  Either can be used.
 .PP
 # salt-run state.orch ceph.stage.0
 .RE
