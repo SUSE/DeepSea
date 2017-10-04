@@ -949,7 +949,10 @@
     ],
     "schemaVersion": 14,
     "style": "dark",
-    "tags": [],
+    "tags": [
+        "SES",
+        "deepsea"
+    ],
     "templating": {
       "list": [
         {

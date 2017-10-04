@@ -428,7 +428,9 @@
     "style": "dark",
     "tags": [
       "ceph",
-      "rgw"
+      "rgw",
+      "deepsea",
+      "SES"
     ],
     "templating": {
       "list": [

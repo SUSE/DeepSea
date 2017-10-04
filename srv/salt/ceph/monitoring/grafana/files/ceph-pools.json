@@ -532,7 +532,9 @@
     "style": "dark",
     "tags": [
       "ceph",
-      "pools"
+      "pools",
+      "deepsea",
+      "SES"
     ],
     "templating": {
       "list": [

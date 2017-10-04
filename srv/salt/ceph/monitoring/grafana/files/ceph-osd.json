@@ -502,7 +502,9 @@
     "style": "dark",
     "tags": [
       "ceph",
-      "osd"
+      "osd",
+      "deepsea",
+      "SES"
     ],
     "templating": {
       "list": [

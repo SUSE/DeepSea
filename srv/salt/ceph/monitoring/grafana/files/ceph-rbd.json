@@ -143,7 +143,9 @@
     "style": "dark",
     "tags": [
       "ceph",
-      "rbd"
+      "rbd",
+      "deepsea",
+      "SES"
     ],
     "templating": {
       "list": [
