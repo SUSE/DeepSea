@@ -59,7 +59,7 @@ sed -i 's/^Version:.*/Version: %{version}/g' deepsea.spec
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
 %__rm -f %{buildroot}/%{_mandir}/man?/*.gz
-%__gzip %{buildroot}/%{_mandir}/man?/deepsea.*
+%__gzip %{buildroot}/%{_mandir}/man?/deepsea*
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %post
@@ -312,6 +312,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
 %{_mandir}/man7/deepsea*.7.gz
+%{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 /srv/modules/runners/*.py*

@@ -509,7 +509,7 @@ salt '*' advise.generic
 .PP
 salt '*' cephdisks.list
 .PP
-salt 'master_minion cephimages.list
+salt 'master_minion' cephimages.list
 .PP
 salt '*' cephinspector.get_minion_public_network
 .RS
@@ -542,19 +542,31 @@ salt '*' fs.btrfs_subvol_exists subvol='@/var/lib/ceph'
 salt '*' fs.btrfs_create_subvol subvol='@/var/lib/ceph'
 .RS
 .RE
-salt '*' fs.btrfs_mount_subvol subvol='@/var/lib/ceph' path='/var/lib/ceph'
+salt '*' fs.btrfs_mount_subvol subvol='@/var/lib/ceph'
+.RS 32
+path='/var/lib/ceph'
+.RE
 .RS
 .RE
 salt '*' fs.get_attrs path='/var/lib/ceph'
 .RS
 .RE
-salt '*' fs.add_attrs path='/var/lib/ceph' attrs='C' [rec=True|False] [omit='/var/lib/ceph/osd']
+salt '*' fs.add_attrs path='/var/lib/ceph' attrs='C' 
+.RS 32
+[rec=True|False] [omit='/var/lib/ceph/osd']
+.RE
 .RS
 .RE
-salt '*' fs.remove_attrs path='/var/lib/ceph' attrs='C' [rec=True|False] [omit='/var/lib/ceph/osd']
+salt '*' fs.remove_attrs path='/var/lib/ceph' attrs='C'
+.RS 32
+[rec=True|False] [omit='/var/lib/ceph/osd']
+.RE
 .RS
 .RE
-salt '*' fs.set_attrs path='/var/lib/ceph' attrs='C' [rec=True|False] [omit='/var/lib/ceph/osd']
+salt '*' fs.set_attrs path='/var/lib/ceph' attrs='C'
+.RS 32
+[rec=True|False] [omit='/var/lib/ceph/osd']
+.RE
 .RS
 .RE
 salt '*' fs.get_mountpoint_opts mountpoint='/var/lib/ceph'
@@ -572,10 +584,16 @@ salt '*' fs.get_uuid dev_path='/dev/sda1'
 salt '*' fs.get_device_info mountpoint='/'
 .RS
 .RE
-salt '*' fs.instantiate_btrfs_subvolume subvol='@/var/lib/ceph' path='/var/lib/ceph'
+salt '*' fs.instantiate_btrfs_subvolume subvol='@/var/lib/ceph' 
+.RS 32
+path='/var/lib/ceph'
+.RE
 .RS
 .RE
-salt '*' fs.migrate_path_to_btrfs_subvolume subvol='@/var/lib/ceph' path='/var/lib/ceph'
+salt '*' fs.migrate_path_to_btrfs_subvolume subvol='@/var/lib/ceph' 
+.RS 32
+path='/var/lib/ceph'
+.RE
 .RS
 .RE
 salt '*' fs.inspect_path path='/var/lib/ceph'
