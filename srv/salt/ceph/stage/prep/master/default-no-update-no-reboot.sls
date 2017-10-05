@@ -1,3 +1,8 @@
+salt-api:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.salt-api
+
 {% if salt['saltutil.runner']('validate.setup') == False %}
 
 validate failed:
@@ -7,11 +12,6 @@ validate failed:
     - failhard: True
 
 {% endif %}
-
-salt-api:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.salt-api
 
 {% if salt['saltutil.runner']('validate.saltapi') == False %}
 
