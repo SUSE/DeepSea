@@ -9,7 +9,7 @@ insert_final_newline = true
 
 [*.{py,yml,html}]
 indent_size = 4
-indent_style = tab
+indent_style = space
 
 [*.{js,json,sls}]
 indent_size = 2
