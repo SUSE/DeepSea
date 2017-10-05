@@ -252,9 +252,17 @@ def baseline(margin=10, verbose=False, **kwargs):
     trigger 'ceph tell osd.$n bench' on all $n OSDs and check the results for
     slow outliers
     '''
-    # get all osd ids
-    osd_list = local_client.cmd('I@cluster:ceph and I@roles:storage',
-                                'osd.list', [], expr_form='compound')
+    client_glob = kwargs.get('client_glob',
+                             'I@roles:storage and I@cluster:ceph')
+    log.info('client glob is {}'.format(client_glob))
+
+    # get all osd ids for a given client_glob
+    osd_list = local_client.cmd(client_glob,
+        'osd.list', [], expr_form='compound')
+
+    if not osd_list:
+        raise Exception('No OSDs found for glob {}'.format(client_glob))
+
     ids = [osd_id for (osd, osd_ids) in osd_list.items() for osd_id in osd_ids]
 
     # gotta get the master_minion...not pretty but works
