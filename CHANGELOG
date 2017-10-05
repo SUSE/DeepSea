@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Oct  5 15:13:15 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.30
+- Swap salt-api and validate.setup
+- Fix syntax indentation
+
+-------------------------------------------------------------------
 Wed Oct  4 19:49:43 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.29
