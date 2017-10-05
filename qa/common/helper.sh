@@ -22,12 +22,10 @@ function _run_stage {
   test -z "$cli" && cli="classic"
   local stage_log_path="/tmp/stage.${stage_num}.log"
 
-  set +x
   echo ""
   echo "*********************************************"
   echo "********** Running DeepSea Stage $stage_num **********"
   echo "*********************************************"
-  set -x
 
   # CLI case
   if [ "x$cli" = "xcli" ] ; then
