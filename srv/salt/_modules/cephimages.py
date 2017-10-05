@@ -19,7 +19,7 @@ def list():
         rbd_proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         for rbd_line in rbd_proc.stdout:
             if pool not in images:
-            images[pool] = []
+                images[pool] = []
             images[pool].append(rbd_line.rstrip('\n'))
 
     return images
