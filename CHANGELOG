@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Oct  6 14:21:27 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.31
+- Moved salt-api validation
+- fix NVMe partition removal
+
+-------------------------------------------------------------------
 Thu Oct  5 15:13:15 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.30
