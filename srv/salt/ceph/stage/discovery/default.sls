@@ -1,3 +1,13 @@
+{% if salt['saltutil.runner']('validate.saltapi') == False %}
+
+salt-api failed:
+  salt.state:
+    - name: just.exit
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
+{% endif %}
+
 {% if salt['saltutil.runner']('validate.prep') == False %}
 
 validate failed:
