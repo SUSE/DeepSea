@@ -21,28 +21,47 @@ function _run_stage {
   local cli=$2
   test -z "$cli" && cli="classic"
   local stage_log_path="/tmp/stage.${stage_num}.log"
+  local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
+  local deepsea_exit_status=""
 
+  set +x
   echo ""
   echo "*********************************************"
   echo "********** Running DeepSea Stage $stage_num **********"
   echo "*********************************************"
+  set -x
 
   # CLI case
   if [ "x$cli" = "xcli" ] ; then
       echo "using DeepSea CLI"
+      set +e
       deepsea \
           --log-file=/var/log/salt/deepsea.log \
           --log-level=debug \
           stage \
           run \
           ceph.stage.${stage_num} \
-          --simple-output
+          --simple-output \
+          2>&1 | tee $deepsea_cli_output_path
+      deepsea_exit_status="${PIPESTATUS[0]}"
+      echo "deepsea exit status: $deepsea_exit_status"
+      if [ "$deepsea_exit_status" = "0" ] ; then
+          if grep -q -F "failed=0" $deepsea_cli_output_path ; then
+              echo "DeepSea stage OK"
+          else
+              echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
+              exit 1
+          fi
+      else
+          exit 1
+      fi
+      set -e
       return
   fi
 
   # non-CLI ("classic") case
   echo -n "" > $stage_log_path
-  salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 > $stage_log_path
+  salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 | tee $stage_log_path
   STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
 
   if [[ "$STAGE_FINISHED" ]]; then
@@ -75,9 +94,9 @@ function _run_test_script_on_node {
   salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT
   local LOGFILE=/tmp/test_script.log
   if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
-    salt $TESTNODE cmd.run "sh $TESTSCRIPT" | tee $LOGFILE
+    salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>&1 | tee $LOGFILE
   else
-    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" | tee $LOGFILE
+    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>&1 | tee $LOGFILE
   fi
   local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
   test "x$RESULT" = "xOK"
