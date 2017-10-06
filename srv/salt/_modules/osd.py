@@ -954,7 +954,7 @@ class OSDCommands(object):
 
     def osd_partition(self):
         """
-        Return the OSD partition.  For new devices without any sizes, 
+        Return the OSD partition.  For new devices without any sizes,
         partition creation is left to ceph-disk.  This means that there
         is no partition to find and we rely on convention.
 
@@ -1405,6 +1405,7 @@ class OSDRemove(object):
         time.sleep(1)
         cmd = "pkill -9 -f ceph-osd.*{}\ --".format(self.osd_id)
         _run(cmd)
+        time.sleep(1)
         return ""
 
     def unmount(self):
@@ -1492,8 +1493,14 @@ class OSDRemove(object):
                 continue
 
             short_name = readlink(self.partitions[attr])
+            exists = os.path.exists(short_name)
+            if not exists and 'nvme' in short_name:
+                time.sleep(1)
+                # NVMe devices just might not be there the first time
+                log.info("Check {} once more".format(short_name))
+                exists = os.path.exists(short_name)
 
-            if os.path.exists(short_name):
+            if exists:
                 if self.osd_disk and self.osd_disk in short_name:
                     log.info("No need to delete {}".format(short_name))
                 else:
@@ -1504,22 +1511,6 @@ class OSDRemove(object):
                         _run(cmd)
             else:
                 log.error("Partition {} does not exist".format(short_name))
-
-
-    #def _split_partition(self, partition):
-    #    """
-    #    Return the device and partition
-    #    """
-    #    part = readlink(partition)
-    #    if os.path.exists(part):
-    #        log.debug("splitting partition {}".format(part))
-    #        m = re.match("(.+\D)(\d+)", part)
-    #        disk = m.group(1)
-    #        if 'nvme' in disk:
-    #            disk = disk[:-1]
-    #            log.debug("Truncating p {}".format(disk))
-    #        return disk, m.group(2)
-    #    return None, None
 
     def _wipe_gpt_backups(self):
         """
@@ -1657,14 +1648,14 @@ class OSDDevices(object):
 
     def _uuid_device(self, device, pathname="/dev/disk/by-id"):
         """
-        Return the uuid device
+        Return the uuid device, last one if multiple are matched
         """
         if os.path.exists(device):
             if os.path.exists(pathname):
                 cmd = "find -L {} -samefile {} \( -name ata* -o -name nvme* \)".format(pathname, device)
                 rc, _stdout, _stderr = _run(cmd)
                 if _stdout:
-                    return _stdout
+                    return _stdout.split()[-1]
                 else:
                     return readlink(device)
             else:
