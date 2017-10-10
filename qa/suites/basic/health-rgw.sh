@@ -67,6 +67,7 @@ if [ -n "$SSL" ] ; then
 else
     echo "Testing RGW deployment (no SSL)"
 fi
+salt_api_test
 run_stage_1 "$CLI"
 policy_cfg_base
 policy_cfg_mon_flex
