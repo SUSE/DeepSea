@@ -86,6 +86,7 @@ function run_stage_1 {
 }
 
 function run_stage_2 {
+  salt '*' cmd.run "zypper --non-interactive --no-gpg-checks refresh"
   _run_stage 2 "$@"
   salt_pillar_items
 }
