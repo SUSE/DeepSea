@@ -25,6 +25,7 @@ fi
 # show salt RPM version in log and fail if salt is not installed
 rpm -q salt-master
 rpm -q salt-minion
+rpm -q salt-api
 
 # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
 # (otherwise we would have to set deepsea grain on all minions)
@@ -85,6 +86,7 @@ function run_stage_1 {
 }
 
 function run_stage_2 {
+  salt '*' cmd.run "zypper --non-interactive --no-gpg-checks refresh"
   _run_stage 2 "$@"
   salt_pillar_items
 }
@@ -435,6 +437,13 @@ function ceph_health_test {
   salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
   # last line: determines return value of function
   ! grep -q 'Timeout expired' $LOGFILE
+}
+
+function salt_api_test {
+  echo "Salt API test: BEGIN"
+  systemctl status salt-api.service
+  curl http://${SALT_MASTER}:8000/ | python -m json.tool
+  echo "Salt API test: END"
 }
 
 function rados_write_test {
