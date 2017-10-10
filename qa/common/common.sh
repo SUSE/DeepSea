@@ -25,6 +25,7 @@ fi
 # show salt RPM version in log and fail if salt is not installed
 rpm -q salt-master
 rpm -q salt-minion
+rpm -q salt-api
 
 # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
 # (otherwise we would have to set deepsea grain on all minions)
