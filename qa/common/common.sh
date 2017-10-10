@@ -437,6 +437,13 @@ function ceph_health_test {
   ! grep -q 'Timeout expired' $LOGFILE
 }
 
+function salt_api_test {
+  echo "Salt API test: BEGIN"
+  systemctl status salt-api.service
+  curl http://${SALT_MASTER}:8000/ | python -m json.tool
+  echo "Salt API test: END"
+}
+
 function rados_write_test {
     local TESTSCRIPT=/tmp/test_rados_put.sh
     cat << 'EOF' > $TESTSCRIPT
