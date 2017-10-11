@@ -72,5 +72,16 @@ test_systemd_ceph_osd_target_wants
 rados_write_test
 ceph_version_test
 run_stage_0 "$CLI"
+restart_services
+mon_restarted "1" # 1 means not restarted
+osd_restarted "1"
+# apply config change
+change_osd_conf
+change_mon_conf
+# construct and spread config
+run_stage_3 "$CLI"
+restart_services
+mon_restarted "0" # 0 means restarted
+osd_restarted "0"
 
 echo "OK"

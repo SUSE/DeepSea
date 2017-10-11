@@ -113,6 +113,24 @@ function run_stage_5 {
 # see https://github.com/SUSE/DeepSea/tree/master/srv/salt/ceph/configuration/files/ceph.conf.d
 #
 
+function change_rgw_conf {
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/rgw.conf
+foo = bar
+EOF
+}
+
+function change_osd_conf {
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/osd.conf
+foo = bar
+EOF
+}
+
+function change_mon_conf {
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
+foo = bar
+EOF
+}
+
 function ceph_conf_small_cluster {
   local STORAGENODES=$(json_storage_nodes)
   test ! -z "$STORAGENODES"
@@ -149,7 +167,45 @@ EOF
 #
 
 function proposal_populate_dmcrypt {
-    salt-run proposal.populate encryption='dmcrypt' name='dmcrypt'
+  salt-run proposal.populate encryption='dmcrypt' name='dmcrypt'
+}
+
+#
+# functions for restarting all configured services
+#
+
+function restart_services {
+  salt-run state.orch ceph.restart
+}
+
+function mon_restarted {
+  local expected_return=$1
+  local mon_hosts=$(salt --static --out json -C "I@roles:mon" test.ping | jq -r 'keys[]')
+  for minion in ${mon_hosts}; do
+    salt "${minion}*" cmd.shell "journalctl -u ceph-mon@*" | grep -i terminated
+    test $? = ${expected_return}
+  done
+}
+
+function osd_restarted {
+    local expected_return=$1
+    osd_hosts=$(salt --static --out json -C "I@roles:storage" test.ping | jq -r 'keys[]')
+    for host in ${osd_hosts}; do
+        osds=$(salt --static --out json ${host} osd.list | jq .[][])
+        for osd in ${osds}; do
+            salt ${host} cmd.shell "journalctl -u ceph-osd@${osd}" | grep -i terminated
+            test $? = ${expected_return}
+        done
+    done
+}
+
+function rgw_restarted {
+  local expected_return=$1
+  rgw_hosts=$(salt --static --out json -C "I@roles:rgw" test.ping | jq -r 'keys[]')
+  for host in ${rgw_hosts}; do
+    salt ${host} cmd.shell "journalctl -u ceph-radosgw@*" | grep -i terminated
+    test $? = ${expected_return}
+  done
 }
 
 #
