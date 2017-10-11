@@ -6,6 +6,12 @@
         - tgt: {{ master }}
         - sls: ceph.wait
 
+    check if all processes are still running on {{ host }}:
+      salt.state:
+        - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+        - tgt_type: compound
+        - sls: ceph.processes
+        - failhard: True
 
     restarting rgw on {{ host }}:
       salt.state:
