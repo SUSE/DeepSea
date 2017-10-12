@@ -4,6 +4,7 @@ lrbd:
   pkg.installed:
     - pkgs:
       - lrbd
+    - refresh: True
 
 /tmp/lrbd.conf:
   file.managed:

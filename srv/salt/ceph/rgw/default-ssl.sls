@@ -7,6 +7,7 @@ include:
 install rgw:
   pkg.installed:
     - name: ceph-radosgw
+    - refresh: True
 
 {% for role in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 

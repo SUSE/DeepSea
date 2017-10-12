@@ -3,6 +3,7 @@ ntp:
   pkg.installed:
     - pkgs:
       - ntp
+    - refresh: True
 
 {% if salt['service.status']('ntpd') == False %}
 sync time:

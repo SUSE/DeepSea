@@ -4,6 +4,7 @@ install openattic:
   pkg.installed:
     - pkgs:
       - openattic
+    - refresh: True
 
 configure salt-api:
   module.run:
