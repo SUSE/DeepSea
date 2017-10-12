@@ -201,7 +201,7 @@ def rbd(**kwargs):
     """
 
     client_glob = kwargs.get('client_glob',
-                             'I@roles:client-rbd and I@cluster:ceph')
+        'I@roles:client-rbd-benchmark and I@cluster:ceph')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
