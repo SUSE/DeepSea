@@ -217,7 +217,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/client-iscsi
 %dir /srv/salt/ceph/rescind/client-nfs
 %dir /srv/salt/ceph/rescind/client-radosgw
-%dir /srv/salt/ceph/rescind/client-rbd
+%dir /srv/salt/ceph/rescind/benchmark-rbd
 %dir /srv/salt/ceph/rescind/ganesha
 %dir /srv/salt/ceph/rescind/igw
 %dir /srv/salt/ceph/rescind/igw/keyring
@@ -439,7 +439,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/client-cephfs/*.sls
 %config /srv/salt/ceph/rescind/client-nfs/*.sls
 %config /srv/salt/ceph/rescind/client-radosgw/*.sls
-%config /srv/salt/ceph/rescind/client-rbd/*.sls
+%config /srv/salt/ceph/rescind/benchmark-rbd/*.sls
 %config /srv/salt/ceph/rescind/ganesha/*.sls
 %config /srv/salt/ceph/rescind/igw/*.sls
 %config /srv/salt/ceph/rescind/igw/keyring/*.sls

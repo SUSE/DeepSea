@@ -353,5 +353,5 @@ readme](srv/pillar/ceph/benchmarks/README.md) for further details.
 ```
 
 This runs fio using the RBD backend against the cluster as a whole. This
-requires at least one minion with the `client-rbd` role. See the [benchmark
-readme](srv/pillar/ceph/benchmarks/README.md) for further details.
+requires at least one minion with the `benchmark-rbd` role. See the
+[benchmark readme](srv/pillar/ceph/benchmarks/README.md) for further details.
