@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Oct 13 12:49:01 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.32
+- Cleanup: package removal
+- Add argument to benchmark runner
+- Additional qa tests
+
+-------------------------------------------------------------------
 Fri Oct  6 14:21:27 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.31
