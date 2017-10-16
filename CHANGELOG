@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Oct 16 17:29:08 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.33
+- Update grains unconditionally
+
+-------------------------------------------------------------------
 Fri Oct 13 12:49:01 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.32
