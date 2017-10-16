@@ -82,16 +82,16 @@ class Fio(object):
 
     def run(self, job_spec):
         job_name = os.path.splitext(os.path.basename(job_spec))[0]
-        job_log_dir = '{}/{}/{}/{}_{}'.format(
+        log_dir = '{}/{}/{}/{}_{}'.format(
             self.log_dir,
             self.target,
             'fio',
             job_name,
             datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S'))
-        os.makedirs(job_log_dir)
+        os.makedirs(log_dir)
 
         # parse yaml and get all job permutations
-        permutations_specs = self._parse_permutations_specs(job_spec, job_log_dir)
+        permutations_specs = self._parse_permutations_specs(job_spec, log_dir)
         job_permutations = self._get_job_permutations(permutations_specs)
         master_minion = local_client.cmd(
                         'I@roles:master', 'pillar.get',
@@ -106,6 +106,8 @@ class Fio(object):
             fio expects a job file for every remote agent
             '''
             job_name = '{}_{}_{}'.format(job['number_of_workers'], job['workload'], job['blocksize'])
+            job_log_dir = '{}/{}'.format(log_dir, job_name)
+            os.makedirs(job_log_dir)
             for client in self.clients:
                 job.update({'client': client})
                 jobfile = self._parse_job(job, job_name, job_log_dir, client)
@@ -133,7 +135,7 @@ class Fio(object):
         return self._populate_and_write_job_file(template, job, job_name, client, job_log_dir)
 
     def _populate_and_write_job_file(self, template, job, job_name, client, job_log_dir):
-        jobfile = '{}/{}_{}'.format(job_log_dir, job_name, client)
+        jobfile = '{}/{}.fio'.format(job_log_dir, client)
 
         # Add configs from pillars
         pool_name = local_client.cmd(
@@ -148,6 +150,9 @@ class Fio(object):
         job.update({'image_prefix': image_prefix})
         log.info('RBD benchmarks: using image prefix {}'.format(image_prefix))
 
+        job.update({'job_log_dir': job_log_dir})
+        log.info('RBD benchmarks: using image job log dir {}'.format(job_log_dir))
+
         # render template and save job file
         template.stream(job).dump(jobfile)
         return jobfile
@@ -159,7 +164,6 @@ class Fio(object):
 
         Options on which we can permutate: number_of_workers, workload, blocksize
         """
-        print('permutations_specs_file: ' + permutations_specs_file)
         with open('{}/{}'.format(self.bench_dir, permutations_specs_file, 'r')) as yml:
             try:
                 permutations = yaml.load(yml)
@@ -167,15 +171,7 @@ class Fio(object):
                 log.error('Error parsing job spec in file {}/fio/{}'.format(self.bench_dir, permutations_specs_file))
                 log.error(error)
                 raise error
-        output_options = '''
-        write_bw_log={logdir}/output
-        write_lat_log={logdir}/output
-        write_hist_log={logdir}/output
-        write_iops_log={logdir}/output
-        '''.format(logdir=job_log_dir)
-        permutations.update({'dir': self.work_dir,
-                    'output_options': output_options,
-                   })
+        permutations.update({'dir': self.work_dir})
         return permutations
 
     def _get_job_permutations(self, permutations_spec):
