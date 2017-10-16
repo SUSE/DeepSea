@@ -1698,20 +1698,15 @@ class OSDGrains(object):
         """
         Load and save grains when changed
         """
-        if storage:
-            content = {}
-            if os.path.exists(filename):
-                with open(filename, 'r') as minion_grains:
-                    content = yaml.safe_load(minion_grains)
-            if 'ceph' in content:
-                if content['ceph'] != storage:
-                    content['ceph'] = storage
-                    self._update_grains(content)
-                else:
-                    log.debug("No update for {}".format(filename))
-            else:
-                content['ceph'] = storage
-                self._update_grains(content)
+        content = {}
+        if os.path.exists(filename):
+            with open(filename, 'r') as minion_grains:
+                content = yaml.safe_load(minion_grains)
+        if 'ceph' in content and content['ceph'] == storage:
+            log.debug("No update for {}".format(filename))
+        else:
+            content['ceph'] = storage
+            self._update_grains(content)
 
     def _update_grains(self, content, filename="/etc/salt/grains"):
         """
