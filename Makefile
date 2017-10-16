@@ -253,6 +253,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/osd/key/*.sls $(DESTDIR)/srv/salt/ceph/osd/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/auth
 	install -m 644 srv/salt/ceph/osd/auth/*.sls $(DESTDIR)/srv/salt/ceph/osd/auth/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/grains
+	install -m 644 srv/salt/ceph/osd/grains/*.sls $(DESTDIR)/srv/salt/ceph/osd/grains/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/keyring
 	install -m 644 srv/salt/ceph/osd/keyring/*.sls $(DESTDIR)/srv/salt/ceph/osd/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/scheduler

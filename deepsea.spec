@@ -182,6 +182,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/osd/files
 %dir /srv/salt/ceph/osd/key
 %dir /srv/salt/ceph/osd/auth
+%dir /srv/salt/ceph/osd/grains
 %dir /srv/salt/ceph/osd/keyring
 %dir /srv/salt/ceph/osd/restart
 %dir /srv/salt/ceph/osd/scheduler
@@ -408,6 +409,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/osd/files/*.j2
 %config /srv/salt/ceph/osd/key/*.sls
 %config /srv/salt/ceph/osd/auth/*.sls
+%config /srv/salt/ceph/osd/grains/*.sls
 %config /srv/salt/ceph/osd/keyring/*.sls
 %config /srv/salt/ceph/osd/restart/*.sls
 %config /srv/salt/ceph/osd/scheduler/*.sls

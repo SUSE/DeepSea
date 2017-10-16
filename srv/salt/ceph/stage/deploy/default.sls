@@ -126,6 +126,13 @@ storage:
     - sls: ceph.osd
     - failhard: True
 
+grains:
+  salt.state:
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt_type: compound
+    - sls: ceph.osd.grains
+    - failhard: True
+
 pools:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
