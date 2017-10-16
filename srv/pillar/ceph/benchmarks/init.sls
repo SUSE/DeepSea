@@ -1,3 +1,3 @@
-rbd_benchmark_pool: deepsea_rbd_benchmark
+rbd_benchmark_pool: ds_rbd_bench_pool
 
-rbd_benchmark_image_prefix: rbd_bench_img_
+rbd_benchmark_image_prefix: ds_rbd_bench_img_

@@ -11,7 +11,10 @@ import jinja2
 import os
 import subprocess
 import sys
+import time
 import yaml
+
+from itertools import product
 
 log = logging.getLogger(__name__)
 local_client = salt.client.LocalClient()
@@ -47,10 +50,12 @@ class Fio(object):
             raise Exception('No minions found for glob {}'.format(client_glob))
 
         clients = []
+        hostnames = []
         ip_filter = lambda add: ipaddress.ip_address(
             add.decode()) in ipaddress.ip_network(public_network.decode())
         for minion, ip_list in minion_ip_lists.items():
             clients.extend(list(filter(ip_filter, ip_list)))
+            hostnames.append(minion)
 
         if not clients:
             raise Exception(
@@ -63,8 +68,8 @@ class Fio(object):
 
         self.cmd_global_args = ['--output-format=json']
 
-        # store client addresses preformatted for user with fio
-        self.clients = clients
+        # store client hostnames
+        self.clients = hostnames
 
         self.bench_dir = bench_dir
         self.log_dir = log_dir
@@ -82,48 +87,84 @@ class Fio(object):
             self.target,
             'fio',
             job_name,
-            datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
+            datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S'))
         os.makedirs(job_log_dir)
-        log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
-        client_jobs = []
-        '''
-        create a list that alternates between --client arguments and job files
-        e.g. [--client=host1, jobfile, --client=host2, jobfile]
-        fio expects a job file for every remote agent
-        '''
-        for client in self.clients:
-            jobfile = self._parse_job(job_spec, job_name, job_log_dir, client)
-            client_jobs.extend(['--client={}'.format(client)])
-            client_jobs.extend([jobfile])
 
-        output = subprocess.check_output(
-            [self.cmd] + self.cmd_global_args + log_args + client_jobs)
+        # parse yaml and get all job permutations
+        permutations_specs = self._parse_permutations_specs(job_spec, job_log_dir)
+        job_permutations = self._get_job_permutations(permutations_specs)
+        master_minion = local_client.cmd(
+                        'I@roles:master', 'pillar.get',
+                        ['master_minion'], expr_form='compound').items()[0][1]
+
+        output = []
+        for job in job_permutations:
+            client_jobs = []
+            '''
+            create a list that alternates between --client arguments and job files
+            e.g. [--client=host1, jobfile, --client=host2, jobfile]
+            fio expects a job file for every remote agent
+            '''
+            job_name = '{}_{}_{}'.format(job['number_of_workers'], job['workload'], job['blocksize'])
+            for client in self.clients:
+                job.update({'client': client})
+                jobfile = self._parse_job(job, job_name, job_log_dir, client)
+                client_jobs.extend(['--client={}'.format(client)])
+                client_jobs.extend([jobfile])
+
+            log_args = ['--output={}/{}.json'.format(job_log_dir, job_name)]
+
+            # Run fio command
+            log.info('fio command:')
+            log.info([self.cmd] + self.cmd_global_args + log_args + client_jobs)
+            output.append(subprocess.check_output(
+                [self.cmd] + self.cmd_global_args + log_args + client_jobs))
+
+            # Some time to settle between runs
+            time.sleep(30)
 
         return output
 
-    def _parse_job(self, job_spec, job_name, job_log_dir, client):
-        # parse yaml and get job spec
-        job = self._get_job_parameters(job_spec, job_log_dir, client)
-
+    def _parse_job(self, job, job_name, job_log_dir, client):
         # which template does the job want
         template = self.jinja_env.get_template(job['template'])
 
         # popluate template and return job file location
-        return self._populate_and_write_job(template, job, job_name, client)
+        return self._populate_and_write_job_file(template, job, job_name, client, job_log_dir)
 
-    def _populate_and_write_job(self, template, job, job_name, client):
-        jobfile = '{}/{}_{}'.format(self.job_dir, job_name, client)
+    def _populate_and_write_job_file(self, template, job, job_name, client, job_log_dir):
+        jobfile = '{}/{}_{}'.format(job_log_dir, job_name, client)
+
+        # Add configs from pillars
+        pool_name = local_client.cmd(
+            'I@roles:master', 'pillar.get',
+            ['rbd_benchmark_pool'], expr_form='compound').items()[0][1]
+        job.update({'pool_name': pool_name})
+        log.info('RBD benchmarks: using pool {}'.format(pool_name))
+
+        image_prefix = local_client.cmd(
+            'I@roles:master', 'pillar.get',
+            ['rbd_benchmark_image_prefix'], expr_form='compound').items()[0][1]
+        job.update({'image_prefix': image_prefix})
+        log.info('RBD benchmarks: using image prefix {}'.format(image_prefix))
 
         # render template and save job file
         template.stream(job).dump(jobfile)
         return jobfile
 
-    def _get_job_parameters(self, job_spec, job_log_dir, client):
-        with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
+    def _parse_permutations_specs(self, permutations_specs_file, job_log_dir):
+        """
+        Expects a YAML file that contains all permutations.
+        Returns a data structure with all permutations requested by the YAML file.
+
+        Options on which we can permutate: number_of_workers, workload, blocksize
+        """
+        print('permutations_specs_file: ' + permutations_specs_file)
+        with open('{}/{}'.format(self.bench_dir, permutations_specs_file, 'r')) as yml:
             try:
-                job = yaml.load(yml)
+                permutations = yaml.load(yml)
             except YAMLError as error:
-                log.error('Error parsing job spec in file {}/fio/{}'.format(self.bench_dir, job_spec))
+                log.error('Error parsing job spec in file {}/fio/{}'.format(self.bench_dir, permutations_specs_file))
                 log.error(error)
                 raise error
         output_options = '''
@@ -132,9 +173,29 @@ class Fio(object):
         write_hist_log={logdir}/output
         write_iops_log={logdir}/output
         '''.format(logdir=job_log_dir)
-        job.update({'dir': self.work_dir, 'output_options': output_options,
-                    'client': client})
-        return job
+        permutations.update({'dir': self.work_dir,
+                    'output_options': output_options,
+                   })
+        return permutations
+
+    def _get_job_permutations(self, permutations_spec):
+        """
+        Expects a data structure that describes all permutations.
+        Returns an array of jobs.
+        """
+        list_entries = {k: v for k, v in permutations_spec.items() if isinstance(v, list)}
+        keys = list_entries.keys()
+        scalar_entries = {k: v for k, v in permutations_spec.items() if not isinstance(v, list)}
+
+        permutations = list(product(*list_entries.values()))
+        res = []
+        for permutation in permutations:
+            run = {}
+            run.update(scalar_entries)
+            for i in range(0, len(list_entries)):
+                run.update({keys[i]: permutation[i]})
+            res.append(run)
+        return res
 
 
 def __parse_and_set_dirs(kwargs):

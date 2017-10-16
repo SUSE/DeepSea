@@ -1,1 +1,13 @@
 template: base_rbd.j2
+blocksize:
+  - 4
+  - 64
+  - 4M
+workload:
+  - read
+  - write
+  - randread
+  - randwrite
+  - randrw
+number_of_workers:
+  - 1
