@@ -1,6 +1,8 @@
+{% set pg_num = salt['calculate.pg_num']() %}
+
 create benchmark pool:
   cmd.run:
-    - name: ceph osd pool create {{ salt['pillar.get']('rbd_benchmark_pool', 'deepsea_rbd_benchmark') }} 256 256
+    - name: ceph osd pool create {{ salt['pillar.get']('rbd_benchmark_pool', 'deepsea_rbd_benchmark') }} {{ pg_num }} {{ pg_num }}
 
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='storage') %}
 create {{ host }} benchmark image:
