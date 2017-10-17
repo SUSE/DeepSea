@@ -288,6 +288,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/maintenance/upgrade/master
 %dir /srv/salt/ceph/maintenance/upgrade/minion
 %dir /srv/salt/ceph/maintenance/upgrade/report
+%dir /srv/salt/ceph/maintenance/upgrade/cleanup
 %dir /srv/salt/ceph/upgrade
 %dir /srv/salt/ceph/updates
 %dir /srv/salt/ceph/updates/master
@@ -512,6 +513,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/maintenance/upgrade/master/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/minion/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/report/*.sls
+%config /srv/salt/ceph/maintenance/upgrade/cleanup/*.sls
 %config /srv/salt/ceph/tools/fio/*.sls
 %config /srv/salt/ceph/tools/fio/files/fio.service
 %config /srv/salt/ceph/updates/*.sls
