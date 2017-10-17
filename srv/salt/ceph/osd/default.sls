@@ -20,16 +20,17 @@ activate {{ device }}:
 
 {% for pair in salt['pillar.get']('storage:data+journals') %}
 {% for data, journal in pair.items() %}
+{% set dev = salt['cmd.run']('readlink -f ' + data ) %}
 prepare {{ data }}:
   cmd.run:
     - name: "ceph-disk -v prepare --fs-type xfs --data-dev --journal-dev --cluster {{ salt['pillar.get']('cluster') }} --cluster-uuid {{ salt['pillar.get']('fsid') }} {{ data }} {{ journal }}"
-    - unless: "fsck {{ data }}"
+    - unless: "fsck {{ dev }}1"
     - fire_event: True
 
 activate {{ data }}:
   cmd.run:
-    - name: "ceph-disk -v activate --mark-init systemd --mount {{ data }}"
-    - unless: "grep -q ^{{ data }} /proc/mounts"
+    - name: "ceph-disk -v activate --mark-init systemd --mount {{ dev }}1"
+    - unless: "grep -q ^{{ dev }}1 /proc/mounts"
     - fire_event: True
 
 {% endfor %}
