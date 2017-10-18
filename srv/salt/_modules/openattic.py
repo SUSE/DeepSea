@@ -49,7 +49,7 @@ def _write_config_file(config_file, config):
 
 
 def _select_config_file_path():
-    possible_paths = ("/etc/sysconfig/openattic", "/etc/openattic")
+    possible_paths = ("/etc/default/openattic", "/etc/sysconfig/openattic")
     for path in possible_paths:
         if os.access(path, os.F_OK) and os.access(path, os.R_OK | os.W_OK):
             return path
