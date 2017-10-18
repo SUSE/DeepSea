@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
+# pylint: disable=modernize-parse-error
+#
+# The salt-api calls functions with keywords that are not needed
+# pylint: disable=unused-argument
+"""
+The collection of functions for OSDs that are no longer present.
+"""
 
-import salt.client
-import pprint
 import logging
+import salt.client
 
 log = logging.getLogger(__name__)
 
-def help():
+
+def help_():
     """
     Usage
     """
@@ -15,10 +23,10 @@ def help():
              '\n\n'
              'salt-run rescinded.osds:\n\n'
              '    Returns the list of OSDs for minions that are no longer mounted\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
+
 
 def ids(cluster, **kwargs):
     """
@@ -30,15 +38,16 @@ def ids(cluster, **kwargs):
     # Restrict search to this cluster
     search = "I@cluster:{}".format(cluster)
 
-    pillar_data = local.cmd(search , 'pillar.items', [], expr_form="compound")
-    ids = []
-    for minion in pillar_data.keys():
+    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    _ids = []
+    for minion in pillar_data:
         if ('roles' in pillar_data[minion] and
             'storage' in pillar_data[minion]['roles']):
-                continue
+            continue
         data = local.cmd(minion, 'osd.list', [], expr_form="glob")
-        ids.extend(data[minion])
-    return ids
+        _ids.extend(data[minion])
+    return _ids
+
 
 def osds(cluster='ceph'):
     """
@@ -48,10 +57,14 @@ def osds(cluster='ceph'):
 
     local = salt.client.LocalClient()
     data = local.cmd(search, 'osd.rescinded', [], expr_form="compound")
-    ids = []
+    _ids = []
     for minion in data:
-        if type(data[minion]) is list:
-            ids.extend(data[minion])
+        if isinstance(data[minion], list):
+            _ids.extend(data[minion])
         else:
             log.debug(data[minion])
-    return list(set(ids))
+    return list(set(_ids))
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

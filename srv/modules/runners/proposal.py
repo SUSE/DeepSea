@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-
-import salt.client
-# import salt.key
-# import salt.config
-# import salt.utils
-# import salt.utils.minions
-
+# pylint: disable=modernize-parse-error,fixme
+"""
+Generates the hardware profiles for a minion
+"""
+from __future__ import absolute_import
 import pprint
-import yaml
 from os.path import isdir, isfile
 import os
+# pylint: disable=redefined-builtin
 from sys import exit
 import logging
+import salt.client
+import yaml
+# pylint: disable=import-error
 import deepsea_minions
 
 log = logging.getLogger(__name__)
 
-usage = '''
+USAGE = '''
 The proposal runner compiles and either shows or writes storage profile
 proposals. It offers two methods: 'peek' and 'populate'.
 The 'peek' method simply collects the proposals from the minions and displays
@@ -86,9 +87,9 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
-target = deepsea_minions.DeepseaMinions()
+TARGET = deepsea_minions.DeepseaMinions()
 
-std_args = {
+STD_ARGS = {
     'leftovers': False,
     'standalone': False,
     'nvme-ssd-spinner': False,
@@ -97,7 +98,7 @@ std_args = {
     'ssd-spinner': False,
     'ratio': 5,
     'db-ratio': 5,
-    'target': target.deepsea_minions,
+    'target': TARGET.deepsea_minions,
     'data': 0,
     'journal': 0,
     'wal': 0,
@@ -109,11 +110,14 @@ std_args = {
     'wal-size': '500m',
 }
 
-base_dir = '/srv/pillar/ceph/proposals'
+BASE_DIR = '/srv/pillar/ceph/proposals'
 
 
 def _parse_args(kwargs):
-    args = std_args.copy()
+    """
+    Parse command line arguments
+    """
+    args = STD_ARGS.copy()
     args.update(kwargs)
     if args.get('name') == 'import':
         print(('ERROR: profile name import is a reserved name. Please use'
@@ -128,37 +132,43 @@ def _parse_args(kwargs):
 
 
 def _propose(node, proposal, args):
-    # iterate over proposals and output appropriate device data
+    """
+    Iterate over proposals and output appropriate device data
+    """
     profile = {}
     for device in proposal:
-        k, v = device.items()[0]
+        key, value = device.items()[0]
         dev_par = {}
         format_ = args.get('format')
-        if type(v) is dict:
+        if isinstance(value, dict):
             assert format_ == 'bluestore'
-            db, wal = v.items()[0]
+            # pylint: disable=invalid-name
+            db, wal = value.items()[0]
             dev_par['wal'] = wal
             dev_par['db'] = db
             dev_par['wal_size'] = args.get('wal-size')
             dev_par['db_size'] = args.get('db-size')
-        elif type(v) is str and v != '':
+        elif isinstance(value, str) and value != '':
             if format_ == 'bluestore':
-                dev_par['wal'] = v
-                dev_par['db'] = v
+                dev_par['wal'] = value
+                dev_par['db'] = value
                 dev_par['wal_size'] = args.get('wal-size')
                 dev_par['db_size'] = args.get('db-size')
             else:
-                dev_par['journal'] = v
+                dev_par['journal'] = value
                 dev_par['journal_size'] = args.get('journal-size')
         dev_par['format'] = format_
         if args.get('encryption') != '':
             dev_par['encryption'] = args.get('encryption')
-        profile[k] = dev_par
+        profile[key] = dev_par
 
     return {node: profile}
 
 
 def _choose_proposal(node, proposal, args):
+    """
+    Select proposal or default to hardware present
+    """
     confs = ['nvme-ssd-spinner', 'nvme-ssd', 'nvme-spinner', 'ssd-spinner', 'standalone']
     # propose according to flags if present
     for conf in confs:
@@ -173,11 +183,17 @@ def _choose_proposal(node, proposal, args):
             log.error("Verify that targeted minions have proposal.generate")
 
 
-def help():
-    print(usage)
+def help_():
+    """
+    Usage
+    """
+    print USAGE
 
 
 def test(**kwargs):
+    """
+    Runtime test case
+    """
     args = _parse_args(kwargs)
 
     local_client = salt.client.LocalClient()
@@ -187,12 +203,15 @@ def test(**kwargs):
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
-        p = _choose_proposal(node, proposal, args)
-        if p:
-            pprint.pprint(p)
+        _proposal = _choose_proposal(node, proposal, args)
+        if _proposal:
+            pprint.pprint(_proposal)
 
 
 def peek(**kwargs):
+    """
+    Display the output to the user
+    """
     args = _parse_args(kwargs)
 
     local_client = salt.client.LocalClient()
@@ -202,14 +221,16 @@ def peek(**kwargs):
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
-        p = _choose_proposal(node, proposal, args)
-        if p:
-            pprint.pprint(p)
+        _proposal = _choose_proposal(node, proposal, args)
+        if _proposal:
+            pprint.pprint(_proposal)
 
 
-def _write_proposal(p, profile_dir):
-
-    node, proposal = p.items()[0]
+def _write_proposal(prop, profile_dir):
+    """
+    Save the proposal for a specific minion
+    """
+    node, proposal = prop.items()[0]
 
     # write out roles
     role_file = '{}/cluster/{}.sls'.format(profile_dir, node)
@@ -234,6 +255,9 @@ def _write_proposal(p, profile_dir):
 
 
 def _record_filter(args, base_dir):
+    """
+    Save the filter provided
+    """
     filter_file = '{}/.filter'.format(base_dir)
 
     if not isfile(filter_file):
@@ -241,8 +265,8 @@ def _record_filter(args, base_dir):
         open(filter_file, 'a').close()
 
     current_filter = {}
-    with open(filter_file) as f:
-        current_filter = yaml.load(f)
+    with open(filter_file) as filehandle:
+        current_filter = yaml.load(filehandle)
     if current_filter is None:
         current_filter = {}
 
@@ -253,11 +277,15 @@ def _record_filter(args, base_dir):
                 k.startswith('__')}
     current_filter[args['target']] = rec_args
 
-    with open(filter_file, 'w') as f:
-        yaml.dump(current_filter, f, default_flow_style=False)
+    with open(filter_file, 'w') as filehandle:
+        yaml.dump(current_filter, filehandle, default_flow_style=False)
 
 
 def populate(**kwargs):
+    """
+    Aggregate the results of the modules and save the desired proposal for
+    all minions.
+    """
     args = _parse_args(kwargs)
 
     local_client = salt.client.LocalClient()
@@ -266,21 +294,25 @@ def populate(**kwargs):
                                  expr_form='compound', kwarg=args)
 
     # check if profile of 'name' exists
-    profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
+    profile_dir = '{}/profile-{}'.format(BASE_DIR, args['name'])
     if not isdir(profile_dir):
-        os.makedirs(profile_dir, 0755)
+        os.makedirs(profile_dir, 0o755)
     # TODO do not hardcode cluster name ceph here
     if not isdir('{}/stack/default/ceph/minions'.format(profile_dir)):
-        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 0755)
+        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 0o755)
     if not isdir('{}/cluster'.format(profile_dir)):
-        os.makedirs('{}/cluster'.format(profile_dir), 0755)
+        os.makedirs('{}/cluster'.format(profile_dir), 0o755)
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
-        p = _choose_proposal(node, proposal, args)
-        if p:
-            _write_proposal(p, profile_dir)
+        _proposal = _choose_proposal(node, proposal, args)
+        if _proposal:
+            _write_proposal(_proposal, profile_dir)
     # write out .filter here...will need some logic to merge existing data too.
     _record_filter(args, profile_dir)
 
     return True
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

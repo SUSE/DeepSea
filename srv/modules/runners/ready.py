@@ -1,21 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import salt.client
-import salt.utils.error
-import logging
-import ipaddress
-import pprint
-import yaml
-import os
-import re
-from subprocess import call, Popen, PIPE
-from os.path import dirname
-
-from collections import OrderedDict
-
-log = logging.getLogger(__name__)
-
-
+# pylint: disable=modernize-parse-error
 """
 Although similar to validate.py, the intention here is to run checks on
 all minions in a cluster.  Additionally, these checks are not absolute so
@@ -23,7 +7,20 @@ a warning is more appropriate.
 
 """
 
-class bcolors:
+import logging
+from collections import OrderedDict
+import salt.client
+import salt.utils.error
+
+
+log = logging.getLogger(__name__)
+
+
+# pylint: disable=no-init,too-few-public-methods
+class Bcolors(object):
+    """
+    Define escape sequences
+    """
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -48,52 +45,58 @@ class Checks(object):
         self.warnings = OrderedDict()
         self.local = salt.client.LocalClient()
 
-
     def firewall(self):
         """
         Scan all minions for the default firewall settings.  Set warnings
         for any differences.
         """
-        contents = self.local.cmd(self.search , 'cmd.shell', [ '/usr/sbin/iptables -S' ], expr_form="compound")
-        for minion in contents.keys():
+        contents = self.local.cmd(self.search, 'cmd.shell',
+                                  ['/usr/sbin/iptables -S'],
+                                  expr_form="compound")
+        for minion in contents:
             # Accept custom named chains
-            if not contents[minion].startswith("-P INPUT ACCEPT\n-P FORWARD ACCEPT\n-P OUTPUT ACCEPT"):
+            if not contents[minion].startswith(("-P INPUT ACCEPT\n"
+                                                "-P FORWARD ACCEPT\n"
+                                                "-P OUTPUT ACCEPT")):
                 msg = "enabled on minion {}".format(minion)
                 if 'firewall' in self.warnings:
                     self.warnings['firewall'].append(msg)
                 else:
-                    self.warnings['firewall'] = [ msg ]
+                    self.warnings['firewall'] = [msg]
         if 'firewall' not in self.warnings:
             self.passed['firewall'] = "disabled"
 
-
     def apparmor(self):
         """
-        Scan minions for apparmor settings.  
+        Scan minions for apparmor settings.
         """
-        contents = self.local.cmd(self.search , 'cmd.shell', [ '/usr/sbin/apparmor_status --enabled 2>/dev/null; echo $?' ], expr_form="compound")
+        contents = self.local.cmd(self.search, 'cmd.shell',
+                                  [('/usr/sbin/apparmor_status --enabled '
+                                    '2>/dev/null; echo $?')],
+                                  expr_form="compound")
         for minion in contents:
             if contents[minion] and int(contents[minion]) == 0:
                 msg = "enabled on minion {}".format(minion)
                 if 'apparmor' in self.warnings:
                     self.warnings['apparmor'].append(msg)
                 else:
-                    self.warnings['apparmor'] = [ msg ]
+                    self.warnings['apparmor'] = [msg]
         if 'apparmor' not in self.warnings:
             self.passed['apparmor'] = "disabled"
-
 
     def report(self):
         """
         Produce nicely colored output
         """
         for attr in self.passed.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.OKGREEN, self.passed[attr], bcolors.ENDC)
+            print "{:25}: {}{}{}{}".format(attr, Bcolors.BOLD, Bcolors.OKGREEN,
+                                           self.passed[attr], Bcolors.ENDC)
         for attr in self.warnings.keys():
-            print "{:25}: {}{}{}{}".format(attr, bcolors.BOLD, bcolors.WARNING, self.warnings[attr], bcolors.ENDC)
+            print "{:25}: {}{}{}{}".format(attr, Bcolors.BOLD, Bcolors.WARNING,
+                                           self.warnings[attr], Bcolors.ENDC)
 
 
-def help():
+def help_():
     """
     Usage
     """
@@ -101,10 +104,10 @@ def help():
              'salt-run ready.check search=target:\n'
              'salt-run ready.check fail_on_warning=False:\n\n'
              '    Check for firewall and apparmor configurations\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
+
 
 def check(cluster, fail_on_warning=True, search=None, **kwargs):
     """
@@ -120,13 +123,15 @@ def check(cluster, fail_on_warning=True, search=None, **kwargs):
     # minions.
     search = "I@cluster:{}".format(cluster) if not search else search
 
-    c = Checks(search)
-    c.firewall()
-    c.apparmor()
-    c.report()
+    _check = Checks(search)
+    _check.firewall()
+    _check.apparmor()
+    _check.report()
 
-    if c.warnings and fail_on_warning:
+    if _check.warnings and fail_on_warning:
         return False
     return True
 
-
+__func_alias__ = {
+                 'help_': 'help',
+                 }

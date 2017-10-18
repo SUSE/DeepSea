@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=too-few-public-methods,modernize-parse-error
+"""
+The list of minions related to a Salt target is often needed for operations.
+"""
 
-import salt.client
 import logging
-import pprint
 import os
 import sys
 import re
+import salt.client
 
 log = logging.getLogger(__name__)
 
-def help():
+
+def help_():
     """
     Usage
     """
@@ -32,13 +36,12 @@ def help():
              'salt-run select.from pillar=var role=default_role attr=value1,value2 :\n\n'
              '    Returns an array of grain values that matches the pillar variable.\n'
              '    Defaults to role if variable is not found.\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
 
-def minions(host = False, **kwargs):
+def minions(host=False, **kwargs):
     """
     Some targets needs to match all minions within a search criteria.
     """
@@ -59,13 +62,14 @@ def minions(host = False, **kwargs):
     sys.stdout = open(os.devnull, 'w')
 
     local = salt.client.LocalClient()
-    minions = local.cmd(search , 'pillar.get', [ 'id' ], expr_form="compound")
+    _minions = local.cmd(search, 'pillar.get', ['id'], expr_form="compound")
 
     sys.stdout = _stdout
 
     if host:
-        return ([ k.split('.')[0] for k in minions.keys() ])
-    return minions.keys()
+        return ([k.split('.')[0] for k in _minions.keys()])
+    return _minions.keys()
+
 
 def one_minion(**kwargs):
     """
@@ -79,9 +83,9 @@ def one_minion(**kwargs):
         return
 
 
-def public_addresses(tuples = False, host = False, **kwargs):
+def public_addresses(tuples=False, host=False, **kwargs):
     """
-    Returns an array of public addresses matching the search critieria.  
+    Returns an array of public addresses matching the search critieria.
     Can also return an array of tuples with fqdn or short name.
     """
     criteria = []
@@ -97,15 +101,15 @@ def public_addresses(tuples = False, host = False, **kwargs):
     sys.stdout = open(os.devnull, 'w')
 
     local = salt.client.LocalClient()
-    result = local.cmd(search , 'public.address', [], expr_form="compound")
+    result = local.cmd(search, 'public.address', [], expr_form="compound")
 
     sys.stdout = _stdout
 
     if tuples:
         if host:
-            addresses = [ [k.split('.')[0],v] for k, v in result.items() ]
+            addresses = [[k.split('.')[0], v] for k, v in result.items()]
         else:
-            addresses = [ [k,v] for k, v in result.items() ]
+            addresses = [[k, v] for k, v in result.items()]
     else:
         addresses = []
         for entry in result:
@@ -113,7 +117,7 @@ def public_addresses(tuples = False, host = False, **kwargs):
     return addresses
 
 
-def attr(host = False, **kwargs):
+def attr(host=False, **kwargs):
     """
     Return a paired list of minions and a given attribute
     """
@@ -134,15 +138,16 @@ def attr(host = False, **kwargs):
     sys.stdout = open(os.devnull, 'w')
 
     local = salt.client.LocalClient()
-    minions = local.cmd(search , 'pillar.get', [ attribute ], expr_form="compound")
+    _minions = local.cmd(search, 'pillar.get', [attribute], expr_form="compound")
 
     sys.stdout = _stdout
 
     if host:
-        pairs = [ [k.split('.')[0],v] for k, v in minions.items() ]
+        pairs = [[k.split('.')[0], v] for k, v in _minions.items()]
     else:
-        pairs = [ [k,v] for k, v in minions.items() ]
+        pairs = [[k, v] for k, v in _minions.items()]
     return pairs
+
 
 def from_(pillar, role, *args, **kwargs):
     """
@@ -156,7 +161,7 @@ def from_(pillar, role, *args, **kwargs):
     """
 
     if 'attr' in kwargs:
-        args = re.split(',\s*', kwargs['attr'])
+        args = re.split(r',\s*', kwargs['attr'])
 
     # When search matches no minions, salt prints to stdout.  Suppress stdout.
     _stdout = sys.stdout
@@ -165,7 +170,8 @@ def from_(pillar, role, *args, **kwargs):
     local = salt.client.LocalClient()
     search = "I@roles:master"
     try:
-        roles = local.cmd(search , 'pillar.get', [ pillar ], expr_form="compound").values()[0]
+        roles = local.cmd(search, 'pillar.get', [pillar], expr_form="compound").values()[0]
+    # pylint: disable=bare-except
     except:
         roles = []
 
@@ -175,22 +181,23 @@ def from_(pillar, role, *args, **kwargs):
         # With no pillar variable, check for minions with assigned role
         result = minions(roles=role)
         if result:
-            roles = [ role ]
+            roles = [role]
 
     results = []
     for _role in roles:
         minion_list = minions(roles=_role)
         for minion in minion_list:
-            grains_result = local.cmd(minion , 'grains.item',  list(args)).values()[0]
-            small = [ _role ]
+            grains_result = local.cmd(minion, 'grains.item', list(args)).values()[0]
+            small = [_role]
             for arg in list(args):
                 small.append(grains_result[arg])
             results.append(small)
-                
+
     if results:
         return results
-    return [ [ None ] * (1 + len(args)) ]
+    return [[None] * (1 + len(args))]
 
 __func_alias__ = {
                  'from_': 'from',
+                 'help_': 'help',
                  }

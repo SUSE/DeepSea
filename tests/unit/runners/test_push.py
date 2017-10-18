@@ -51,24 +51,23 @@ class TestPush():
 
     @patch('glob.glob', new=f_glob.glob)
     def test_parse(self):
-        p_d = push.PillarData(False)
 
-        parsed = p_d._parse('{}/*.sls'.format(proposal_dir))
+        parsed = push._parse('{}/*.sls'.format(proposal_dir))
         assert len(parsed) == len(nodes)
 
-        parsed = p_d._parse('{}/mon*.sls'.format(proposal_dir))
+        parsed = push._parse('{}/mon*.sls'.format(proposal_dir))
         assert len(parsed) == len([n for n in nodes if n.startswith('mon')])
 
-        parsed = p_d._parse('{}/mon[1,2].sls'.format(proposal_dir))
+        parsed = push._parse('{}/mon[1,2].sls'.format(proposal_dir))
         assert len(parsed) == 2
 
-        parsed = p_d._parse('{}/*.sls slice=[2:5]'.format(proposal_dir))
+        parsed = push._parse('{}/*.sls slice=[2:5]'.format(proposal_dir))
         assert len(parsed) == 3
 
-        parsed = p_d._parse('{}/*.sls re=.*1\.sls$'.format(proposal_dir))
+        parsed = push._parse('{}/*.sls re=.*1\.sls$'.format(proposal_dir))
         assert len(parsed) == len([n for n in nodes if '1' in n])
 
-        parsed = p_d._parse('{}/*.sls FOO=.*1\.sls$'.format(proposal_dir))
+        parsed = push._parse('{}/*.sls FOO=.*1\.sls$'.format(proposal_dir))
         assert len(parsed) == len(nodes)
 
     @patch('glob.glob', new=f_glob.glob)

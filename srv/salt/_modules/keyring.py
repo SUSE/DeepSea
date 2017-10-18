@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+Keyring collection of operations
+"""
 
+from __future__ import absolute_import
 import os
 import struct
 import base64
 import time
+
 
 def secret(filename):
     """
@@ -22,12 +27,18 @@ def secret(filename):
 
     return gen_secret()
 
+
 def gen_secret():
+    """
+    Generate a valid keyring secret for Ceph
+    """
     key = os.urandom(16)
-    header = struct.pack('<hiih',1,int(time.time()),0,len(key))
+    header = struct.pack('<hiih', 1, int(time.time()), 0, len(key))
     return base64.b64encode(header + key)
 
-def file(component, name=None):
+
+# pylint: disable=too-many-return-statements
+def file_(component, name=None):
     """
     Return the pathname to the cache directory.  This feels cleaner than
     trying to use Jinja across different directories to retrieve a common
@@ -59,3 +70,7 @@ def file(component, name=None):
 
     elif component == "deepsea_rbd_bench":
         return "/srv/salt/ceph/rbd/benchmarks/files/cache/deepsea_rbd_bench.keyring"
+
+__func_alias__ = {
+                 'file_': 'file',
+                 }

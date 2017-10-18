@@ -1,18 +1,6 @@
 # -*- coding: utf-8 -*-
-
-import time
-import logging
-import os
-import stat
-import glob
-import fcntl
-
-import salt.loader
-import salt.utils.event
-
-log = logging.getLogger(__name__)
-
-
+# pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
+# pylint: disable=too-few-public-methods,modernize-parse-error
 """
 The queue runner in salt uses sqlite.  While not a problem in general, when
 a few events arrive simultaneously, the last attempts fail.  The contention is
@@ -24,6 +12,17 @@ This runner will rely on file existence, creation and removal.  If a system
 is loaded, operations will block but eventually complete.
 """
 
+import time
+import logging
+import os
+import glob
+
+import salt.loader
+import salt.utils.event
+
+log = logging.getLogger(__name__)
+
+
 class FileQueue(object):
     """
     Use fileystem operations to keep track of a queue. Rely on modification
@@ -34,11 +33,11 @@ class FileQueue(object):
         """
         Set default settings, allow overriding, create queue directory
         """
-        self.settings = { 'root_dir': "/var/cache/salt/master/filequeues",
-                          'queue': "default",
-                          'event': "salt/filequeue/queue" }
+        self.settings = {'root_dir': "/var/cache/salt/master/filequeues",
+                         'queue': "default",
+                         'event': "salt/filequeue/queue"}
         if 'queue' in kwargs:
-            self.settings['event'] =  "salt/filequeue/" + kwargs['queue']
+            self.settings['event'] = "salt/filequeue/" + kwargs['queue']
 
         # Do not include the operation if the event is overridden
         if 'event' in kwargs:
@@ -61,9 +60,8 @@ class FileQueue(object):
         List directories under root_dir
         """
         dirs = glob.glob("{}/*".format(self.root_dir))
-        dirs = [ os.path.basename(d) for d in dirs ]
+        dirs = [os.path.basename(d) for d in dirs]
         return dirs
-
 
     def touch(self, item):
         """
@@ -77,18 +75,18 @@ class FileQueue(object):
 
         if (ret and 'duplicate_fail' in self.settings and
             self.settings['duplicate_fail']):
-            self._fire_event(False, [ item, "present" ])
+            self._fire_event(False, [item, "present"])
             return False
-        self._fire_event(True, [ item, "added" ])
+        self._fire_event(True, [item, "added"])
         return True
 
-
+    # pylint: disable=invalid-name
     def ls(self):
         """
         List filenames in alpha-numeric order
         """
         files = glob.glob("{}/*".format(self.queue_dir))
-        files = [ os.path.basename(f) for f in files ]
+        files = [os.path.basename(f) for f in files]
         return sorted(files)
 
     def items(self):
@@ -96,9 +94,9 @@ class FileQueue(object):
         List filenames in modification time order
         """
         mtime = {}
-        for f in os.listdir(self.queue_dir):
-            mtime[os.stat("{}/{}".format(self.queue_dir, f)).st_mtime] = f
-        files = [ mtime[k] for k in sorted(mtime.keys()) ]
+        for filename in os.listdir(self.queue_dir):
+            mtime[os.stat("{}/{}".format(self.queue_dir, filename)).st_mtime] = filename
+        files = [mtime[k] for k in sorted(mtime.keys())]
         return files
 
     def empty(self):
@@ -108,11 +106,11 @@ class FileQueue(object):
         files = self.ls()
         if files:
             log.debug("queue {} contains {}".format(self.queue_dir, files))
-            self._fire_event(False, [ "populated" ])
+            self._fire_event(False, ["populated"])
             return False
         else:
             log.debug("queue {} is empty".format(self.queue_dir))
-            self._fire_event(True, [ "empty" ])
+            self._fire_event(True, ["empty"])
             return True
 
     def remove(self, item):
@@ -123,9 +121,9 @@ class FileQueue(object):
         if os.path.isfile(filename):
             log.debug("removing {}".format(filename))
             os.remove(filename)
-            self._fire_event(True, [ item, "remove"])
+            self._fire_event(True, [item, "remove"])
             return True
-        self._fire_event(False, [ item, "absent"])
+        self._fire_event(False, [item, "absent"])
         return False
 
     def vacate(self, item):
@@ -146,16 +144,14 @@ class FileQueue(object):
         if len(files) == 1:
             if files[0] == item:
                 log.debug("queue {} is vacated".format(self.queue_dir))
-                self._fire_event(True, [ "vacated" ])
+                self._fire_event(True, ["vacated"])
                 return True
             else:
                 log.debug("queue {} contains {}".format(self.queue_dir, files))
-                self._fire_event(False, [ "occupied" ])
+                self._fire_event(False, ["occupied"])
                 return False
         else:
             log.debug("filename {} does not exist".format(filename))
-
-
 
     def check(self, item):
         """
@@ -165,10 +161,10 @@ class FileQueue(object):
         ret = os.path.isfile(filename)
         if ret:
             log.info("file {} exists".format(filename))
-            self._fire_event(True, [ item, "exists"])
+            self._fire_event(True, [item, "exists"])
         else:
             log.info("file {} is missing".format(filename))
-            self._fire_event(False, [ item, "missing"])
+            self._fire_event(False, [item, "missing"])
         return ret
 
     def _fire_event(self, result, operation):
@@ -192,7 +188,7 @@ class FileQueue(object):
             event.fire_event(settings, "/".join(tags))
 
 
-class Lock():
+class Lock(object):
     """
     Serialize operations on queue
     """
@@ -214,24 +210,24 @@ class Lock():
                 break
             except OSError:
                 log.debug("{} locked".format(self.lockfile))
-                pass
             time.sleep(.2)
         return
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type_, value, traceback):
         """
         Remove symlink
         """
         os.remove(self.lockfile)
 
+
 def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k:v for k,v in settings.iteritems() if not k.startswith('__')}
+    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
 
 
-def help():
+def help_():
     """
     Usage
     """
@@ -301,12 +297,9 @@ def help():
              '    CLI Example:\n\n'
              '        salt-run filequeue.vacant abc\n'
              '        salt-run filequeue.vacant abc queue=prep\n'
-             '        salt-run filequeue.vacant item=abc queue=prep\n'
-    )
+             '        salt-run filequeue.vacant item=abc queue=prep\n')
     print usage
     return ""
-
-
 
 
 def queues(**kwargs):
@@ -314,122 +307,137 @@ def queues(**kwargs):
     List queues
     """
     log.debug("queues: kwargs = {}".format(_skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
-        return "\n".join(fq.dirs())
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
+        return "\n".join(filequeue.dirs())
 
-def enqueue(queue = None, **kwargs):
+
+def enqueue(queue=None, **kwargs):
     """
     Add item
     """
     log.debug("enqueue: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
         if queue:
-            ret = fq.touch(queue)
+            ret = filequeue.touch(queue)
         elif 'item' in kwargs:
-            ret = fq.touch(kwargs['item'])
+            ret = filequeue.touch(kwargs['item'])
         else:
             help()
             return
     return ret
 
+
+# pylint: disable=invalid-name
 add = salt.utils.alias_function(enqueue, 'add')
 push = salt.utils.alias_function(enqueue, 'push')
+
 
 def dequeue(**kwargs):
     """
     Remove oldest item
     """
     log.debug("dequeue: kwargs = {}".format(_skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
-        oldest = fq.items()[0]
-        fq.remove(oldest)
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
+        oldest = filequeue.items()[0]
+        filequeue.remove(oldest)
     return oldest
+
 
 def pop(**kwargs):
     """
     Remove newest item
     """
     log.debug("pop: kwargs = {}".format(_skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
-        newest = fq.items()[-1]
-        fq.remove(newest)
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
+        newest = filequeue.items()[-1]
+        filequeue.remove(newest)
     return newest
 
+
+# pylint: disable=invalid-name
 def ls(**kwargs):
     """
     List items
     """
     log.debug("ls: kwargs = {}".format(_skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
-        return "\n".join(fq.ls())
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
+        return "\n".join(filequeue.ls())
+
 
 def items(**kwargs):
     """
     List items in time order
     """
     log.debug("items: kwargs = {}".format(_skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
-        return "\n".join(fq.items())
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
+        return "\n".join(filequeue.items())
+
 
 def empty(**kwargs):
     """
     Check if queue is empty
     """
     log.debug("empty: kwargs = {}".format(_skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
-        return fq.empty()
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
+        return filequeue.empty()
 
-def check(queue = None, **kwargs):
+
+def check(queue=None, **kwargs):
     """
     Check if item exists
     """
     log.debug("check: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
         if queue:
-            return fq.check(queue)
+            return filequeue.check(queue)
         elif 'item' in kwargs:
-            return fq.check(kwargs['item'])
+            return filequeue.check(kwargs['item'])
         else:
             help()
             return
 
-def remove(queue = None, **kwargs):
+
+def remove(queue=None, **kwargs):
     """
     Remove specific item
     """
     log.debug("remove: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
 
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
         if queue:
-            return fq.remove(queue)
+            return filequeue.remove(queue)
         elif 'item' in kwargs:
-            return fq.remove(kwargs['item'])
+            return filequeue.remove(kwargs['item'])
         else:
             help()
             return
 
-def vacate(queue = None, **kwargs):
+
+def vacate(queue=None, **kwargs):
     """
     Remove specific item and check if queue is empty
     """
     log.debug("vacate: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
 
-    fq = FileQueue(**kwargs)
-    with Lock(fq.settings):
+    filequeue = FileQueue(**kwargs)
+    with Lock(filequeue.settings):
         if queue:
-            return fq.vacate(queue)
+            return filequeue.vacate(queue)
         elif 'item' in kwargs:
-            return fq.vacate(kwargs['item'])
+            return filequeue.vacate(kwargs['item'])
         else:
             help()
             return
 
+__func_alias__ = {
+                 'help_': 'help',
+                 }

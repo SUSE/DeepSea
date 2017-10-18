@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=fixme,modernize-parse-error
+# pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
+"""
+All OSD related functions
+"""
 
+from __future__ import absolute_import
 import glob
 import os
 import json
@@ -7,9 +13,8 @@ import logging
 import time
 import re
 import pprint
+from subprocess import Popen, PIPE
 import yaml
-import salt.client
-from subprocess import call, Popen, PIPE
 
 log = logging.getLogger(__name__)
 
@@ -18,15 +23,13 @@ try:
 except ImportError:
     pass
 
-"""
-The first functions are different queries for osds.  These can be combined.
-
-The two classes should be combined as well.  I thought I would wait for now.
-"""
+# The first functions are different queries for osds.  These can be combined.
+# The two classes should be combined as well.  I thought I would wait for now.
 
 
 def _run(cmd):
     """
+    Generic function for running shell commands
     """
     log.info(cmd)
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -38,109 +41,117 @@ def _run(cmd):
     log.debug(_stderr)
     log.debug(pprint.pformat(proc.stdout.read()))
     log.debug(pprint.pformat(proc.stderr.read()))
-    #return proc.returncode, _stdout, _stderr
     return proc.returncode, _stdout, _stderr
+
 
 # These first three methods should be combined... saving for later
 def paths():
     """
     Return an array of pathnames
     """
-    return [ pathname for pathname in glob.glob("/var/lib/ceph/osd/*") ]
+    return [pathname for pathname in glob.glob("/var/lib/ceph/osd/*")]
+
 
 def devices():
     """
     Return an array of devices
     """
-    paths = [ pathname for pathname in glob.glob("/var/lib/ceph/osd/*") ]
-    devices = []
+    _paths = [pathname for pathname in glob.glob("/var/lib/ceph/osd/*")]
+    _devices = []
     with open('/proc/mounts') as mounts:
         for line in mounts:
             device, path = line.split()[:2]
-            if path in paths:
-                devices.append(device)
+            if path in _paths:
+                _devices.append(device)
 
-    return devices
+    return _devices
+
 
 def pairs():
     """
     Return an array of devices and paths
     """
-    paths = [ pathname for pathname in glob.glob("/var/lib/ceph/osd/*") ]
-    pairs = []
+    _paths = [pathname for pathname in glob.glob("/var/lib/ceph/osd/*")]
+    _pairs = []
     with open('/proc/mounts') as mounts:
         for line in mounts:
-            partition, path = line.split()[:2]
-            if path in paths:
-                m = re.match(r'^(.+)\d+$', partition)
-                device = m.group(1)
+            _partition, path = line.split()[:2]
+            if path in _paths:
+                match = re.match(r'^(.+)\d+$', _partition)
+                device = match.group(1)
                 if 'nvme' in device:
                     device = device[:-1]
-                pairs.append([ device, path ])
+                _pairs.append([device, path])
 
-    return pairs
+    return _pairs
+
 
 def part_pairs():
     """
     Return an array of partitions and paths
     """
-    paths = [ pathname for pathname in glob.glob("/var/lib/ceph/osd/*") ]
-    pairs = []
+    _paths = [pathname for pathname in glob.glob("/var/lib/ceph/osd/*")]
+    _pairs = []
     with open('/proc/mounts') as mounts:
-	for line in mounts:
-	    partition, path = line.split()[:2]
-	    if path in paths:
-		m = re.match(r'^(.+)\d+$', partition)
-		part = m.group(0)
-		pairs.append([ part, path ])
-    return pairs
+        for line in mounts:
+            _partition, path = line.split()[:2]
+            if path in _paths:
+                match = re.match(r'^(.+)\d+$', _partition)
+                part = match.group(0)
+                _pairs.append([part, path])
+    return _pairs
 
-def _filter_devices(devices, **kwargs):
+
+def _filter_devices(_devices, **kwargs):
     """
     Filter devices if provided.
 
     Only supporting format currently.
     """
     if 'format' in kwargs:
-        devices = [ device for device in devices if devices[device]['format'] == kwargs['format'] ]
+        _devices = [device for device in _devices
+                    if _devices[device]['format'] == kwargs['format']]
 
-    return devices
+    return _devices
+
 
 def configured(**kwargs):
     """
     Return the osds from the ceph namespace or original namespace, optionally
     filtered by attributes.
     """
-    osds = []
-    devices = []
+    _devices = []
     # That doesn't allow mixed configurations
     # storage[osds] OR storage[data+journals]
     # TODO: append devices from one config version
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
         and 'osds' in __pillar__['ceph']['storage']):
-        devices = __pillar__['ceph']['storage']['osds']
-        devices = _filter_devices(devices, **kwargs)
-        devices = devices.keys()
+        _devices = __pillar__['ceph']['storage']['osds']
+        log.debug("devices from pillar: {}".format(_devices))
+        _devices = _filter_devices(_devices, **kwargs)
     if ('storage' in __pillar__ and
         'osds' in __pillar__['storage'] and
-        type(__pillar__['storage']['osds']) is list):
-        devices = __pillar__['storage']['osds']
-        log.debug("devices: {}".format(devices))
+        isinstance(__pillar__['storage']['osds'], list)):
+        _devices = __pillar__['storage']['osds']
+        log.debug("devices: {}".format(_devices))
         if 'format' in kwargs and kwargs['format'] != 'filestore':
             return []
     if ('storage' in __pillar__ and
         'data+journals' in __pillar__['storage'] and
-        type(__pillar__['storage']['data+journals']) is list):
-        [devices.append(x.keys()[0]) for x in __pillar__['storage']['data+journals']]
-    log.debug("devices: {}".format(devices))
+        isinstance(__pillar__['storage']['data+journals'], list)):
+        for entry in __pillar__['storage']['data+journals']:
+            _devices.append(entry.keys()[0])
+    log.debug("devices: {}".format(_devices))
 
-    return devices
+    return _devices
+
 
 def list_():
     """
     Return the array of ids.
     """
-    mounted = [ path.split('-')[1][:-5] for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path ]
+    mounted = [path.split('-')[1][:-5]
+               for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path]
     log.info("mounted osds {}".format(mounted))
     if 'ceph' in __grains__:
         grains = __grains__['ceph'].keys()
@@ -148,23 +159,27 @@ def list_():
         grains = []
     return list(set(mounted + grains))
 
+
 def rescinded():
     """
     Return the array of ids that are no longer mounted.
     """
-    mounted = [ int(path.split('-')[1][:-5]) for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path ]
+    mounted = [int(path.split('-')[1][:-5])
+               for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path]
     log.info("mounted osds {}".format(mounted))
-    #ids = __grains__['ceph'].keys() if 'ceph' in __grains__ else []
-    ids = _children()
-    log.debug("ids: {}".format(ids))
+    # ids = __grains__['ceph'].keys() if 'ceph' in __grains__ else []
+    _ids = _children()
+    log.debug("ids: {}".format(_ids))
     for osd in mounted:
         log.debug("osd: {}".format(osd))
-        if osd in ids:
-            ids.remove(osd)
-    return ids
+        if osd in _ids:
+            _ids.remove(osd)
+    return _ids
+
 
 def _children():
     """
+    Returns the OSDs assigned to this node according to Ceph
     """
     result = json.loads(tree())
     entries = []
@@ -182,6 +197,7 @@ def ids():
     """
     return list()
 
+
 def tree():
     """
     Return osd tree
@@ -191,15 +207,17 @@ def tree():
     overriding the keyring is happening in three places.
     """
     settings = {
-        'conf': "/etc/ceph/ceph.conf" ,
+        'conf': "/etc/ceph/ceph.conf",
         'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
         'client': 'client.bootstrap-osd'
     }
-    #cluster=rados.Rados(conffile=settings['conf'])
-    cluster=rados.Rados(conffile=settings['conf'], conf=dict(keyring=settings['keyring']), name=settings['client'])
+    # cluster=rados.Rados(conffile=settings['conf'])
+    cluster = rados.Rados(conffile=settings['conf'],
+                          conf=dict(keyring=settings['keyring']),
+                          name=settings['client'])
     cluster.connect()
-    cmd = json.dumps({"prefix":"osd tree", "format":"json" })
-    ret,output,err = cluster.mon_command(cmd, b'', timeout=6)
+    cmd = json.dumps({"prefix": "osd tree", "format": "json"})
+    _, output, _ = cluster.mon_command(cmd, b'', timeout=6)
     log.debug(json.dumps(json.loads(output), indent=4))
     return json.dumps(json.loads(output), indent=4)
 
@@ -209,38 +227,38 @@ class OSDState(object):
     Manage the OSD state
     """
 
-    def __init__(self, id, **kwargs):
+    def __init__(self, _id, **kwargs):
         """
         Initialize settings, connect to Ceph cluster
         """
-        self.id = id
+        self.osd_id = _id
         self.settings = {
-            'conf': "/etc/ceph/ceph.conf" ,
+            'conf': "/etc/ceph/ceph.conf",
             'filename': '/var/run/ceph/osd.{}-weight'.format(id),
             'timeout': 3600,
             'delay': 6
         }
         self.settings.update(kwargs)
-        self.cluster=rados.Rados(conffile=self.settings['conf'])
+        self.cluster = rados.Rados(conffile=self.settings['conf'])
         self.cluster.connect()
 
     def down(self):
         """
+        Not implemented
         """
         print self.osd_tree()
 
-
     def osd_tree(self):
         """
+        Return the tree of OSDs
         """
-        cmd = json.dumps({"prefix":"osd tree", "format":"json" })
-        ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+        cmd = json.dumps({"prefix": "osd tree", "format": "json"})
+        _, output, _ = self.cluster.mon_command(cmd, b'', timeout=6)
         log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
         for entry in json.loads(output)['nodes']:
-            print entry
-            if entry['id'] == self.id:
+            if entry['id'] == self.osd_id:
                 return entry
-        log.warn("ID {} not found".format(self.id))
+        log.warn("ID {} not found".format(self.osd_id))
         return {}
 
     def wait(self):
@@ -252,16 +270,16 @@ class OSDState(object):
             entry = self.osd_tree()
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
-                    log.info("osd.{} has no PGs".format(self.id))
+                    log.info("osd.{} has no PGs".format(self.osd_id))
                     return
                 else:
                     if entry['crush_weight'] != '0.0':
                         msg = "Weight is not 0.0"
                         log.error(msg)
                         return msg
-                    log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
+                    log.warn("osd.{} has {} PGs remaining".format(self.osd_id, entry['pgs']))
             else:
-                log.warn("osd.{} does not exist".format(self.id))
+                log.warn("osd.{} does not exist".format(self.osd_id))
                 return
             i += 1
             time.sleep(self.settings['delay'])
@@ -269,13 +287,13 @@ class OSDState(object):
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
 
-def down(id, **kwargs):
+
+def down(_id, **kwargs):
     """
     Set an OSD to down and wait until the status is down
     """
-    o = OSDState(id, **kwargs)
-    o.down()
-
+    osdstate = OSDState(_id, **kwargs)
+    osdstate.down()
 
 
 class OSDWeight(object):
@@ -283,13 +301,13 @@ class OSDWeight(object):
     Manage the setting and restoring of OSD crush weights
     """
 
-    def __init__(self, id, **kwargs):
+    def __init__(self, _id, **kwargs):
         """
         Initialize settings, connect to Ceph cluster
         """
-        self.id = id
+        self.osd_id = _id
         self.settings = {
-            'conf': "/etc/ceph/ceph.conf" ,
+            'conf': "/etc/ceph/ceph.conf",
             'filename': '/var/run/ceph/osd.{}-weight'.format(id),
             'timeout': 60,
             'keyring': '/etc/ceph/ceph.client.admin.keyring',
@@ -298,13 +316,14 @@ class OSDWeight(object):
         }
         self.settings.update(kwargs)
         log.debug("settings: {}".format(pprint.pformat(self.settings)))
-        #self.cluster=rados.Rados(conffile=self.settings['conf'])
-        self.cluster=rados.Rados(conffile=self.settings['conf'], conf=dict(keyring=self.settings['keyring']), name=self.settings['client'])
+        # self.cluster=rados.Rados(conffile=self.settings['conf'])
+        self.cluster = rados.Rados(conffile=self.settings['conf'],
+                                   conf=dict(keyring=self.settings['keyring']),
+                                   name=self.settings['client'])
         try:
             self.cluster.connect()
         except Exception as error:
             raise RuntimeError("connection error: {}".format(error))
-
 
     def save(self):
         """
@@ -318,7 +337,6 @@ class OSDWeight(object):
             with open(self.settings['filename'], 'w') as weightfile:
                 weightfile.write("{}\n".format(entry['crush_weight']))
 
-
     def restore(self):
         """
         Set weight to previous setting
@@ -326,32 +344,31 @@ class OSDWeight(object):
         if os.path.isfile(self.settings['filename']):
             with open(self.settings['filename']) as weightfile:
                 saved_weight = weightfile.read().rstrip('\n')
-                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.id))
+                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.osd_id))
                 self.reweight(saved_weight)
-
 
     def reweight(self, weight):
         """
         Set the weight for the OSD
         Note: haven't found the equivalent api call for reweight
         """
-        stdout = []
-        stderr = []
-        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.id, weight)
+        cmd = ("ceph --keyring={} --name={} osd crush reweight osd.{} "
+               "{}".format(self.settings['keyring'], self.settings['client'],
+                           self.osd_id, weight))
         return _run(cmd)
 
     def osd_df(self):
         """
         Retrieve df entry for an osd
         """
-        cmd = json.dumps({"prefix":"osd df", "format":"json" })
-        ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
-        #log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
+        cmd = json.dumps({"prefix": "osd df", "format": "json"})
+        _, output, _ = self.cluster.mon_command(cmd, b'', timeout=6)
+        # log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
         for entry in json.loads(output)['nodes']:
-            if entry['id'] == self.id:
+            if entry['id'] == self.osd_id:
                 log.debug(pprint.pformat(entry))
                 return entry
-        log.warn("ID {} not found".format(self.id))
+        log.warn("ID {} not found".format(self.osd_id))
         return {}
 
     def is_empty(self):
@@ -371,16 +388,16 @@ class OSDWeight(object):
             entry = self.osd_df()
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
-                    log.info("osd.{} has no PGs".format(self.id))
+                    log.info("osd.{} has no PGs".format(self.osd_id))
                     return ""
                 else:
-                    log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
+                    log.warn("osd.{} has {} PGs remaining".format(self.osd_id, entry['pgs']))
                     if last_pgs != entry['pgs']:
                         # Making progress, reset countdown
                         i = 0
                         last_pgs = entry['pgs']
             else:
-                msg = "osd.{} does not exist".format(self.id)
+                msg = "osd.{} does not exist".format(self.osd_id)
                 log.warn(msg)
                 return msg
             i += 1
@@ -388,6 +405,7 @@ class OSDWeight(object):
 
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
+
 
 def _settings(**kwargs):
     """
@@ -408,35 +426,38 @@ def _settings(**kwargs):
     return settings
 
 
-def zero_weight(id, wait=True, **kwargs):
+def zero_weight(_id, wait=True, **kwargs):
     """
     Set weight to zero and wait until PGs are moved
     """
     settings = _settings(**kwargs)
 
-    o = OSDWeight(id, **settings)
-    o.save()
-    rc, _stdout, _stderr = o.reweight('0.0')
-    if rc != 0:
+    osdweight = OSDWeight(_id, **settings)
+    osdweight.save()
+    _rc, _stdout, _stderr = osdweight.reweight('0.0')
+    if _rc != 0:
         return "Reweight failed"
     if wait:
-        return o.wait()
+        return osdweight.wait()
     else:
         return ""
 
-empty = salt.utils.alias_function(zero_weight, 'empty')
 
-def restore_weight(id, **kwargs):
+def restore_weight(_id, **kwargs):
     """
     Restore the previous setting for an OSD if possible
     """
     settings = _settings(**kwargs)
 
-    o = OSDWeight(id, **settings)
-    o.restore()
+    osdweight = OSDWeight(_id, **settings)
+    osdweight.restore()
     return True
 
+
 def _find_paths(device):
+    """
+    Return matching pathnames, special case NVMe devices
+    """
     if 'nvme' in device:
         pathnames = glob.glob("{}p[0-9]*".format(device))
     else:
@@ -460,6 +481,8 @@ def readlink(device, follow=True):
     log.debug(pprint.pformat(proc.stderr.read()))
     return result
 
+
+# pylint: disable=too-many-instance-attributes
 class OSDConfig(object):
     """
     Attributes:
@@ -478,16 +501,18 @@ class OSDConfig(object):
     * capacity
     """
 
+    # pylint: disable=invalid-name
     V1 = 'v1'
+    # pylint: disable=invalid-name
     V2 = 'v2'
     DEFAULT_FORMAT_FOR_V1 = 'filestore'
     DEFAULT_FORMAT_FOR_V2 = 'bluestore'
 
+    # pylint: disable=unused-argument
     def __init__(self, device, **kwargs):
         """
         Set attributes for an OSD
         """
-        filters = kwargs.get('filters', None)
         self.device = readlink(device)
         # top_level_identifiier
         self.tli = self._set_tli()
@@ -500,6 +525,7 @@ class OSDConfig(object):
         self.wal_size = self.set_wal_size()
         self.wal = self.set_wal()
         self.db_size = self.set_db_size()
+        # pylint: disable=invalid-name
         self.db = self.set_db()
         # default for encryption can be retrieved from the global pillar
         self.encryption = self.set_encryption()
@@ -511,12 +537,13 @@ class OSDConfig(object):
         Return the dictionary below ceph:storage:osds, if available
         """
         if ('ceph' in __pillar__ and
-           'storage' in __pillar__['ceph'] and
-           'osds' in __pillar__['ceph']['storage']):
+            'storage' in __pillar__['ceph'] and
+            'osds' in __pillar__['ceph']['storage']):
 
             return self._convert_tli(__pillar__['ceph']['storage']['osds'])
         return None
 
+    # pylint: disable=no-self-use
     def _convert_tli(self, osds):
         """
         Simplify names to short devices
@@ -526,7 +553,7 @@ class OSDConfig(object):
             short_osd = readlink(osd)
             result[short_osd] = {}
             for attr in osds[osd]:
-                if (attr == 'journal' or attr == 'wal' or attr == 'db'):
+                if attr == 'journal' or attr == 'wal' or attr == 'db':
                     result[short_osd][attr] = readlink(osds[osd][attr])
                 else:
                     result[short_osd][attr] = osds[osd][attr]
@@ -564,8 +591,9 @@ class OSDConfig(object):
         """
         Check disk is less than 10GB, useful in VM environments
         """
-        return self.size < 10000000000 # 10GB
+        return self.size < 10000000000  # 10GB
 
+    # pylint: disable=no-self-use
     def _config_version(self):
         """
         Return version based on structure
@@ -614,6 +642,7 @@ class OSDConfig(object):
                 log.info("No journal specified for {}".format(self.device))
         return default
 
+    # pylint: disable=no-self-use
     def _convert_data_journals(self, struct):
         """
         Create new structure with short device names
@@ -624,6 +653,7 @@ class OSDConfig(object):
                 result[readlink(osd)] = readlink(journal)
         return result
 
+    # pylint: disable=no-self-use
     def _check_existence(self, key, ident, device, default=None):
         """
         Check that key exists and return value
@@ -632,6 +662,7 @@ class OSDConfig(object):
             return ident[device][key]
         return default
 
+    # pylint: disable=no-self-use
     def set_journal_size(self, default=None):
         """
         Return journal size if defined.  Otherwise, return a size that is
@@ -641,7 +672,8 @@ class OSDConfig(object):
         if self._config_version() == OSDConfig.V1:
             return self._journal_default()
         if self._config_version() == OSDConfig.V2:
-            return self._check_existence('journal_size', self.tli, self.device, default=self._journal_default())
+            return self._check_existence('journal_size', self.tli, self.device,
+                                         default=self._journal_default())
 
     def _journal_default(self):
         """
@@ -653,7 +685,7 @@ class OSDConfig(object):
                 for disk in disks[__grains__['id']]:
                     # Check size of journal disk
                     if disk['Device File'] == self.journal:
-                        if int(disk['Bytes']) < 10000000000: # 10GB
+                        if int(disk['Bytes']) < 10000000000:  # 10GB
                             return "{}K".format(int(int(disk['Bytes']) * 0.0001))
                         else:
                             return "5242880K"
@@ -713,6 +745,7 @@ class OSDConfig(object):
                  'lockbox': 'FB3AABF9-D25F-47CC-BF5E-721D1816496B'}
         return types
 
+
 class OSDPartitions(object):
     """
     Manage the creation/deletion of partitions related to OSDs
@@ -726,7 +759,7 @@ class OSDPartitions(object):
         Initialize configuration, disks from mine
         """
         self.osd = config
-        #self.disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
+        # self.disks = __salt__['mine.get'](tgt=__grains__['id'], fun='cephdisks.list')
 
     def clean(self):
         """
@@ -738,8 +771,8 @@ class OSDPartitions(object):
         pathnames = _find_paths(self.osd.device)
         if pathnames:
             cmd = "sgdisk -Z --clear -g {}".format(self.osd.device)
-            rc, _stdout, _stderr = _run(cmd)
-            if rc != 0:
+            _rc, _stdout, _stderr = _run(cmd)
+            if _rc != 0:
                 raise RuntimeError("{} failed".format(cmd))
 
     def partition(self):
@@ -749,7 +782,7 @@ class OSDPartitions(object):
         if self.osd.disk_format == 'filestore':
             self._xfs_partitions(self.osd.device, self.osd.size)
         if self.osd.disk_format == 'bluestore':
-            self._bluestore_partitions(self.osd.device)
+            self._bluestore_partitions()
         return 0
 
     def _xfs_partitions(self, device, disk_size):
@@ -763,17 +796,21 @@ class OSDPartitions(object):
             if self.osd.journal_size:
                 if self.osd.journal == device:
                     # Create journal of journal_size, data as remainder
-                    self.create(self.osd.journal, [('journal', self.osd.journal_size), ('osd', None)])
+                    self.create(self.osd.journal, [('journal',
+                                                   self.osd.journal_size),
+                                                   ('osd', None)])
                 else:
                     # Create journal of journal_size on journal device
                     # and data partition on whole disk of device
-                    self.create(self.osd.journal, [('journal', self.osd.journal_size)])
+                    self.create(self.osd.journal, [('journal',
+                                                   self.osd.journal_size)])
                     self.create(self.osd.device, [('osd', None)])
             else:
                 if self.osd.journal == self.osd.device:
                     # Create journal, data as remainder
-                    self.create(self.osd.device, [('journal', self.osd.journal_size),
-                                                 ('osd', None)])
+                    self.create(self.osd.device, [('journal',
+                                                  self.osd.journal_size),
+                                                  ('osd', None)])
                 else:
                     # Create journal on journal device
                     # and data partition on whole disk of device
@@ -787,9 +824,9 @@ class OSDPartitions(object):
             elif self.osd.small:
                 # Create journal, data as remainder
                 self.create(self.osd.device, [('journal', self.osd.journal_size), ('osd', None)])
-                #FIXME: The calls in the conditionals are the same.
+                # FIXME: The calls in the conditionals are the same.
 
-
+    # pylint: disable=no-self-use
     def _double(self, size):
         """
         Double the value of numeral
@@ -799,7 +836,7 @@ class OSDPartitions(object):
         suffix = size[-1]
         return "{}{}".format(numeral * 2, suffix)
 
-
+    # pylint: disable=no-self-use
     def _halve(self, size):
         """
         Halve the value of numeral
@@ -809,7 +846,7 @@ class OSDPartitions(object):
         suffix = size[-1]
         return "{}{}".format(int(numeral / 2), suffix)
 
-    def _bluestore_partitions(self, device):
+    def _bluestore_partitions(self):
         """
         Create partitions when wal_size and/or db_size is specified
 
@@ -824,14 +861,16 @@ class OSDPartitions(object):
         When these get resolved, change the logic
         """
 
-        if ((self.osd.wal or self.osd.db) and self.osd.encryption):
-            log.warn("You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf")
+        if (self.osd.wal or self.osd.db) and self.osd.encryption:
+            log.warn(("You deploy encrypted WAL and/or DB on a dedicated "
+                      "device. Specifying sizes is now handled via your ceph.conf"))
             return
 
         if self.osd.wal and self.osd.db:
             if self.osd.wal_size:
                 if self.osd.wal == self.osd.device:
-                    log.warn("WAL size is unsupported for same device of {}".format(self.osd.device))
+                    log.warn(("WAL size is unsupported for same device of "
+                              "{}".format(self.osd.device)))
                 else:
                     # Create wal of wal_size on wal device
                     self.create(self.osd.wal, [('wal', self.osd.wal_size)])
@@ -853,32 +892,36 @@ class OSDPartitions(object):
             if self.osd.wal:
                 if self.osd.wal_size:
                     if self.osd.wal == self.osd.device:
-                        log.warn("WAL size is unsupported for same device of {}".format(self.osd.device))
+                        log.warn(("WAL size is unsupported for same device of "
+                                  "{}".format(self.osd.device)))
                     else:
                         log.warn("Setting db to same device {} as wal".format(self.osd.wal))
                         # Create wal of wal_size on wal device
                         # Create db on wal device
                         self.create(self.osd.wal, [('wal', self.osd.wal_size),
-                                                 ('db', self._halve(self.osd.wal_size))])
+                                                   ('db', self._halve(self.osd.wal_size))])
             else:
                 if self.osd.wal_size:
-                    log.warn("WAL size is unsupported for same device of {}".format(self.osd.device))
+                    log.warn(("WAL size is unsupported for same device of "
+                              "{}".format(self.osd.device)))
 
             if self.osd.db:
                 if self.osd.db_size:
                     if self.osd.db == self.osd.device:
-                        log.warn("DB size is unsupported for same device of {}".format(self.osd.device))
+                        log.warn(("DB size is unsupported for same device of "
+                                  "{}".format(self.osd.device)))
                     else:
                         log.warn("Setting wal to same device {} as db".format(self.osd.db))
                         # Create db of db_size on db device
                         # Create wal on db device
                         self.create(self.osd.db, [('wal', self._double(self.osd.db_size)),
-                                                ('db', self.osd.db_size)])
+                                                  ('db', self.osd.db_size)])
             else:
                 if self.osd.db_size:
-                    log.warn("DB size is unsupported for same device of {}".format(self.osd.device))
+                    log.warn(("DB size is unsupported for same device of "
+                              "{}".format(self.osd.device)))
 
-    def create(self, device, partitions):
+    def create(self, device, _partitions):
         """
         Create a partition
         """
@@ -886,14 +929,18 @@ class OSDPartitions(object):
         log.debug("last partition: {}".format(last_partition))
 
         index = 1
-        for partition_type, size in partitions:
+        for partition_type, size in _partitions:
             number = last_partition + index
             if size:
-                cmd = "/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} {}".format(number, size, number, self.osd.types[partition_type], device)
+                cmd = ("/usr/sbin/sgdisk -n {}:0:+{} -t {}:{} "
+                       "{}".format(number, size, number,
+                                   self.osd.types[partition_type], device))
             else:
-                cmd = "/usr/sbin/sgdisk -N {} -t {}:{} {}".format(number, number, self.osd.types[partition_type], device)
-            rc, _stdout, _stderr = _run(cmd)
-            if rc != 0:
+                cmd = ("/usr/sbin/sgdisk -N {} -t {}:{} "
+                       "{}".format(number, number,
+                                   self.osd.types[partition_type], device))
+            _rc, _stdout, _stderr = _run(cmd)
+            if _rc != 0:
                 raise RuntimeError("{} failed".format(cmd))
             log.info("partprobe disk")
             self._part_probe(device)
@@ -905,19 +952,21 @@ class OSDPartitions(object):
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
             if os.path.exists("{}{}".format(device, number)):
-                wipe_cmd = "dd if=/dev/zero of={}{} bs=4096 count=1 oflag=direct".format(device, number)
+                wipe_cmd = ("dd if=/dev/zero of={}{} bs=4096 count=1 "
+                            "oflag=direct".format(device, number))
                 _run(wipe_cmd)
             index += 1
 
     def _part_probe(self, device):
         """
+        Run partprobe until successful or timeout is reached
         """
         wait_time = 1
         retries = 5
         cmd = "/usr/sbin/partprobe {}".format(device)
-        for attempt in range(1, retries + 1):
-            rc, _stdout, _stderr = _run(cmd)
-            if rc == 0:
+        for _ in range(1, retries + 1):
+            _rc, _stdout, _stderr = _run(cmd)
+            if _rc == 0:
                 return
             time.sleep(wait_time)
         raise RuntimeError("{} failed".format(cmd))
@@ -929,18 +978,22 @@ class OSDPartitions(object):
         """
         pathnames = _find_paths(device)
         if pathnames:
-            partitions = sorted([re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int)
-            log.debug("partitions: {}".format(partitions))
-            last_part = partitions[-1]
+            _partitions = sorted([re.sub(r"{}p?".format(device), '', p)
+                                  for p in pathnames], key=int)
+            log.debug("partitions: {}".format(_partitions))
+            last_part = _partitions[-1]
             return int(last_part)
         return 0
 
+
 def partition(device):
     """
+    Create necessary partitions for defined sizes
     """
     config = OSDConfig(device)
     osdp = OSDPartitions(config)
     return osdp.partition()
+
 
 class OSDCommands(object):
     """
@@ -967,25 +1020,25 @@ class OSDCommands(object):
         """
         log.debug("format: {}".format(self.osd.disk_format))
         if self.osd.disk_format:
-              if self.osd.disk_format == 'filestore':
-                  if self.osd.journal and self.osd.journal != self.osd.device:
-                      # Journal on separate device
-                      return 1
-                  else:
-                      # Journal on same device
-                      return 2
-              if self.osd.disk_format == 'bluestore':
-                  return 1
+            if self.osd.disk_format == 'filestore':
+                if self.osd.journal and self.osd.journal != self.osd.device:
+                    # Journal on separate device
+                    return 1
+                else:
+                    # Journal on same device
+                    return 2
+            if self.osd.disk_format == 'bluestore':
+                return 1
         return self.highest_partition(self.osd.device, 'osd')
 
-    def is_partition(self, partition_type, device, partition):
+    def is_partition(self, partition_type, device, _partition):
         """
         Check partition type
         """
-        cmd = "/usr/sbin/sgdisk -i {} {}".format(partition, device)
-        rc, result, stderr = _run(cmd)
-        id = "Partition GUID code: {}".format(self.osd.types[partition_type])
-        return id in result
+        cmd = "/usr/sbin/sgdisk -i {} {}".format(_partition, device)
+        _, result, _ = _run(cmd)
+        _id = "Partition GUID code: {}".format(self.osd.types[partition_type])
+        return _id in result
 
     def highest_partition(self, device, partition_type):
         """
@@ -995,21 +1048,23 @@ class OSDCommands(object):
             log.debug("{} device: {}".format(partition_type, device))
             pathnames = _find_paths(device)
             # the to int -> key=int conversion fails here
-            partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int, reverse=True)
+            _partitions = sorted([re.sub(r"{}p?".format(device), '', p)
+                                  for p in pathnames], key=int, reverse=True)
             # best strategy? remove key=int and do checks before conversion ourselves?
-            log.debug("partitions: {}".format(partitions))
-            for partition in partitions:
-                log.debug("checking partition {} on device {}".format(partition, device))
+            log.debug("partitions: {}".format(_partitions))
+            for _partition in _partitions:
+                log.debug("checking partition {} on device {}".format(_partition, device))
                 # Not confusing at all - use digit for NVMe too
-                if self.is_partition(partition_type, device, partition):
-                    log.debug("found partition {} on device {}".format(partition, device))
+                if self.is_partition(partition_type, device, _partition):
+                    log.debug("found partition {} on device {}".format(_partition, device))
                     if 'nvme' in device:
-                        partition = "p{}".format(partition)
-                    return partition
+                        _partition = "p{}".format(_partition)
+                    return _partition
         self.error = "Partition type {} not found on {}".format(partition_type, device)
         log.error(self.error)
         return 0
 
+    # pylint: disable=no-self-use
     def _cluster_name(self):
         """
         Return the cluster name from the ceph namespace, original namespace
@@ -1021,6 +1076,7 @@ class OSDCommands(object):
             return __pillar__['cluster']
         return 'ceph'
 
+    # pylint: disable=no-self-use
     def _fsid(self):
         """
         Return the fsid from the ceph namespace, original namespace
@@ -1032,6 +1088,7 @@ class OSDCommands(object):
             return __pillar__['fsid']
         return '00000000-0000-0000-0000-000000000000'
 
+    # pylint: disable=no-self-use
     def is_partitioned(self, device):
         """
         Return whether the device is already partitioned
@@ -1051,9 +1108,17 @@ class OSDCommands(object):
         if self.is_partitioned(device):
             # Prepartitioned OSD
             if self.osd.journal:
-                args = "{}{} {}{}".format(device, self.highest_partition(device, 'osd'), self.osd.journal, self.highest_partition(self.osd.journal, 'journal'))
+                args = "{}{} {}{}".format(device,
+                                          self.highest_partition(device, 'osd'),
+                                          self.osd.journal,
+                                          self.highest_partition(self.osd.journal,
+                                                                 'journal'))
             else:
-                args = "{}{} {}{}".format(device, self.highest_partition(device, 'osd'), device, self.highest_partition(self.osd.device, 'journal'))
+                args = "{}{} {}{}".format(device,
+                                          self.highest_partition(device, 'osd'),
+                                          device,
+                                          self.highest_partition(self.osd.device,
+                                                                 'journal'))
         else:
             # Raw
             if self.osd.journal:
@@ -1077,29 +1142,30 @@ class OSDCommands(object):
 
             # WAL cornercase with sizes
             if self.osd.wal and self.osd.wal_size and self.osd.wal != self.osd.device:
-                partition = self.highest_partition(self.osd.wal, 'wal')
-                if partition:
-                    args += "--block.wal {}{} ".format(self.osd.wal, partition)
+                _partition = self.highest_partition(self.osd.wal, 'wal')
+                if _partition:
+                    args += "--block.wal {}{} ".format(self.osd.wal, _partition)
                 else:
                     args += "--block.wal {} ".format(self.osd.wal)
 
             # DB cornercase with sizes
             if self.osd.db and self.osd.db_size and self.osd.db != self.osd.device:
-                partition = self.highest_partition(self.osd.db, 'db')
-                if partition:
-                    args += "--block.db {}{} ".format(self.osd.db, partition)
+                _partition = self.highest_partition(self.osd.db, 'db')
+                if _partition:
+                    args += "--block.db {}{} ".format(self.osd.db, _partition)
                 else:
                     args += "--block.db {} ".format(self.osd.db)
 
-            # Generic case withouth sizes 
+            # Generic case withouth sizes
             if self.osd.wal and not (self.osd.wal_size or self.osd.db_size):
                 args += "--block.wal {} ".format(self.osd.wal)
             if self.osd.db and not (self.osd.wal_size or self.osd.db_size):
                 args += "--block.db {} ".format(self.osd.db)
 
         if self.osd.encryption and (self.osd.wal_size or self.osd.db_size):
-            log.warn(""" The --wal-size and --db-size options are not supported for encrypted OSDs, so
-                         the values you specified will be ignored. Please specify the WAL and DB sizes
+            log.warn(""" The --wal-size and --db-size options are not supported
+                         for encrypted OSDs, so the values you specified will
+                         be ignored. Please specify the WAL and DB sizes
                          via ceph.conf with:
                                             bluestore block db size = size
                                             bluestore block wal size = size """)
@@ -1110,8 +1176,8 @@ class OSDCommands(object):
             if self.osd.wal:
                 args += "--block.wal {} ".format(self.osd.wal)
 
-        # fails if the device is already partitioned but the partitionnumber is not 1
-        # should never be partitioned..
+        # fails if the device is already partitioned but the partitionnumber
+        # is not 1 should never be partitioned..
         if self.is_partitioned(self.osd.device):
             if 'nvme' in self.osd.device:
                 args += "{}p1".format(self.osd.device)
@@ -1159,11 +1225,12 @@ class OSDCommands(object):
             if not args:
                 log.error("Format is neither filestore nor bluestore.")
 
-            cmd += "--data-dev --journal-dev --cluster {} --cluster-uuid {} ".format(self._cluster_name(), self._fsid())
+            cmd += ("--data-dev --journal-dev --cluster {} --cluster-uuid "
+                    "{} ".format(self._cluster_name(), self._fsid()))
             cmd += args
 
         if self.error:
-           cmd = "/bin/false # {}".format(self.error)
+            cmd = "/bin/false # {}".format(self.error)
 
         log.info("prepare: {}".format(cmd))
         return cmd
@@ -1188,15 +1255,6 @@ class OSDCommands(object):
         log.info("activate: {}".format(cmd))
         return cmd
 
-    def detect(self, osd_id, pathname="/var/lib/ceph/osd"):
-        """
-        Return the osd type
-        """
-        filename = "{}/ceph-{}/type".format(pathname, osd_id)
-        if os.path.exists(filename):
-            with open(filename, 'r') as osd_type:
-                return osd_type.read().rstrip()
-
     def is_incorrect(self):
         """
         Check that an OSD is configured properly.  Compare formats, separate
@@ -1220,23 +1278,30 @@ class OSDCommands(object):
                 with open(filename, 'r') as osd_type:
                     osd_format = osd_type.read().rstrip()
                 if osd_format != self.osd.disk_format:
-                    log.info("OSD {} does not match format {}".format(pathname, self.osd.disk_format))
+                    log.info(("OSD {} does not match format "
+                              "{}".format(pathname, self.osd.disk_format)))
                     return True
 
             if self.osd.disk_format == 'filestore' and self.osd.journal:
-                result = self._check_device(pathname, 'journal', self.osd.journal, self.osd.journal_size)
+                result = self._check_device(pathname, 'journal',
+                                            self.osd.journal,
+                                            self.osd.journal_size)
                 if result:
                     return True
 
             if self.osd.disk_format == 'bluestore':
                 if self.osd.wal:
                     if os.path.exists("{}/block.wal".format(pathname)):
-                        result = self._check_device(pathname, 'block.wal', self.osd.wal, self.osd.wal_size)
+                        result = self._check_device(pathname, 'block.wal',
+                                                    self.osd.wal,
+                                                    self.osd.wal_size)
                         if result:
                             return True
                 if self.osd.db:
                     if os.path.exists("{}/block.db".format(pathname)):
-                        result = self._check_device(pathname, 'block.db', self.osd.db, self.osd.db_size)
+                        result = self._check_device(pathname, 'block.db',
+                                                    self.osd.db,
+                                                    self.osd.db_size)
                         if result:
                             return True
 
@@ -1244,14 +1309,15 @@ class OSDCommands(object):
 
     def _check_device(self, pathname, attr, device, size):
         """
+        Check that the device and size match the configuration
         """
         devicename = readlink("{}/{}".format(pathname, attr))
-        if device and  not devicename.startswith(device):
+        if device and not devicename.startswith(device):
             log.info("OSD {} {} does not match {}".format(attr, devicename, device))
             return True
         if size:
             cmd = "blockdev --getsize64 {}".format(devicename)
-            rc, _stdout, _stderr = _run(cmd)
+            _, _stdout, _stderr = _run(cmd)
             bsize = int(_stdout)
             _bytes = self._convert(size)
             if _bytes != bsize:
@@ -1260,33 +1326,47 @@ class OSDCommands(object):
 
     def _convert(self, size):
         """
+        Expand size to bytes
         """
-        suffixes = { 'K': 2**10, 'M': 2**20, 'G': 2**30, 'T': 2**40 }
+        suffixes = {'K': 2**10, 'M': 2**20, 'G': 2**30, 'T': 2**40}
         suffix = size[-1:].upper()
         bsize = int(size[:-1]) * suffixes[suffix]
         log.debug("suffix: {} bsize: {}".format(suffix, bsize))
         return bsize
 
-def split_partition(partition):
+
+def _detect(osd_id, pathname="/var/lib/ceph/osd"):
+    """
+    Return the osd type
+    """
+    filename = "{}/ceph-{}/type".format(pathname, osd_id)
+    if os.path.exists(filename):
+        with open(filename, 'r') as osd_type:
+            return osd_type.read().rstrip()
+
+
+def split_partition(_partition):
     """
     Return the device and partition
     """
-    part = readlink(partition)
-    #if os.path.exists(part):
+    part = readlink(_partition)
+    # if os.path.exists(part):
     log.debug("splitting partition {}".format(part))
-    m = re.match("(.+\D)(\d+)", part)
-    disk = m.group(1)
+    match = re.match(r"(.+\D)(\d+)", part)
+    disk = match.group(1)
     if 'nvme' in disk:
         disk = disk[:-1]
         log.debug("Truncating p {}".format(disk))
-    return disk, m.group(2)
-    #return None, None
+    return disk, match.group(2)
+    # return None, None
+
 
 class OSDRemove(object):
     """
     Manage the graceful removal of an OSD
     """
 
+    # pylint: disable=unused-argument
     def __init__(self, osd_id, device, weight, grains, force=False, **kwargs):
         """
         Initialize settings
@@ -1302,19 +1382,20 @@ class OSDRemove(object):
         """
         Return queried partitions or fallback to grains
         """
-        partitions = device.partitions(self.osd_id)
-        if not partitions:
+        _partitions = device.partitions(self.osd_id)
+        if not _partitions:
             log.debug("grains: \n{}".format(pprint.pformat(__grains__['ceph'])))
             if str(self.osd_id) in __grains__['ceph']:
-                partitions = __grains__['ceph'][str(self.osd_id)]['partitions']
+                _partitions = __grains__['ceph'][str(self.osd_id)]['partitions']
             else:
                 log.error("Id {} missing from grains".format(self.osd_id))
                 return None
-        log.debug("partitions: \n{}".format(pprint.pformat(partitions)))
-        return partitions
+        log.debug("partitions: \n{}".format(pprint.pformat(_partitions)))
+        return _partitions
 
     def remove(self):
         """
+        Wrapper for removing an OSD
         """
         if not self.partitions:
             msg = "OSD {} is not present on minion {}".format(self.osd_id, __grains__['id'])
@@ -1326,27 +1407,28 @@ class OSDRemove(object):
         else:
             self.empty()
 
-        #Terminate
+        # Terminate
         self.terminate()
 
-        #Unmount filesystems
+        # Unmount filesystems
         result = self.unmount()
         if result:
             return result
 
-        #Wipe partitions
+        # Wipe partitions
         self.wipe()
 
-        #Destroy partitions
+        # Destroy partitions
         self.destroy()
         return ""
 
     def empty(self):
         """
+        Wait until all PGs evacuate an OSD
         """
         self._weight.save()
-        rc, _stdout, _stderr = self._weight.reweight('0.0')
-        if rc != 0:
+        _rc, _stdout, _stderr = self._weight.reweight('0.0')
+        if _rc != 0:
             msg = "Reweight failed"
             log.error(msg)
             return msg
@@ -1363,10 +1445,10 @@ class OSDRemove(object):
         # How long with this hang on a broken OSD
         cmd = "systemctl stop ceph-osd@{}".format(self.osd_id)
         _run(cmd)
-        cmd = "pkill -f ceph-osd.*{}\ --".format(self.osd_id)
+        cmd = r"pkill -f ceph-osd.*{}\ --".format(self.osd_id)
         _run(cmd)
         time.sleep(1)
-        cmd = "pkill -9 -f ceph-osd.*{}\ --".format(self.osd_id)
+        cmd = r"pkill -9 -f ceph-osd.*{}\ --".format(self.osd_id)
         _run(cmd)
         time.sleep(1)
         return ""
@@ -1385,9 +1467,9 @@ class OSDRemove(object):
                     mount = entry[0]
                 if mount in mounted:
                     cmd = "umount {}".format(mount)
-                    rc, _stdout, _stderr = _run(cmd)
-                    log.debug("returncode: {}".format(rc))
-                    if rc != 0:
+                    _rc, _stdout, _stderr = _run(cmd)
+                    log.debug("returncode: {}".format(_rc))
+                    if _rc != 0:
                         msg = "Unmount failed - check for processes on {}".format(entry[0])
                         log.error(msg)
                         return msg
@@ -1402,21 +1484,21 @@ class OSDRemove(object):
         """
         Find the mount points for the OSD and lockbox.
         """
-        devices = []
+        _devices = []
         for attr in ['osd', 'lockbox']:
             if attr in self.partitions:
-                devices.append(readlink(self.partitions[attr]))
-        log.debug("mounted: {}".format(devices))
-        return devices
+                _devices.append(readlink(self.partitions[attr]))
+        log.debug("mounted: {}".format(_devices))
+        return _devices
 
     def wipe(self):
         """
         Erase the beginning of any filesystems
         """
         if self.partitions:
-            for osd_type, partition in self.partitions.iteritems():
-                if os.path.exists(partition):
-                    cmd = "dd if=/dev/zero of={} bs=4096 count=1 oflag=direct".format(partition)
+            for _, _partition in self.partitions.iteritems():
+                if os.path.exists(_partition):
+                    cmd = "dd if=/dev/zero of={} bs=4096 count=1 oflag=direct".format(_partition)
                     _run(cmd)
         else:
             msg = "Nothing to wipe - no partitions available"
@@ -1428,6 +1510,7 @@ class OSDRemove(object):
         """
         Destroy the osd disk and any partitions on other disks
         """
+        # pylint: disable=attribute-defined-outside-init
         self.osd_disk = self._osd_disk()
         self._delete_partitions()
         self._wipe_gpt_backups()
@@ -1437,16 +1520,18 @@ class OSDRemove(object):
 
     def _osd_disk(self):
         """
+        Determine the data disk of an OSD
         """
         if 'lockbox' in self.partitions:
-            partition = self.partitions['lockbox']
+            _partition = self.partitions['lockbox']
         else:
-            partition = self.partitions['osd']
-        disk, partition = split_partition(partition)
+            _partition = self.partitions['osd']
+        disk, _ = split_partition(_partition)
         return disk
 
     def _delete_partitions(self):
         """
+        Delete the partitions
         """
         for attr in self.partitions:
             log.debug("Checking attr {}".format(attr))
@@ -1467,45 +1552,52 @@ class OSDRemove(object):
                 if self.osd_disk and self.osd_disk in short_name:
                     log.info("No need to delete {}".format(short_name))
                 else:
-                    disk, partition = split_partition(self.partitions[attr])
+                    disk, _partition = split_partition(self.partitions[attr])
                     if disk:
-                        log.debug("disk: {} partition: {}".format(disk, partition))
-                        cmd = "sgdisk -d {} {}".format(partition, disk)
+                        log.debug("disk: {} partition: {}".format(disk, _partition))
+                        cmd = "sgdisk -d {} {}".format(_partition, disk)
                         _run(cmd)
             else:
                 log.error("Partition {} does not exist".format(short_name))
 
     def _wipe_gpt_backups(self):
         """
+        Wipe the backup GPT partitions
         """
         if self.osd_disk and os.path.exists(self.osd_disk):
             cmd = "blockdev --getsz {}".format(self.osd_disk)
-            rc, _stdout, _stderr = _run(cmd)
+            _, _stdout, _stderr = _run(cmd)
             end_of_disk = int(_stdout)
             seek_position = int(end_of_disk/4096 - 33)
-            cmd = "dd if=/dev/zero of={} bs=4096 count=33 seek={} oflag=direct".format(self.osd_disk, seek_position)
+            cmd = ("dd if=/dev/zero of={} bs=4096 count=33 seek={} "
+                   "oflag=direct".format(self.osd_disk, seek_position))
             _run(cmd)
             return ""
 
     def _delete_osd(self):
         """
+        Erase the data disk
         """
         if self.osd_disk and os.path.exists(self.osd_disk):
             cmd = "sgdisk -Z --clear -g {}".format(self.osd_disk)
-            rc, _stdout, _stderr = _run(cmd)
-            if rc != 0:
+            _rc, _stdout, _stderr = _run(cmd)
+            if _rc != 0:
                 raise RuntimeError("{} failed".format(cmd))
 
+    # pylint: disable=no-self-use
     def _settle(self):
         """
+        Wait for the OS to update
         """
         for cmd in ['udevadm settle --timeout=20',
                     'partprobe',
                     'udevadm settle --timeout=20']:
             _run(cmd)
 
+
 def remove(osd_id, **kwargs):
     """
+    Remove an OSD
     """
     settings = _settings(**kwargs)
 
@@ -1519,44 +1611,55 @@ def remove(osd_id, **kwargs):
     osdr = OSDRemove(osd_id, osdd, osdw, osdg, **kwargs)
     return osdr.remove()
 
+
 def is_empty(osd_id, **kwargs):
     """
+    Check whether an OSD has an PGs
     """
     settings = _settings(**kwargs)
-    osdd = OSDDevices()
+    OSDDevices()  # verify that this call is needed
     osdw = OSDWeight(osd_id, **settings)
     return osdw.is_empty()
 
+
 def terminate(osd_id):
     """
+    Stop OSD process
     """
     osdd = OSDDevices()
     osdr = OSDRemove(osd_id, osdd, None, None)
     return osdr.terminate()
 
+
 def unmount(osd_id):
     """
+    Unmount OSD filesystems
     """
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
     osdr = OSDRemove(osd_id, osdd, None, osdg)
     return osdr.unmount()
 
+
 def wipe(osd_id):
     """
+    Wipe the data on the partitions
     """
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
     osdr = OSDRemove(osd_id, osdd, None, osdg)
     return osdr.wipe()
 
+
 def destroy(osd_id):
     """
+    Remove the OSD partitions
     """
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
     osdr = OSDRemove(osd_id, osdd, None, osdg)
     return osdr.destroy()
+
 
 class OSDDevices(object):
     """
@@ -1573,8 +1676,9 @@ class OSDDevices(object):
         """
         Returns the partitions of the OSD
         """
+        # pylint: disable=attribute-defined-outside-init
         self.osd_id = osd_id
-        partitions = {}
+        _partitions = {}
         mount_dir = "{}/ceph-{}".format(self.pathname, self.osd_id)
         lockbox_dir = self._lockbox_dir()
         log.info("Checking /proc/mounts for {}".format(mount_dir))
@@ -1583,18 +1687,21 @@ class OSDDevices(object):
                 entry = line.split()
                 if entry[1] == mount_dir:
                     log.info("osd: {}".format(line))
-                    partitions['osd'] = self._uuid_device(entry[0])
+                    _partitions['osd'] = self._uuid_device(entry[0])
                 if entry[1] == lockbox_dir:
                     log.info("lockbox: {}".format(line))
-                    partitions['lockbox'] = self._uuid_device(entry[0])
+                    _partitions['lockbox'] = self._uuid_device(entry[0])
 
         for device_type in ['journal', 'block', 'block.db', 'block.wal', 'block_dmcrypt']:
             result = self._uuid_device("{}/{}".format(mount_dir, device_type))
             if result:
-                partitions[device_type] = result
-        return partitions
+                _partitions[device_type] = result
+        return _partitions
 
     def _lockbox_dir(self):
+        """
+        Returns lockbox pathname
+        """
         return "{}-lockbox/{}".format(self.pathname, self.osd_fsid(self.osd_id))
 
     def osd_fsid(self, osd_id):
@@ -1609,14 +1716,16 @@ class OSDDevices(object):
         else:
             log.error("file {} is missing".format(filename))
 
+    # pylint: disable=no-self-use
     def _uuid_device(self, device, pathname="/dev/disk/by-id"):
         """
         Return the uuid device, last one if multiple are matched
         """
         if os.path.exists(device):
             if os.path.exists(pathname):
-                cmd = "find -L {} -samefile {} \( -name ata* -o -name nvme* \)".format(pathname, device)
-                rc, _stdout, _stderr = _run(cmd)
+                cmd = (r"find -L {} -samefile {} \( -name ata* -o "
+                       r"-name nvme* \)".format(pathname, device))
+                _, _stdout, _stderr = _run(cmd)
                 if _stdout:
                     return _stdout.split()[-1]
                 else:
@@ -1624,6 +1733,8 @@ class OSDDevices(object):
             else:
                 return readlink(device)
 
+
+# pylint: disable=too-few-public-methods
 class OSDGrains(object):
     """
     Manage caching the device names for all OSDs.
@@ -1646,16 +1757,15 @@ class OSDGrains(object):
         """
         Save the OSD partitions into the grains
         """
-        ids = [ path.split('-')[1] for path in glob.glob("/var/lib/ceph/osd/*") if '-' in path ]
+        _ids = [path.split('-')[1] for path in glob.glob("/var/lib/ceph/osd/*") if '-' in path]
         storage = {}
-        for osd_id in ids:
+        for osd_id in _ids:
             if self.partitions(osd_id):
                 storage[osd_id] = {}
                 storage[osd_id]['partitions'] = self.partitions(osd_id)
                 storage[osd_id]['fsid'] = self.osd_fsid(osd_id)
                 log.debug("osd {}: {}".format(osd_id, pprint.pformat(storage[osd_id])))
         self._grains(storage)
-
 
     def _grains(self, storage, filename="/etc/salt/grains"):
         """
@@ -1671,6 +1781,7 @@ class OSDGrains(object):
             content['ceph'] = storage
             self._update_grains(content)
 
+    # pylint: disable=no-self-use
     def _update_grains(self, content, filename="/etc/salt/grains"):
         """
         Update the yaml file without destroying other content
@@ -1688,6 +1799,7 @@ class OSDGrains(object):
         log.info("Syncing grains")
         __salt__['saltutil.sync_grains']()
 
+
 def is_partitioned(device):
     """
     Check if device is partitioned
@@ -1695,6 +1807,7 @@ def is_partitioned(device):
     config = OSDConfig(device)
     osdc = OSDCommands(config)
     return osdc.is_partitioned(device)
+
 
 def deploy():
     """
@@ -1731,30 +1844,33 @@ def deploy():
             _run(osdc.prepare())
             _run(osdc.activate())
 
+
 def redeploy(simultaneous=False):
     """
+    Empty all PGs in parallel initially if necessary.  Then remove and
+    recreate each OSD that does not match its configuration.
     """
     if simultaneous:
         for _id in __grains__['ceph']:
-            partition = _partition(_id)
-            log.info("Partition: {}".format(partition))
-            disk, part = split_partition(partition)
+            _part = _partition(_id)
+            log.info("Partition: {}".format(_part))
+            disk, _ = split_partition(_part)
             log.info("ID: {}".format(_id))
             log.info("Disk: {}".format(disk))
             if is_incorrect(disk):
                 zero_weight(_id, wait=False)
 
     for _id in __grains__['ceph']:
-        partition = _partition(_id)
-        #if 'lockbox' in __grains__['ceph'][_id]['partitions']:
-        #    partition = __grains__['ceph'][_id]['partitions']['lockbox']
-        #else:
-        #    partition = __grains__['ceph'][_id]['partitions']['osd']
-        log.info("Partition: {}".format(partition))
-        disk, part = split_partition(partition)
+        _part = _partition(_id)
+        # if 'lockbox' in __grains__['ceph'][_id]['partitions']:
+        #     partition = __grains__['ceph'][_id]['partitions']['lockbox']
+        # else:
+        #     partition = __grains__['ceph'][_id]['partitions']['osd']
+        log.info("Partition: {}".format(_part))
+        disk, _ = split_partition(_part)
         log.info("ID: {}".format(_id))
         log.info("Disk: {}".format(disk))
-        if not os.path.exists(partition) or is_incorrect(disk):
+        if not os.path.exists(_part) or is_incorrect(disk):
             remove(_id)
             config = OSDConfig(disk)
             osdp = OSDPartitions(config)
@@ -1762,15 +1878,18 @@ def redeploy(simultaneous=False):
             osdc = OSDCommands(config)
             _run(osdc.prepare())
             _run(osdc.activate())
-          # not is_prepared(disk)):
+            # not is_prepared(disk)):
+
 
 def _partition(osd_id):
     """
+    Return the recorded partitions from the grains
     """
     if 'lockbox' in __grains__['ceph'][osd_id]['partitions']:
         return __grains__['ceph'][osd_id]['partitions']['lockbox']
     else:
         return __grains__['ceph'][osd_id]['partitions']['osd']
+
 
 def is_prepared(device):
     """
@@ -1786,17 +1905,15 @@ def is_prepared(device):
     if osdc.highest_partition(readlink(device), 'lockbox') != 0:
         log.debug("Found encrypted OSD {}".format(device))
         return True
-    partition = osdc.highest_partition(readlink(device), 'osd')
-    if partition == 0:
+    _partition = osdc.highest_partition(readlink(device), 'osd')
+    if _partition == 0:
         log.debug("Do not know which partition to check on {}".format(device))
         return False
-    log.debug("Checking partition {} on device {}".format(partition, device))
-    if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
-        return True
-    else:
-        return False
+    log.debug("Checking partition {} on device {}".format(_partition, device))
+    return osdc.is_partition('osd', config.device, _partition) and _fsck(config.device, _partition)
 
-def _fsck(device, partition):
+
+def _fsck(device, _partition):
     """
     Check filesystem on partition
 
@@ -1806,8 +1923,8 @@ def _fsck(device, partition):
     prefix = ''
     if 'nvme' in device:
         prefix = 'p'
-    #cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
-    cmd = "/usr/sbin/xfs_admin -u {}{}{}".format(device, prefix, partition)
+    # cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
+    cmd = "/usr/sbin/xfs_admin -u {}{}{}".format(device, prefix, _partition)
     log.info(cmd)
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     proc.wait()
@@ -1816,20 +1933,22 @@ def _fsck(device, partition):
     log.debug("xfs_admin: {}".format(proc.returncode))
     return proc.returncode == 0
 
+
 def is_activated(device):
     """
     Check if the device has already been activated.  Return shell command.
     """
     config = OSDConfig(device)
     osdc = OSDCommands(config)
-    partition = osdc.highest_partition(readlink(device), 'osd')
-    pathname = "{}{}".format(config.device, partition)
+    _partition = osdc.highest_partition(readlink(device), 'osd')
+    pathname = "{}{}".format(config.device, _partition)
     log.info("Checking /proc/mounts for {}".format(pathname))
     with open("/proc/mounts", "r") as mounts:
         for line in mounts:
             if line.startswith(pathname):
                 return "/bin/true"
     return "/bin/false"
+
 
 def prepare(device):
     """
@@ -1843,6 +1962,7 @@ def prepare(device):
     osdc = OSDCommands(config)
     return osdc.prepare()
 
+
 def activate(device):
     """
     Return ceph-disk command to activate OSD.
@@ -1851,25 +1971,30 @@ def activate(device):
     osdc = OSDCommands(config)
     return osdc.activate()
 
+
 def detect(osd_id):
     """
+    Returns OSD type (e.g. Bluestore or Filestore)
     """
-    config = OSDConfig(device)
-    osdc = OSDCommands(config)
-    return osdc.detect(osd_id)
+    return _detect(osd_id)
+
 
 def is_incorrect(device):
     """
+    Returns if the OSD does not match the desired configuration
     """
     config = OSDConfig(device)
     osdc = OSDCommands(config)
     return osdc.is_incorrect()
 
+
 def partitions(osd_id):
     """
+    List the related partitions to an OSD
     """
     osdd = OSDDevices()
     return osdd.partitions(osd_id)
+
 
 def retain():
     """
@@ -1878,6 +2003,7 @@ def retain():
     osdd = OSDDevices()
     osdg = OSDGrains(osdd)
     return osdg.retain()
+
 
 def report(failhard=False):
     """
@@ -1890,19 +2016,18 @@ def report(failhard=False):
     active = []
     unmounted = []
     for _id in __grains__['ceph']:
-        partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
-        disk, part = split_partition(partition)
+        _partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
+        disk, _ = split_partition(_partition)
         active.append(disk)
         log.debug("checking /var/lib/ceph/osd/ceph-{}/fsid".format(_id))
         if not os.path.exists("/var/lib/ceph/osd/ceph-{}/fsid".format(_id)):
             unmounted.append(disk)
         if 'lockbox' in __grains__['ceph'][_id]['partitions']:
-            partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
-            disk, part = split_partition(partition)
+            _partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
+            disk, _ = split_partition(_partition)
             active.append(disk)
 
     log.debug("active: {}".format(active))
-
 
     if 'ceph' in __pillar__:
         unconfigured = __pillar__['ceph']['storage']['osds'].keys()
@@ -1921,8 +2046,8 @@ def report(failhard=False):
 
     if 'storage' in __pillar__:
         unconfigured = __pillar__['storage']['osds']
-        for dj in __pillar__['storage']['data+journals']:
-            unconfigured.append(*dj.keys())
+        for _dj in __pillar__['storage']['data+journals']:
+            unconfigured.append(*_dj.keys())
         log.info("unconfigured: {}".format(unconfigured))
         changed = list(unconfigured)
         osds = list(unconfigured)
@@ -1954,5 +2079,5 @@ def report(failhard=False):
 
 __func_alias__ = {
                 'list_': 'list',
+                'empty': 'zero_weight',
                 }
-

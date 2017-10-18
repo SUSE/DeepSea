@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+Intervention into special conditions during package management
+"""
+from __future__ import absolute_import
 from subprocess import Popen, PIPE
 from platform import linux_distribution
 import logging
@@ -6,12 +11,12 @@ import os
 log = logging.getLogger(__name__)
 
 
+# pylint: disable=too-few-public-methods
 class PackageManager(object):
 
     """
-    That is not the native salt module and is not meant to
-    replace it.
-    This module was created to react on the host package 
+    That is not the native salt module and is not meant to replace it.
+    This module was created to react on the host package
     manager's reboot advice, rebooting if required.
     """
 
@@ -23,9 +28,11 @@ class PackageManager(object):
         self.platform = linux_distribution()[0].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
+            # pylint: disable=invalid-name
             self.pm = Zypper(**kwargs)
         elif "ubuntu" in self.platform or "debian" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
+            # pylint: disable=invalid-name,redefined-variable-type
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
@@ -46,9 +53,13 @@ class PackageManager(object):
 
 
 class Apt(PackageManager):
+    """
+    Apt related functions
+    """
 
     VERSION = 0.1
 
+    # pylint: disable=super-init-not-called
     def __init__(self, **kwargs):
         """
         Instead of reinitializing __init__ from super,
@@ -70,9 +81,10 @@ class Apt(PackageManager):
         self._refresh()
         cmd = "/usr/lib/update-notifier/apt-check"
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        # pylint: disable=unused-variable
         stdout, stderr = proc.communicate()
-        for cn in stderr.split(";"):
-            if int(cn) > 0:
+        for cn_err in stderr.split(";"):
+            if int(cn_err) > 0:
                 log.info('Update Needed')
                 return True
             log.info('No Update Needed')
@@ -111,7 +123,7 @@ class Apt(PackageManager):
                 if os.path.isfile('/var/run/reboot-required'):
                     self._reboot()
             elif proc.returncode != 0:
-                raise StandardError("Apt exited with non-0 returncode")
+                raise Exception("Apt exited with non-0 returncode")
         else:
             log.info('System up to date')
 
@@ -145,6 +157,7 @@ class Zypper(PackageManager):
 
     VERSION = 0.1
 
+    # pylint: disable=super-init-not-called
     def __init__(self, **kwargs):
         """
         Instead of reinitializing __init__ from super,
@@ -176,6 +189,7 @@ class Zypper(PackageManager):
             log.debug('Executing {}'.format(cmd))
             return False
 
+    # pylint: disable=no-self-use
     def _upgrades_needed(self):
         """
         In the upgrade path, always perform a `zypper dup`.  `zypper dup` has no equivalent
@@ -222,26 +236,26 @@ class Zypper(PackageManager):
         return False
 
     def _check_for_reboots(self, returncode):
+        """
+        zypper up doesn't return the necessary exitcodes.
+        zypper patch does.
+        zypper patch only accepts repos that are from official repos
+        zypper up processes all repos.
+
+        In a environment where you simply don't have shiny and signed repos
+        like in a development environment we can't rely on a returncode
+        driven rebooting.
+
+        => Keep checks for kernel updates in /srv/salt/ceph/stage/prep.sls until
+           a better solution is found.
+        """
         if int(returncode) == 102:
-            """
-            zypper up doesn't return the necessary exitcodes.
-            zypper patch does.
-            zypper patch only accepts repos that are from official repos
-            zypper up processes all repos.
-
-            In a environment where you simply don't have shiny and signed repos
-            like in a development environment we can't rely on a returncode
-            driven rebooting.
-
-            => Keep checks for kernel updates in /srv/salt/ceph/stage/prep.sls until
-               a better solution is found.
-            """
             self._reboot()
         if int(returncode) > 0 and int(returncode) < 100:
             if int(returncode) in self.RETCODES:
                 log.debug("Zypper Error: {}".format(self.RETCODES[returncode]))
             log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
-            raise StandardError('Zypper failed with code: {}. Look at the logs'.format(returncode))
+            raise Exception('Zypper failed with code: {}. Look at the logs'.format(returncode))
 
     def _handle(self, strat='up'):
         """
@@ -282,6 +296,9 @@ class Zypper(PackageManager):
             log.info("No updates available.")
 
     def _migrate(self):
+        """
+        Handle zypper migration
+        """
         # There is no dryrun
         strategy_flags = ['--auto-agree-with-licenses', '--replacefiles', '--allow-vendor-change']
         # Passing allow-vendor-change because the issue you get when not using it
@@ -302,24 +319,41 @@ class Zypper(PackageManager):
         self._check_for_reboots(proc.returncode)
 
 
+# pylint: disable=invalid-name
 def up(**kwargs):
+    """
+    Updates
+    """
     strat = up.__name__
     obj = PackageManager(**kwargs)
+    # pylint: disable=protected-access
     obj.pm._handle(strat=strat)
 
 
 def dup(**kwargs):
+    """
+    Distribution updates
+    """
     strat = dup.__name__
     obj = PackageManager(**kwargs)
+    # pylint: disable=protected-access
     obj.pm._handle(strat=strat)
 
 
 def patch(**kwargs):
+    """
+    Patches
+    """
     strat = patch.__name__
     obj = PackageManager(**kwargs)
+    # pylint: disable=protected-access
     obj.pm._handle(strat=strat)
 
 
 def migrate(**kwargs):
+    """
+    Migrations
+    """
     pm = Zypper(**kwargs)
+    # pylint: disable=protected-access
     pm._migrate()

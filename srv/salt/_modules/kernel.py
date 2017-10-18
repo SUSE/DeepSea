@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from subprocess import call, Popen, PIPE
-import salt.client
-import logging
-import re
-import os
-
-log = logging.getLogger(__name__)
-
 """
 Some distributions include multiple kernels and may default to a minimal
 kernel in some cases.  Some Ceph services rely on  kernel modules that will
@@ -29,6 +20,15 @@ example,
                 - kernel-default-base
 
 """
+
+from __future__ import absolute_import
+from subprocess import Popen, PIPE
+import logging
+import re
+import os
+import salt.client
+
+log = logging.getLogger(__name__)
 
 
 def replace(**kwargs):
@@ -77,6 +77,7 @@ def _kernel_pkg():
         return package
     return
 
+
 def _boot_image(contents):
     """
     Return the kernel pathname parsed from the supplied string
@@ -89,6 +90,7 @@ def _boot_image(contents):
         log.error("BOOT_IMAGE missing")
     return boot_image
 
+
 def _query_command(filename):
     """
     Determine the query command based on the package binaries.  Add others
@@ -96,9 +98,8 @@ def _query_command(filename):
     """
     if filename:
         if os.path.isfile('/bin/rpm'):
-            return [ '/bin/rpm', '-qf', filename ]
+            return ['/bin/rpm', '-qf', filename]
         if os.path.isfile('/usr/bin/dpkg'):
-            return [ '/usr/bin/dpkg', '--search', filename ]
+            return ['/usr/bin/dpkg', '--search', filename]
     log.error("Neither rpm nor dpkg found")
     return
-

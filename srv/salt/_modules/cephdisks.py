@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=fixme,modernize-parse-error
+"""
+Operations for finding blank drives or Ceph disks
+"""
 
 import os
 import re
@@ -9,8 +13,10 @@ import logging
 
 log = logging.getLogger(__name__)
 
-VERSION=0.2
+VERSION = 0.2
 
+
+# pylint: disable=too-few-public-methods
 class HardwareDetections(object):
     """
     Custom Salt module to detect suitable disks for the ceph deployment
@@ -33,6 +39,7 @@ class HardwareDetections(object):
         self.hw_raid_name = kwargs.get('raid_controller_name', None)
         self.software_raid = kwargs.get('sw_raid', None)
 
+    # pylint: disable=no-self-use
     def _is_removable(self, base):
         """
         Ask the kernel if device is a removable
@@ -43,11 +50,12 @@ class HardwareDetections(object):
             bool: True if is removable
         """
         filename = base + "/removable"
-        with open(filename, 'r') as fd:
-            removable = fd.readline().rstrip('\n')
-        if (removable == "1"):
+        with open(filename, 'r') as _fd:
+            removable = _fd.readline().rstrip('\n')
+        if removable == "1":
             return True
 
+    # pylint: disable=no-self-use
     def _is_rotational(self, base):
         """
         Ask the kernel for the disk's rotational value
@@ -58,9 +66,9 @@ class HardwareDetections(object):
             str: 1 if rotational 0 if nonrotational
         """
         filename = base + "/queue/rotational"
-        with open(filename, 'r') as fd:
-            rotational = fd.readline().rstrip('\n')
-        if (rotational == "1"):
+        with open(filename, 'r') as _fd:
+            rotational = _fd.readline().rstrip('\n')
+        if rotational == "1":
             return rotational
         else:
             return "0"
@@ -79,14 +87,12 @@ class HardwareDetections(object):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
             if device in line:
-                m = re.match('\[(.*?)\]', line)
-                if len(m.group(1).split(":")) >= 2:
+                match = re.match(r'\[(.*?)\]', line)
+                if len(match.group(1).split(":")) >= 2:
                     # try to be less stupid here
-                    return m.group(1).split(":")[-2]
-                    """
-                    is [0:0:ID:0] a fixed format?
-                    check on other machines
-                    """
+                    return match.group(1).split(":")[-2]
+                    # is [0:0:ID:0] a fixed format?
+                    # check on other machines
                 else:
                     log.warning("Could not retrieve bus_id for {}").format(device)
                     return None
@@ -105,7 +111,8 @@ class HardwareDetections(object):
         smartctl_path = self._which('smartctl')
         bus_id = self._return_device_bus_id(device)
         if not bus_id:
-            log.warning('Could not find bus_id for {}. Falling back to legacy detection mode'.format(device))
+            log.warning(('Could not find bus_id for {}. Falling back to legacy '
+                         'detection mode'.format(device)))
             return self._is_rotational(base)
         try:
             cmd = "{} -i /dev/{} -d {},{}".format(smartctl_path,
@@ -121,16 +128,20 @@ class HardwareDetections(object):
                 # ADD PARSING HERE TO DETECT FAILURE
                 if "A mandatory SMART command failed" in line:
                     log.warn("Something went wrong during smartctl query")
-                m = re.match("([^:]+): (.*)", line)
-                if m:
-                    if (m.group(1) == "Rotation Rate"):
-                        c = re.match("^\s+ Solid State Device", m.group(2))
-                        if c:
+                match = re.match("([^:]+): (.*)", line)
+                if match:
+                    if match.group(1) == "Rotation Rate":
+                        found = re.match(r"^\s+ Solid State Device",
+                                         match.group(2))
+                        if found:
                             return '0'
             return '1'
+        # pylint: disable=bare-except
         except:
-            """ If something fails, fall back to the default detection mode"""
-            log.warning('Something went wrong during smartctl query for device {}. Falling back to legacy detection mode'.format(device))
+            # If something fails, fall back to the default detection mode
+            log.warning(('Something went wrong during smartctl query for '
+                         'device {}. Falling back to legacy detection '
+                         'mode'.format(device)))
             return self._is_rotational(base)
 
     def _detect_raidctrl(self):
@@ -174,10 +185,8 @@ class HardwareDetections(object):
         # TODO: See if other places are also infected
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
-            """
-            match one of the available raid ctrls
-            areca, megaraid, 3ware, hprr
-            """
+            # match one of the available raid ctrls
+            # areca, megaraid, 3ware, hprr
             if 'megaraid' in line.lower():
                 info['controller_name'] = 'megaraid'
             elif 'areca' in line.lower() or 'arcmsr' in line.lower():
@@ -218,9 +227,12 @@ class HardwareDetections(object):
             str: the full path of the programm
         """
         def _is_exe(fpath):
+            """
+            Check if file is executable
+            """
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-        fpath, fname = os.path.split(program)
+        fpath, _ = os.path.split(program)
         if fpath:
             if _is_exe(program):
                 return program
@@ -237,7 +249,8 @@ class HardwareDetections(object):
             log.info(msg)
             raise StandardError(msg)
         else:
-            msg = "Parameter <failhard> needs to be bool(True) or bool(False) but was: {}".format(str(failhard))
+            msg = ("Parameter <failhard> needs to be bool(True) or bool(False) "
+                   "but was: {}".format(str(failhard)))
             log.info(msg)
             raise StandardError(msg)
 
@@ -259,10 +272,10 @@ class HardwareDetections(object):
             raise Exception(err_msg)
 
         if self._which('hwinfo', failhard=False):
-            """ SUSE, openSUSE """
+            # SUSE, openSUSE
             return self._hwinfo
         elif self._which('lshw', failhard=False):
-            """ Ubuntu, Fedora, CentOS """
+            # Ubuntu, Fedora, CentOS
             return self._lshw
         else:
             err_msg = """Can not find a proper hardware detection tool.
@@ -284,24 +297,30 @@ class HardwareDetections(object):
         cmd = "{} --disk --only /dev/{}".format(hwinfo_path, device)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
-            m = re.match("  ([^:]+): (.*)", line)
-            if m:
-                if (m.group(1) == "Capacity"):
-                    c = re.match("(\d+ \w+) \((\d+) bytes\)", m.group(2))
-                    if c:
-                        results[m.group(1)] = c.group(1)
-                        results['Bytes'] = c.group(2)
-                elif (m.group(1) == 'Device File'):
-                    if ' ' in m.group(2):
-                        results[m.group(1)] = re.sub(r'"', '', m.group(2).split(' ')[0])
+            match = re.match("  ([^:]+): (.*)", line)
+            if match:
+                if match.group(1) == "Capacity":
+                    found = re.match(r"(\d+ \w+) \((\d+) bytes\)",
+                                     match.group(2))
+                    if found:
+                        results[match.group(1)] = found.group(1)
+                        results['Bytes'] = found.group(2)
+                elif match.group(1) == 'Device File':
+                    if ' ' in match.group(2):
+                        results[match.group(1)] = re.sub(r'"', '',
+                                                         match.group(2).split(' ')[0])
                     else:
-                        results[m.group(1)] = re.sub(r'"', '', m.group(2))
+                        results[match.group(1)] = re.sub(r'"', '',
+                                                         match.group(2))
                 else:
-                    results[m.group(1)] = re.sub(r'"', '', m.group(2))
+                    results[match.group(1)] = re.sub(r'"', '', match.group(2))
         return results
 
     def _udevadm(self, device):
         """
+        Return the path provided by udevadm
+
+        TODO: would `readlink -f` have been simpler here?
         """
         cmd = "udevadm info {}".format(device)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -324,6 +343,7 @@ class HardwareDetections(object):
         # TODO: Search for all possible codes:
         data = "Partition GUID code: 45B0969E-9B03-4F30-B4C6-B4B80CEFF106"
         journal = "Partition GUID code: 4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D"
+        # pylint: disable=invalid-name
         db = "Partition GUID code: 30CD0809-C2B2-499C-8879-2D6B78529876"
         wal = "Partition GUID code: 5CE17FCE-4087-4169-B7FF-056CC58473F9"
         osd_lockbox = "Partition GUID code: FB3AABF9-D25F-47CC-BF5E-721D1816496B"
@@ -342,12 +362,10 @@ class HardwareDetections(object):
                 log.error(line)
         return False
 
-    def _lshw(self, device=None):
+    def _lshw(self):
         """
         Parse lshw output into dictionary
 
-        args:
-            device (str): short name of device(sda, sdb..)
         return:
             list: lshw output as list of dicts
         """
@@ -375,7 +393,7 @@ class HardwareDetections(object):
                 if node.find('logicalname').text == '/dev/cdrom':
                     continue
                 ident = node.find('logicalname').text
-                if type(ident) is list:
+                if isinstance(ident, list):
                     ident = ident[0]
                 results[ident] = {}
                 for key, attr in attributes.iteritems():
@@ -386,13 +404,13 @@ class HardwareDetections(object):
                         else:
                             disk_description[attr] = node.find(key).text
                 disk_description['Device File'] = self._udevadm(ident)
-                disk_description['Driver'] = self._find_driver(ident)
+                disk_description['Driver'] = self._find_driver()
                 results[ident].update(disk_description)
             else:
                 log.info('No logicalname found. Cannot identiy that disk.')
         return results
 
-    def _find_driver(self, ident):
+    def _find_driver(self):
         """
         lshw can't detect the driver used. proposal.py relies on
         this information to determine the journal distribution.
@@ -409,9 +427,9 @@ class HardwareDetections(object):
         it will fail silently and cause havoc.
         """
         required_fields = ['Driver', 'Model', 'Device File', 'Capacity', 'device', 'rotational']
-        for rf in required_fields:
-            if rf not in hardware_dict or not hardware_dict[rf]:
-                raise ValueError("{} is not included in the hardware dict.".format(rf))
+        for _rf in required_fields:
+            if _rf not in hardware_dict or not hardware_dict[_rf]:
+                raise ValueError("{} is not included in the hardware dict.".format(_rf))
 
     def assemble_device_list(self):
         """
@@ -427,7 +445,7 @@ class HardwareDetections(object):
 
         drives = []
         raid_ctrl = self._detect_raidctrl()
-        hw = self.detection_method()
+        _hw = self.detection_method()
         for path in glob('/sys/block/*/device'):
             log.debug("path: {}".format(path))
             base = os.path.dirname(path)
@@ -436,24 +454,26 @@ class HardwareDetections(object):
             # Skip partitioned, non-osd drives
             partitions = glob(base + "/" + device + "*")
             if partitions:
-                for p in partitions:
+                for partition in partitions:
                     if 'nvme' in device:
-                        ids = [re.sub('.+p(\d+)', r'\1', p) for p in partitions]
+                        ids = [re.sub(r'.+p(\d+)', r'\1', partition)
+                               for partition in partitions]
                     else:
-                        ids = [re.sub('\D+', '', p) for p in partitions]
+                        ids = [re.sub(r'\D+', '', partition)
+                               for partition in partitions]
                 if not self._osd("/dev/" + device, ids):
                     continue
 
-            if (self._is_removable(base)):
+            if self._is_removable(base):
                 continue
 
-            if hw:
-                hardware = hw['/dev/'+device]
+            if _hw:
+                hardware = _hw['/dev/'+device]
             else:
                 hardware = self.detection_method(device)
 
             if raid_ctrl['raidtype'] and self._which('smartctl'):
-                """ Trying to correct the kernel's assumption here """
+                # Trying to correct the kernel's assumption here
                 log.info("Requirements met to utilize S.M.A.R.T on {}".format(device))
                 rotational = self._query_disktype(device, raid_ctrl, base)
                 hardware['rotational'] = rotational
@@ -467,10 +487,17 @@ class HardwareDetections(object):
 
 
 def list_(**kwargs):
+    """
+    List the disks
+    """
     hwd = HardwareDetections(**kwargs)
     return hwd.assemble_device_list()
 
+
 def version():
+    """
+    Displays version
+    """
     print VERSION
 
 __func_alias__ = {

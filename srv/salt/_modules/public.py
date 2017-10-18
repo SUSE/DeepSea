@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
+"""
+Functions related to the public network
+"""
 
+from __future__ import absolute_import
 import ipaddress
-import time
 import logging
 import pprint
 import re
 
 log = logging.getLogger(__name__)
 
-"""
-"""
 
 def address():
     """
@@ -20,7 +22,7 @@ def address():
         return ""
 
     log.debug("pillar: {}".format(type(__pillar__['public_network'])))
-    if type(__pillar__['public_network']) is str:
+    if isinstance(__pillar__['public_network'], str):
         networks = re.split(', *', __pillar__['public_network'])
     else:
         networks = __pillar__['public_network']
@@ -35,9 +37,9 @@ def address():
             log.info("interface: {}".format(pprint.pformat(interface)))
             if 'inet' in interfaces[interface]:
                 for entry in interfaces[interface]['inet']:
-                    address = entry['address']
-                    log.info("Checking address {}".format(address))
-                    if (ipaddress.ip_address(u'{}'.format(address)) in
+                    _address = entry['address']
+                    log.info("Checking address {}".format(_address))
+                    if (ipaddress.ip_address(u'{}'.format(_address)) in
                         ipaddress.ip_network(u'{}'.format(public_network))):
-                        return address
+                        return _address
     return ""

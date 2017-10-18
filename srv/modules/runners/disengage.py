@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=too-few-public-methods,modernize-parse-error
 
 """
 Some operations are inherently dangerous, but still necessary.  Allow
@@ -18,7 +19,7 @@ class SafetyFile(object):
         self.filename = "/run/salt/master/safety.{}".format(cluster)
 
 
-def help():
+def help_():
     """
     Usage
     """
@@ -27,8 +28,7 @@ def help():
              '\n\n'
              'salt-run disengage.check:\n\n'
              '    Check whether the timestamp is less than a minute old\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
@@ -53,3 +53,7 @@ def check(cluster='ceph'):
         return stamp + 60 > time.time()
     else:
         return False
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

@@ -1,5 +1,8 @@
-#!/usr/bin/python
-
+# -*- coding: utf-8 -*-
+# pylint: disable=modernize-parse-error,no-self-use
+#
+# The salt-api calls functions with keywords that are not needed
+# pylint: disable=unused-argument
 """
 Consolidate any user interface iscsi calls for Wolffish and openATTIC.
 
@@ -16,8 +19,8 @@ import logging
 import sys
 import os
 import json
-import yaml
 import urllib
+import yaml
 import salt.client
 import salt.utils.minions
 
@@ -62,14 +65,14 @@ class Iscsi(object):
         sys.stdout = _stdout
         if wrapped:
             data = []
-            for igw in igws.keys():
+            for igw in igws:
                 for addr in igws[igw]:
                     if addr == '127.0.0.1':
                         continue
                     data.append({'node': igw, 'addr': addr})
             return data
         else:
-            for igw in igws.keys():
+            for igw in igws:
                 igws[igw].remove('127.0.0.1')
 
             return igws
@@ -85,13 +88,13 @@ class Iscsi(object):
                                              'compound', __opts__)
         if wrapped:
             data = []
-            for master in result.keys():
+            for master in result:
                 for pool in result[master]:
                     data.append({'pool': pool, 'img': result[master][pool]})
                 break
             return data
         else:
-            for master in result.keys():
+            for master in result:
                 return result[master]
 
     def config(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf"):
@@ -126,7 +129,10 @@ class Iscsi(object):
             # POST preflight checks which would render third party cookie auth
             # (ie. where the frontend is hosted on a different server than
             # salt-api) useless.
-            contents = urllib.unquote(kwargs['data']) if 'contenttype' in kwargs and not kwargs['contenttype'] else kwargs['data']
+            if 'contenttype' in kwargs and not kwargs['contenttype']:
+                contents = urllib.unquote(kwargs['data'])
+            else:
+                contents = kwargs['data']
 
             with open(filename, 'w') as conf:
                 conf.write(contents)
@@ -191,12 +197,12 @@ class Iscsi(object):
         Return canned example for nodes and addresses
         """
         _interfaces = {1: {'igw1': ['192.168.0.2', '192.168.1.2', '192.168.2.2']},
-                      2: {'node1': ['10.0.0.10'],
-                          'node2': ['10.0.0.11'],
-                          'node3': ['10.0.0.12',
-                                    '172.16.31.12',
-                                    '192.168.10.112'],
-                          'node4': ['1.2.3.4']}}
+                       2: {'node1': ['10.0.0.10'],
+                           'node2': ['10.0.0.11'],
+                           'node3': ['10.0.0.12',
+                                     '172.16.31.12',
+                                     '192.168.10.112'],
+                           'node4': ['1.2.3.4']}}
         if wrapped:
             data = []
             for node in _interfaces[canned].keys():
@@ -207,7 +213,7 @@ class Iscsi(object):
             return _interfaces[canned]
 
 
-def help():
+def help_():
     """
     Usage
     """
@@ -234,8 +240,7 @@ def help():
              '\n\n'
              'salt-run ui_iscsi.undeploy:\n\n'
              '    Stops lrbd\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
@@ -287,25 +292,37 @@ def images(**kwargs):
 
 
 def status(**kwargs):
+    """
+    Check the systemd status of lrbd
+    """
     local = salt.client.LocalClient()
-    status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
+    _status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
     result = True
-    for _, v in status.iteritems():
-        result = result and v
+    for _, value in _status.iteritems():
+        result = result and value
     return result
 
 
 def deploy(**kwargs):
+    """
+    Run iscsi orchestration
+    """
     runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
     result = runner.cmd('state.orch', ['ceph.stage.iscsi'], print_event=False)
     return result['data']['retcode'] == 0
 
 
 def undeploy(**kwargs):
+    """
+    Stop the lrbd service
+    """
     local = salt.client.LocalClient()
     results = local.cmd('I@roles:igw', 'service.stop', ['lrbd'], expr_form='compound')
     result = True
-    for _, v in results.iteritems():
-        result = result and v
+    for _, value in results.iteritems():
+        result = result and value
     return result
 
+__func_alias__ = {
+                 'help_': 'help',
+                 }

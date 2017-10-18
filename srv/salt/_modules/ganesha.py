@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Ganesha configuration and exports
+"""
 
 from __future__ import absolute_import
 

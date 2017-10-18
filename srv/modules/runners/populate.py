@@ -1,41 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim: ts=8 et sw=4 sts=4
-
-import salt.client
-import salt.key
-import salt.config
-import salt.utils
-import salt.utils.minions
-import ready
-
-import re
-import pprint
-import string
-import random
-from subprocess import call, Popen, PIPE
-import yaml
-import json
-from os.path import dirname, basename, isdir
-import os
-import struct
-import time
-import base64
-import errno
-import uuid
-import ipaddress
-import logging
-import deepsea_minions
-import validate
-import operator
-
-import sys
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-from cStringIO import StringIO
-
+# pylint: skip-file
+# pylint: disable=too-few-public-methods,modernize-parse-error
 """
 WHY THIS RUNNER EXISTS:
 
@@ -54,6 +20,45 @@ creation of a Ceph cluster.
 See the partner runner push.proposal for details.
 
 """
+
+import salt.client
+import salt.key
+import salt.config
+import salt.utils
+import salt.utils.minions
+# pylint: disable=relative-import
+import ready
+
+import re
+import pprint
+import string
+import random
+from subprocess import call, Popen, PIPE
+import yaml
+import json
+from os.path import dirname, basename, isdir
+import os
+import struct
+import time
+import base64
+import errno
+import uuid
+import ipaddress
+import logging
+# pylint: disable=relative-import
+import deepsea_minions
+# pylint: disable=relative-import
+import validate
+import operator
+
+import sys
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+from cStringIO import StringIO
+
 
 log = logging.getLogger(__name__)
 
@@ -103,7 +108,8 @@ class SaltWriter(object):
             log.info("Writing {}".format(filename))
             with open(filename, "w") as yml:
                 yml.write(yaml.dump(contents, Dumper=self.dumper,
-                                              default_flow_style=False))
+                          default_flow_style=False))
+
 
 class CephStorage(object):
     """
@@ -118,24 +124,22 @@ class CephStorage(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        #self.keyring = Utils.secret()
+        # self.keyring = Utils.secret()
 
-
-    def save(self, servers, proposals):
+    def save(self, servers, _proposals):
         """
         Save each proposal for each server of each model
         """
         count = 0
-            #log.debug("model: {}".format(model))
-        for server in proposals.keys():
-            for model in proposals[server]:
-                for proposal in proposals[server][model]:
+        # log.debug("model: {}".format(model))
+        for server in _proposals:
+            for model in _proposals[server]:
+                for proposal in _proposals[server][model]:
                     count += 1
                     name = 'profile-{}-{}'.format(model, str(count))
                     self._save_proposal(name, server, proposal)
                     self._save_roles(name, server)
             count = 0
-
 
     def _save_proposal(self, name, server, storage):
         """
@@ -145,7 +149,7 @@ class CephStorage(object):
         if not os.path.isdir(model_dir):
             _create_dirs(model_dir, self.root_dir)
         filename = model_dir + "/" +  server + ".yml"
-        contents = { 'storage': storage }
+        contents = {'storage': storage}
         self.writer.write(filename, contents)
 
     def _save_roles(self, name, server):
@@ -155,12 +159,11 @@ class CephStorage(object):
         cluster_dir = "{}/{}/cluster".format(self.root_dir, name)
         if not os.path.isdir(cluster_dir):
             _create_dirs(cluster_dir, self.root_dir)
-        #filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
+        # filename = cluster_dir + "/" +  server.split('.')[0] + ".sls"
         filename = cluster_dir + "/" +  server + ".sls"
         contents = {}
-        contents['roles'] =  [ 'storage' ]
+        contents['roles'] = ['storage']
         self.writer.write(filename, contents)
-
 
 
 class HardwareProfile(object):
@@ -189,20 +192,18 @@ class HardwareProfile(object):
                 # Virtual machines do not have vendors
                 label = self._label(drive['Model'], drive['Capacity'])
 
-            if not label in self.rotates:
+            if label not in self.rotates:
                 self.rotates[label] = drive['rotational']
-            if not label in self.nvme:
+            if label not in self.nvme:
                 # lshw can't detect the driver
                 self.nvme[label] = (drive['Driver'] == "nvme")
-
 
             if label in self.model:
                 self.model[label].append(self._device(drive))
             else:
-                self.model[label] = [ self._device(drive) ]
+                self.model[label] = [self._device(drive)]
         name = self._name()
         self._profiles(name, hostname)
-
 
     def _device(self, drive):
         """
@@ -222,7 +223,7 @@ class HardwareProfile(object):
         """
         if ' ' in vendor:
             vendor = self._brand(vendor)
-        return  vendor + re.sub(' ', '', capacity)
+        return vendor + re.sub(' ', '', capacity)
 
     def _brand(self, vendor):
         """
@@ -235,31 +236,31 @@ class HardwareProfile(object):
 
     def _profiles(self, name, hostname):
         """
+        Assign hardware profiles
         """
-        #if name in self.servers:
-        #    self.servers[name].append( hostname )
-        #else:
-        #    self.servers[name] = [ hostname ]
+        # if name in self.servers:
+        #     self.servers[name].append(hostname)
+        # else:
+        #     self.servers[name] = [hostname]
         if hostname not in self.profiles:
             self.profiles[hostname] = {}
         if name not in self.profiles[hostname]:
             self.profiles[hostname][name] = {}
-        for label in self.model.keys():
+        for label in self.model:
             if label not in self.profiles[hostname][name]:
                 self.profiles[hostname][name][label] = {}
             self.profiles[hostname][name][label] = self.model[label]
-
-
 
     def _name(self):
         """
         Create a consistent name by sorting the drive types
         """
         quantities = {}
-        for label in self.model.keys():
+        for label in self.model:
             quantities[str(len(self.model[label])) + label] = ""
-        return "-".join(sorted(quantities.keys(), cmp=self._model_sort))
+        return "-".join(sorted(quantities, cmp=self._model_sort))
 
+    # pylint: disable=invalid-name
     def _model_sort(self, a, b):
         """
         Sort by numeric, then alpha
@@ -272,7 +273,6 @@ class HardwareProfile(object):
             return 1
         else:
             return cmp(x.group(2), y.group(2))
-
 
 
 class DiskConfiguration(object):
@@ -288,16 +288,19 @@ class DiskConfiguration(object):
         self.storage_nodes = {}
         if servers:
             for server in servers:
-                ret = salt.utils.minions.mine_get(server, 'cephdisks.list', 'glob', options.__opts__)
+                ret = salt.utils.minions.mine_get(server, 'cephdisks.list',
+                                                  'glob', options.__opts__)
                 # what if server of servers returns anything -> no profile, no notification
                 self.storage_nodes.update(ret)
         else:
-            ret = salt.utils.minions.mine_update('*', '', 'glob', options.__opts__)
-            self.storage_nodes = salt.utils.minions.mine_get('*', 'cephdisks.list', 'glob', options.__opts__)
+            ret = salt.utils.minions.mine_update('*', '', 'glob',
+                                                 options.__opts__)
+            self.storage_nodes = salt.utils.minions.mine_get('*',
+                                                             'cephdisks.list',
+                                                             'glob',
+                                                             options.__opts__)
 
-
-        self.servers = self.storage_nodes.keys()
-
+        self.servers = self.storage_nodes
 
     def generate(self, hardwareprofile):
         """
@@ -309,7 +312,7 @@ class DiskConfiguration(object):
         for server in self.storage_nodes:
             self.hardware.add(server, self.storage_nodes[server])
 
-        for server in self.hardware.profiles.keys():
+        for server in self.hardware.profiles:
             if server not in self.proposals:
                 self.proposals[server] = {}
             for configuration in self.hardware.profiles[server]:
@@ -320,32 +323,33 @@ class DiskConfiguration(object):
 
                 log.debug("configuration {} with no journals".format(configuration))
                 self.proposals[server][configuration].append(self._assignments(drives))
-                for drive_model in drives.keys():
+                for drive_model in drives:
                     # How many types of drives are SSDs, NVMes
                     if self.hardware.rotates[drive_model] == '0':
-                        log.debug("configuration {} with {} journal".format(configuration, drive_model))
+                        log.debug(("configuration {} with {} "
+                                   "journal".format(configuration, drive_model)))
                         proposal = self._assignments(drives, drive_model)
                         if proposal:
                             self.proposals[server][configuration].append(proposal)
                         else:
-                            log.warning("No proposal for {} as journal on {}".format(drive_model, configuration))
-
+                            log.warning(("No proposal for {} as journal on "
+                                         "{}".format(drive_model,
+                                                     configuration)))
 
     def _log_results(self, label, results):
         """
         """
         log.debug("{}:".format(label))
-        for k in results.keys():
+        for k in results:
             log.debug(" {}:".format(k))
             if k == 'data+journals':
                 for entry in results[k]:
-                    for d in entry.keys():
+                    for d in entry:
                         log.debug("  {}:".format(d))
                         log.debug("   {}".format(entry[d]))
             else:
                 for d in results[k]:
                     log.debug("  {}".format(d))
-
 
     def _assignments(self, drives, journal=None):
         """
@@ -387,15 +391,14 @@ class DiskConfiguration(object):
         else:
             return assignments
 
-
     def _separate_drives(self, drives, journal):
         """
         Put a drive in one of three queues: osd, data or journal
         """
-        assignments = { 'osds': [], 'data+journals': [] }
+        assignments = {'osds': [], 'data+journals': []}
         data = []
         journals = []
-        for drive_model in drives.keys():
+        for drive_model in drives:
             # check capacity
             if drive_model == journal:
                 journals.extend(drives[drive_model])
@@ -421,8 +424,8 @@ class DiskConfiguration(object):
 
         """
         for partitions in range(6, 2, -1):
-            if (data and len(data) % partitions == 0):
-                if (len(journals) >= len(data)/partitions):
+            if data and len(data) % partitions == 0:
+                if len(journals) >= len(data)/partitions:
                     log.debug("Using {} partitions on {}".format(partitions, journals))
 
                     return self._assign(partitions, assignments, data, journals)
@@ -438,7 +441,7 @@ class DiskConfiguration(object):
 
         """
         partitions = len(data)/len(journals) + 1
-        if (partitions > 2 and partitions < 7):
+        if partitions > 2 and partitions < 7:
             log.debug("Rounding... using {} partitions on {}".format(partitions, journals))
             return self._assign(partitions, assignments, data, journals)
 
@@ -450,7 +453,8 @@ class DiskConfiguration(object):
         count = 1
         for device in data:
             log.debug("device: {}".format(device))
-            assignments['data+journals'].extend([{"{}".format(device): "{}".format(journals[index])}])
+            assignments['data+journals'].extend([{"{}".format(device):
+                                                  "{}".format(journals[index])}])
             count += 1
             if (count - 1) % partitions == 0:
                 log.debug("next journal")
@@ -460,6 +464,7 @@ class DiskConfiguration(object):
         # Add unused journal drives as OSDs
         assignments['osds'].extend(journals[index:])
         return assignments
+
 
 class CephRoles(object):
     """
@@ -481,8 +486,7 @@ class CephRoles(object):
         self.networks = self._networks(self.servers)
         self.public_networks, self.cluster_networks = self.public_cluster(self.networks.copy())
 
-        self.available_roles = [ 'storage' ]
-
+        self.available_roles = ['storage']
 
     def _rgw_configurations(self):
         """
@@ -492,11 +496,11 @@ class CephRoles(object):
 
         local = salt.client.LocalClient()
 
-        _rgws = local.cmd(self.search , 'pillar.get', [ 'rgw_configurations' ], expr_form="compound")
-        for node in _rgws.keys():
+        _rgws = local.cmd(self.search, 'pillar.get', ['rgw_configurations'], expr_form="compound")
+        for node in _rgws:
             if _rgws[node]:
                 return _rgws[node]
-        return [ 'rgw' ]
+        return ['rgw']
 
     def _ganesha_configurations(self):
         """
@@ -505,13 +509,14 @@ class CephRoles(object):
         """
         local = salt.client.LocalClient()
 
-        _ganeshas = local.cmd(self.search , 'pillar.get', [ 'ganesha_configurations' ], expr_form="compound")
-        for node in _ganeshas.keys():
+        _ganeshas = local.cmd(self.search, 'pillar.get',
+                              ['ganesha_configurations'], expr_form="compound")
+        for node in _ganeshas:
             # Check the first one
             if _ganeshas[node]:
                 return _ganeshas[node]
             else:
-                return [ 'ganesha' ]
+                return ['ganesha']
 
     def generate(self):
         """
@@ -522,13 +527,12 @@ class CephRoles(object):
         self._client_roles()
         self._master_role()
 
-
     def _standard_roles(self):
         """
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = [ 'admin', 'mon', 'mds', 'mgr', 'igw', 'openattic' ]
+        roles = ['admin', 'mon', 'mds', 'mgr', 'igw', 'openattic']
         roles += self._rgw_configurations()
         roles += self._ganesha_configurations()
         self.available_roles.extend(roles)
@@ -553,13 +557,12 @@ class CephRoles(object):
             role_dir = "{}/role-{}".format(self.root_dir, role)
             self._role_assignment(role_dir, role)
 
-
     def _master_role(self):
         """
         The master role can access all keyring secrets
         """
         role = 'master'
-        self.available_roles.extend([ role ])
+        self.available_roles.extend([role])
 
         role_dir = "{}/role-{}".format(self.root_dir, role)
         self._role_assignment(role_dir, role)
@@ -572,7 +575,6 @@ class CephRoles(object):
             return 'osd'
         return role
 
-
     def _role_assignment(self, role_dir, role):
         """
         Create role related sls files
@@ -583,7 +585,7 @@ class CephRoles(object):
         for server in self.servers:
             filename = cluster_dir + "/" +  server + ".sls"
             contents = {}
-            contents['roles'] = [ role ]
+            contents['roles'] = [role]
             self.writer.write(filename, contents)
 
     def monitor_members(self):
@@ -623,7 +625,6 @@ class CephRoles(object):
                     return entry[2]
         return ""
 
-
     def cluster_config(self):
         """
         Provide the default configuration for a cluster
@@ -631,7 +632,7 @@ class CephRoles(object):
         if self.cluster:
             cluster_dir = "{}/config/stack/default/{}".format(self.root_dir, self.cluster)
             if not os.path.isdir(cluster_dir):
-                 _create_dirs(cluster_dir, self.root_dir)
+                _create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
             contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, os.urandom(32)))
@@ -657,7 +658,7 @@ class CephRoles(object):
 
         interfaces = local.cmd(self.search, 'network.interfaces', [], expr_form="compound")
 
-        for minion in interfaces.keys():
+        for minion in interfaces:
             for nic in interfaces[minion]:
                 if 'inet' in interfaces[minion][nic]:
                     for addr in interfaces[minion][nic]['inet']:
@@ -668,9 +669,8 @@ class CephRoles(object):
                         if cidr in networks:
                             networks[cidr].append((minion, nic, addr['address']))
                         else:
-                            networks[cidr] = [ (minion, nic, addr['address']) ]
+                            networks[cidr] = [(minion, nic, addr['address'])]
         return networks
-
 
     def _network(self, address, netmask):
         """
@@ -704,7 +704,7 @@ class CephRoles(object):
         # first step, find public networks using hostname -i in all minions
         public_addrs = []
         local = salt.client.LocalClient()
-        cmd_result = local.cmd(self.search , 'cmd.run', ['hostname -i'], expr_form="compound")
+        cmd_result = local.cmd(self.search, 'cmd.run', ['hostname -i'], expr_form="compound")
         for _, addrs in cmd_result.items():
             addr_list = addrs.split(' ')
             public_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
@@ -724,7 +724,7 @@ class CephRoles(object):
             break
         if not master_minion:
             raise Exception("No master_minion found in pillar")
-        cmd_result = local.cmd(master_minion , 'grains.get', ['ipv4'], expr_form="compound")
+        cmd_result = local.cmd(master_minion, 'grains.get', ['ipv4'], expr_form="compound")
         for _, addr_list in cmd_result.items():
             master_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
                                 for addr in addr_list if not addr.startswith('127.')])
@@ -754,12 +754,13 @@ class CephRoles(object):
 
         # fourth step, remove redudant public networks
         filtered_list = []
-        cmd_result = local.cmd(self.search , 'grains.get', ['ipv4'], expr_form="compound")
+        cmd_result = local.cmd(self.search, 'grains.get', ['ipv4'], expr_form="compound")
         for network in public_networks:
             to_remove = []
             for key, addr_list in cmd_result.items():
                 if reduce(operator.__or__,
-                          [ipaddress.ip_address(u'{}'.format(addr)) in network for addr in addr_list],
+                          [ipaddress.ip_address(u'{}'.format(addr)) in network
+                           for addr in addr_list],
                           False):
                     to_remove.append(key)
             for key in to_remove:
@@ -774,6 +775,7 @@ class CephRoles(object):
 
         return public_networks, cluster_networks
 
+
 def network_sort(a, b):
     """
     Sort quantity descending and network ascending.
@@ -784,6 +786,7 @@ def network_sort(a, b):
         return -1
     else:
         return cmp(a[1], b[1])
+
 
 class CephCluster(object):
     """
@@ -800,17 +803,17 @@ class CephCluster(object):
         if 'cluster' in kwargs:
             self.names = kwargs['cluster']
         else:
-            self.names = [ 'ceph' ]
+            self.names = ['ceph']
         self.writer = writer
 
         target = deepsea_minions.DeepseaMinions()
         search = target.deepsea_minions
 
         local = salt.client.LocalClient()
-        self.minions = local.cmd(search , 'grains.get', [ 'id' ], expr_form="compound")
+        self.minions = local.cmd(search, 'grains.get', ['id'], expr_form="compound")
 
-        _rgws = local.cmd(search , 'pillar.get', [ 'rgw_configurations' ], expr_form="compound")
-        for node in _rgws.keys():
+        _rgws = local.cmd(search, 'pillar.get', ['rgw_configurations'], expr_form="compound")
+        for node in _rgws:
             self.rgw_configurations = _rgws[node]
             # Just need first
             break
@@ -822,16 +825,15 @@ class CephCluster(object):
         self._assignments()
         self._global()
 
-
     def _assignments(self):
         """
         Create cluster assignment for every cluster and unassigned
         """
-        for cluster in self.names + [ 'unassigned' ]:
+        for cluster in self.names + ['unassigned']:
             for minion in self.minions:
                 cluster_dir = "{}/cluster-{}/cluster".format(self.root_dir, cluster)
                 if not os.path.isdir(cluster_dir):
-                     _create_dirs(cluster_dir, self.root_dir)
+                    _create_dirs(cluster_dir, self.root_dir)
                 filename = "{}/{}.sls".format(cluster_dir, minion)
                 contents = {}
                 contents['cluster'] = cluster
@@ -844,13 +846,14 @@ class CephCluster(object):
         """
         stack_dir = "{}/config/stack/default".format(self.root_dir)
         if not os.path.isdir(stack_dir):
-             _create_dirs(stack_dir, self.root_dir)
+            _create_dirs(stack_dir, self.root_dir)
         filename = "{}/global.yml".format(stack_dir)
         contents = {}
-        contents['time_server'] = '{{ pillar.get("master_minion") }}'
+        contents['time_server'] = '{{pillar.get("master_minion")}}'
         contents['time_init'] = 'ntp'
 
         self.writer.write(filename, contents)
+
 
 def _create_dirs(path, root):
     try:
@@ -863,15 +866,16 @@ def _create_dirs(path, root):
             '''.format(path, root))
             raise err
 
+
 def show(**kwargs):
     """
     Quick printing of usable disks
 
     Note: rearrange at some point
     """
-    print(("DEPRECATION WARNING: the generation of storage profiles is now"
-          " handled by the proposal runner. This function will go away in the"
-          " future."))
+    print ("DEPRECATION WARNING: the generation of storage profiles is now"
+           " handled by the proposal runner. This function will go away in the"
+           " future.")
     settings = Settings()
 
     salt_writer = SaltWriter(**kwargs)
@@ -886,11 +890,11 @@ def show(**kwargs):
         # Common cluster configuration
         ceph_storage = CephStorage(settings, name, salt_writer)
         dc = DiskConfiguration(settings, servers=ceph_cluster.minions)
-        fields = [ 'Capacity', 'Device File', 'Model', 'rotational' ]
-        for minion,details in dc.storage_nodes.iteritems():
+        fields = ['Capacity', 'Device File', 'Model', 'rotational']
+        for minion, details in dc.storage_nodes.iteritems():
             print minion + ":"
             for drive in details:
-                for k,v in drive.iteritems():
+                for k, v in drive.iteritems():
                     if k in fields:
                         if k == 'rotational':
                             if drive[k] == '1':
@@ -899,7 +903,8 @@ def show(**kwargs):
                             sys.stdout.write(" " + v)
                 print
 
-def help():
+
+def help_():
     """
     Usage
     """
@@ -908,8 +913,7 @@ def help():
              '\n\n'
              'salt-run populate.engulf_existing_cluster:\n\n'
              '    Convert an existing Ceph cluster to DeepSea\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
@@ -933,7 +937,8 @@ def proposals(**kwargs):
         ceph_roles.cluster_config()
         ceph_roles.monitor_members()
         ceph_roles.igw_members()
-    return [ True ]
+    return [True]
+
 
 def _replace_key_in_cluster_yml(key, val):
     """
@@ -954,7 +959,7 @@ def _replace_key_in_cluster_yml(key, val):
         return False
 
     # Replace the old fsid entry.
-    cluster_yml = [ key + ": " + val if key + ":" in line else line.strip() for line in cluster_yml ]
+    cluster_yml = [key + ": " + val if key + ":" in line else line.strip() for line in cluster_yml]
 
     # Write out the new version.
     try:
@@ -973,9 +978,10 @@ def _replace_key_in_cluster_yml(key, val):
 
     return True
 
+
 def _get_existing_cluster_network(addrs, public_network=None):
     """
-    Based on the addrs dictionary { minion: [ ipaddress ] }, this function
+    Based on the addrs dictionary { minion: [ipaddress] }, this function
     returns an address consisting of network prefix followed by the cidr
     prefix (ie. 10.0.0.0/24), or None.
     """
@@ -994,7 +1000,7 @@ def _get_existing_cluster_network(addrs, public_network=None):
     # Remove lo.
     for entry in minion_network_interfaces:
         try:
-            del(minion_network_interfaces[entry]["lo"])
+            del minion_network_interfaces[entry]["lo"]
         except:
             pass
 
@@ -1006,10 +1012,15 @@ def _get_existing_cluster_network(addrs, public_network=None):
                     for inet_data in data["inet"]:
                         if i == "0.0.0.0":
                             # If running on 0.0.0.0, assume we can use public_network
-                            ip = ipaddress.ip_interface(u"{}".format(public_network)) if public_network else ipaddress.ip_interface(u"{}/{}".format(i, inet_data["netmask"]))
+                            if public_network:
+                                ip = ipaddress.ip_interface(u"{}".format(public_network))
+                            else:
+                                ip = ipaddress.ip_interface(u"{}/{}".format(i,
+                                                                            inet_data["netmask"]))
                             minion_networks.append(str(ip.network))
                         elif inet_data["address"] == i:
-                            ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"], inet_data["netmask"]))
+                            ip = ipaddress.ip_interface(u"{}/{}".format(inet_data["address"],
+                                                                        inet_data["netmask"]))
                             minion_networks.append(str(ip.network))
 
     # Check for consistency across all entries.
@@ -1020,10 +1031,11 @@ def _get_existing_cluster_network(addrs, public_network=None):
         # We have multiple possible networks.  This is liable to happen with OSDs
         # when there is a private cluster network.  Let's try to remove the public
         # network.
-        minion_networks = [ n for n in minion_networks if n != public_network ]
+        minion_networks = [n for n in minion_networks if n != public_network]
         network = minion_networks[0] if len(set(minion_networks)) == 1 else None
 
     return network
+
 
 def _replace_fsid_with_existing_cluster(fsid):
     """
@@ -1031,6 +1043,7 @@ def _replace_fsid_with_existing_cluster(fsid):
     Returns True/False.
     """
     return _replace_key_in_cluster_yml("fsid", fsid)
+
 
 def _replace_public_network_with_existing_cluster(mon_addrs):
     """
@@ -1040,10 +1053,12 @@ def _replace_public_network_with_existing_cluster(mon_addrs):
     public_network = _get_existing_cluster_network(mon_addrs)
     if not public_network:
         log.error("Failed to determine cluster's public_network.")
-        return { 'ret': False, 'public_network': None }
+        return {'ret': False, 'public_network': None}
     else:
-        return { 'ret': _replace_key_in_cluster_yml("public_network", public_network),
-                 'public_network': public_network }
+        return {'ret': _replace_key_in_cluster_yml("public_network",
+                                                   public_network),
+                'public_network': public_network}
+
 
 def _replace_cluster_network_with_existing_cluster(osd_addrs, public_network=None):
     """
@@ -1056,10 +1071,12 @@ def _replace_cluster_network_with_existing_cluster(osd_addrs, public_network=Non
     cluster_network = _get_existing_cluster_network(osd_addrs, public_network)
     if not cluster_network:
         log.error("Failed to determine cluster's cluster_network.")
-        return { 'ret': False, 'cluster_network': None }
+        return {'ret': False, 'cluster_network': None}
     else:
-        return { 'ret': _replace_key_in_cluster_yml("cluster_network", cluster_network),
-                 'cluster_network': cluster_network }
+        return {'ret': _replace_key_in_cluster_yml("cluster_network",
+                                                   cluster_network),
+                'cluster_network': cluster_network}
+
 
 def engulf_existing_cluster(**kwargs):
     """
@@ -1078,8 +1095,9 @@ def engulf_existing_cluster(**kwargs):
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
     minions = deepsea_minions.DeepseaMinions()
     search = minions.deepsea_minions
-    validator = validate.Validate("ceph", local.cmd(search , 'pillar.items', [], expr_form="compound"),
-                         [], validate.get_printer())
+    validator = validate.Validate("ceph", local.cmd(search, 'pillar.items', [],
+                                                    expr_form="compound"),
+                                  [], validate.get_printer())
     validator.deepsea_minions(minions)
     if validator.errors:
         validator.report()
@@ -1115,10 +1133,11 @@ def engulf_existing_cluster(**kwargs):
     mds_instances = []
     rgw_instances = []
 
-    for minion, info in local.cmd(search, "cephinspector.inspect", [], expr_form="compound").items():
+    for minion, info in local.cmd(search, "cephinspector.inspect", [],
+                                  expr_form="compound").items():
 
         if type(info) is not dict:
-            print("cephinspector.inspect failed on %s: %s" % (minion, info))
+            print "cephinspector.inspect failed on %s: %s" % (minion, info)
             return False
 
         if info["ceph_conf"] is not None:
@@ -1127,7 +1146,8 @@ def engulf_existing_cluster(**kwargs):
             else:
                 if info["ceph_conf"] != ceph_conf:
                     # TODO: what's the best way to report errors from a runner?
-                    print("ceph.conf on %s doesn't match ceph.conf on %s" % (minion, previous_minion))
+                    print ("ceph.conf on {} doesn't match ceph.conf on "
+                           "{}").format(minion, previous_minion)
                     return False
             previous_minion = minion
 
@@ -1137,9 +1157,10 @@ def engulf_existing_cluster(**kwargs):
             # We'll talk to this minion later to obtain keyrings
             admin_minion = minion
 
-        is_master = local.cmd(minion, "pillar.get", [ "master_minion" ], expr_form="compound")[minion] == minion
+        is_master = local.cmd(minion, "pillar.get", ["master_minion"],
+                              expr_form="compound")[minion] == minion
 
-        if not info["running_services"].keys() and not is_admin and not is_master:
+        if not info["running_services"] and not is_admin and not is_master:
             # No ceph services running, no admin key, not the master_minion,
             # don't assign it to the cluster
             continue
@@ -1151,21 +1172,24 @@ def engulf_existing_cluster(**kwargs):
         elif is_admin:
             policy_cfg.append("role-admin/cluster/" + minion + ".sls")
 
-        if "ceph-mon" in info["running_services"].keys():
+        if "ceph-mon" in info["running_services"]:
             mon_minions.append(minion)
             policy_cfg.append("role-mon/cluster/" + minion + ".sls")
             policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
-            for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks", [], expr_form="compound").items():
+            for minion, ipaddrs in local.cmd(minion,
+                                             "cephinspector.get_minion_public_networks",
+                                             [], expr_form="compound").items():
                 mon_addrs[minion] = ipaddrs
 
-        if "ceph-osd" in info["running_services"].keys():
+        if "ceph-osd" in info["running_services"]:
             # Needs a storage profile assigned (which may be different
             # than the proposals deepsea has come up with, depending on
             # how things were deployed)
-            ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml", [], expr_form="compound")
+            ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml",
+                                   [], expr_form="compound")
             if not ceph_disks:
                 log.error("Failed to get list of Ceph OSD disks.")
-                return [ False ]
+                return [False]
 
             for minion, store in ceph_disks.items():
                 minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
@@ -1173,7 +1197,7 @@ def engulf_existing_cluster(**kwargs):
                 _create_dirs(minion_yml_dir, "")
                 salt_writer.write(minion_yml_path, store)
 
-                minion_sls_data = { "roles": [ "storage" ] }
+                minion_sls_data = {"roles": ["storage"]}
                 minion_sls_dir = imported_profile_path + "/cluster"
                 minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
                 _create_dirs(minion_sls_dir, "")
@@ -1182,20 +1206,22 @@ def engulf_existing_cluster(**kwargs):
                 policy_cfg.append(minion_sls_path[minion_sls_path.find(imported_profile):])
                 policy_cfg.append(minion_yml_path[minion_yml_path.find(imported_profile):])
 
-            for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks", [], expr_form="compound").items():
+            for minion, ipaddrs in local.cmd(minion,
+                                             "cephinspector.get_minion_cluster_networks",
+                                             [], expr_form="compound").items():
                 osd_addrs[minion] = ipaddrs
 
-        if "ceph-mgr" in info["running_services"].keys():
+        if "ceph-mgr" in info["running_services"]:
             policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
             for i in info["running_services"]["ceph-mgr"]:
                 mgr_instances.append(i)
 
-        if "ceph-mds" in info["running_services"].keys():
+        if "ceph-mds" in info["running_services"]:
             policy_cfg.append("role-mds/cluster/" + minion + ".sls")
             for i in info["running_services"]["ceph-mds"]:
                 mds_instances.append(i)
 
-        if "ceph-radosgw" in info["running_services"].keys():
+        if "ceph-radosgw" in info["running_services"]:
             policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
             for i in info["running_services"]["ceph-radosgw"]:
                 rgw_instances.append(i)
@@ -1204,30 +1230,35 @@ def engulf_existing_cluster(**kwargs):
         # populate rgw_configurations in pillar data?
 
     if not admin_minion:
-        print("No nodes found with ceph.client.admin.keyring")
+        print "No nodes found with ceph.client.admin.keyring"
         return False
 
     # TODO: this is really not very DRY...
-    admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.admin" ], expr_form="compound")[admin_minion]
+    admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                              ["key=client.admin"],
+                              expr_form="compound")[admin_minion]
     if not admin_keyring:
-        print("Could not obtain client.admin keyring")
+        print "Could not obtain client.admin keyring"
         return False
 
-    mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mon." ], expr_form="compound")[admin_minion]
+    mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                            ["key=mon."], expr_form="compound")[admin_minion]
     if not mon_keyring:
-        print("Could not obtain mon keyring")
+        print "Could not obtain mon keyring"
         return False
 
-    osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client.bootstrap-osd" ], expr_form="compound")[admin_minion]
+    osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                      ["key=client.bootstrap-osd"],
+                                      expr_form="compound")[admin_minion]
     if not osd_bootstrap_keyring:
-        print("Could not obtain osd bootstrap keyring")
+        print "Could not obtain osd bootstrap keyring"
         return False
 
     # If there's no MGR instances, add MGR roles automatically to all the MONs
     # (since Luminous, MGR is a requirement, so it seems reasonable to add this
     # role automatically for imported clusters)
     if not mgr_instances:
-        print("No MGRs detected, automatically assigning role-mgr to MONs")
+        print "No MGRs detected, automatically assigning role-mgr to MONs"
         for minion in mon_minions:
             policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
 
@@ -1244,25 +1275,29 @@ def engulf_existing_cluster(**kwargs):
         keyring.write(osd_bootstrap_keyring)
 
     for i in mgr_instances:
-        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ], expr_form="compound")[admin_minion]
+        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                ["key=mgr." + i],
+                                expr_form="compound")[admin_minion]
         if not mgr_keyring:
-            print("Could not obtain mgr." + i + " keyring")
+            print "Could not obtain mgr." + i + " keyring"
             return False
         with open("/srv/salt/ceph/mgr/cache/" + i + ".keyring", 'w') as keyring:
             keyring.write(mgr_keyring)
 
     for i in mds_instances:
-        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ], expr_form="compound")[admin_minion]
+        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                ["key=mds." + i], expr_form="compound")[admin_minion]
         if not mds_keyring:
-            print("Could not obtain mds." + i + " keyring")
+            print "Could not obtain mds." + i + " keyring"
             return False
         with open("/srv/salt/ceph/mds/cache/" + i + ".keyring", 'w') as keyring:
             keyring.write(mds_keyring)
 
     for i in rgw_instances:
-        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ], expr_form="compound")[admin_minion]
+        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                ["key=client." + i], expr_form="compound")[admin_minion]
         if not rgw_keyring:
-            print("Could not obtain client." + i + " keyring")
+            print "Could not obtain client." + i + " keyring"
             return False
         with open("/srv/salt/ceph/rgw/cache/client." + i + ".keyring", 'w') as keyring:
             keyring.write(rgw_keyring)
@@ -1272,10 +1307,9 @@ def engulf_existing_cluster(**kwargs):
 
     # ...but inject the unassigned line first so it takes precendence,
     # along with the global config bits (because they're prettier early)...
-    policy_cfg = [
-        "cluster-unassigned/cluster/*.sls",
-        "config/stack/default/ceph/cluster.yml",
-        "config/stack/default/global.yml" ] + policy_cfg
+    policy_cfg = ["cluster-unassigned/cluster/*.sls",
+                  "config/stack/default/ceph/cluster.yml",
+                  "config/stack/default/global.yml"] + policy_cfg
 
     # ...and write it out (this will fail with EPERM if someone's already
     # created a policy.cfg as root, BTW)
@@ -1290,25 +1324,28 @@ def engulf_existing_cluster(**kwargs):
     cp.readfp(StringIO("\n".join([line.strip() for line in ceph_conf.split("\n")])))
 
     if not cp.has_section("global"):
-        print("ceph.conf is missing [global] section")
+        print "ceph.conf is missing [global] section"
         return False
     if not cp.has_option("global", "fsid"):
-        print("ceph.conf is missing fsid")
+        print "ceph.conf is missing fsid"
         return False
 
     if not _replace_fsid_with_existing_cluster(cp.get("global", "fsid")):
         log.error("Failed to replace derived fsid with fsid of existing cluster.")
-        return [ False ]
+        return [False]
 
     p_net_dict = _replace_public_network_with_existing_cluster(mon_addrs)
     if not p_net_dict['ret']:
-        log.error("Failed to replace derived public_network with public_network of existing cluster.")
-        return [ False ]
+        log.error(("Failed to replace derived public_network with "
+                   "public_network of existing cluster."))
+        return [False]
 
-    c_net_dict = _replace_cluster_network_with_existing_cluster(osd_addrs, p_net_dict['public_network'])
+    c_net_dict = _replace_cluster_network_with_existing_cluster(osd_addrs,
+                                                                p_net_dict['public_network'])
     if not c_net_dict['ret']:
-        log.error("Failed to replace derived cluster_network with cluster_network of existing cluster.")
-        return [ False ]
+        log.error(("Failed to replace derived cluster_network with "
+                   "cluster_network of existing cluster."))
+        return [False]
 
     # write out the imported ceph.conf
     with open("/srv/salt/ceph/configuration/files/ceph.conf.import", 'w') as conf:
@@ -1318,3 +1355,7 @@ def engulf_existing_cluster(**kwargs):
     _replace_key_in_cluster_yml("configuration_init", "default-import")
 
     return True
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

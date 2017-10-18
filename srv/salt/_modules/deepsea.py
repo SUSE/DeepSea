@@ -87,7 +87,7 @@ def render_sls(state_arg):
         result = _render_state(state_arg)
         return _serialize_ordered_dict(result)
     elif isinstance(state_arg, list):
-        result = {}
+        result = OrderedDict()
         for state_name in state_arg:
             content = _render_state(state_name)
             content = _serialize_ordered_dict(content)

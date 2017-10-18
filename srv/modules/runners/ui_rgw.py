@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-
+# pylint: disable=modernize-parse-error,too-few-public-methods
+#
+# The salt-api calls functions with keywords that are not needed
+# pylint: disable=unused-argument
 """
 Consolidate any user interface rgw calls for Wolffish and openATTIC.
 
@@ -11,7 +14,6 @@ from __future__ import absolute_import
 import logging
 import os
 import json
-import re
 import glob
 import salt.client
 import salt.utils.minions
@@ -92,6 +94,9 @@ class Radosgw(object):
 
     @staticmethod
     def endpoints(cluster='ceph'):
+        """
+        Run the endpoints module on the master minion
+        """
         result = []
         local = salt.client.LocalClient()
         for master_node in local.cmd('*', "pillar.get", ["master_minion"]).values():
@@ -100,7 +105,7 @@ class Radosgw(object):
         return result
 
 
-def help():
+def help_():
     """
     Usage
     """
@@ -112,10 +117,10 @@ def help():
              '\n\n'
              'salt-run ui_rgw.token data:\n\n'
              '    Returns radosgw-token result from supplied data\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
+
 
 def credentials(canned=None, **kwargs):
     """
@@ -126,9 +131,16 @@ def credentials(canned=None, **kwargs):
 
 
 def endpoints(**kwargs):
+    """
+    Returns RadosGW endpoints
+    """
     return Radosgw.endpoints()
 
+
 def token(**kwargs):
+    """
+    Generate the RadosGW token
+    """
     local = salt.client.LocalClient()
 
     if "data" not in kwargs:
@@ -145,5 +157,13 @@ def token(**kwargs):
     access = data["access"]
     secret = data["secret"]
 
-    token = local.cmd('I@roles:rgw', 'cmd.shell', [ 'radosgw-token --encode --ttype={} --access={} --secret={}'.format(ttype, access, secret) ], expr_form="compound")
-    return token
+    _token = local.cmd('I@roles:rgw', 'cmd.shell',
+                       ['radosgw-token --encode --ttype={} --access={} --secret={}'.format(ttype,
+                                                                                           access,
+                                                                                           secret)],
+                       expr_form="compound")
+    return _token
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

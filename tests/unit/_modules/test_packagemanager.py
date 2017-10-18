@@ -211,7 +211,7 @@ class TestZypper():
         updates_needed.return_value = True
         po.return_value.returncode = 99
         po.return_value.communicate.return_value = ("packages out", "error")
-        with pytest.raises(StandardError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             zypp._handle()
             assert po.called is True
             assert _reboot.called is False
@@ -229,7 +229,7 @@ class TestZypper():
         updates_needed.return_value = True
         po.return_value.returncode = 1
         po.return_value.communicate.return_value = ("packages out", "error")
-        with pytest.raises(StandardError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             zypp._handle()
             assert po.called is True
             assert _reboot.called is False
@@ -242,7 +242,7 @@ class TestZypper():
         Given _handle is passed a unkown parameter.
         Then _handle should raise an exception
         """
-        with pytest.raises(StandardError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             zypp._handle(strat='Unknown')
             assert po.called is False
             assert _reboot.called is False
@@ -333,7 +333,7 @@ class TestApt():
         po.return_value.returncode = 1
         with patch("srv.salt._modules.packagemanager.os.path.isfile") as mock_file:
             mock_file.return_value = True
-            with pytest.raises(StandardError) as excinfo:
+            with pytest.raises(Exception) as excinfo:
                 apt._handle()
                 excinfo.match('Apt exited with non-0 return*')
                 assert po.called is True
@@ -372,7 +372,7 @@ class TestApt():
         updates_needed.return_value = True
         po.return_value.returncode = 99
         po.return_value.communicate.return_value = ("packages out", "error")
-        with pytest.raises(StandardError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             apt._handle()
             excinfo.match('Apt exited with non-0 return*')
             assert po.called is True

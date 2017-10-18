@@ -1,17 +1,26 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=fixme
+"""
+RadosGW related functions for users, configurations, keys and buckets
+"""
 
-import salt.config
+from __future__ import absolute_import
 import logging
+# pylint: disable=incompatible-py3-code
 from subprocess import Popen, PIPE
 import os
 import json
-import boto
-import boto.s3.connection
-import boto.exception
-import glob
 import re
+# pylint: disable=import-error,3rd-party-module-not-gated
+import boto
+# pylint: disable=import-error,3rd-party-module-not-gated
+import boto.s3.connection
+# pylint: disable=import-error,3rd-party-module-not-gated
+import boto.exception
+import salt.config
 
 log = logging.getLogger(__name__)
+
 
 def configurations():
     """
@@ -28,7 +37,7 @@ def configurations():
                         set(__pillar__['roles']))
 
         if 'rgw' in __pillar__['roles']:
-            return [ 'rgw' ]
+            return ['rgw']
     return []
 
 
@@ -41,11 +50,10 @@ def configuration(role):
         return 'rgw'
     if 'roles' in __pillar__:
         if 'rgw_configurations' in __pillar__:
-            for rgw_config in  __pillar__['rgw_configurations']:
+            for rgw_config in __pillar__['rgw_configurations']:
                 if rgw_config in role:
                     return rgw_config
     return
-
 
 
 def users(realm='default', contains=None):
@@ -59,9 +67,10 @@ def users(realm='default', contains=None):
     log.debug("rc: {}".format(proc.returncode))
     if proc.returncode != '0':
         if contains:
-            return [ item for item in json.loads(proc.stdout.read()) if contains in item]
+            return [item for item in json.loads(proc.stdout.read()) if contains in item]
         return json.loads(proc.stdout.read())
     return []
+
 
 def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/files/users.j2"):
     """
@@ -85,47 +94,52 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
 
             # Create the RGW user if it does not exist.
             if not user['uid'] in existing_users:
-                base_cmd = "radosgw-admin user create --uid={uid} " \
-                    "--display-name={name} --rgw-realm={realm}".format(
-                    uid=user['uid'], name=user['name'], realm=realm)
-
+                base_cmd = ("radosgw-admin user create --uid={uid} "
+                            "--display-name={name} "
+                            "--rgw-realm={realm}".format(uid=user['uid'],
+                                                         name=user['name'],
+                                                         realm=realm))
                 args = ''
                 if 'email' in user:
-                    args += " --email=%s" % user['email']
-
-                if 'system' in user and user['system'] is True:
-                    args += " --system"
-
+                    args += " --email={}".format(user['email'])
                 if 'access_key' in user:
-                    args += " --access-key=%s" % user['access_key']
+                    args += " --access-key={}".format(user['access_key'])
 
                 if 'secret' in user:
-                    args += " --secret=%s" % user['secret']
-
+                    args += " --secret={}".format(user['secret'])
                 command = base_cmd + args
-
                 proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
-                with open(filename, "w") as json:
+                filename = "{}/user.{}.json".format(pathname, user['uid'])
+                with open(filename, "w") as _json:
                     for line in proc.stdout:
-                        json.write(line)
+                        _json.write(line)
                 for line in proc.stderr:
                     log.info("stderr: {}".format(line))
+                    proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
+                    with open(filename, "w") as _json:
+                        for line in proc.stdout:
+                            _json.write(line)
+                    for line in proc.stderr:
+                        log.info("stderr: {}".format(line))
 
                 proc.wait()
             else:
                 # Create the JSON file if it does not exist. This happens
                 # when the RGW user was manually created beforehand.
+                # pylint: disable=useless-else-on-loop
                 if not os.path.exists(filename):
+                    # pylint: disable=redefined-variable-type
                     args = ['radosgw-admin', 'user', 'info']
                     args.extend(['--uid', user['uid']])
                     args.extend(['--rgw-realm', realm])
                     proc = Popen(args, stdout=PIPE, stderr=PIPE)
-                    with open(filename, "w") as json:
+                    with open(filename, "w") as _json:
                         for line in proc.stdout:
-                            json.write(line)
+                            _json.write(line)
                     for line in proc.stderr:
                         log.info("stderr: {}".format(line))
                     proc.wait()
+
 
 def _key(user, field, pathname):
     """
@@ -142,16 +156,27 @@ def _key(user, field, pathname):
 
     return data['keys'][0][field]
 
+
 def access_key(user, pathname="/srv/salt/ceph/rgw/cache"):
+    """
+    Returns the access key for a given user
+    """
     if not user:
         raise ValueError("ERROR: no user specified")
     return _key(user, 'access_key', pathname)
 
+
 def secret_key(user, pathname="/srv/salt/ceph/rgw/cache"):
+    """
+    Returns the secret key for a given user
+    """
     return _key(user, 'secret_key', pathname)
 
 
 def endpoints(cluster='ceph'):
+    """
+    Returns an array of data structures for each gateway
+    """
     result = []
 
     search = "I@cluster:{}".format(cluster)
@@ -208,6 +233,7 @@ def endpoints(cluster='ceph'):
                 if line:
                     match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
                     if match:
+                        # pylint: disable=redefined-variable-type
                         port = int(match.group(1))
                         ssl = match.group(2)
 
@@ -217,7 +243,8 @@ def endpoints(cluster='ceph'):
 
         local = salt.client.LocalClient()
 
-        fqdns = local.cmd('I@roles:'+ rgw_conf_files[pathname], 'grains.item', ['fqdn'], expr_form="compound")
+        fqdns = local.cmd('I@roles:'+ rgw_conf_files[pathname], 'grains.item',
+                          ['fqdn'], expr_form="compound")
         for _, grains in fqdns.items():
             log.warning("fqdns: {}".format(fqdns))
             result.append({
@@ -230,6 +257,9 @@ def endpoints(cluster='ceph'):
 
 
 def s3connect(user):
+    """
+    Return an S3 connection
+    """
     endpoint = endpoints()[0]
 
     s3conn = boto.connect_s3(
@@ -242,7 +272,11 @@ def s3connect(user):
     )
     return s3conn
 
+
 def create_bucket(**kwargs):
+    """
+    Create a bucket for a user
+    """
     s3conn = s3connect(kwargs['user'])
     try:
         s3conn.create_bucket(kwargs['bucket_name'])
@@ -250,7 +284,11 @@ def create_bucket(**kwargs):
         return False
     return True
 
+
 def lookup_bucket(user, bucket):
+    """
+    Query a bucket for a user
+    """
     s3conn = s3connect(user)
     if s3conn.lookup(bucket, validate=True) is None:
         return False
