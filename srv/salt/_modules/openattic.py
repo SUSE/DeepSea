@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import configobj
 import os
+from shutil import copyfile
 import salt.utils
 
 from salt.exceptions import CommandExecutionError
@@ -61,17 +62,15 @@ def configure_salt_api(hostname, port, username, sharedsecret):
     config_file = _select_config_file_path()
 
     config = configobj.ConfigObj(config_file)
-    if 'SALT_API_HOST' not in config:
-        config['SALT_API_HOST'] = hostname
-    if 'SALT_API_PORT' not in config:
-        config['SALT_API_PORT'] = int(port)
 
-    if 'SALT_API_EAUTH' not in config or config['SALT_API_EAUTH'] == 'auto':
-        config['SALT_API_EAUTH'] = 'sharedsecret'
-
+    config['SALT_API_HOST'] = hostname
+    config['SALT_API_PORT'] = int(port)
+    config['SALT_API_EAUTH'] = 'sharedsecret'
     config['SALT_API_USERNAME'] = username
     config['SALT_API_SHARED_SECRET'] = sharedsecret
 
+    # Write backup file
+    copyfile(config_file, "{}.deepsea.bak".format(config_file))
     _write_config_file(config_file, config)
 
 
@@ -79,8 +78,10 @@ def configure_grafana(hostname):
     config_file = _select_config_file_path()
 
     config = configobj.ConfigObj(config_file)
-    if 'GRAFANA_API_HOST' not in config:
-        config['GRAFANA_API_HOST'] = hostname
 
+    config['GRAFANA_API_HOST'] = hostname
+
+    # Write backup file
+    copyfile(config_file, "{}.deepsea.bak".format(config_file))
     _write_config_file(config_file, config)
 
