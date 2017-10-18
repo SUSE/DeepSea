@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Oct 18 11:55:06 UTC 2017 - ejackson@suse.com
+
+- Version 0.7.35
+- Relocate openATTIC config file
+- Fix cli
+
+-------------------------------------------------------------------
 Tue Oct 17 16:09:27 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.34
