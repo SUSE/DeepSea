@@ -177,7 +177,7 @@ class Stage(object):
         assert self._executing
 
         if self.current_step >= len(self._steps):
-            return None
+            return None, None, None
 
         curr_step = None
         for i in range(0, 2):
@@ -247,7 +247,7 @@ class Stage(object):
             self._dynamic_steps[event.jid] = step
             return None, None, step
 
-        return None
+        return None, None, None
 
     def finish_step(self, event):
         """
