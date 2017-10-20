@@ -1225,6 +1225,43 @@ class TestOSDCommands():
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
     @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_encrypted(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And it's encrypted
+        And the device has partitions & a lockbox
+        And is_partition() returns True
+        Expect to return 5 (lockboxes are always on 5)
+        """
+        kwargs = {'device': '/dev/vdb'}
+        glob_mock.glob.return_value = ['/dev/vdb1', '/dev/vdb2', '/dev/vdb5']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'lockbox')
+        assert ret == '5'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_encrypted_nvme(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a device
+        And it's encrypted
+        And the device has partitions & a lockbox
+        And is_partition() returns True
+        And it's a nvme
+        Expect to return 5 (lockboxes are always on 5)
+        """
+        kwargs = {'device': '/dev/nvme1n1'}
+        glob_mock.glob.return_value = ['/dev/nvme1n1p1', '/dev/nvme1n1p2', '/dev/nvme1n1p5']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'lockbox')
+        assert ret == 'p5'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
     def test_highest_partition_no_nvme(self, glob_mock, part_mock, osdc_o):
         """
         Given there is a device
