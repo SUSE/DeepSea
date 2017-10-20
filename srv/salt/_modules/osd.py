@@ -1782,11 +1782,13 @@ def is_prepared(device):
     """
     config = OSDConfig(device)
     osdc = OSDCommands(config)
+    if osdc.highest_partition(readlink(device), 'lockbox') != 0:
+        log.debug("Found encrypted OSD {}".format(device))
+        return True
     partition = osdc.highest_partition(readlink(device), 'osd')
     if partition == 0:
         log.debug("Do not know which partition to check on {}".format(device))
         return False
-
     log.debug("Checking partition {} on device {}".format(partition, device))
     if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
         return True
