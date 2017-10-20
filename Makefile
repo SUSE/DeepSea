@@ -269,6 +269,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/packages/*.sls $(DESTDIR)/srv/salt/ceph/packages/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/packages/common
 	install -m 644 srv/salt/ceph/packages/common/*.sls $(DESTDIR)/srv/salt/ceph/packages/common/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/packages/remove
+	install -m 644 srv/salt/ceph/packages/remove/*.sls $(DESTDIR)/srv/salt/ceph/packages/remove/
 	# state files - pool
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/pool
 	install -m 644 srv/salt/ceph/pool/*.sls $(DESTDIR)/srv/salt/ceph/pool/
