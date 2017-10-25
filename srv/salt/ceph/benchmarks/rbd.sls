@@ -5,7 +5,7 @@ prep master:
 
 prep clients:
   salt.state:
-    - tgt: "I@roles:client-rbd and I@cluster:ceph"
+    - tgt: "I@roles:client-rbd-benchmark and I@cluster:ceph"
     - tgt_type: compound
     - sls:
       - ceph.rbd.benchmarks.prepare_clients
@@ -18,11 +18,11 @@ run fio:
     - log_dir: {{ salt['pillar.get']('benchmark:log-file-directory') }}
     - job_dir: {{ salt['pillar.get']('benchmark:job-file-directory') }}
     - default_collection: {{ salt['pillar.get']('benchmark:default-collection') }}
-    - client_glob : "I@roles:client-rbd and I@cluster:ceph"
+    - client_glob : "I@roles:client-rbd-benchmark and I@cluster:ceph"
 
 cleanup clients:
   salt.state:
-    - tgt: "I@roles:client-rbd and I@cluster:ceph"
+    - tgt: "I@roles:client-rbd-benchmark and I@cluster:ceph"
     - tgt_type: compound
     - sls:
       - ceph.rbd.benchmarks.cleanup_clients

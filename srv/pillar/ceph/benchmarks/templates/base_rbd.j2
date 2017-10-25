@@ -1,13 +1,19 @@
 [global]
 ioengine=rbd
 clientname=deepsea_rbd_bench
-pool=rbd
-rbdname=deepsea_benchmark
+pool={{ pool_name }}
+rbdname={{ image_prefix}}{{ client }}
 invalidate=0
-rw=randrw
-bs=4k
+rw={{ workload }}
+bs={{ blocksize }}
 iodepth=128
-runtime=60
+runtime=300
 time_based
+numjobs={{ numjobs }}
+direct=1
 
 [base_run]
+write_bw_log={{ job_log_dir }}/output
+write_lat_log={{ job_log_dir }}/output
+write_hist_log={{ job_log_dir }}/output
+write_iops_log={{ job_log_dir }}/output

@@ -1,6 +1,12 @@
-delete benchmark image:
+delete benchmark pool:
   cmd.run:
-    - name: rbd rm deepsea_benchmark
+    - name: ceph osd pool rm {{ salt['pillar.get']('rbd_benchmark_pool', 'deepsea_rbd_benchmark') }} {{ salt['pillar.get']('rbd_benchmark_pool', 'ds_rbd_bench_pool') }} --yes-i-really-really-mean-it
+
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='storage') %}
+delete {{ host }} benchmark image:
+  cmd.run:
+    - name: rbd rm --pool {{ salt['pillar.get']('rbd_benchmark_pool', 'deepsea_rbd_benchmark') }} {{ salt['pillar.get']('rbd_benchmark_image_prefix', 'ds_rbd_bench_img_') }}{{ host }}
+{% endfor %}
 
 remove key file:
   file.absent:
