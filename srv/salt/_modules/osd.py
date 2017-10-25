@@ -1085,7 +1085,7 @@ class OSDCommands(object):
 
             # DB cornercase with sizes
             if self.osd.db and self.osd.db_size and self.osd.db != self.osd.device:
-                partition = self.highest_partition(self.osd.wal, 'db')
+                partition = self.highest_partition(self.osd.db, 'db')
                 if partition:
                     args += "--block.db {}{} ".format(self.osd.db, partition)
                 else:
