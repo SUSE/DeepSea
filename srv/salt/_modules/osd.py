@@ -1098,10 +1098,11 @@ class OSDCommands(object):
                 args += "--block.db {} ".format(self.osd.db)
 
         if self.osd.encryption and (self.osd.wal_size or self.osd.db_size):
-            log.warn("""Your specified wal/db_sizes will not be respected. 
-                           Configure the default sizes via the ceph.conf with
-                           bluestore block db size = size
-                           bluestore block wal size = size""")
+            log.warn(""" The --wal-size and --db-size options are not supported for encrypted OSDs, so
+                         the values you specified will be ignored. Please specify the WAL and DB sizes
+                         via ceph.conf with:
+                                            bluestore block db size = size
+                                            bluestore block wal size = size """)
 
         if self.osd.encryption:
             if self.osd.db:
