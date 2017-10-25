@@ -355,6 +355,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-radosgw
 	install -m 644 srv/salt/ceph/rescind/client-radosgw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-radosgw/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/benchmark-rbd
+	install -m 644 srv/salt/ceph/rescind/benchmark-rbd/*.sls $(DESTDIR)/srv/salt/ceph/rescind/benchmark-rbd/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw
 	install -m 644 srv/salt/ceph/rescind/rgw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw/keyring
