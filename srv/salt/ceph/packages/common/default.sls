@@ -12,6 +12,7 @@ stage prep dependencies suse:
       - python-rados
       - iperf
     - fire_event: True
+    - refresh: True
 
 {% elif os == 'Ubuntu' %}
 
@@ -25,6 +26,7 @@ stage prep dependencies ubuntu:
       - python-rados
       - iperf
     - fire_event: True
+    - refresh: True
 
 {% else %}
 

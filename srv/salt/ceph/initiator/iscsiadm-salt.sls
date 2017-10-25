@@ -4,6 +4,7 @@ open-iscsi:
   pkg.installed:
     - pkgs:
       - open-iscsi
+    - refresh: True
 
 #open-iscsi:
 #  cmd.run:

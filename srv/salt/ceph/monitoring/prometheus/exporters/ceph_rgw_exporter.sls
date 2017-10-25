@@ -1,6 +1,7 @@
 install_package:
   pkg.installed:
     - name: python-prometheus-client
+    - refresh: True
 
 install_rgw_exporter:
   file.managed:

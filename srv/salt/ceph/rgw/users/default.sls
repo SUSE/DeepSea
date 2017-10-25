@@ -4,6 +4,7 @@ install rgw:
     - pkgs:
       - ceph-radosgw
       - python-boto
+    - refresh: True
 
 add users:
   module.run:

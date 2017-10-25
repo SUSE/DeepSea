@@ -1,6 +1,8 @@
 golang-github-prometheus-prometheus:
   pkg.installed:
     - fire_event: True
+    - name: golang-github-prometheus-prometheus
+    - refresh: True
 
 /etc/prometheus/prometheus.yml:
   file.managed:

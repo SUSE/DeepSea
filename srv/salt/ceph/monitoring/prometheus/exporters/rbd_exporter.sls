@@ -4,6 +4,7 @@ install rbd exporter dependencies:
     - pkgs:
       - cron
       - jq
+    - refresh: True
 
 rbd text exporter:
   file.managed:

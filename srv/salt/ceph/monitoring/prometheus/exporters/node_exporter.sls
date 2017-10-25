@@ -1,6 +1,7 @@
 install node exporter package:
   pkg.installed:
     - name: golang-github-prometheus-node_exporter
+    - refresh: True
     - fire_event: True
 
 set node exporter service args:
