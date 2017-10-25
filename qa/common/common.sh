@@ -27,6 +27,9 @@ rpm -q salt-master
 rpm -q salt-minion
 rpm -q salt-api
 
+# show deepsea RPM version in case deepsea was installed from RPM
+rpm -q deepsea || true
+
 # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
 # (otherwise we would have to set deepsea grain on all minions)
 echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
