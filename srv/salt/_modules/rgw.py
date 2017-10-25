@@ -2,7 +2,7 @@
 
 import salt.config
 import logging
-from subprocess import call, Popen, PIPE
+from subprocess import Popen, PIPE
 import os
 import json
 import boto
@@ -67,46 +67,65 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
     """
     Write each user to its own file.
     """
-    users = __salt__['slsutil.renderer'](jinja)
-    log.debug("users rendered: {}".format(users))
+    conf_users = __salt__['slsutil.renderer'](jinja)
+    log.debug("users rendered: {}".format(conf_users))
 
-    if users is None or 'realm' not in users:
+    if conf_users is None or 'realm' not in conf_users:
         return
 
-    for realm in users['realm']:
-        for user in users['realm'][realm]:
+    for realm in conf_users['realm']:
+        # Get the existing users.
+        existing_users = users(realm)
+
+        for user in conf_users['realm'][realm]:
             if 'uid' not in user or 'name' not in user:
                 raise ValueError('ERROR: please specify both uid and name')
 
-            base_cmd = "radosgw-admin user create --uid={uid} --display-name={name}".format(
-                uid=user['uid'],
-                name=user['name'],
-            )
-
-            args = ''
-            if 'email' in user:
-                args += " --email=%s" % user['email']
-
-            if 'system' in user and user['system'] is True:
-                args += " --system"
-
-            if 'access_key' in user:
-                args += " --access-key=%s" % user['access_key']
-
-            if 'secret' in user:
-                args += " --secret=%s" % user['secret']
-
-            command = base_cmd + args
-
-            proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
             filename = "{}/user.{}.json".format(pathname, user['uid'])
-            with open(filename, "w") as json:
-                for line in proc.stdout:
-                    json.write(line)
-            for line in proc.stderr:
-                log.info("stderr: {}".format(line))
 
-            proc.wait()
+            # Create the RGW user if it does not exist.
+            if not user['uid'] in existing_users:
+                base_cmd = "radosgw-admin user create --uid={uid} " \
+                    "--display-name={name} --rgw-realm={realm}".format(
+                    uid=user['uid'], name=user['name'], realm=realm)
+
+                args = ''
+                if 'email' in user:
+                    args += " --email=%s" % user['email']
+
+                if 'system' in user and user['system'] is True:
+                    args += " --system"
+
+                if 'access_key' in user:
+                    args += " --access-key=%s" % user['access_key']
+
+                if 'secret' in user:
+                    args += " --secret=%s" % user['secret']
+
+                command = base_cmd + args
+
+                proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
+                with open(filename, "w") as json:
+                    for line in proc.stdout:
+                        json.write(line)
+                for line in proc.stderr:
+                    log.info("stderr: {}".format(line))
+
+                proc.wait()
+            else:
+                # Create the JSON file if it does not exist. This happens
+                # when the RGW user was manually created beforehand.
+                if not os.path.exists(filename):
+                    args = ['radosgw-admin', 'user', 'info']
+                    args.extend(['--uid', user['uid']])
+                    args.extend(['--rgw-realm', realm])
+                    proc = Popen(args, stdout=PIPE, stderr=PIPE)
+                    with open(filename, "w") as json:
+                        for line in proc.stdout:
+                            json.write(line)
+                    for line in proc.stderr:
+                        log.info("stderr: {}".format(line))
+                    proc.wait()
 
 def _key(user, field, pathname):
     """
@@ -197,7 +216,7 @@ def endpoints(cluster='ceph'):
                         admin_path = match.group(1)
 
         local = salt.client.LocalClient()
-        
+
         fqdns = local.cmd('I@roles:'+ rgw_conf_files[pathname], 'grains.item', ['fqdn'], expr_form="compound")
         for _, grains in fqdns.items():
             log.warning("fqdns: {}".format(fqdns))
