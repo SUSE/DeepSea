@@ -174,7 +174,7 @@ function proposal_populate_dmcrypt {
 }
 
 #
-# functions for restarting all configured services
+# functions for testing ceph.restart orchestration
 #
 
 function restart_services {
@@ -184,15 +184,18 @@ function restart_services {
 function mon_restarted {
   local expected_return=$1
   local mon_hosts=$(salt --static --out json -C "I@roles:mon" test.ping | jq -r 'keys[]')
+  set +e
   for minion in ${mon_hosts}; do
     salt "${minion}*" cmd.shell "journalctl -u ceph-mon@*" | grep -i terminated
     test $? = ${expected_return}
   done
+  set -e
 }
 
 function osd_restarted {
     local expected_return=$1
     osd_hosts=$(salt --static --out json -C "I@roles:storage" test.ping | jq -r 'keys[]')
+    set +e
     for host in ${osd_hosts}; do
         osds=$(salt --static --out json ${host} osd.list | jq .[][])
         for osd in ${osds}; do
@@ -200,15 +203,18 @@ function osd_restarted {
             test $? = ${expected_return}
         done
     done
+    set -e
 }
 
 function rgw_restarted {
   local expected_return=$1
   rgw_hosts=$(salt --static --out json -C "I@roles:rgw" test.ping | jq -r 'keys[]')
+  set +e
   for host in ${rgw_hosts}; do
     salt ${host} cmd.shell "journalctl -u ceph-radosgw@*" | grep -i terminated
     test $? = ${expected_return}
   done
+  set -e
 }
 
 #
