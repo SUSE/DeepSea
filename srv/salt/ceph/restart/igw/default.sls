@@ -6,7 +6,7 @@
         - tgt: {{ master }}
         - sls: ceph.wait
 
-    check if all processes are still running on {{ host }}:
+    check if all processes are still running on {{ host }} after restarting igws:
       salt.state:
         - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
         - tgt_type: compound
