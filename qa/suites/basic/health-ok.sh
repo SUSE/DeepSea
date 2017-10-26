@@ -2,14 +2,16 @@
 #
 # DeepSea integration test "suites/basic/health-ok.sh"
 #
-# This script runs DeepSea stages 0-3 to deploy a Ceph cluster on all the nodes
-# that have at least one external disk drive. After stage 3 completes, the
-# script checks for HEALTH_OK.
+# This script runs DeepSea stages 0-3 to deploy a Ceph cluster, optionally
+# with data-at-rest encryption of OSDs, on all the nodes that have at least
+# one external disk drive. After stage 3 completes, the script checks for
+# HEALTH_OK and tests the "ceph.restart" orchestration.
 #
 # The script makes no assumptions beyond those listed in qa/README.
 #
-# On success (HEALTH_OK is reached), the script returns 0. On failure, for
-# whatever reason, the script returns non-zero.
+# On success (HEALTH_OK is reached and "ceph.restart" orchestration behaves
+# as expected), the script returns 0. On failure, for whatever reason, the
+# script returns non-zero.
 #
 # The script produces verbose output on stdout, which can be captured for later
 # forensic analysis.
@@ -28,8 +30,9 @@ function usage {
     echo "  ${0} [-h,--help] [--cli]"
     echo
     echo "Options:"
-    echo "    --cli      Use DeepSea CLI"
-    echo "    --help     Display this usage message"
+    echo "    --cli         Use DeepSea CLI"
+    echo "    --encryption  Deploy OSDs with data-at-rest encryption"
+    echo "    --help        Display this usage message"
     exit 1
 }
 
@@ -43,9 +46,11 @@ eval set -- "$TEMP"
 
 # process options
 CLI=""
+ENCRYPTION=""
 while true ; do
     case "$1" in
         --cli) CLI="cli" ; shift ;;
+        --encrypted) ENCRYPTION="encryption" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
@@ -58,9 +63,12 @@ cat_salt_config
 run_stage_0 "$CLI"
 salt_api_test
 run_stage_1 "$CLI"
+if [ -n "$ENCRYPTION" ] ; then
+    proposal_populate_dmcrypt
+fi
 policy_cfg_base
 policy_cfg_mon_flex
-policy_cfg_storage 0 # "0" means all nodes will have storage role
+policy_cfg_storage 0 $ENCRYPTION # "0" means all nodes will have storage role
 cat_policy_cfg
 run_stage_2 "$CLI"
 ceph_conf_small_cluster
