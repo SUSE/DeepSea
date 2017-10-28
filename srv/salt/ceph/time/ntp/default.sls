@@ -1,4 +1,9 @@
 
+{% set time_server = salt['pillar.get']('time_server') %}
+{% if time_server is string %}
+{% set time_server = [time_server] %}
+{% endif %}
+
 ntp:
   pkg.installed:
     - pkgs:
@@ -8,10 +13,10 @@ ntp:
 {% if salt['service.status']('ntpd') == False %}
 sync time:
   cmd.run:
-    - name: "sntp -S -c {{ salt['pillar.get']('time_server') }}"
+    - name: "sntp -S -c {{ time_server[0] }}"
 {% endif %}
 
-{% if grains['id'] != salt['pillar.get']('time_server') %}
+{% if grains['id'] not in salt['pillar.get']('time_server') %}
 /etc/ntp.conf:
   file:
     - managed

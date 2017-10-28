@@ -558,16 +558,19 @@ class Validate(object):
         """
         Check that time server is available
         """
-        time_server = self.data[self.data.keys()[0]].get("time_server", "")
         time_init = self.data[self.data.keys()[0]].get("time_init", "")
         if time_init == 'disabled':
             self.passed['time_server'] = "disabled"
             return
 
-        if (time_init == 'ntp' and os.path.isfile('/usr/sbin/sntp')):
-            self._ntp_check(time_server)
-        else:
-            self._ping_check(time_server)
+        time_server = self.data[self.data.keys()[0]].get("time_server", "")
+        if type(time_server) is not list:
+            time_server = [time_server]
+        for server in time_server:
+            if (time_init == 'ntp' and os.path.isfile('/usr/sbin/sntp')):
+                self._ntp_check(server)
+            else:
+                self._ping_check(server)
 
         self._set_pass_status('time_server')
 
