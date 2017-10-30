@@ -1020,8 +1020,8 @@
             "valueMaps": [
               {
                 "op": "=",
-                "text": "N/A",
-                "value": "null"
+                "text": "0 s",
+                "value": "0"
               }
             ],
             "valueName": "avg"
@@ -1098,8 +1098,8 @@
             "valueMaps": [
               {
                 "op": "=",
-                "text": "N/A",
-                "value": "null"
+                "text": "0 s",
+                "value": "0"
               }
             ],
             "valueName": "avg"
