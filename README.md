@@ -29,6 +29,9 @@ If you think you've found a bug or would like to suggest an enhancement, please 
 
 If you would like to contribute to DeepSea, refer to the [contribution guidelines](https://github.com/suse/deepsea/blob/master/contributing.md).
 
+## Developers and Admins
+For those interested in learning about some of the uses of Salt in DeepSea, see [here](https://github.com/suse/deepsea/blob/master/salt.md) for explanations and examples.
+ 
 ## Usage
 You need at least a minimum of 4 nodes to be able to test and use DeepSea properly.
 
