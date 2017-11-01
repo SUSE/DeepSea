@@ -2091,107 +2091,70 @@
         "collapse": false,
         "height": 435,
         "panels": [
-          {
-            "aliasColors": {},
-            "bars": false,
-            "datasource": "Prometheus",
-            "fill": 1,
-            "id": 36,
-            "legend": {
-              "alignAsTable": false,
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "rightSide": false,
-              "show": true,
-              "total": false,
-              "values": false
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "span": 12,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "ceph_osd_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
-                "intervalFactor": 1,
-                "legendFormat": "{{osd}}",
-                "refId": "J",
-                "step": 1
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "OSD Utilization",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "decbytes",
-                "label": "Used",
-                "logBase": 1,
-                "max": null,
+            {
+              "cards": {
+                "cardPadding": null,
+                "cardRound": 2
+              },
+              "color": {
+                "cardColor": "rgb(0, 254, 255)",
+                "colorScale": "sqrt",
+                "colorScheme": "interpolateGnBu",
+                "exponent": 0.5,
                 "min": null,
+                "mode": "spectrum"
+              },
+              "dataFormat": "timeseries",
+              "datasource": "Prometheus",
+              "heatmap": {},
+              "highlightCards": true,
+              "id": 39,
+              "legend": {
                 "show": true
               },
-              {
-                "format": "short",
-                "label": null,
+              "links": [],
+              "span": 12,
+              "targets": [
+                {
+                  "expr": "ceph_osd_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter', osd=~'osd.*'}",
+                  "format": "time_series",
+                  "interval": "1m",
+                  "intervalFactor": 1,
+                  "legendFormat": "",
+                  "refId": "A",
+                  "step": 60
+                }
+              ],
+              "timeFrom": null,
+              "title": "OSD Utilization",
+              "tooltip": {
+                "show": true,
+                "showHistogram": false
+              },
+              "type": "heatmap",
+              "xAxis": {
+                "show": true
+              },
+              "xBucketNumber": null,
+              "xBucketSize": "1m",
+              "yAxis": {
+                "decimals": null,
+                "format": "bytes",
                 "logBase": 1,
                 "max": null,
                 "min": null,
-                "show": true
-              }
-            ]
-          }
+                "show": true,
+                "splitFactor": null
+              },
+              "yBucketNumber": null,
+              "yBucketSize": null
+            }
         ],
         "repeat": null,
         "repeatIteration": null,
         "repeatRowId": null,
-        "showTitle": false,
-        "title": "Dashboard Row",
-        "titleSize": "h6"
-      },
-      {
-        "collapse": false,
-        "height": 250,
-        "panels": [],
-        "repeat": null,
-        "repeatIteration": null,
-        "repeatRowId": null,
-        "showTitle": false,
-        "title": "Dashboard Row",
-        "titleSize": "h6"
-      },
-      {
-        "collapse": false,
-        "height": 250,
-        "panels": [],
-        "repeat": null,
-        "repeatIteration": null,
-        "repeatRowId": null,
-        "showTitle": false,
-        "title": "Dashboard Row",
+        "showTitle": true,
+        "title": "OSD Utilization",
         "titleSize": "h6"
       }
     ],
