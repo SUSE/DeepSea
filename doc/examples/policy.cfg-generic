@@ -8,6 +8,8 @@ config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
 # Role assignment
 role-master/cluster/*.sls slice=[2:3]
+role-prometheus/cluster/*.sls slice=[2:3]
+role-grafana/cluster/*.sls slice=[2:3]
 role-mon/cluster/*.sls slice=[3:6]
 role-mgr/cluster/*.sls slice=[3:6]
 role-igw/cluster/*.sls slice=[6:9]

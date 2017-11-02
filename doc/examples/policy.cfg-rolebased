@@ -5,6 +5,9 @@ cluster-ceph/cluster/*.sls
 # ADMIN
 role-master/cluster/admin*.sls
 role-admin/cluster/admin*.sls
+# MONITORING
+role-prometheus/cluster/admin*.sls
+role-grafana/cluster/admin*.sls
 
 # MON
 role-mon/cluster/mon*.sls

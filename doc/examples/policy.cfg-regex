@@ -8,7 +8,9 @@ profile-default/stack/default/ceph/minions/*.yml re=.*3[^7]\.subdomainX\.sls$
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
 # Role assignment
-role-master/cluster/admin.subdomainA.sls 
+role-master/cluster/admin.subdomainA.sls
+role-prometheus/cluster/admin.subdomainA.sls
+role-granafa/cluster/admin.subdomainA.sls
 role-igw/cluster/*.sls re=.*2[4-6]\.subdomainX\.sls$
 role-mon/cluster/mon*.sls re=.*1[135]\.subdomainX\.sls$
 role-mgr/cluster/mon*.sls re=.*1[135]\.subdomainX\.sls$
