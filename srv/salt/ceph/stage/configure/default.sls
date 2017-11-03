@@ -38,6 +38,22 @@ setup monitoring:
     - tgt_type: compound
     - sls: ceph.monitoring
 
+install grafana:
+  salt.state:
+    - tgt: 'I@roles:grafana and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.grafana
+
+setup grafana auth:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.monitoring.grafana.auth
+
+setup grafana dashboards:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.monitoring.grafana.dashboards
+
 setup node exporters:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
