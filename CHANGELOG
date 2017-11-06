@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Mon Nov 6 10:16:07 UTC 2017 - jschmid@suse.de
+
+- Version 0.8 ecbc24759d047be517a309c05674a0a7e9b5ddc2
+- fix bsc#1064223
+- restart mechanism for services
+- tests for restart and encrypted disks
+- adding explicit restarts to pgk.install states
+
+-------------------------------------------------------------------
 Wed Oct 18 11:55:06 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.35
