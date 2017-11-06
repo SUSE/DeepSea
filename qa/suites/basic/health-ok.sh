@@ -36,7 +36,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli" \
+TEMP=$(getopt -o h --long "cli,encrypted,encryption" \
      -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -50,7 +50,7 @@ ENCRYPTION=""
 while true ; do
     case "$1" in
         --cli) CLI="cli" ; shift ;;
-        --encrypted) ENCRYPTION="encryption" ; shift ;;
+        --encrypted|--encryption) ENCRYPTION="encryption" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
