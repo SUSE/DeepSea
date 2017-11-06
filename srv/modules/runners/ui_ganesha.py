@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=modernize-parse-error
+#
+# The salt-api calls functions with keywords that are not needed
+# pylint: disable=unused-argument
 """
 NFS Ganesha API runner
 
@@ -17,12 +21,22 @@ import yaml
 
 
 class GaneshaConfParser(object):
+    """
+    Ganesha configuration file parser
+    """
+
     def __init__(self, conf_file):
+        """
+        Load config file, initialize variables
+        """
         self.pos = 0
         self.text = ""
         self.load_file(conf_file)
 
     def load_file(self, conf_file):
+        """
+        Read file without comments
+        """
         with open(conf_file) as cfi:
             for line in cfi.readlines():
                 cardinal_idx = line.find('#')
@@ -33,6 +47,9 @@ class GaneshaConfParser(object):
                     self.text += line[:cardinal_idx]
 
     def remove_all_whitespaces(self):
+        """
+        Strip whitespaces from lines
+        """
         new_text = ""
         in_string = False
         for i, cha in enumerate(self.text):
@@ -43,9 +60,15 @@ class GaneshaConfParser(object):
         self.text = new_text
 
     def stream(self):
+        """
+        Return remaining file
+        """
         return self.text[self.pos:]
 
     def parse_block_name(self):
+        """
+        Returns name of configuration block
+        """
         idx = self.stream().find('{')
         if idx == -1:
             raise Exception("Cannot find block name")
@@ -54,6 +77,9 @@ class GaneshaConfParser(object):
         return block_name
 
     def parse_block(self):
+        """
+        Parses curly brace block
+        """
         block_name = self.parse_block_name().lower()
         block_dict = {'block_name': block_name}
         self.parse_block_body(block_dict)
@@ -63,6 +89,9 @@ class GaneshaConfParser(object):
         return block_dict
 
     def parse_parameter_value(self, raw_value):
+        """
+        Return value whether quoted or comma separated
+        """
         colon_idx = raw_value.find(',')
 
         if colon_idx == -1:
@@ -76,6 +105,9 @@ class GaneshaConfParser(object):
             return [self.parse_parameter_value(v.strip()) for v in raw_value.split(',')]
 
     def parse_stanza(self, block_dict):
+        """
+        Parse an individual line
+        """
         equal_idx = self.stream().find('=')
         semicolon_idx = self.stream().find(';')
         if equal_idx == -1:
@@ -86,6 +118,9 @@ class GaneshaConfParser(object):
         self.pos += semicolon_idx+1
 
     def parse_block_body(self, block_dict):
+        """
+        Parse the whole body
+        """
         last_pos = self.pos
         while True:
             semicolon_idx = self.stream().find(';')
@@ -96,7 +131,11 @@ class GaneshaConfParser(object):
                 # block end
                 return
 
-            if (semicolon_idx != -1 and lbracket_idx != -1 and semicolon_idx < lbracket_idx) or (semicolon_idx != -1 and lbracket_idx == -1):
+            if ((semicolon_idx != -1 and
+                 lbracket_idx != -1 and
+                 semicolon_idx < lbracket_idx) or
+                (semicolon_idx != -1 and
+                 lbracket_idx == -1)):
                 self.parse_stanza(block_dict)
             elif (semicolon_idx != -1 and lbracket_idx != -1 and semicolon_idx > lbracket_idx) or (
                   semicolon_idx == -1 and lbracket_idx != -1):
@@ -111,6 +150,9 @@ class GaneshaConfParser(object):
             last_pos = self.pos
 
     def parse(self):
+        """
+        The general parser that returns blocks of configuration
+        """
         self.remove_all_whitespaces()
         blocks = []
         while self.stream():
@@ -120,6 +162,9 @@ class GaneshaConfParser(object):
 
     @staticmethod
     def _indentation(depth, size=4):
+        """
+        Prepend spaces to indent as necessary
+        """
         conf_str = ""
         for _ in range(0, depth*size):
             conf_str += " "
@@ -127,7 +172,13 @@ class GaneshaConfParser(object):
 
     @staticmethod
     def write_block_body(block, depth=0):
+        """
+        Return the block body
+        """
         def format_val(key, val):
+            """
+            Return a comma separated list, raw value or quoted value
+            """
             if isinstance(val, list):
                 return ', '.join([format_val(key, v) for v in val])
             elif isinstance(val, int) or (block['block_name'] == 'CLIENT' and key == 'clients'):
@@ -149,6 +200,9 @@ class GaneshaConfParser(object):
 
     @staticmethod
     def write_block(block, depth):
+        """
+        Return the configuration block
+        """
         conf_str = ""
         conf_str += GaneshaConfParser._indentation(depth)
         conf_str += format(block['block_name'])
@@ -160,6 +214,9 @@ class GaneshaConfParser(object):
 
     @staticmethod
     def write_conf(blocks):
+        """
+        Return the configuration file
+        """
         conf_str = ""
         for block in blocks:
             conf_str += GaneshaConfParser.write_block(block, 0)
@@ -167,8 +224,14 @@ class GaneshaConfParser(object):
 
 
 class Ganesha(object):
+    """
+    Ganesha specific configuration operations
+    """
     @staticmethod
     def _process_ganesha_conf_block(block):
+        """
+        Extract attributes from configuration block
+        """
         new_block = {}
         for key, val in block.items():
             if key in ['secret_access_key', 'access_key_id', 'block_name']:
@@ -190,6 +253,9 @@ class Ganesha(object):
 
     @staticmethod
     def _process_ganesha_conf(conf):
+        """
+        Process configuration blocks that are not export
+        """
         filtered_conf = []
         for block in conf:
             if block['block_name'] != 'export':
@@ -199,6 +265,9 @@ class Ganesha(object):
 
     @staticmethod
     def call_salt_module(local_client, role, fun, args, only_vals=True, minion=False):
+        """
+        Wrapper for Salt module since multiple values may be returned
+        """
         target = "I@roles:{}".format(role) if not minion else role
         result = local_client.cmd(target, fun, args, expr_form="compound")
         if minion:
@@ -230,7 +299,11 @@ class Ganesha(object):
         return result
 
     @staticmethod
+    # pylint: disable=too-many-return-statements
     def _add_secrets_to_exports(exports, local_client):
+        """
+        Add the users to the CEPH and RGW sections
+        """
         for host_exports in exports:
             found_rgw_fsal = False
             if 'host' not in host_exports:
@@ -289,6 +362,9 @@ class Ganesha(object):
 
     @staticmethod
     def _process_export_blocks(exports):
+        """
+        Process export blocks separately
+        """
         for host_exports in exports:
             for export in host_exports['exports']:
                 if export['block_name'] == 'EXPORT':
@@ -327,6 +403,9 @@ class Ganesha(object):
 
     @staticmethod
     def save_exports(exports):
+        """
+        Save the ganesha configuration for each gateway
+        """
         if exports is None:
             return {'success': False, 'message': 'No exports config provided'}
         elif not isinstance(exports, list):
@@ -355,6 +434,9 @@ class Ganesha(object):
 
     @staticmethod
     def deploy_exports(minion=None):
+        """
+        Call 'salt <target> state.apply ceph.ganesha'
+        """
         local = salt.client.LocalClient()
         master_minion = Ganesha.call_salt_module(
             local, 'master', 'pillar.get', ['master_minion'])[0]
@@ -373,6 +455,9 @@ class Ganesha(object):
 
     @staticmethod
     def check_exports_status():
+        """
+        Check the status of each export
+        """
         exports = Ganesha.get_exports()
         local = salt.client.LocalClient()
         exports_info = Ganesha.call_salt_module(local, 'ganesha', 'ganesha.get_exports_info',
@@ -408,7 +493,8 @@ class Ganesha(object):
                     })
         return result
 
-def help():
+
+def help_():
     """
     Usage
     """
@@ -432,8 +518,7 @@ def help():
              '\n\n'
              'salt-run ui_ganesha.stop_exports:\n\n'
              '    Stops the ganesha service for each minion\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
@@ -447,6 +532,9 @@ def get_hosts(**kwargs):
 
 
 def get_fsals_available(**kwargs):
+    """
+    Return the FileSystem Abstraction Layer types
+    """
     # salt.saltutil.runner('select.minions', cluster='ceph', roles='mds')
     runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
     result = []
@@ -477,11 +565,15 @@ def save_exports(exports, **kwargs):
     try:
         exports_json = json.loads(exports)
         return Ganesha.save_exports(exports_json)
-    except Exception as e:
-        return {'success': False, 'message': str(e)}
+    # pylint: disable=broad-except
+    except Exception as exc:
+        return {'success': False, 'message': str(exc)}
 
 
 def deploy_exports(**kwargs):
+    """
+    Apply the changes to all gateways or a single minion
+    """
     if 'minion' in kwargs:
         Ganesha.deploy_exports(kwargs['minion'])
     else:
@@ -489,13 +581,23 @@ def deploy_exports(**kwargs):
 
 
 def status_exports(**kwargs):
+    """
+    Return status of exports
+    """
     return Ganesha.check_exports_status()
 
 
 def stop_exports(**kwargs):
+    """
+    Stop the Ganesha service
+    """
     local = salt.client.LocalClient()
     if 'minion' in kwargs:
         return Ganesha.call_salt_module(local, kwargs['minion'], 'service.stop',
                                         ['nfs-ganesha'], minion=True)
 
     return Ganesha.call_salt_module(local, 'ganesha', 'service.stop', ['nfs-ganesha'], False)
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

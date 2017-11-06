@@ -1,13 +1,22 @@
 # -*- coding: utf-8 -*-
-import configobj
+"""
+OpenATTIC configuration operations
+"""
+
+from __future__ import absolute_import
 import os
 from shutil import copyfile
+# pylint: disable=import-error,3rd-party-module-not-gated
+import configobj
 import salt.utils
 
 from salt.exceptions import CommandExecutionError
 
 
 def _write_config_file(config_file, config):
+    """
+    Create the openATTIC configuration file
+    """
     conf_content = ""
     write_log = set()
     with salt.utils.fopen(config_file, "r") as fir:
@@ -49,16 +58,22 @@ def _write_config_file(config_file, config):
 
 
 def _select_config_file_path():
+    """
+    Return an openATTIC configuration pathname
+    """
     possible_paths = ("/etc/default/openattic", "/etc/sysconfig/openattic")
     for path in possible_paths:
         if os.access(path, os.F_OK) and os.access(path, os.R_OK | os.W_OK):
             return path
     raise CommandExecutionError(
-        "No openATTIC config file found in the following locations: {}"
-        .format(possible_paths))
+        ("No openATTIC config file found in the following locations: "
+         "{}".format(possible_paths)))
 
 
 def configure_salt_api(hostname, port, username, sharedsecret):
+    """
+    Update the SALT API configuration
+    """
     config_file = _select_config_file_path()
 
     config = configobj.ConfigObj(config_file)
@@ -75,6 +90,9 @@ def configure_salt_api(hostname, port, username, sharedsecret):
 
 
 def configure_grafana(hostname):
+    """
+    Update the Grafana configuration
+    """
     config_file = _select_config_file_path()
 
     config = configobj.ConfigObj(config_file)
@@ -84,4 +102,3 @@ def configure_grafana(hostname):
     # Write backup file
     copyfile(config_file, "{}.deepsea.bak".format(config_file))
     _write_config_file(config_file, config)
-

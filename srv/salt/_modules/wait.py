@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+Heath related checks for Ceph
+"""
 
-import rados
+from __future__ import absolute_import
 import json
 import time
 import logging
-import pprint
-
+# pylint: disable=import-error,3rd-party-module-not-gated
+import rados
+# pylint: disable=incompatible-py3-code
 log = logging.getLogger(__name__)
 
 
@@ -24,7 +28,7 @@ class HealthCheck(object):
             raise ValueError(msg)
 
         self.settings = {
-            'conf' : "/etc/ceph/ceph.conf",
+            'conf': "/etc/ceph/ceph.conf",
             'timeout': 300,
             'check': 2,
             'delay': 6,
@@ -38,19 +42,20 @@ class HealthCheck(object):
         """
         Connect to Ceph cluster
         """
-        self.cluster=rados.Rados(conffile=self.settings['conf'])
+        self.cluster = rados.Rados(conffile=self.settings['conf'])
         self.cluster.connect()
 
     def wait(self):
         """
         Poll until the status "matches" the specificed number of checks.
         """
-        cmd = json.dumps({"prefix":"health", "format":"json" })
-        i=0
+        cmd = json.dumps({"prefix": "health", "format": "json"})
+        i = 0
         check = 0
 
         while i < (self.settings['timeout']/self.settings['delay']):
-            ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+            # pylint: disable=unused-variable
+            ret, output, err = self.cluster.mon_command(cmd, b'', timeout=6)
             health = json.loads(output)
             if 'overall_status' in health:
                 current_status = json.loads(output)['overall_status']
@@ -76,44 +81,52 @@ class HealthCheck(object):
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
 
+    # pylint: disable=no-self-use
     def _check_status(self, current, settings):
         """
         Return the "correct" matching status
         """
         if settings['negate']:
             log.debug("status != {}".format(settings['status']))
-            return (current != settings['status'])
+            return current != settings['status']
         else:
             log.debug("status == {}".format(settings['status']))
-            return (current == settings['status'])
+            return current == settings['status']
 
     def just(self):
+        """
+        Sleep a set amount
+        """
         time.sleep(self.settings['delay'])
 
+
 def just(**kwargs):
-    hc = HealthCheck(**kwargs)
-    hc.just()
+    """
+    Wait for the delay
+    """
+    healthcheck = HealthCheck(**kwargs)
+    healthcheck.just()
+
 
 def until(**kwargs):
     """
     Wait around until the status matches.
     """
-    hc = HealthCheck(**kwargs)
-    hc.wait()
+    healthcheck = HealthCheck(**kwargs)
+    healthcheck.wait()
 
 
 def out(**kwargs):
     """
     Negate the check.  That is, wait out the status such as HEALTH_ERR.
     """
-    kwargs.update({ 'negate': True })
-    hc = HealthCheck(**kwargs)
-    hc.wait()
+    kwargs.update({'negate': True})
+    healthcheck = HealthCheck(**kwargs)
+    healthcheck.wait()
 
 
 def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k:v for k,v in settings.iteritems() if not k.startswith('__')}
-
+    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}

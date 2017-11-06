@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import salt.client
-import pprint
-import os
-import sys
-import logging
-import salt.utils
-import salt.utils.master
-
-log = logging.getLogger(__name__)
-
+# pylint: disable=modernize-parse-error
 """
 The original purpose of this runner is to verify that proceeding with an
 upgrade is safe.  All expected processes are running.
@@ -17,7 +7,18 @@ upgrade is safe.  All expected processes are running.
 A secondary purpose is a utility to check the current state of all processes.
 """
 
-def help():
+import pprint
+import os
+import sys
+import logging
+import salt.client
+import salt.utils
+import salt.utils.master
+
+log = logging.getLogger(__name__)
+
+
+def help_():
     """
     Usage
     """
@@ -29,12 +30,12 @@ def help():
              '\n\n'
              'salt-run cephprocesses.wait:\n\n'
              '    Wait for all processes to be up according to assigned roles\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
 
+# pylint: disable=dangerous-default-value
 def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
     """
     Query the status of running processes for each role.  Also, verify that
@@ -52,7 +53,7 @@ def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
 
     ret = True
 
-    for role in status.keys():
+    for role in status:
         for minion in status[role]:
             if status[role][minion] is False:
                 if tolerate_down == 0:
@@ -62,6 +63,7 @@ def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
 
     return ret
 
+
 def mon(cluster='ceph'):
     """
     Query all monitors.  If any are running, assume cluster is running and
@@ -69,11 +71,11 @@ def mon(cluster='ceph'):
     to determines whether minion steps should happen serially or in parallel.
     """
     status = _status("I@cluster:{}".format(cluster), ['mon'], False)
-    running = False
     for minion in status['mon']:
         if status['mon'][minion]:
             return True
     return False
+
 
 def _status(search, roles, verbose):
     """
@@ -94,7 +96,6 @@ def _status(search, roles, verbose):
                                  verbose=verbose,
                                  expr_form="compound")
 
-
     sys.stdout = _stdout
     log.debug(pprint.pformat(status))
     return status
@@ -114,7 +115,7 @@ def _cached_roles(search):
 
     cached = pillar_util.get_minion_pillar()
     roles = {}
-    for minion in cached.keys():
+    for minion in cached:
         if 'roles' in cached[minion]:
             for role in cached[minion]['roles']:
                 roles.setdefault(role, []).append(minion)
@@ -146,9 +147,9 @@ def wait(cluster='ceph', **kwargs):
                        expr_form="compound")
 
     sys.stdout = _stdout
-    log.debug("status: ".format(pprint.pformat(status)))
+    log.debug("status: {}".format(pprint.pformat(status)))
     if False in status.values():
-        for minion in status.keys():
+        for minion in status:
             if status[minion] is False:
                 log.error("minion {} failed".format(minion))
         return False
@@ -167,3 +168,7 @@ def _timeout(cluster='ceph'):
         return 900
     else:
         return 120
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+Operations for Ceph processes to roles
+"""
 
+from __future__ import absolute_import
 import logging
 import time
-import psutil
 import os
 import pwd
+# pylint: disable=import-error,3rd-party-module-not-gated
+import psutil
 
 log = logging.getLogger(__name__)
 
@@ -40,19 +45,27 @@ def check(results=False, quiet=False, **kwargs):
         for rgw_config in __pillar__['rgw_configurations']:
             processes[rgw_config] = ['radosgw']
 
+    # pylint: disable=too-many-nested-blocks
     if 'roles' in __pillar__:
         for role in kwargs.get('roles', __pillar__['roles']):
             # Checking running first.
             for running_proc in psutil.process_iter():
                 # NOTE about `ps` and psutils.Process():
-                # `ps -e` determines process names by examining /proc/PID/stat,status files.  The name derived
+                # `ps -e` determines process names by examining
+                # /proc/PID/stat,status files.  The name derived
                 # there is also found in psutil.Process.name.
-                # `ps -ef`, according to strace, appears to also reference /proc/PID/cmdline when determining
-                # process names.  We have found that some processes (ie. ceph-mgr was noted) will _sometimes_
-                # contain a process name in /proc/PIDstat/stat,status that does not match that found in /proc/PID/cmdline.
-                # In our ceph-mgr example, the process name was found to be 'exe' (which happens to also be the name a of
-                # symlink in /proc/PID that points to the executable) while the cmdline entry contained 'ceph-mgr' etc.
-                # As such, we've decided that a check based on executable path is more reliable.
+                # `ps -ef`, according to strace, appears to also reference
+                # /proc/PID/cmdline when determining
+                # process names.  We have found that some processes (ie.
+                # ceph-mgr was noted) will _sometimes_
+                # contain a process name in /proc/PIDstat/stat,status that does
+                # not match that found in /proc/PID/cmdline.
+                # In our ceph-mgr example, the process name was found to be
+                # 'exe' (which happens to also be the name a of
+                # symlink in /proc/PID that points to the executable) while the
+                # cmdline entry contained 'ceph-mgr' etc.
+                # As such, we've decided that a check based on executable
+                # path is more reliable.
                 pdict = running_proc.as_dict(attrs=['pid', 'name', 'exe', 'uids'])
                 pdict_exe = os.path.basename(pdict['exe'])
                 pdict_pid = pdict['pid']
@@ -61,7 +74,10 @@ def check(results=False, quiet=False, **kwargs):
                 if pdict_exe in processes[role]:
                     # Verify httpd-worker pid belongs to openattic.
                     if (role != 'openattic') or (role == 'openattic' and pdict_uid == 'openattic'):
-                            res['up'][pdict_exe] = res['up'][pdict_exe] + [pdict_pid] if res['up'].has_key(pdict_exe) else [pdict_pid]
+                        if pdict_exe in res['up']:
+                            res['up'][pdict_exe] = res['up'][pdict_exe] + [pdict_pid]
+                        else:
+                            res['up'][pdict_exe] = [pdict_pid]
 
             # Any processes for this role that aren't running, mark them down.
             for proc in processes[role]:
@@ -73,11 +89,15 @@ def check(results=False, quiet=False, **kwargs):
 
     return res if results else running
 
+
+# pylint: disable=unused-argument
 def down(**kwargs):
     """
-    Based on check(), return True/False if all Ceph processes that are meant to be running on a node are down.
+    Based on check(), return True/False if all Ceph processes that are meant
+    to be running on a node are down.
     """
     return True if not check(True, True)['up'].values() else False
+
 
 def wait(**kwargs):
     """
@@ -110,7 +130,7 @@ def _timeout():
     Assume 15 minutes for physical hardware since some hardware has long
     shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
     """
-    if 'physical' == __grains__['virtual']:
+    if __grains__['virtual'] == 'physical':
         return 900
     else:
         return 120

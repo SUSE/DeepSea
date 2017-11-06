@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 # vim: ts=8 et sw=4 sts=4
+# pylint: disable=fixme
+"""
+Inspects an existing cluter to extract the configuration
+"""
+from __future__ import absolute_import
 
 import os
-import socket
 from subprocess import Popen, PIPE
 import json
-import psutil
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated
+import psutil
 
 log = logging.getLogger(__name__)
+
 
 def _get_listening_ipaddrs(proc_name):
     """
@@ -24,6 +30,7 @@ def _get_listening_ipaddrs(proc_name):
             # connections() API has changed across psutil versions also.
             try:
                 conns = proc.get_connections(kind="inet")
+            # pylint: disable=bare-except
             except:
                 conns = proc.connections(kind="inet")
             for con in conns:
@@ -32,6 +39,7 @@ def _get_listening_ipaddrs(proc_name):
 
     return list(set(proc_listening_ips))
 
+
 def get_minion_public_networks():
     """
     For a given node, returns the list of unique IPs on which the ceph-mon processes are listening.
@@ -39,12 +47,14 @@ def get_minion_public_networks():
     """
     return _get_listening_ipaddrs("ceph-mon")
 
+
 def get_minion_cluster_networks():
     """
     For a given node, returns the list of unique IPs on which the ceph-osd processes are listening.
     If ceph-osd is not running/listening, returns [].
     """
     return _get_listening_ipaddrs("ceph-osd")
+
 
 def _get_device_of_partition(partition):
     """
@@ -57,12 +67,16 @@ def _get_device_of_partition(partition):
 
     return partition
 
+
 def _get_disk_id(partition):
     """
     Return the disk id of a partition/device, or the original partition/device if
     the disk id is not available.
     """
-    disk_id_cmd = Popen("find -L /dev/disk/by-id -samefile " + partition + " \( -name ata* -o -name nvme* \)", stdout=PIPE, stderr=PIPE, shell=True)
+    disk_id_cmd = Popen("find -L /dev/disk/by-id -samefile " + partition +
+                        r" \( -name ata* -o -name nvme* \)", stdout=PIPE,
+                        stderr=PIPE, shell=True)
+    # pylint: disable=unused-variable
     out, err = disk_id_cmd.communicate()
 
     # We should only ever have one entry that we return.
@@ -70,6 +84,7 @@ def _get_disk_id(partition):
         return out.rstrip()
     else:
         return partition
+
 
 def _get_osd_type(part_dict):
     """
@@ -80,7 +95,7 @@ def _get_osd_type(part_dict):
     for use in other modules.
     """
     osd_type = None
-    type_file_path = part_dict["mount"] + "/type" if part_dict.has_key("mount") else ""
+    type_file_path = part_dict["mount"] + "/type" if "mount" in part_dict else ""
 
     if os.path.exists(type_file_path):
         with open(type_file_path, 'r') as type_file:
@@ -88,16 +103,22 @@ def _get_osd_type(part_dict):
 
     return osd_type
 
+
 def _append_to_ceph_disk(ceph_disks, partition, part_dict):
+    """
+    Append dict to ceph_disks
+    """
     try:
         ceph_disks["ceph"]["storage"]["osds"][partition]
-    except KeyError, e:
+    # pylint: disable=unused-variable
+    except KeyError as err:
         ceph_disks["ceph"]["storage"]["osds"][partition] = {}
     finally:
         for k in part_dict:
             ceph_disks["ceph"]["storage"]["osds"][partition][k] = part_dict[k]
 
-def _convert_size_to_human_readable_format(size):
+
+def _convert_size(size):
     """
     Converts bytes to human readable string.  Note that precision was deliberately
     kept to the nearest whole unit per osd.py.
@@ -120,20 +141,25 @@ def _convert_size_to_human_readable_format(size):
 
     return "{}{}".format(size, suffixes[s_index])
 
+
 def _get_partition_size(partition):
     """
     Returns partition size in a human readable format.
     """
-    blockdev_cmd = Popen("blockdev --getsize64 {}".format(partition), stdout=PIPE, stderr=PIPE, shell=True)
+    blockdev_cmd = Popen("blockdev --getsize64 {}".format(partition),
+                         stdout=PIPE, stderr=PIPE, shell=True)
+    # pylint: disable=unused-variable
     size, err = blockdev_cmd.communicate()
 
     try:
-        size = _convert_size_to_human_readable_format(int(size))
-    except ValueError, e:
+        size = _convert_size(int(size))
+    # pylint: disable=unused-variable
+    except ValueError as err:
         size = "0B"
 
     return size
-    
+
+
 def _append_bs_to_ceph_disk(ceph_disks, path, part_dict):
     """
     Append a bluestore OSD to ceph_disks dict.
@@ -143,15 +169,16 @@ def _append_bs_to_ceph_disk(ceph_disks, path, part_dict):
     osd_dev = _get_disk_id(_get_device_of_partition(path))
 
     # Take from part_dict the elements we need.
-    bs_dict = { "format": "bluestore" }
-    if part_dict.has_key("block.db_dev"):
+    bs_dict = {"format": "bluestore"}
+    if "block.db_dev" in part_dict:
         bs_dict["db"] = _get_disk_id(_get_device_of_partition(part_dict["block.db_dev"]))
         bs_dict["db_size"] = _get_partition_size(part_dict["block.db_dev"])
-    if part_dict.has_key("block.wal_dev"):
+    if "block.wal_dev" in part_dict:
         bs_dict["wal"] = _get_disk_id(_get_device_of_partition(part_dict["block.wal_dev"]))
         bs_dict["wal_size"] = _get_partition_size(part_dict["block.wal_dev"])
 
     _append_to_ceph_disk(ceph_disks, osd_dev, bs_dict)
+
 
 def _append_fs_to_ceph_disk(ceph_disks, path, part_dict):
     """
@@ -161,16 +188,19 @@ def _append_fs_to_ceph_disk(ceph_disks, path, part_dict):
     # a device path, but let's not take any chances.
     osd_dev = _get_disk_id(_get_device_of_partition(path))
 
-    journal_partition = part_dict["journal_dev"] if part_dict.has_key("journal_dev") else ""
+    journal_partition = part_dict["journal_dev"] if "journal_dev" in part_dict else ""
     journal_partition_size = _get_partition_size(journal_partition)
 
     journal_dev = _get_disk_id(_get_device_of_partition(journal_partition))
 
     # Take from part_dict the elements we need.
-    fs_dict = { "format": "filestore", "journal": journal_dev, "journal_size": journal_partition_size }
+    fs_dict = {"format": "filestore", "journal": journal_dev,
+               "journal_size": journal_partition_size}
 
     _append_to_ceph_disk(ceph_disks, osd_dev, fs_dict)
 
+
+# pylint: disable=unused-argument
 def get_ceph_disks_yml(**kwargs):
     """
     Generates yml representation of Ceph filestores on a given node.
@@ -182,22 +212,23 @@ def get_ceph_disks_yml(**kwargs):
     out, err = ceph_disk_list.communicate()
     ceph_disks = {"ceph":
                   {"storage":
-                   {"osds": {} }}}
+                   {"osds": {}}}}
 
     # Failed `ceph-disk list`
-    if err: return None
+    if err:
+        return None
 
     out_list = json.loads(out)
     # [ { 'path': '/dev/foo', 'partitions': [ {...}, ... ], ... }, ... ]
     # The partitions list has all the goodies.
     for out_dict in out_list:
         # Grab the path (ie. /dev/foo).
-        path = out_dict["path"] if out_dict.has_key("path") else None
+        path = out_dict["path"] if "path" in out_dict else None
         # Paranoia: check to make sure we have a path and a "partitions" entry.
-        if path and out_dict.has_key("partitions"):
+        if path and "paritions" in out_dict:
             for part_dict in out_dict["partitions"]:
                 # We only care to process OSD "data" partitions.
-                if part_dict.has_key("type") and part_dict["type"] == "data":
+                if "type" in part_dict and part_dict["type"] == "data":
                     # Determine if we're dealing with filestore or bluestore.
                     osd_type = _get_osd_type(part_dict)
                     if osd_type == "filestore":
@@ -205,16 +236,21 @@ def get_ceph_disks_yml(**kwargs):
                     elif osd_type == "bluestore":
                         _append_bs_to_ceph_disk(ceph_disks, path, part_dict)
                     else:
-                        log.warn("Unable to engulf OSD at {}. Unsupported type. Skipping.".format(path))
+                        log.warn(("Unable to engulf OSD at {}. Unsupported "
+                                  "type. Skipping.".format(path)))
 
     return ceph_disks
 
-def inspect(**kwargs):
-    # This will *ONLY* work on a cluster named "ceph".  It won't help with
-    # clusters with other names.
 
-    # deliberately only looking for things ceph-deploy can deploy
-    # TODO: do we need more than this?
+# pylint: disable=unused-argument
+def inspect(**kwargs):
+    """
+    This will *ONLY* work on a cluster named "ceph".  It won't help with
+    clusters with other names.
+
+    deliberately only looking for things ceph-deploy can deploy
+    TODO: do we need more than this?
+    """
     ceph_services = ['ceph-mon', 'ceph-osd', 'ceph-mds', 'ceph-mgr', 'ceph-radosgw']
 
     #
@@ -226,10 +262,10 @@ def inspect(**kwargs):
     # }
     #
     running_services = {}
-    for rs in __salt__['service.get_running']():
-        instance = rs.split('@')
+    for _rs in __salt__['service.get_running']():
+        instance = _rs.split('@')
         if len(instance) == 2 and instance[0] in ceph_services:
-            if not running_services.has_key(instance[0]):
+            if not instance[0] in running_services:
                 running_services[instance[0]] = []
             running_services[instance[0]].append(instance[1])
 
@@ -237,6 +273,7 @@ def inspect(**kwargs):
     try:
         with open("/etc/ceph/ceph.conf", "r") as conf:
             ceph_conf = conf.read()
+    # pylint: disable=bare-except
     except:
         pass
 
@@ -245,6 +282,7 @@ def inspect(**kwargs):
         "ceph_conf": ceph_conf,
         "has_admin_keyring": os.path.isfile("/etc/ceph/ceph.client.admin.keyring")
     }
+
 
 def get_keyring(**kwargs):
     """
@@ -258,10 +296,11 @@ def get_keyring(**kwargs):
     admin keyring, in order for `ceph auth get` to be able to talk to the
     cluster.
     """
-    if not "key" in kwargs:
+    if "key" not in kwargs:
         return None
 
     cmd = Popen("ceph auth get " + kwargs["key"], stdout=PIPE, stderr=PIPE, shell=True)
+    # pylint: disable=unused-variable
     out, err = cmd.communicate()
 
     return out if out else None

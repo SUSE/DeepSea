@@ -1,35 +1,41 @@
-import salt.client
-import pprint
+# -*- coding: utf-8 -*-
+# pylint: disable=modernize-parse-error
+"""
+Intended for general status of clusters.
+"""
+
 from collections import Counter
+import salt.client
+
 
 def _get_data(cluster_name='ceph'):
     """
+    Query grains, run commands for current versions
     """
     local = salt.client.LocalClient()
-    status_report = {}
     search = "I@cluster:{}".format(cluster_name)
-    # grains might be inaccurate or not up to date because they are designed to hold static data about
-    # the minion. In case of an update though, the data will change.
-    # grains are refreshed on reboot(restart of the service).
-    os_codename = local.cmd(search, 'grains.get', [ 'oscodename' ], expr_form="compound")
-    salt_version = local.cmd(search, 'grains.get', [ 'saltversion' ], expr_form="compound")
-    ceph_version = local.cmd(search, 'cmd.shell', [ 'ceph --version' ], expr_form="compound")
+    # grains might be inaccurate or not up to date because they are designed
+    # to hold static data about the minion. In case of an update though, the
+    # data will change.  grains are refreshed on reboot(restart of the service).
+    os_codename = local.cmd(search, 'grains.get', ['oscodename'], expr_form="compound")
+    salt_version = local.cmd(search, 'grains.get', ['saltversion'], expr_form="compound")
+    ceph_version = local.cmd(search, 'cmd.shell', ['ceph --version'], expr_form="compound")
 
     return os_codename, salt_version, ceph_version
 
-def help():
+
+def help_():
     """
     Usage
     """
     usage = ('salt-run status.report:\n\n'
              '    Summarizes OS, Ceph and Salt versions\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
 
-def report(cluster_name='ceph', stdout=True, return_data=False ):
+def report(cluster_name='ceph', stdout=True, return_data=False):
     """
     Creates a report that tries to find the most common versions from:
       * OS Version and Codename
@@ -44,6 +50,9 @@ def report(cluster_name='ceph', stdout=True, return_data=False ):
     common_keys = {'ceph': {}, 'salt': {}, 'os': {}}
 
     def _organize(minion_data):
+        """
+        Finds unsync'd nodes
+        """
         key_ident = minion_data[0]
         minion_data_dct = minion_data[1]
         counter_obj = Counter(minion_data_dct.values())
@@ -60,7 +69,7 @@ def report(cluster_name='ceph', stdout=True, return_data=False ):
 
     for minion_data in [('os', os_codename), ('ceph', ceph_version), ('salt', salt_version)]:
         _organize(minion_data)
-        
+
     if stdout:
         for key in common_keys:
             print "  {}: {}".format(key, common_keys[key])
@@ -74,3 +83,7 @@ def report(cluster_name='ceph', stdout=True, return_data=False ):
         return {'statusreport': [common_keys, unsynced_nodes]}
     else:
         return ""
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

@@ -140,14 +140,14 @@ class TestOSDConfig():
     @pytest.fixture(scope='class')
     def osd_o(self):
         with patch.object(osd.OSDConfig, '__init__', lambda self: None):
-            print "Constructing the OSDConfig object"
+            print("Constructing the OSDConfig object")
             cnf = osd.OSDConfig()
             cnf.device = '/dev/sdx'
             # monkeypatching the device in the object since __init__
             # is mocked -> skipping the readlink()
             yield cnf
             # everything after the yield is a teardown code
-            print "Teardown OSDConfig object"
+            print("Teardown OSDConfig object")
 
     @pytest.mark.skip(reason='skip')
     def test__set_tli(self):
@@ -559,14 +559,6 @@ class TestOSDPartitions():
         obj.partition()
         xfs_part_mock.assert_called_with(obj.osd.device, obj.osd.size)
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._bluestore_partitions')
-    def test_partition_bluestore(self, blue_part_mock, osdp_o):
-        kwargs = {'format': 'bluestore'}
-        osd_config = OSDConfig(**kwargs)
-        obj = osdp_o(osd_config)
-        obj.partition()
-        blue_part_mock.assert_called_with(obj.osd.device)
-
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     def test_xfs_partitions_colocated(self, create_mock, osdp_o):
         """
@@ -685,7 +677,7 @@ class TestOSDPartitions():
                   'wal_size': '1000'}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with('No size specified for db /dev/sdx. Using default sizes')
 
     @mock.patch('srv.salt._modules.osd.log')
@@ -705,7 +697,7 @@ class TestOSDPartitions():
                   'db_size': 10000}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
         mock_log.warn.assert_any_call('DB size is unsupported for same device of /dev/sdx')
 
@@ -725,7 +717,7 @@ class TestOSDPartitions():
                   'db_size': 10000}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
 
     @mock.patch('srv.salt._modules.osd.log')
@@ -743,7 +735,7 @@ class TestOSDPartitions():
                   'db_size': 10000}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
 
     @mock.patch('srv.salt._modules.osd.log')
@@ -761,7 +753,7 @@ class TestOSDPartitions():
                   'db_size': 10000}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_any_call('You deploy encrypted WAL and/or DB on a dedicated device. Specifying sizes is now handled via your ceph.conf')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
@@ -781,7 +773,7 @@ class TestOSDPartitions():
                   'db_size': 'dbsize'}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         create_mock.assert_any_call('/dev/sdwal', [('wal', 'walsize')])
         create_mock.assert_any_call('/dev/sddb', [('db', 'dbsize')])
 
@@ -803,7 +795,7 @@ class TestOSDPartitions():
                   'db_size': 'dbsize'}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with('No size specified for wal /dev/sdwal. Using default sizes.')
         create_mock.assert_any_call('/dev/sddb', [('db', 'dbsize')])
 
@@ -824,7 +816,7 @@ class TestOSDPartitions():
                   'db_size': None}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         create_mock.assert_any_call('/dev/sdwal', [('wal', 'walsize')])
 
     @mock.patch('srv.salt._modules.osd.log')
@@ -844,8 +836,7 @@ class TestOSDPartitions():
                   'db_size': None}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
-        mock_log.warn.assert_called()
+        obj._bluestore_partitions()
         mock_log.warn.assert_called()
 
     @mock.patch('srv.salt._modules.osd.log')
@@ -863,7 +854,7 @@ class TestOSDPartitions():
                   'db_size': None}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._halve')
@@ -885,7 +876,7 @@ class TestOSDPartitions():
                   'db_size': None}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with('Setting db to same device /dev/sdwal as wal')
         create_mock.assert_called_with('/dev/sdwal', [('wal', 100000), ('db', halve_mock('100000'))])
         halve_mock.assert_called_with('100000')
@@ -904,7 +895,7 @@ class TestOSDPartitions():
                   'db_size': None}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with('WAL size is unsupported for same device of /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.log')
@@ -922,7 +913,7 @@ class TestOSDPartitions():
                   'db_size': 'dbsize'}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with('DB size is unsupported for same device of /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._double')
@@ -943,7 +934,7 @@ class TestOSDPartitions():
                   'db_size': 100000}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with('Setting wal to same device /dev/sddb as db')
         create_mock.assert_called_with('/dev/sddb', [('wal', double_mock(100000)), ('db', 100000)])
         double_mock.assert_called_with(100000)
@@ -962,7 +953,7 @@ class TestOSDPartitions():
                   'db_size': 'dbsize'}
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
-        obj._bluestore_partitions(obj.osd.device)
+        obj._bluestore_partitions()
         mock_log.warn.assert_called_with("DB size is unsupported for same device of /dev/sdx")
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')

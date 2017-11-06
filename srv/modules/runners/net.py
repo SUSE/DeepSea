@@ -1,18 +1,26 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=modernize-parse-error,unused-argument
+"""
+Network utilities
+"""
 
+import time
 import logging
 import operator
 import re
 import salt.client
-import deepsea_minions
-import time
 
+# pylint: disable=import-error,3rd-party-module-not-gated
 from netaddr import IPNetwork, IPAddress
+# pylint: disable=relative-import
+import deepsea_minions
 
 log = logging.getLogger(__name__)
 
-def help():
+
+def help_():
     """
+    Usage
     """
     usage = ('salt-run net.get_cpu_count server=minion\n\n'
              '    Returns the number of cpus for a minion\n'
@@ -31,10 +39,10 @@ def help():
              'salt-run net.iperf cluster=ceph:\n'
              'salt-run net.iperf exclude=target:\n\n'
              '    Summarizes bandwidth throughput between minion interfaces\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
+
 
 def get_cpu_count(server):
     """
@@ -42,7 +50,7 @@ def get_cpu_count(server):
     """
     local = salt.client.LocalClient()
     result = local.cmd("S@{} or {}".format(server, server),
-                       'grains.item',  ['num_cpus'], expr_form="compound")
+                       'grains.item', ['num_cpus'], expr_form="compound")
     cpu_core = result.values()[0]['num_cpus']
     return cpu_core
 
@@ -75,6 +83,8 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
 
     addresses = []
     local = salt.client.LocalClient()
+    # Salt targets can use list or string
+    # pylint: disable=redefined-variable-type
     if cluster:
         search = "I@cluster:{}".format(cluster)
 
@@ -143,7 +153,6 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
                     addresses.remove(ex_ip)
         except ValueError:
             log.debug("ping: remove {} ip doesn't exist".format(ex_ip))
-            pass
         _create_server(addresses)
         result = _create_client(addresses)
         sort_result = _add_unit(sorted(result.items(),
@@ -157,14 +166,20 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
 
 
 def _add_unit(records):
+    """
+    Add formatting
+    """
     stuff = []
     for host in enumerate(records):
         log.debug("Host {} Speed {}".format(host[1][0], host[1][1]))
-        stuff.append([host[1][0],  "{} Mbits/sec".format(host[1][1])])
+        stuff.append([host[1][0], "{} Mbits/sec".format(host[1][1])])
     return stuff
 
 
 def _create_server(addresses):
+    """
+    Start iperf server
+    """
     start_service = []
     local = salt.client.LocalClient()
     log.debug("net.iperf._create_server: address list {} ".format(addresses))
@@ -172,15 +187,18 @@ def _create_server(addresses):
         cpu_core = get_cpu_count(server)
         log.debug("net.iperf._create_server: server {} cpu count {} "
                   .format(server, cpu_core))
-        for x in range(cpu_core):
+        for count in range(cpu_core):
             log.debug("net.iperf._create_server: server {} count {} port {} "
-                      .format(server, x, 5200+x))
+                      .format(server, count, 5200+count))
             start_service.append(local.cmd("S@{}".format(server),
                                            'multi.iperf_server_cmd',
-                                           [x, 5200+x], expr_form="compound"))
+                                           [count, 5200+count], expr_form="compound"))
 
 
 def _create_client(addresses):
+    """
+    Start iperf client
+    """
     results = []
     jid = []
     local = salt.client.LocalClient()
@@ -191,12 +209,14 @@ def _create_client(addresses):
         clients = list(addresses)
         clients.remove(server)
         clients_size = len(clients)
+        # pylint: disable=invalid-name
         for x in xrange(0, cpu_core, clients_size):
+            # pylint: disable=invalid-name
             for y, client in enumerate(clients):
                 log.debug("net.iperf._create_client:")
                 log.debug("server port:{}, x:{} client:{} to server:{}"
                           .format(5200+x+y, x/clients_size, client, server))
-                if(x+y < cpu_core):
+                if x+y < cpu_core:
                     jid.append(
                         local.cmd_async(
                             "S@"+client,
@@ -222,11 +242,14 @@ def _create_client(addresses):
                 not_done = True
     results = []
     for job in jid:
-            results.append(__salt__['jobs.lookup_jid'](job))
+        results.append(__salt__['jobs.lookup_jid'](job))
     return _summarize_iperf(results)
 
 
 def jumbo_ping(cluster=None, exclude=None, **kwargs):
+    """
+    Ping with larger packets
+    """
     ping(cluster, exclude, ping_type="jumbo")
 
 
@@ -288,6 +311,7 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
         return ""
 
     local = salt.client.LocalClient()
+    # pylint: disable=redefined-variable-type
     if cluster:
         search = "I@cluster:{}".format(cluster)
         if exclude_string:
@@ -325,7 +349,6 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                     addresses.remove(ex_ip)
         except ValueError:
             log.debug("ping: remove {} ip doesn't exist".format(ex_ip))
-            pass
     if ping_type is "jumbo":
         results = local.cmd(search, 'multi.jumbo_ping',
                             addresses, expr_form="compound")
@@ -365,17 +388,17 @@ def _exclude_filter(excluded):
     excluded = excluded.split(",")
     log.debug("_exclude_filter: split ',' {}".format(excluded))
 
-    pattern_compound = re.compile("^.*([GPIJLNSE]\@).*$")
+    pattern_compound = re.compile(r"^.*([GPIJLNSE]\@).*$")
     pattern_iplist = re.compile(
-        "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}" +
-        "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
+        r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}" +
+        r"([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
     pattern_ipcidr = re.compile(
-        "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}" +
-        "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])" +
-        "(\/([0-9]|[1-2][0-9]|3[0-2]))$")
+        r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}" +
+        r"([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])" +
+        r"(\/([0-9]|[1-2][0-9]|3[0-2]))$")
     pattern_hostlist = re.compile(
-        "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]).)*" +
-        "([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
+        r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]).)*" +
+        r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
     compound = []
     ipcidr = []
     iplist = []
@@ -414,12 +437,12 @@ def _exclude_filter(excluded):
         return None, None
 
 
-def _flatten(l):
+def _flatten(_list):
     """
     Flatten a array of arrays
     """
-    log.debug("_flatten: {}".format(l))
-    return list(set(item for sublist in l for item in sublist))
+    log.debug("_flatten: {}".format(_list))
+    return list(set(item for sublist in _list for item in sublist))
 
 
 def _summarize(total, results):
@@ -459,6 +482,9 @@ def _summarize(total, results):
 
 
 def _iperf_result_get_server(result):
+    """
+    Return server results
+    """
     return result['server']
 
 
@@ -493,8 +519,8 @@ def _summarize_iperf(results):
         speed = result.split('Mbits/sec')
         speed = filter(None, speed)
         try:
-            for v in speed:
-                total += float(v.strip())
+            for value in speed:
+                total += float(value.strip())
             # server_results[key] = str(total) + " Mbits/sec"
             server_results[key] = int(total)
         except ValueError:
@@ -507,3 +533,7 @@ def _skip_dunder(settings):
     Skip double underscore keys
     """
     return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

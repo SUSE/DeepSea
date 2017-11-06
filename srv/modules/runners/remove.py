@@ -1,24 +1,26 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=too-few-public-methods,modernize-parse-error
+"""
+Runner to remove a single osd
+"""
 
 import logging
 import salt.client
 import salt.runner
 
-"""
-Runner to remove a single osd
-"""
-
 log = logging.getLogger(__name__)
 
-def help():
+
+def help_():
     """
+    Usage
     """
     usage = ('salt-run remove.osd id:\n\n'
              '    Removes an OSD\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
+
 
 def osd(id_, drain=False):
     """
@@ -42,9 +44,9 @@ def osd(id_, drain=False):
     osds = local_cli.cmd('I@roles:storage', 'osd.list', expr_form='compound')
 
     host = ''
-    for osd in osds:
-        if '{}'.format(id_) in osds[osd]:
-            host = osd
+    for _osd in osds:
+        if '{}'.format(id_) in osds[_osd]:
+            host = _osd
             break
     else:
         log.error('No OSD with ID {} found...giving up'.format(id_))
@@ -79,3 +81,7 @@ def osd(id_, drain=False):
     log.info(ret)
 
     return True
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import sys
+sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import proposal
 from tests.unit.helper.output import OutputHelper
 

@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=modernize-parse-error
+"""
+Small collection of functions intended for all minions.
+"""
 
+import time
+import logging
 import salt.key
 import salt.client
 import salt.utils
 import salt.utils.master
 from salt.exceptions import SaltClientError
-import time
-import logging
 
 log = logging.getLogger(__name__)
 
-def help():
+
+def help_():
     """
+    Usage
     """
     usage = ('salt-run minions.ready:\n'
              'salt-run minions.ready search=target:\n\n'
@@ -19,10 +25,10 @@ def help():
              '\n\n'
              'salt-run minions.message content=message:\n\n'
              '    Logs a warning message\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
+
 
 def ready(**kwargs):
     """
@@ -50,17 +56,20 @@ def ready(**kwargs):
     while True:
         try:
             if settings['search']:
-                results = client.cmd(settings['search'], 'test.ping', timeout=__opts__['timeout'], expr_form="compound")
+                results = client.cmd(settings['search'], 'test.ping',
+                                     timeout=__opts__['timeout'],
+                                     expr_form="compound")
             else:
                 results = client.cmd('*', 'test.ping', timeout=__opts__['timeout'])
         except SaltClientError as client_error:
-            print(client_error)
+            print client_error
             return ret
 
         actual = set(results.keys())
 
         if settings['search']:
-            pillar_util = salt.utils.master.MasterPillarUtil(settings['search'], "compound",
+            pillar_util = salt.utils.master.MasterPillarUtil(
+                                                     settings['search'], "compound",
                                                      use_cached_grains=True,
                                                      grains_fallback=False,
                                                      opts=__opts__)
@@ -79,11 +88,14 @@ def ready(**kwargs):
             if end_time < time.time():
                 log.warn("Timeout reached")
                 if settings['exception']:
-                    raise RuntimeError("Timeout reached. {} seems to be down.".format(",".join(list(expected - actual))))
+                    msg = ("Timeout reached. "
+                           "{} seems to be down.").format(",".join(list(expected - actual)))
+                    raise RuntimeError(msg)
                 return False
         time.sleep(settings['sleep'])
 
     return True
+
 
 def message(**kwargs):
     """
@@ -91,3 +103,7 @@ def message(**kwargs):
     """
     log.warn("{}".format(kwargs['content']))
     return ""
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }
