@@ -52,8 +52,9 @@ class HardwareDetections(object):
         filename = base + "/removable"
         with open(filename, 'r') as _fd:
             removable = _fd.readline().rstrip('\n')
-        if removable == "1":
-            return True
+            if int(removable) == 1:
+                log.debug("{} is a removable. Skipping..".format(base))
+                return True
 
     # pylint: disable=no-self-use
     def _is_rotational(self, base):
@@ -127,7 +128,7 @@ class HardwareDetections(object):
             for line in proc.stdout:
                 # ADD PARSING HERE TO DETECT FAILURE
                 if "A mandatory SMART command failed" in line:
-                    log.warn("Something went wrong during smartctl query")
+                    log.warning("Something went wrong during smartctl query")
                 match = re.match("([^:]+): (.*)", line)
                 if match:
                     if match.group(1) == "Rotation Rate":
@@ -340,26 +341,29 @@ class HardwareDetections(object):
         Search for Ceph Data and Journal partitions
         """
         log.debug("Checking partitions {} on device {}".format(ids, device))
-        # TODO: Search for all possible codes:
-        data = "Partition GUID code: 45B0969E-9B03-4F30-B4C6-B4B80CEFF106"
-        journal = "Partition GUID code: 4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D"
-        # pylint: disable=invalid-name
-        db = "Partition GUID code: 30CD0809-C2B2-499C-8879-2D6B78529876"
-        wal = "Partition GUID code: 5CE17FCE-4087-4169-B7FF-056CC58473F9"
-        osd_lockbox = "Partition GUID code: FB3AABF9-D25F-47CC-BF5E-721D1816496B"
+        guuid_table = {'data': "45B0969E-9B03-4F30-B4C6-B4B80CEFF106",
+                       'journal': "4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D",
+                       'db': "30CD0809-C2B2-499C-8879-2D6B78529876",
+                       'wal': "5CE17FCE-4087-4169-B7FF-056CC58473F9",
+                       'osd_lockbox': "FB3AABF9-D25F-47CC-BF5E-721D1816496B",
+                       'luks_journal': "45B0969E-9B03-4F30-B4C6-35865CEFF106",
+                       'luks_wal': "86A32090-3647-40B9-BBBD-38D8C573AA86",
+                       'luks_db': "166418DA-C469-4022-ADF4-B30AFD37F176",
+                       'plain_wal': "306E8683-4FE2-4330-B7C0-00A917C16966",
+                       'plain_db': "93B0052D-02D9-4D8A-A43B-33A3EE4DFBC3"}
         sgdisk_path = self._which('sgdisk')
         for partition_id in ids:
             cmd = "{} -i {} {}".format(sgdisk_path, partition_id, device)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             for line in proc.stdout:
-                if line.startswith(data) or \
-                   line.startswith(journal) or \
-                   line.startswith(db) or \
-                   line.startswith(wal) or \
-                   line.startswith(osd_lockbox):
-                    return True
+                if line.startswith("Partition GUID code:"):
+                    for guuid_code in guuid_table.values():
+                        if guuid_code in line:
+                            log.debug('Found signs that {} belongs to ceph'.format(device))
+                            return True
             for line in proc.stderr:
                 log.error(line)
+        log.debug("No signs of ceph found on {}. Skipping..".format(device))
         return False
 
     def _lshw(self):
@@ -447,7 +451,7 @@ class HardwareDetections(object):
         raid_ctrl = self._detect_raidctrl()
         _hw = self.detection_method()
         for path in glob('/sys/block/*/device'):
-            log.debug("path: {}".format(path))
+            log.debug("Checking path: {}".format(path))
             base = os.path.dirname(path)
             device = os.path.basename(base)
             # Check this on a per disk basis
@@ -463,6 +467,8 @@ class HardwareDetections(object):
                                for partition in partitions]
                 if not self._osd("/dev/" + device, ids):
                     continue
+            else:
+                log.debug('No partitions detected on {}'.format(device))
 
             if self._is_removable(base):
                 continue
@@ -482,6 +488,7 @@ class HardwareDetections(object):
 
             hardware['device'] = device
             self._preflight_check(hardware)
+            log.debug('Adding {} to the list of cephdisks.'.format(device))
             drives.append(hardware)
         return drives
 
@@ -499,6 +506,7 @@ def version():
     Displays version
     """
     print VERSION
+
 
 __func_alias__ = {
                 'list_': 'list',
