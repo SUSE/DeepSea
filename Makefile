@@ -286,6 +286,39 @@ copy-files:
 	install -m 644 srv/salt/ceph/openattic/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
 	install -m 644 srv/salt/ceph/openattic/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
+	# state files - openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack
+	install -m 644 srv/salt/ceph/openstack/*.sls $(DESTDIR)/srv/salt/ceph/openstack/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder
+	install -m 644 srv/salt/ceph/openstack/cinder/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/auth
+	install -m 644 srv/salt/ceph/openstack/cinder/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/files
+	install -m 644 srv/salt/ceph/openstack/cinder/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/cinder/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/key
+	install -m 644 srv/salt/ceph/openstack/cinder/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/pool
+	install -m 644 srv/salt/ceph/openstack/cinder/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/pool
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance
+	install -m 644 srv/salt/ceph/openstack/glance/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/auth
+	install -m 644 srv/salt/ceph/openstack/glance/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/files
+	install -m 644 srv/salt/ceph/openstack/glance/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/glance/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/key
+	install -m 644 srv/salt/ceph/openstack/glance/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/pool
+	install -m 644 srv/salt/ceph/openstack/glance/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/pool
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova
+	install -m 644 srv/salt/ceph/openstack/nova/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/auth
+	install -m 644 srv/salt/ceph/openstack/nova/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/files
+	install -m 644 srv/salt/ceph/openstack/nova/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/nova/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/key
+	install -m 644 srv/salt/ceph/openstack/nova/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/pool
+	install -m 644 srv/salt/ceph/openstack/nova/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/pool
 	# state files - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd
 	install -m 644 srv/salt/ceph/osd/*.sls $(DESTDIR)/srv/salt/ceph/osd/
