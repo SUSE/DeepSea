@@ -25,7 +25,6 @@ import uuid
 import ipaddress
 import logging
 import deepsea_minions
-import validate
 import operator
 
 import sys
@@ -1078,8 +1077,10 @@ def engulf_existing_cluster(**kwargs):
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
     minions = deepsea_minions.DeepseaMinions()
     search = minions.deepsea_minions
-    validator = validate.Validate("ceph", local.cmd(search , 'pillar.items', [], expr_form="compound"),
-                         [], validate.get_printer())
+    import validate
+    validator = validate.Validate("ceph", local.cmd(search, 'pillar.items', [],
+                                                    expr_form="compound"),
+                                  [], validate.get_printer())
     validator.deepsea_minions(minions)
     if validator.errors:
         validator.report()
