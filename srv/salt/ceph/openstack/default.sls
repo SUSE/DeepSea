@@ -1,0 +1,5 @@
+
+include:
+  - .glance
+  - .cinder
+  - .nova

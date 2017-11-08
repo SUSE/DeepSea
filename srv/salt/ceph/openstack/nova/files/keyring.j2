@@ -1,0 +1,4 @@
+[{{ client }}]
+        key = {{ secret }}
+        caps mon = allow r
+        caps osd = allow class-read object_prefix rbd_children,  allow allow rwx pool=compute, allow allow rwx pool=cinder,  allow rx pool=glance
