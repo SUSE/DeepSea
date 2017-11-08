@@ -159,15 +159,7 @@ set luminous osds:
 
 {% else %}
 
-updates:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - sls: ceph.upgrade
-
-restart:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - sls: ceph.updates.restart
+{% set notice = salt['saltutil.runner']('advise.no_cluster_detected') %}
 
 {% endif %}
 
