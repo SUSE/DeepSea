@@ -281,6 +281,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/sysctl
 %dir /srv/salt/ceph/sysctl/files
 %dir /srv/salt/ceph/setosdflags
+%dir /srv/salt/ceph/setosdflags/sortbitwise
+%dir /srv/salt/ceph/setosdflags/requireosdrelease
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/time/ntp/files
@@ -508,6 +510,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/sysctl/*.sls
 %config /srv/salt/ceph/sysctl/files/*.conf
 %config /srv/salt/ceph/setosdflags/*.sls
+%config /srv/salt/ceph/setosdflags/requireosdrelease/*.sls
+%config /srv/salt/ceph/setosdflags/sortbitwise/*.sls
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/time/ntp/files/*.j2
