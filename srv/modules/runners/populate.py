@@ -47,8 +47,6 @@ import ipaddress
 import logging
 # pylint: disable=relative-import
 import deepsea_minions
-# pylint: disable=relative-import
-import validate
 import operator
 
 import sys
@@ -1095,6 +1093,7 @@ def engulf_existing_cluster(**kwargs):
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
     minions = deepsea_minions.DeepseaMinions()
     search = minions.deepsea_minions
+    import validate
     validator = validate.Validate("ceph", local.cmd(search, 'pillar.items', [],
                                                     expr_form="compound"),
                                   [], validate.get_printer())
