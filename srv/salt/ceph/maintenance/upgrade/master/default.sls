@@ -9,6 +9,12 @@ sync all:
     - sls: ceph.sync
     - failhard: True
 
+set sortbitwise flag: 
+  salt.state:
+    - sls: ceph.setosdflags.sortbitwise
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - failhard: True
+
 # May generate an unpack error which is safe to ignore
 update deepsea and master:
   salt.state:
