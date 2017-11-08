@@ -1168,8 +1168,11 @@ def inspect_path(path='', **kwargs):
     or None if path not supplied.  On an error return from any of the composite
     functions, set 'ret' = False.
     """
-    path_info = {'ret': True, 'exists': None, 'type': None, 'attrs': None,
-                 'mount_info': None, 'dev_info': None}
+    # 'mount_info' and 'dev_info' keys not explicitly initialized to None to avoid pylint E1136
+    # which appears as a false postive when referencing a variable that was first initialized
+    # to None, and later assigned a dictionary.
+    # See: https://github.com/PyCQA/pylint/issues/1498 - open ticket as of this commit.
+    path_info = {'ret': True, 'exists': None, 'type': None, 'attrs': None}
 
     if not path:
         log.error("Unable to inspect '{}'.".format(path))
@@ -1186,11 +1189,12 @@ def inspect_path(path='', **kwargs):
         # Only set a fail flag when collecting attrs for existing paths.
         path_info['ret'] = False
 
-    path_info = get_mount_info(path)
+    path_info['mount_info'] = get_mount_info(path)
     if not path_info['mount_info']:
         path_info['ret'] = False
 
-    path_info['dev_info'] = get_device_info(path_info['mount_info']['mountpoint'])
+    mountpoint = path_info['mount_info']['mountpoint'] if path_info['mount_info'] else ''
+    path_info['dev_info'] = get_device_info(mountpoint)
     if not path_info['dev_info']:
         path_info['ret'] = False
 
