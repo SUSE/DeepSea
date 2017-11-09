@@ -112,6 +112,7 @@ def list_():
     """
     Public function exposed for salt
     Invoked with: salt <target> cephimages.list
+    The cli equivalent is: /usr/bin/rbd -p pool ls
     """
     CephImages().list()
 
