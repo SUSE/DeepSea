@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Nov 9 10:15:12 UTC 2017 - jschmid@suse.de
+
+- Version 0.8.01 bb9069893
+- prevents bsc#1067088
+- don't fall back to 'upgrade all' if no cluster exists
+- set the 'sortbitwise' osd flag before the upgrade
+
+-------------------------------------------------------------------
 Mon Nov 6 10:16:07 UTC 2017 - jschmid@suse.de
 
 - Version 0.8 ecbc24759d047be517a309c05674a0a7e9b5ddc2
