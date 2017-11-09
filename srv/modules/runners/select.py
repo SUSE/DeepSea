@@ -41,6 +41,13 @@ def help_():
     return ""
 
 
+def _grain_host(client, minion):
+    """
+    Return the host grain for a given minion, for use a short hostname
+    """
+    return client.cmd(minion, 'grains.item', ['host']).values()[0]['host']
+
+
 def minions(host=False, **kwargs):
     """
     Some targets needs to match all minions within a search criteria.
@@ -67,7 +74,7 @@ def minions(host=False, **kwargs):
     sys.stdout = _stdout
 
     if host:
-        return ([k.split('.')[0] for k in _minions.keys()])
+        return [_grain_host(local, k) for k in _minions.keys()]
     return _minions.keys()
 
 
@@ -107,7 +114,7 @@ def public_addresses(tuples=False, host=False, **kwargs):
 
     if tuples:
         if host:
-            addresses = [[k.split('.')[0], v] for k, v in result.items()]
+            addresses = [[_grain_host(local, k), v] for k, v in result.items()]
         else:
             addresses = [[k, v] for k, v in result.items()]
     else:
@@ -143,7 +150,7 @@ def attr(host=False, **kwargs):
     sys.stdout = _stdout
 
     if host:
-        pairs = [[k.split('.')[0], v] for k, v in _minions.items()]
+        pairs = [[_grain_host(local, k), v] for k, v in _minions.items()]
     else:
         pairs = [[k, v] for k, v in _minions.items()]
     return pairs
