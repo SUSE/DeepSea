@@ -492,6 +492,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/sync/*.sls $(DESTDIR)/srv/salt/ceph/sync/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags
 	install -m 644 srv/salt/ceph/setosdflags/*.sls $(DESTDIR)/srv/salt/ceph/setosdflags
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags/requireosdrelease
+	install -m 644 srv/salt/ceph/setosdflags/requireosdrelease/*.sls $(DESTDIR)/srv/salt/ceph/setosdflags/requireosdrelease
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags/sortbitwise
+	install -m 644 srv/salt/ceph/setosdflags/sortbitwise/*.sls $(DESTDIR)/srv/salt/ceph/setosdflags/sortbitwise
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time
 	install -m 644 srv/salt/ceph/time/default.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -m 644 srv/salt/ceph/time/disabled.sls $(DESTDIR)/srv/salt/ceph/time/
