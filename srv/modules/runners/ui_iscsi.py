@@ -309,7 +309,7 @@ def deploy(**kwargs):
     """
     runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
     result = runner.cmd('state.orch', ['ceph.stage.iscsi'], print_event=False)
-    return result['data']['retcode'] == 0
+    return result['retcode'] == 0
 
 
 def undeploy(**kwargs):
