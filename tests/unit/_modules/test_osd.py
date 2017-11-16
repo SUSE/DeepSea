@@ -1280,6 +1280,40 @@ class TestOSDCommands():
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
     @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_nvme_partition(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is an NVMe device
+        And the device has partitions
+        And is_partition() returns True
+        Expect to return p2
+        """
+        kwargs = {'device': '/dev/nvme0n1'}
+        glob_mock.glob.return_value = ['/dev/nvme0n1p1', '/dev/nvme0n1p2']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd')
+        assert ret == 'p2'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test_highest_partition_no_nvme_partition(self, glob_mock, part_mock, osdc_o):
+        """
+        Given there is a NVMe device
+        And the device has partitions
+        And is_partition() returns True
+        Expect to return 2
+        """
+        kwargs = {'device': '/dev/nvme0n1'}
+        glob_mock.glob.return_value = ['/dev/nvme0n1p1', '/dev/nvme0n1p2']
+        part_mock.return_value = True
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+        ret = obj.highest_partition(osd_config.device, 'osd', nvme_partition=False)
+        assert ret == '2'
+
+    @mock.patch('srv.salt._modules.osd.OSDCommands.is_partition')
+    @mock.patch('srv.salt._modules.osd.glob')
     def test_highest_partition_27th(self, glob_mock, part_mock, osdc_o):
         """
         Given there is a device
