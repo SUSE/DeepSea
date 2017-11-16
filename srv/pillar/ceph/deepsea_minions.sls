@@ -1,4 +1,4 @@
-# See `man deepsea.minions` for details
+# See `man deepsea-minions` for details
 
 # Choose minions with a deepsea grain
 deepsea_minions: 'G@deepsea:*'
