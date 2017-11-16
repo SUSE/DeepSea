@@ -61,6 +61,7 @@ $ sudo make install
 
 ### Cluster Preparation 
 The cluster deployment process has several phases. First, you need to prepare all nodes of the cluster by configuring Salt and then deploy and configure Ceph.
+
 The following procedure describes the cluster preparation in detail.
 
 Install a minimum of four machines (or define `DEV_ENV=true` either as an environment variable or a pillar variable during the deployment process) with SUSE Leap 42.3 or Tumbleweed and add the DeepSea repo to your defined "admin" node:
@@ -145,8 +146,8 @@ the example domain, then the file looks as follows:
 master_minion: salt.example
 ```
 
-Check that the `salt-minion` service is enabled and started on all nodes. Enable
-and start it if needed:
+Check that the `salt-minion` service is enabled and started on all nodes (including
+the master node). Enable and start it if needed:
 
 ```
 # systemctl enable salt-minion.service`
@@ -163,6 +164,19 @@ Verify that the keys have been accepted:
 ```
 # salt-key --list-all
 ```
+In order to avoid conflicts with other minions managed by the Salt master, DeepSea
+needs to know which Salt minions should be considered part of the Ceph cluster to
+be deployed. This can be configured in file `/srv/pillar/ceph/deepsea_minions.sls`,
+by defining a naming pattern. By default, DeepSea targets all minions that have a
+grain `deepsea` applied to them. This can be accomplished by running the following
+Salt command on all Minions that should be part of your Ceph cluster:
+
+```
+# salt -L <list of minions> grains.append deepsea default
+````
+
+Alternatively, you can change `deepsea_minions` in `deepsea_minions.sls` to any valid
+Salt target definition. See `man deepsea-minions` for details.
 
 #### Cleanup your Disks - only needed if your disks were used in a cluster before
 
