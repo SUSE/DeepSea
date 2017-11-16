@@ -987,9 +987,13 @@ class OSDCommands(object):
         id = "Partition GUID code: {}".format(self.osd.types[partition_type])
         return id in result
 
-    def highest_partition(self, device, partition_type):
+    def highest_partition(self, device, partition_type, nvme_partition=True):
         """
         Return the highest created partition of partition type
+
+        For NVMe devices, the partition name is 'p' + digit with one
+        exception if the result will be used by the sgdisk command.  Then,
+        the raw number is needed.
         """
         if device:
             log.debug("{} device: {}".format(partition_type, device))
@@ -1003,7 +1007,7 @@ class OSDCommands(object):
                 # Not confusing at all - use digit for NVMe too
                 if self.is_partition(partition_type, device, partition):
                     log.debug("found partition {} on device {}".format(partition, device))
-                    if 'nvme' in device:
+                    if 'nvme' in device and nvme_partition:
                         partition = "p{}".format(partition)
                     return partition
         self.error = "Partition type {} not found on {}".format(partition_type, device)
@@ -1786,12 +1790,12 @@ def is_prepared(device):
     if osdc.highest_partition(readlink(device), 'lockbox') != 0:
         log.debug("Found encrypted OSD {}".format(device))
         return True
-    partition = osdc.highest_partition(readlink(device), 'osd')
-    if partition == 0:
+    _partition = osdc.highest_partition(readlink(device), 'osd', nvme_partition=False)
+    if _partition == 0:
         log.debug("Do not know which partition to check on {}".format(device))
         return False
-    log.debug("Checking partition {} on device {}".format(partition, device))
-    if osdc.is_partition('osd', config.device, partition) and _fsck(config.device, partition):
+    log.debug("Checking partition {} on device {}".format(_partition, device))
+    if osdc.is_partition('osd', config.device, _partition) and _fsck(config.device, _partition):
         return True
     else:
         return False
