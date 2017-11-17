@@ -1,4 +1,3 @@
-
 prevent empty rendering:
   test.nop:
     - name: skip
@@ -8,11 +7,11 @@ prevent empty rendering:
 {% set keyring_file = salt['keyring.file']('mds', host)  %}
 {{ keyring_file}}:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/mds/files/keyring.j2
     - template: jinja
-    - user: salt
-    - group: salt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
     - mode: 600
     - makedirs: True
     - context:
