@@ -28,6 +28,8 @@ import re
 import os
 import salt.client
 
+from salt.exceptions import CommandExecutionError
+
 log = logging.getLogger(__name__)
 
 
@@ -103,3 +105,24 @@ def _query_command(filename):
             return ['/usr/bin/dpkg', '--search', filename]
     log.error("Neither rpm nor dpkg found")
     return
+
+
+def installed_kernel_version():
+    """
+    Return the installed kernel version
+    """
+    os_str = __grains__.get('os', '')
+    if os_str == 'SUSE':
+        kernel_pkgs = ['kernel-default', 'kernel-default-base']
+    else:
+        kernel_pkgs = ['kernel']
+
+    for kernel_pkg in kernel_pkgs:
+        try:
+            pkg_info = __salt__['pkg.info_installed'](kernel_pkg)
+        except CommandExecutionError:
+            continue
+        if pkg_info:
+            pkg_info = pkg_info[kernel_pkg]
+            return "{}-{}.{}".format(pkg_info['version'], pkg_info['release'], pkg_info['arch'])
+    return None

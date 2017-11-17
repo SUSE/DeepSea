@@ -5,4 +5,3 @@ ceph:
       - ceph
     - refresh: True
     - fire_event: True
-
