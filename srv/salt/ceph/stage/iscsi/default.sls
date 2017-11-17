@@ -1,5 +1,13 @@
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
 
+add_mine_cephimages.list_function:
+  salt.function:
+    - name: mine.send
+    - arg:
+      - cephimages.list
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+
 igw config:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
