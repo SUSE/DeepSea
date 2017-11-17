@@ -1,4 +1,3 @@
-
 prevent empty rendering:
   test.nop:
     - name: skip
@@ -11,8 +10,8 @@ prevent empty rendering:
     - source:
       - salt://ceph/mgr/files/keyring.j2
     - template: jinja
-    - user: salt
-    - group: salt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
     - mode: 600
     - makedirs: True
     - context:

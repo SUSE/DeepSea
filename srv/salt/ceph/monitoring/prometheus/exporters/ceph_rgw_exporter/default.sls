@@ -1,6 +1,10 @@
 install_package:
   pkg.installed:
+  {% if grains.get('os', '') == 'CentOS' %}
+    - name: python2-prometheus_client
+  {% else %}
     - name: python-prometheus-client
+  {% endif %}
     - refresh: True
 
 install_rgw_exporter:
