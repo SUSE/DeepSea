@@ -39,10 +39,12 @@ unlock:
     - item: 'lock'
     - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
 
+{% if grains.get('os_family', '') == 'Suse' %}
 restart master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart
+{% endif %}
 
 complete marker:
   salt.runner:
