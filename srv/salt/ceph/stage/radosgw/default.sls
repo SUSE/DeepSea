@@ -29,7 +29,6 @@ setup prometheus rgw exporter:
     - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
 
 {% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-{% if salt.saltutil.runner('changed.config', service=config) == True %}
 
 restart {{config}}:
   salt.state:
@@ -37,7 +36,6 @@ restart {{config}}:
     - tgt_type: compound
     - sls: ceph.rgw.restart
 
-{% endif %}
 {% endfor %}
 
 rgw demo buckets:

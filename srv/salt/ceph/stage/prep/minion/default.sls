@@ -69,7 +69,7 @@ set noout {{ host }}:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
-restart {{ host }} if updates require:
+restart {{ host }} if updates required:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound

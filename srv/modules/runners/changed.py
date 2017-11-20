@@ -4,12 +4,11 @@
 import os.path
 import hashlib
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated
 import salt.client
 
-"""
-This runner is here to detect config changes in the
-various configuration files to control service restarts.
-"""
+
+__opts__ = salt.config.client_config('/etc/salt/master')
 
 log = logging.getLogger(__name__)
 
@@ -32,18 +31,19 @@ class Config(object):
         hence the service should also be restarted.
         # TODO for other services and complete tree
         """
-        return { 'mds': ['mds'],
-                 'mon': ['mon'],
-                 'osd': ['osd'],
-                 'client': ['client'],
-                 'global': ['global'],
-               }
+        return {'mds': ['mds'],
+                'mon': ['mon'],
+                'mgr': ['mgr'],
+                'osd': ['osd'],
+                'client': ['client'],
+                'global': ['global']}
 
     def rgw_configurations(self):
         """
         RadosGW allows custom configurations.  Include these roles with a
         dependency on the global.conf.  Default to 'rgw' if not set.
         """
+        # pylint: disable=redefined-outer-name
         local = salt.client.LocalClient()
         roles = []
         try:
@@ -67,10 +67,11 @@ class Config(object):
         Cleanup old checksumfiles if the config was removed.
         """
         checksums = ''
-        for fl in self.service_conf_files:
-            if os.path.exists(fl):
-                log.debug("Generating checksum for {}".format(fl))
-                md5 = hashlib.md5(open(fl, 'rb').read()).hexdigest()
+        for _file in self.service_conf_files:
+            if os.path.exists(_file):
+                log.debug("Generating checksum for {}".format(_file))
+                # pylint: disable=resource-leakage
+                md5 = hashlib.md5(open(_file, 'rb').read()).hexdigest()
                 log.debug("Checksum: {}".format(md5))
                 checksums += md5
         if checksums:
@@ -86,8 +87,9 @@ class Config(object):
         """
         if md5:
             log.debug("Writing md5 checksum {} to {}".format(md5, self.checksum_file))
-            with open(self.checksum_file, 'w') as fd:
-                fd.write(md5)
+            # pylint: disable=resource-leakage
+            with open(self.checksum_file, 'w') as _fd:
+                _fd.write(md5)
 
     def read_checksum(self):
         """
@@ -95,8 +97,9 @@ class Config(object):
         """
         if os.path.exists(self.checksum_file):
             log.debug("Reading existing md5 checksum from {}".format(self.checksum_file))
-            with open(self.checksum_file, 'r') as fd:
-                md5 = fd.readline().rstrip()
+            # pylint: disable=resource-leakage
+            with open(self.checksum_file, 'r') as _fd:
+                md5 = _fd.readline().rstrip()
             return md5
         log.debug("No existing checksum for {}".format(self.checksum_file))
         return None
@@ -140,17 +143,24 @@ def help():
     return ""
 
 
-
-def requires_conf_change(service):
+def requires_conf_change(service, cluster='ceph'):
     """
     If any of the dependent services received a change
     in the its config, retrun True
     """
     cfg = Config(service)
+    # pylint: disable=invalid-name
+    local = salt.client.LocalClient()
     if service not in cfg.dependencies:
         return "Service {} not defined".format(service)
     for deps in cfg.dependencies[service]:
         if Config(deps).has_change():
+            if service == 'osd':
+                service = 'storage'
+            search = 'I@cluster:{} and I@roles:{}'.format(cluster, service)
+            local.cmd(search, 'grains.setval',
+                      ["restart_{}".format(service), True],
+                      expr_form="compound")
             return True
     return False
 
@@ -165,6 +175,9 @@ def osd():
 
 def mon():
     return requires_conf_change('mon')
+
+def mgr():
+    return requires_conf_change('mgr')
 
 def global_():
     return requires_conf_change('global')

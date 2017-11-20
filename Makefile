@@ -134,7 +134,11 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/service
 	install -m 644 srv/salt/ceph/ganesha/service/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/service/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/restart
-	install -m 644 srv/salt/ceph/ganesha/service/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/
+	install -m 644 srv/salt/ceph/ganesha/restart/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/restart/force
+	install -m 644 srv/salt/ceph/ganesha/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/restart/controlled
+	install -m 644 srv/salt/ceph/ganesha/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/controlled
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
@@ -169,6 +173,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/mds/files/*.j2 $(DESTDIR)/srv/salt/ceph/mds/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart
 	install -m 644 srv/salt/ceph/mds/restart/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart/force
+	install -m 644 srv/salt/ceph/mds/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart/controlled
+	install -m 644 srv/salt/ceph/mds/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart/controlled
 	# state files - mgr
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr
 	install -m 644 srv/salt/ceph/mgr/*.sls $(DESTDIR)/srv/salt/ceph/mgr/
@@ -182,6 +190,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/mgr/files/*.j2 $(DESTDIR)/srv/salt/ceph/mgr/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/restart
 	install -m 644 srv/salt/ceph/mgr/restart/*.sls $(DESTDIR)/srv/salt/ceph/mgr/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/restart/force
+	install -m 644 srv/salt/ceph/mgr/restart/force/default.sls $(DESTDIR)/srv/salt/ceph/mgr/restart/force
+	install -m 644 srv/salt/ceph/mgr/restart/force/init.sls $(DESTDIR)/srv/salt/ceph/mgr/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/restart/controlled
+	install -m 644 srv/salt/ceph/mgr/restart/controlled/default.sls $(DESTDIR)/srv/salt/ceph/mgr/restart/controlled
+	install -m 644 srv/salt/ceph/mgr/restart/controlled/init.sls $(DESTDIR)/srv/salt/ceph/mgr/restart/controlled
 	# state files - salt-api
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api
 	install -m 644 srv/salt/ceph/salt-api/*.sls $(DESTDIR)/srv/salt/ceph/salt-api
@@ -212,6 +226,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/mon/files/*.j2 $(DESTDIR)/srv/salt/ceph/mon/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart
 	install -m 644 srv/salt/ceph/mon/restart/*.sls $(DESTDIR)/srv/salt/ceph/mon/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart/force
+	install -m 644 srv/salt/ceph/mon/restart/force/default.sls $(DESTDIR)/srv/salt/ceph/mon/restart/force
+	install -m 644 srv/salt/ceph/mon/restart/force/init.sls $(DESTDIR)/srv/salt/ceph/mon/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
+	install -m 644 srv/salt/ceph/mon/restart/controlled/default.sls $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
+	install -m 644 srv/salt/ceph/mon/restart/controlled/init.sls $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
 	# state files - monitoring
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring
 	install -m 644 srv/salt/ceph/monitoring/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/
@@ -246,6 +266,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/openattic/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/oaconfig
 	install -m 644 srv/salt/ceph/openattic/oaconfig/*.sls $(DESTDIR)/srv/salt/ceph/openattic/oaconfig/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart
+	install -m 644 srv/salt/ceph/openattic/restart/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart/force
+	install -m 644 srv/salt/ceph/openattic/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
+	install -m 644 srv/salt/ceph/openattic/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
 	# state files - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd
 	install -m 644 srv/salt/ceph/osd/*.sls $(DESTDIR)/srv/salt/ceph/osd/
@@ -264,6 +290,15 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/restart
 	install -m 644 srv/salt/ceph/osd/restart/default.sls $(DESTDIR)/srv/salt/ceph/osd/restart
 	install -m 644 srv/salt/ceph/osd/restart/init.sls $(DESTDIR)/srv/salt/ceph/osd/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/restart/force
+	install -m 644 srv/salt/ceph/osd/restart/force/default.sls $(DESTDIR)/srv/salt/ceph/osd/restart/force
+	install -m 644 srv/salt/ceph/osd/restart/force/init.sls $(DESTDIR)/srv/salt/ceph/osd/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/restart/controlled
+	install -m 644 srv/salt/ceph/osd/restart/controlled/default.sls $(DESTDIR)/srv/salt/ceph/osd/restart/controlled
+	install -m 644 srv/salt/ceph/osd/restart/controlled/init.sls $(DESTDIR)/srv/salt/ceph/osd/restart/controlled
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/restart/parallel
+	install -m 644 srv/salt/ceph/osd/restart/parallel/default.sls $(DESTDIR)/srv/salt/ceph/osd/restart/parallel
+	install -m 644 srv/salt/ceph/osd/restart/parallel/init.sls $(DESTDIR)/srv/salt/ceph/osd/restart/parallel
 	# state files - packages
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/packages
 	install -m 644 srv/salt/ceph/packages/*.sls $(DESTDIR)/srv/salt/ceph/packages/
@@ -400,6 +435,9 @@ copy-files:
 	# state files - restart - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw
 	install -m 644 srv/salt/ceph/restart/igw/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw
+	# state files - restart - openattic
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/openattic
+	install -m 644 srv/salt/ceph/restart/openattic/*.sls $(DESTDIR)/srv/salt/ceph/restart/openattic
 	# state files - reset
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reset
 	install -m 644 srv/salt/ceph/reset/*.sls $(DESTDIR)/srv/salt/ceph/reset/
@@ -424,6 +462,10 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/default.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
 	install -m 644 srv/salt/ceph/rgw/restart/init.sls $(DESTDIR)/srv/salt/ceph/rgw/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart/force
+	install -m 644 srv/salt/ceph/rgw/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/rgw/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/restart/controlled
+	install -m 644 srv/salt/ceph/rgw/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/rgw/restart/controlled
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/cert/
 	install -m 644 srv/salt/ceph/rgw/cert/*.sls $(DESTDIR)/srv/salt/ceph/rgw/cert/
 	# state files - sysctl

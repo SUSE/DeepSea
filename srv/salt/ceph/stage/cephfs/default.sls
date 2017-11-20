@@ -16,15 +16,11 @@ mds:
     - tgt_type: compound
     - sls: ceph.mds
 
-{% if salt.saltutil.runner('changed.config', service='mds') == True %}
-
 restart mds:
   salt.state:
     - tgt: "I@roles:mds and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.mds.restart
-
-{% endif %}
 
 {% endif %}
 
