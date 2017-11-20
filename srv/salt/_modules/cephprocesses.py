@@ -36,6 +36,10 @@ def check(results=False, quiet=False, **kwargs):
                  'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
                  'admin': [],
                  'openattic': ['httpd-prefork'],
+                 'client-cephfs': [],
+                 'client-iscsi': [],
+                 'client-nfs': [],
+                 'client-radosgw': [],
                  'master': []}
 
     running = True
