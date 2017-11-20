@@ -77,6 +77,26 @@ def mon(cluster='ceph'):
     return False
 
 
+def restart_required(role=None, cluster='ceph'):
+    """
+    Complement Runner call to cephprocesses.restart_required_lsof
+    """
+    assert role
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    local = salt.client.LocalClient()
+
+    role_search = "I@cluster:{} and I@roles:{}".format(cluster, role)
+    restart = local.cmd(role_search,
+                        'cephprocesses.restart_required_lsof',
+                        ["role={}".format(role)],
+                        expr_form="compound")
+
+    sys.stdout = _stdout
+    return restart
+
+
 def _status(search, roles, verbose):
     """
     Return a structure of roles with module results

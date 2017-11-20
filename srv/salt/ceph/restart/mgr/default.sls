@@ -6,6 +6,13 @@
         - tgt: {{ master }}
         - sls: ceph.wait
 
+    check if all processes are still running on {{ host }} after restarting mgrs:
+      salt.state:
+        - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+        - tgt_type: compound
+        - sls: ceph.processes
+        - failhard: True
+
     restarting mgr on {{ host }}:
       salt.state:
         - tgt: {{ host }}
