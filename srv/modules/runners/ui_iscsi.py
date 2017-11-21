@@ -308,6 +308,25 @@ def _check_state_result(states):
     return True
 
 
+def _normalize_minion_ids(minions):
+    """
+    Returns a list of minion ids from a list of hostnames that may be in the
+    short of full form.
+    """
+    # pylint: disable=E1101
+    hostnames = [k for k, _ in interfaces().items()]
+    _minions = []
+    for minion in minions:
+        if minion in hostnames:
+            _minions.append(minion)
+            continue
+        for fqdn in hostnames:
+            if fqdn.startswith(minion) and fqdn[len(minion)] == '.':
+                _minions.append(fqdn)
+                break
+    return _minions
+
+
 def _deploy_in_minions(minions):
     """
     Deploys the lrbd configurations in the respective iSCSI gateways specified in
@@ -326,20 +345,11 @@ def _deploy_in_minions(minions):
         return result
 
     # Second step restart lrbd services
-    hostnames = [k for k, _ in interfaces().items()]
-    _minions = []
-    for minion in minions:
-        if minion in hostnames:
-            _minions.append(minion)
-            continue
-        for fqdn in hostnames:
-            if fqdn.startswith(minion) and fqdn[len(minion)] == '.':
-                _minions.append(fqdn)
-                break
+    minions = _normalize_minion_ids(minions)
 
     local = salt.client.LocalClient()
     if minions:
-        target = 'L@{}'.format(','.join(_minions))
+        target = 'L@{}'.format(','.join(minions))
     else:
         target = 'I@roles:igw'
     state_res = local.cmd(target, 'state.apply', ['ceph.igw'], expr_form="compound")
@@ -365,10 +375,19 @@ def deploy(**kwargs):
 
 
 def undeploy(**kwargs):
-    local = salt.client.LocalClient()
-    results = local.cmd('I@roles:igw', 'service.stop', ['lrbd'], expr_form='compound')
-    result = True
-    for _, v in results.iteritems():
-        result = result and v
-    return result
+    """
+    Stop the lrbd service
+    """
+    if 'minions' in kwargs and kwargs['minions']:
+        minions = kwargs['minions'].split(',')
+    else:
+        minions = []
+    minions = _normalize_minion_ids(minions)
 
+    local = salt.client.LocalClient()
+    if minions:
+        target = 'L@{}'.format(','.join(minions))
+    else:
+        target = 'I@roles:igw'
+    results = local.cmd(target, 'service.stop', ['lrbd'], expr_form='compound')
+    return results
