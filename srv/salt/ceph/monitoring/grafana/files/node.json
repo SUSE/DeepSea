@@ -443,7 +443,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "1 - node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run|var).*',mountpoint!=''} / node_filesystem_size{job='node-exporter',instance='$instance'}",
+                "expr": "1 - node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run).*',mountpoint!=''} / node_filesystem_size{job='node-exporter',instance='$instance'}",
                 "interval": "",
                 "intervalFactor": 2,
                 "legendFormat": "{{mountpoint}}",
@@ -529,7 +529,7 @@
             ],
             "targets": [
               {
-                "expr": "(node_filesystem_size{job='node-exporter',instance='$instance'} - node_filesystem_free{job='node-exporter',instance='$instance'}) / deriv(node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run|var).*',mountpoint!=''}[3d]) > 0",
+                "expr": "(node_filesystem_size{job='node-exporter',instance='$instance'} - node_filesystem_free{job='node-exporter',instance='$instance'}) / deriv(node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run).*',mountpoint!=''}[3d]) > 0",
                 "interval": "",
                 "intervalFactor": 2,
                 "legendFormat": "{{mountpoint}}",
