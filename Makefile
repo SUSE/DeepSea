@@ -227,6 +227,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/files
 	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/files/* $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter
+	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron
+	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
+	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/* $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
 	# state files - noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/set
