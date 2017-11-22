@@ -297,9 +297,15 @@ def status(**kwargs):
     """
     local = salt.client.LocalClient()
     _status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
-    result = True
-    for _, value in _status.iteritems():
-        result = result and value
+    _targets = local.cmd('I@roles:igw', 'iscsi.targets', [], expr_form='compound')
+    result = {}
+    for minion in _status:
+        result[minion] = {
+            'active': _status[minion],
+            'targets': _targets[minion]
+        }
+        if not result[minion]['active']:
+            result[minion]['message'] = 'lrbd service is not running'
     return result
 
 
