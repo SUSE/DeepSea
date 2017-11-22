@@ -11,8 +11,12 @@ import sys
 import syslog
 
 class CephRgwCollector(object):
-    def __init__(self, name):
+    def __init__(self, name, disable_bucket_metrics, disable_usage_metrics,
+            disable_user_metrics):
         self.name = name
+        self.disable_bucket_metrics = disable_bucket_metrics
+        self.disable_usage_metrics = disable_usage_metrics
+        self.disable_user_metrics = disable_user_metrics
 
     def _exec_rgw_admin(self, args):
         try:
@@ -37,13 +41,24 @@ class CephRgwCollector(object):
         return self._exec_rgw_admin(['usage', 'show', '--show-log-sum=false'])
 
     def _init_metrics(self):
-        self._metrics = {
+        self._metrics = {}
+
+    def _init_user_metrics(self):
+        self._metrics.update({
             'user_count': prometheus_client.core.CounterMetricFamily(
                 'ceph_rgw_user_count',
-                'Number of users'),
+                'Number of users')
+        })
+
+    def _init_bucket_metrics(self):
+        self._metrics.update({
             'bucket_count': prometheus_client.core.CounterMetricFamily(
                 'ceph_rgw_bucket_count',
-                'Number of buckets'),
+                'Number of buckets')
+        })
+
+    def _init_usage_metrics(self):
+        self._metrics.update({
             'ops': prometheus_client.core.CounterMetricFamily(
                 'ceph_rgw_user_usage_ops_total',
                 'Number of operations',
@@ -60,7 +75,7 @@ class CephRgwCollector(object):
                 'ceph_rgw_user_usage_received_bytes_total',
                 'Number of bytes received by the RADOS Gateway',
                 labels=["bucket", "owner", "category"])
-        }
+        })
 
     def _add_user_metrics(self, count):
         self._metrics['user_count'].add_metric([], count)
@@ -85,21 +100,27 @@ class CephRgwCollector(object):
     def collect(self):
         self._init_metrics()
         # Process number of users.
-        data = self._collect_user_list()
-        self._add_user_metrics(len(data))
+        if not self.disable_user_metrics:
+            self._init_user_metrics()
+            data = self._collect_user_list()
+            self._add_user_metrics(len(data))
         # Process number of buckets.
-        data = self._collect_bucket_list()
-        self._add_bucket_metrics(len(data))
+        if not self.disable_bucket_metrics:
+            self._init_bucket_metrics()
+            data = self._collect_bucket_list()
+            self._add_bucket_metrics(len(data))
         # Process the usage statistics.
-        data = self._collect_usage_data()
-        if 'entries' in data:
-            for entry in data['entries']:
-                for bucket in entry['buckets']:
-                    for category in bucket['categories']:
-                        self._add_usage_metrics(
-                            bucket['bucket'],
-                            bucket['owner'],
-                            category)
+        if not self.disable_usage_metrics:
+            self._init_usage_metrics()
+            data = self._collect_usage_data()
+            if 'entries' in data:
+                for entry in data['entries']:
+                    for bucket in entry['buckets']:
+                        for category in bucket['categories']:
+                            self._add_usage_metrics(
+                                bucket['bucket'],
+                                bucket['owner'],
+                                category)
         for metric in self._metrics.values():
             yield metric
 
@@ -110,6 +131,18 @@ def parse_args():
         metavar='TYPE.ID',
         required=False,
         type=str)
+    parser.add_argument(
+        '--disable-user-metrics',
+        action='store_true',
+        required=False)
+    parser.add_argument(
+        '--disable-bucket-metrics',
+        action='store_true',
+        required=False)
+    parser.add_argument(
+        '--disable-usage-metrics',
+        action='store_true',
+        required=False)
     return parser.parse_args()
 
 def main():
@@ -132,7 +165,7 @@ def main():
             # added automatically.
             registry = prometheus_client.CollectorRegistry()
             # Register our own collector and write metrics to STDOUT.
-            registry.register(CephRgwCollector(args.name))
+            registry.register(CephRgwCollector(**vars(args)))
             sys.stdout.write(prometheus_client.generate_latest(registry))
             sys.stdout.flush()
             # Unlock the lock file.
