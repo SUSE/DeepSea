@@ -102,6 +102,8 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
                 args = ''
                 if 'email' in user:
                     args += " --email={}".format(user['email'])
+                if 'system' in user and user['system']:
+                    args += " --system"
                 if 'access_key' in user:
                     args += " --access-key={}".format(user['access_key'])
 
