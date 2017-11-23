@@ -1212,7 +1212,7 @@ class OSDCommands(object):
         cmd = ""
         args = ""
         if self.osd.device:
-            cmd = "ceph-disk -v prepare "
+            cmd = "PYTHONWARNINGS=ignore ceph-disk -v prepare "
 
             # Dmcrypt
             if self.osd.encryption == 'dmcrypt':
@@ -1253,7 +1253,7 @@ class OSDCommands(object):
                 prefix = ''
                 if 'nvme' in self.osd.device:
                     prefix = 'p'
-                cmd = "ceph-disk -v activate --mark-init systemd --mount "
+                cmd = "PYTHONWARNINGS=ignore ceph-disk -v activate --mark-init systemd --mount "
                 cmd += "{}{}{}".format(self.osd.device, prefix, self.osd_partition())
 
         log.info("activate: {}".format(cmd))
