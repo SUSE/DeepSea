@@ -1,3 +1,19 @@
+IN_GIT=$(shell [ -d .git ] || git rev-parse --git-dir > /dev/null 2>&1 && echo true)
+ifeq ($(IN_GIT),true)
+VERSION=$(shell git describe HEAD | sed -e 's/^\([0-9\.]\+\)-\([0-9]\+\)-g\(\w\+\)/\1+git.\2.\3/')
+ifeq ($(findstring git,$(VERSION)), )
+VERSION:=$(VERSION)+git.0.$(shell git rev-parse --short $(VERSION))
+endif
+else
+HAS_VERSION_FILE=$(shell [ -e version.txt ] && echo true)
+ifeq ($(HAS_VERSION_FILE),true)
+VERSION=$(shell cat version.txt)
+else
+VERSION=unknown-version
+endif
+endif
+
+
 # Override this to install docs somewhere else
 DOCDIR = /usr/share/doc/packages
 
@@ -638,15 +654,22 @@ install: copy-files
 	systemctl restart salt-api
 	# deepsea-cli
 	zypper -n install python-setuptools python-click
-	python setup.py install --root=$(DESTDIR)/
+	python setup.py install --root=$(DESTDIR)/ --set-version $(VERSION)
 
 rpm: tarball test
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
 tarball:
-	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
-	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.bz2 HEAD
+	$(eval TEMPDIR := $(shell mktemp -d))
+	$(eval DS_DIR := $(TEMPDIR)/deepsea-$(VERSION))
+	mkdir $(DS_DIR)
+	git archive HEAD | tar -x -C $(DS_DIR)
+	cat $(DS_DIR)/deepsea.spec.in | sed -e "s/@VERSION@/$(VERSION)/g" > $(DS_DIR)/deepsea.spec
+	echo "$(VERSION)" > $(DS_DIR)/version.txt
+	sed -i "s/@VERSION@/$(VERSION)/" $(DS_DIR)/setup.py
+	tar -cjf deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) deepsea-$(VERSION)
+	rm -r $(TEMPDIR)
 
 test:
 	tox -e py27
