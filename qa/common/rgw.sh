@@ -26,6 +26,22 @@ EOF
   _run_test_script_on_node $TESTSCRIPT $RGWNODE
 }
 
+function rgw_validate_system_user {
+  #
+  # prove the system user "admin" was really set up
+  #
+  local TESTSCRIPT=/tmp/rgw_validate_system_user.sh
+  local RGWNODE=$(_first_x_node rgw)
+  cat << EOF > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+radosgw-admin user info --uid=admin
+radosgw-admin user info --uid=admin | grep system | grep -q true
+echo "Result: OK"
+EOF
+  _run_test_script_on_node $TESTSCRIPT $RGWNODE
+}
+
 function rgw_validate_demo_users {
   #
   # prove the demo users from rgw_demo_users were really set up

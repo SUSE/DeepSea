@@ -91,6 +91,7 @@ if [ -n "$SSL" ] ; then
     validate_rgw_cert_perm
 fi
 rgw_user_and_bucket_list
+rgw_validate_system_user
 rgw_validate_demo_users
 ceph_health_test
 run_stage_0 "$CLI"
