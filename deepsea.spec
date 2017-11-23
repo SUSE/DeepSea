@@ -165,6 +165,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/monitoring/grafana/files
 %dir /srv/salt/ceph/monitoring/prometheus
 %dir /srv/salt/ceph/monitoring/prometheus/exporters
+%dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter
+%dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron
+%dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/files
 %dir /srv/salt/ceph/monitoring/prometheus/files
 %dir /srv/salt/ceph/noout
@@ -398,6 +401,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/monitoring/grafana/files/*.json
 %config /srv/salt/ceph/monitoring/prometheus/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/*.sls
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/*.sls
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron/*.sls
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/*
 %config /srv/salt/ceph/monitoring/prometheus/exporters/files/*
 %config /srv/salt/ceph/monitoring/prometheus/files/*.j2
 %config /srv/salt/ceph/noout/set/*.sls
