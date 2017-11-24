@@ -9,7 +9,7 @@ install_rgw_exporter:
     - user: prometheus
     - group: prometheus
     - mode: 755
-    - source: salt://{{ slspath }}/files/ceph_rgw.py
+    - source: salt://ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/ceph_rgw.py
     - makedirs: True
 
 include:
