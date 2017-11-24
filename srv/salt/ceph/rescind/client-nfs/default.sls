@@ -1,3 +1,3 @@
 
-client-ganesha nop:
+client-nfs nop:
   test.nop

@@ -114,7 +114,7 @@ class Fio(object):
             output.append(subprocess.check_output(
                 [self.cmd] + self.cmd_global_args + log_args + client_jobs))
             minion = runner.cmd('select.one_minion', ['cluster=ceph',
-                                'roles=client--{}'.format(self.client_glob)],
+                                'roles=client-{}'.format(self.client_glob)],
                                print_event=False)
             print('Job done...using {} to cleanup bench files'.format(minion))
             local_client.cmd(minion, 'cmd.run', ['rm {}/*'.format(self.work_dir)])
