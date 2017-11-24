@@ -645,6 +645,7 @@ copy-files:
 
 install: copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
+	sed -i "s/@VERSION@/$(VERSION)/" $(DESTDIR)/srv/modules/runners/deepsea.py
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 	chown -R salt /srv/pillar/ceph
@@ -668,6 +669,7 @@ tarball:
 	cat $(DS_DIR)/deepsea.spec.in | sed -e "s/@VERSION@/$(VERSION)/g" > $(DS_DIR)/deepsea.spec
 	echo "$(VERSION)" > $(DS_DIR)/version.txt
 	sed -i "s/@VERSION@/$(VERSION)/" $(DS_DIR)/setup.py
+	sed -i "s/@VERSION@/$(VERSION)/" $(DS_DIR)/srv/modules/runners/deepsea.py
 	tar -cjf deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) deepsea-$(VERSION)
 	rm -r $(TEMPDIR)
 
