@@ -208,7 +208,8 @@ def get_ceph_disks_yml(**kwargs):
                                 {"format": "filestore",
                                  "journal": "/dev/bar"}}}}}
     """
-    ceph_disk_list = Popen("ceph-disk list --format=json", stdout=PIPE, stderr=PIPE, shell=True)
+    ceph_disk_list = Popen("PYTHONWARNINGS=ignore ceph-disk list --format=json",
+                           stdout=PIPE, stderr=PIPE, shell=True)
     out, err = ceph_disk_list.communicate()
     ceph_disks = {"ceph":
                   {"storage":
