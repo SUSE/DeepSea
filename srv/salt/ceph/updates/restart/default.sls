@@ -1,6 +1,6 @@
 
 {% set kernel = grains['kernelrelease'] | replace('-default', '')  %}
-{% set installed = salt['cmd.run']('rpm -q --last kernel-default | head -1 | cut -f1 -d\  ') | replace('kernel-default-', '') %}
+{% set installed = salt['kernel.installed_kernel_version']() %}
 
 warning:
   module.run:

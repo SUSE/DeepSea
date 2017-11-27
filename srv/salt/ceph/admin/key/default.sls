@@ -4,11 +4,11 @@
 {% set keyring_file = "/srv/salt/ceph/admin/cache/ceph.client.admin.keyring" %}
 {{ keyring_file }}:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/admin/files/keyring.j2
     - template: jinja
-    - user: salt
-    - group: salt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
     - mode: 600
     - makedirs: True
     - context:

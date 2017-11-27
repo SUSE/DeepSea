@@ -438,7 +438,11 @@ class SLSParser(object):
             """
             # changing process user to "salt" so that any runner side-effects during SLS rendering
             # are done with salt user as owner
-            pw = pwd.getpwnam("salt")
+            try:
+                pw = pwd.getpwnam("salt")
+            except KeyError:
+                # salt user not found, fallback to root
+                pw = pwd.getpwnam("root")
             os.setgid(pw.pw_gid)
             os.setuid(pw.pw_uid)
 

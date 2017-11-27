@@ -69,12 +69,14 @@ set noout {{ host }}:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
+{% if grains.get('os_family', '') == 'Suse' %}
 restart {{ host }} if updates require:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound
     - sls: ceph.updates.restart
     - failhard: True
+{% endif %}
 
 finished {{ host }}:
   salt.runner:
@@ -83,7 +85,7 @@ finished {{ host }}:
 
 {% endfor %}
 
-unset noout after final iteration: 
+unset noout after final iteration:
   salt.state:
     - sls: ceph.noout.unset
     - tgt: {{ salt['pillar.get']('master_minion') }}
@@ -101,12 +103,14 @@ updating minions without roles:
     - sls: ceph.updates
     - failhard: True
 
+{% if grains.get('os_family', '') == 'Suse' %}
 restarting minions without roles:
   salt.state:
     - tgt: I@cluster:ceph
     - tgt_type: compound
     - sls: ceph.updates.restart
     - failhard: True
+{% endif %}
 
 finishing remaining minions:
   salt.runner:
@@ -131,10 +135,12 @@ updates:
     - tgt_type: compound
     - sls: ceph.updates
 
+{% if grains.get('os_family', '') == 'Suse' %}
 restart:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates.restart
+{% endif %}
 
 {% endif %}

@@ -749,20 +749,27 @@ class Validate(object):
         target = deepsea_minions.DeepseaMinions()
         search = target.deepsea_minions
         local = salt.client.LocalClient()
-        contents = local.cmd(search, 'cmd.shell',
-                             ['/usr/bin/zypper info ceph'],
-                             expr_form="compound")
+        contents = local.cmd(search, 'pkg.latest_version', ['ceph'], expr_form="compound")
+        for minion, version in contents.items():
+            if not version:
+                info = local.cmd(minion, 'pkg.info_installed', ['ceph'])
+                if info and 'version' in info[minion]['ceph']:
+                    version = info[minion]['ceph']['version']
+                else:
+                    self.errors.setdefault('ceph_version', []).append(
+                        "No Ceph version is available for installation in {}".format(minion))
+                    continue
 
-        for minion in contents:
-            match = re.search(r'Version: (\S+)', contents[minion])
-            # Skip minions with no ceph repo
-            if match:
-                version = match.group(1)
-
-                # String comparison works for now
-                if version < JEWEL_VERSION:
-                    msg = "ceph version {} on minion {}".format(version, minion)
-                    self.errors.setdefault('ceph_version', []).append(msg)
+            colon_idx = version.find(':')
+            if colon_idx != -1:
+                version = version[colon_idx+1:]
+            dash_idx = version.rfind('-')
+            if dash_idx != -1:
+                version = version[:dash_idx]
+            if version < JEWEL_VERSION:
+                self.errors.setdefault('ceph_version', []).append(
+                    "The Ceph version available in {} is older than 'jewel' (10.2)"
+                    .format(minion))
 
         self._set_pass_status('ceph_version')
 

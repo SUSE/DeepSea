@@ -5,4 +5,3 @@ ceph:
       - ceph
     - dist-upgrade: True
     - fire_event: True
-

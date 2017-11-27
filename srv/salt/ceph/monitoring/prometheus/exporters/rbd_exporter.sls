@@ -2,7 +2,11 @@
 install rbd exporter dependencies:
   pkg.installed:
     - pkgs:
+{% if grains.get('os', '') == 'CentOS' %}
+      - cronie
+{% else %}
       - cron
+{% endif %}
       - jq
     - refresh: True
 

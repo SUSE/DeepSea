@@ -2,7 +2,6 @@
 {# need the context role to be silver, silver, gold, platinum, red, blue #}
 {# red and blue are cephfs configs #}
 
-
 prevent empty rendering:
   test.nop:
     - name: skip
@@ -24,8 +23,8 @@ check {{ role }}:
       - salt://ceph/ganesha/files/{{ role }}.conf.j2
     - template: jinja
     - makedirs: True
-    - user: salt
-    - group: salt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
     - mode: 600
     - context:
       role: {{ salt['rgw.configuration'](role) }}
