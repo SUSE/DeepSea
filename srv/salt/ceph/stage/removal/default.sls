@@ -23,6 +23,7 @@ drain osds:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.remove.storage.drain
+    - failhard: True
 
 terminate ceph osds:
   salt.state:

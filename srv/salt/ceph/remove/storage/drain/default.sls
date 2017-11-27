@@ -6,7 +6,7 @@ reweight nop:
 drain osd.{{ id }}:
   module.run:
     - name: osd.zero_weight
-    - id: {{ id }}
+    - osd_id: {{ id }}
 
 set osd {{ id }} out:
   cmd.run:

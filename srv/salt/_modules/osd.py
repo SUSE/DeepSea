@@ -426,13 +426,13 @@ def _settings(**kwargs):
     return settings
 
 
-def zero_weight(_id, wait=True, **kwargs):
+def zero_weight(osd_id, wait=True, **kwargs):
     """
     Set weight to zero and wait until PGs are moved
     """
     settings = _settings(**kwargs)
 
-    osdweight = OSDWeight(_id, **settings)
+    osdweight = OSDWeight(osd_id, **settings)
     osdweight.save()
     _rc, _stdout, _stderr = osdweight.reweight('0.0')
     if _rc != 0:
@@ -443,13 +443,13 @@ def zero_weight(_id, wait=True, **kwargs):
         return ""
 
 
-def restore_weight(_id, **kwargs):
+def restore_weight(osd_id, **kwargs):
     """
     Restore the previous setting for an OSD if possible
     """
     settings = _settings(**kwargs)
 
-    osdweight = OSDWeight(_id, **settings)
+    osdweight = OSDWeight(osd_id, **settings)
     osdweight.restore()
     return True
 
