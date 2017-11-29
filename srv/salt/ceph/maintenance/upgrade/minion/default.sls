@@ -153,21 +153,13 @@ unset noout after final iteration:
 
 set luminous osds: 
   salt.state:
-    - sls: ceph.setosdflags
+    - sls: ceph.setosdflags.requireosdrelease
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
 {% else %}
 
-updates:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - sls: ceph.upgrade
-
-restart:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - sls: ceph.updates.restart
+{% set notice = salt['saltutil.runner']('advise.no_cluster_detected') %}
 
 {% endif %}
 
