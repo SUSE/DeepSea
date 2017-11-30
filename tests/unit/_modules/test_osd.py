@@ -1955,7 +1955,7 @@ class TestOSDCommands():
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
         ret = obj.activate()
-        assert ret == "ceph-disk -v activate --mark-init systemd --mount /dev/nvme0n1p1"
+        assert ret == "PYTHONWARNINGS=ignore ceph-disk -v activate --mark-init systemd --mount /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.osd_partition')
     def test_activate_2(self, osdp_mock, osdc_o):
@@ -1972,7 +1972,7 @@ class TestOSDCommands():
         osd_config = OSDConfig(**kwargs)
         obj = osdc_o(osd_config)
         ret = obj.activate()
-        assert ret == "ceph-disk -v activate --mark-init systemd --mount /dev/sdx1"
+        assert ret == "PYTHONWARNINGS=ignore ceph-disk -v activate --mark-init systemd --mount /dev/sdx1"
 
     def test_activate_3(self, osdc_o):
         """
