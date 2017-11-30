@@ -122,6 +122,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/ganesha/keyring
 %dir /srv/salt/ceph/ganesha/install
 %dir /srv/salt/ceph/ganesha/restart
+%dir /srv/salt/ceph/ganesha/restart/force
+%dir /srv/salt/ceph/ganesha/restart/controlled
 %dir /srv/salt/ceph/ganesha/service
 %dir /srv/salt/ceph/igw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/igw/cache
@@ -141,6 +143,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mds/keyring
 %dir /srv/salt/ceph/mds/pools
 %dir /srv/salt/ceph/mds/restart
+%dir /srv/salt/ceph/mds/restart/force
+%dir /srv/salt/ceph/mds/restart/controlled
 %dir /srv/salt/ceph/mgr
 %dir %attr(0700, salt, salt) /srv/salt/ceph/mgr/cache
 %dir /srv/salt/ceph/mgr/files
@@ -148,6 +152,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mgr/auth
 %dir /srv/salt/ceph/mgr/keyring
 %dir /srv/salt/ceph/mgr/restart
+%dir /srv/salt/ceph/mgr/restart/force
+%dir /srv/salt/ceph/mgr/restart/controlled
 %dir /srv/salt/ceph/migrate
 %dir /srv/salt/ceph/migrate/nodes
 %dir /srv/salt/ceph/migrate/osds
@@ -160,6 +166,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mon/files
 %dir /srv/salt/ceph/mon/key
 %dir /srv/salt/ceph/mon/restart
+%dir /srv/salt/ceph/mon/restart/force
+%dir /srv/salt/ceph/mon/restart/controlled
 %dir /srv/salt/ceph/monitoring
 %dir /srv/salt/ceph/monitoring/grafana
 %dir /srv/salt/ceph/monitoring/grafana/files
@@ -180,6 +188,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/openattic/key
 %dir /srv/salt/ceph/openattic/keyring
 %dir /srv/salt/ceph/openattic/oaconfig
+%dir /srv/salt/ceph/openattic/restart
+%dir /srv/salt/ceph/openattic/restart/force
+%dir /srv/salt/ceph/openattic/restart/controlled
 %dir /srv/salt/ceph/osd
 %dir %attr(0700, salt, salt) /srv/salt/ceph/osd/cache
 %dir /srv/salt/ceph/osd/files
@@ -188,6 +199,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/osd/grains
 %dir /srv/salt/ceph/osd/keyring
 %dir /srv/salt/ceph/osd/restart
+%dir /srv/salt/ceph/osd/restart/force
+%dir /srv/salt/ceph/osd/restart/controlled
+%dir /srv/salt/ceph/osd/restart/parallel
 %dir /srv/salt/ceph/osd/scheduler
 %dir /srv/salt/ceph/packages
 %dir /srv/salt/ceph/packages/common
@@ -250,6 +264,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/restart/igw
 %dir /srv/salt/ceph/restart/mds
 %dir /srv/salt/ceph/restart/ganesha
+%dir /srv/salt/ceph/restart/openattic
 %dir /srv/salt/ceph/rgw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/rgw/cache
 %dir /srv/salt/ceph/rgw/files
@@ -259,6 +274,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/cert
 %dir /srv/salt/ceph/rgw/keyring
 %dir /srv/salt/ceph/rgw/restart
+%dir /srv/salt/ceph/rgw/restart/force
+%dir /srv/salt/ceph/rgw/restart/controlled
 %dir /srv/salt/ceph/rgw/users
 %dir /srv/salt/ceph/rgw/users/users.d
 %dir /srv/salt/ceph/stage
@@ -365,6 +382,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/ganesha/key/*.sls
 %config /srv/salt/ceph/ganesha/keyring/*.sls
 %config /srv/salt/ceph/ganesha/restart/*.sls
+%config /srv/salt/ceph/ganesha/restart/force/*.sls
+%config /srv/salt/ceph/ganesha/restart/controlled/*.sls
 %config /srv/salt/ceph/ganesha/service/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
@@ -382,12 +401,16 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mds/keyring/*.sls
 %config /srv/salt/ceph/mds/pools/*.sls
 %config /srv/salt/ceph/mds/restart/*.sls
+%config /srv/salt/ceph/mds/restart/force/*.sls
+%config /srv/salt/ceph/mds/restart/controlled/*.sls
 %config /srv/salt/ceph/mgr/*.sls
 %config /srv/salt/ceph/mgr/files/*.j2
 %config /srv/salt/ceph/mgr/key/*.sls
 %config /srv/salt/ceph/mgr/auth/*.sls
 %config /srv/salt/ceph/mgr/keyring/*.sls
 %config /srv/salt/ceph/mgr/restart/*.sls
+%config /srv/salt/ceph/mgr/restart/force/*.sls
+%config /srv/salt/ceph/mgr/restart/controlled/*.sls
 %config /srv/salt/ceph/migrate/nodes/*.sls
 %config /srv/salt/ceph/migrate/osds/*.sls
 %config /srv/salt/ceph/migrate/policy/*.sls
@@ -398,6 +421,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/files/*.j2
 %config /srv/salt/ceph/mon/key/*.sls
 %config /srv/salt/ceph/mon/restart/*.sls
+%config /srv/salt/ceph/mon/restart/force/*.sls
+%config /srv/salt/ceph/mon/restart/controlled/*.sls
 %config /srv/salt/ceph/monitoring/*.sls
 %config /srv/salt/ceph/monitoring/grafana/*.sls
 %config /srv/salt/ceph/monitoring/grafana/files/*.json
@@ -416,6 +441,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/openattic/keyring/*.sls
 %config /srv/salt/ceph/openattic/oaconfig/*.sls
 %config /srv/salt/ceph/openattic/files/*.j2
+%config /srv/salt/ceph/openattic/restart/*.sls
+%config /srv/salt/ceph/openattic/restart/force/*.sls
+%config /srv/salt/ceph/openattic/restart/controlled/*.sls
 %config /srv/salt/ceph/osd/*.sls
 %config /srv/salt/ceph/osd/files/*.j2
 %config /srv/salt/ceph/osd/key/*.sls
@@ -423,6 +451,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/osd/grains/*.sls
 %config /srv/salt/ceph/osd/keyring/*.sls
 %config /srv/salt/ceph/osd/restart/*.sls
+%config /srv/salt/ceph/osd/restart/force/*.sls
+%config /srv/salt/ceph/osd/restart/controlled/*.sls
+%config /srv/salt/ceph/osd/restart/parallel/*.sls
 %config /srv/salt/ceph/osd/scheduler/*.sls
 %config /srv/salt/ceph/packages/*.sls
 %config /srv/salt/ceph/packages/common/*.sls
@@ -481,6 +512,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/restart/rgw/*.sls
 %config /srv/salt/ceph/restart/igw/*.sls
 %config /srv/salt/ceph/restart/ganesha/*.sls
+%config /srv/salt/ceph/restart/openattic/*.sls
 %config /srv/salt/ceph/rgw/*.sls
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/files/*.yml
@@ -490,6 +522,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rgw/cert/*.sls
 %config /srv/salt/ceph/rgw/keyring/*.sls
 %config /srv/salt/ceph/rgw/restart/*.sls
+%config /srv/salt/ceph/rgw/restart/force/*.sls
+%config /srv/salt/ceph/rgw/restart/controlled/*.sls
 %config /srv/salt/ceph/rgw/users/*.sls
 %config /srv/salt/ceph/rgw/users/users.d/README
 %config /srv/salt/ceph/stage/0

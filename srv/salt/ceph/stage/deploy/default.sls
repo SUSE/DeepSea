@@ -61,6 +61,18 @@ configuration:
     - tgt_type: compound
     - sls: ceph.configuration
 
+# this gets pre-parsed anyways.. maybe put this ontop
+# replace with changed.all runner
+{% set ret_mon = salt.saltutil.runner('changed.mon') %}
+{% set ret_osd = salt['saltutil.runner']('changed.osd') %}
+{% set ret_mgr = salt['saltutil.runner']('changed.mgr') %}
+{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
+{% set ret_rgw_conf = salt.saltutil.runner('changed.config', service=config) %}
+{% endfor %}
+{% set ret_client = salt['saltutil.runner']('changed.client') %}
+{% set ret_global = salt['saltutil.runner']('changed.global') %}
+{% set ret_mds = salt['saltutil.runner']('changed.mds') %}
+
 admin:
   salt.state:
     - tgt: 'I@roles:admin and I@cluster:ceph or I@roles:master'
@@ -137,3 +149,24 @@ pools:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.pool
+
+restart osds if needed:
+  salt.state:
+    - tgt: 'I@roles:storage and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.osd.restart
+    - failhard: True
+
+restart mons if needed:
+  salt.state:
+    - tgt: 'I@roles:mon and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.mon.restart
+    - failhard: True
+
+restart mgrs if needed:
+  salt.state:
+    - tgt: 'I@roles:mgr and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.mgr.restart
+    - failhard: True

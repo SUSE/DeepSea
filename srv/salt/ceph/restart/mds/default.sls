@@ -1,4 +1,3 @@
-{% if salt.saltutil.runner('changed.mds') == True %}
 {% set master = salt['pillar.get']('master_minion') %}
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') %}
     
@@ -22,4 +21,3 @@
         - failhard: True
 
 {% endfor %}
-{% endif %}

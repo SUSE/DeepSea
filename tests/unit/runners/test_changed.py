@@ -137,6 +137,12 @@ class TestChanged():
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
+    def test_mgr(self, rcc_mock, salt_mock):
+        changed.mgr()
+        rcc_mock.assert_called_with('mgr') 
+
+    @patch('salt.client.LocalClient', autospec=True)
+    @patch('srv.modules.runners.changed.requires_conf_change')
     def test_osd(self, rcc_mock, salt_mock):
         changed.osd()
         rcc_mock.assert_called_with('osd') 
