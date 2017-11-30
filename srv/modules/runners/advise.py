@@ -66,6 +66,22 @@ def salt_upgrade():
     print message
     return message
 
+
+def no_cluster_detected():
+    """
+    Advise the installer that if the upgrade fails, rerun the orchestration.
+    """
+    message = '''
+        *************** PLEASE READ ***********************
+        You triggered an update but we couldn't find any
+        trace of a ceph cluster. Please make sure to have
+        setup DeepSea correctly and start the upgrade again.
+        ***************************************************'''
+
+    print message
+    return message
+
+
 def networks():
     """
     Advise the installer the current network settings.
