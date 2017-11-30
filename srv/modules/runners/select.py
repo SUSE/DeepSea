@@ -66,7 +66,7 @@ def minions(host=False, **kwargs):
     sys.stdout = open(os.devnull, 'w')
 
     local = salt.client.LocalClient()
-    minions = local.cmd(search , 'pillar.get', [ 'id' ], expr_form="compound")
+    _minions = local.cmd(search , 'pillar.get', [ 'id' ], expr_form="compound")
 
     sys.stdout = _stdout
 
