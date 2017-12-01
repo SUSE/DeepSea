@@ -1,235 +1,194 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=modernize-parse-error
 """
-Operations for Ceph processes to roles
+The original purpose of this runner is to verify that proceeding with an
+upgrade is safe.  All expected processes are running.
+
+A secondary purpose is a utility to check the current state of all processes.
 """
 
-from __future__ import absolute_import
-import logging
-import time
+import pprint
 import os
-import pwd
-import shlex
-# pylint: disable=import-error,3rd-party-module-not-gated
-from subprocess import Popen, PIPE
-import psutil
+import sys
+import logging
+import salt.client
+import salt.utils
+import salt.utils.master
 
 log = logging.getLogger(__name__)
 
-"""
-The original purpose of this runner is to verify that proceeding with an
-upgrade is safe.  All expected services are running.
 
-A secondary purpose is a utility to check the current state of all services.
-"""
-
-# pylint: disable=invalid-name
-processes = {'mon': ['ceph-mon'],
-             'mgr': ['ceph-mgr'],
-             'storage': ['ceph-osd'],
-             'mds': ['ceph-mds'],
-             'igw': [],
-             'rgw': ['radosgw'],
-             'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
-             'admin': [],
-             'openattic': ['httpd-prefork'],
-             'client-cephfs': [],
-             'client-iscsi': [],
-             'client-nfs': [],
-             'client-radosgw': [],
-             'master': []}
-
-
-def check(results=False, quiet=False, **kwargs):
+def help_():
     """
-    Query the status of running processes for each role.  Return False if any
-    fail.  If results flag is set, return a dictionary of the form:
-      { 'down': [ process, ... ], 'up': { process: [ pid, ... ], ...} }
+    Usage
     """
-    running = True
-    res = {'up': {}, 'down': []}
-
-    if 'rgw_configurations' in __pillar__:
-        for rgw_config in __pillar__['rgw_configurations']:
-            processes[rgw_config] = ['radosgw']
-
-    # pylint: disable=too-many-nested-blocks
-    if 'roles' in __pillar__:
-        for role in kwargs.get('roles', __pillar__['roles']):
-            # Checking running first.
-            for running_proc in psutil.process_iter():
-                # NOTE about `ps` and psutils.Process():
-                # `ps -e` determines process names by examining
-                # /proc/PID/stat,status files.  The name derived
-                # there is also found in psutil.Process.name.
-                # `ps -ef`, according to strace, appears to also reference
-                # /proc/PID/cmdline when determining
-                # process names.  We have found that some processes (ie.
-                # ceph-mgr was noted) will _sometimes_
-                # contain a process name in /proc/PIDstat/stat,status that does
-                # not match that found in /proc/PID/cmdline.
-                # In our ceph-mgr example, the process name was found to be
-                # 'exe' (which happens to also be the name a of
-                # symlink in /proc/PID that points to the executable) while the
-                # cmdline entry contained 'ceph-mgr' etc.
-                # As such, we've decided that a check based on executable
-                # path is more reliable.
-                pdict = running_proc.as_dict(attrs=['pid', 'name', 'exe', 'uids'])
-                pdict_exe = os.path.basename(pdict['exe'])
-                pdict_pid = pdict['pid']
-                # Convert the numerical UID to name.
-                pdict_uid = pwd.getpwuid(pdict['uids'].real).pw_name
-                if pdict_exe in processes[role]:
-                    # Verify httpd-worker pid belongs to openattic.
-                    if (role != 'openattic') or (role == 'openattic' and pdict_uid == 'openattic'):
-                        if pdict_exe in res['up']:
-                            res['up'][pdict_exe] = res['up'][pdict_exe] + [pdict_pid]
-                        else:
-                            res['up'][pdict_exe] = [pdict_pid]
-
-            # Any processes for this role that aren't running, mark them down.
-            for proc in processes[role]:
-                if proc not in res['up']:
-                    if not quiet:
-                        log.error("ERROR: process {} for role {} is not running".format(proc, role))
-                    running = False
-                    res['down'] += [proc]
-            # pylint: disable=fixme
-            # FIXME: Map osd.ids to processes.pid to improve qualitify of logging
-            # currently you can only say how many osds/ if any are down, but not
-            # which osd is down exactly.
-            if role == 'storage':
-                if 'ceph-osd' in res['up']:
-                    if len(__salt__['osd.list']()) > len(res['up']['ceph-osd']):
-                        if not quiet:
-                            log.error("ERROR: At least one OSD is not running")
-                        res = {'up': {}, 'down': {'ceph-osd': 'ceph-osd'}}
-                        running = False
-
-    return res if results else running
+    usage = ('salt-run cephprocesses.check:\n\n'
+             '    Checks the process status according to assigned role\n'
+             '\n\n'
+             'salt-run cephprocesses.mon:\n\n'
+             '    Query monitors to determine if Ceph cluster is active\n'
+             '\n\n'
+             'salt-run cephprocesses.wait:\n\n'
+             '    Wait for all processes to be up according to assigned roles\n'
+             '\n\n')
+    print usage
+    return ""
 
 
-# pylint: disable=unused-argument
-def down(**kwargs):
+# pylint: disable=dangerous-default-value
+def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
     """
-    Based on check(), return True/False if all Ceph processes that are meant
-    to be running on a node are down.
+    Query the status of running processes for each role.  Also, verify that
+    all minions assigned roles do respond.  Return False if any fail.
     """
-    return True if not check(True, True)['up'].values() else False
+    search = "I@cluster:{}".format(cluster)
+
+    if not roles:
+        roles = _cached_roles(search)
+
+    status = _status(search, roles, verbose)
+
+    log.debug("roles: {}".format(pprint.pformat(roles)))
+    log.debug("status: {}".format(pprint.pformat(status)))
+
+    ret = True
+
+    for role in status:
+        for minion in status[role]:
+            if status[role][minion] is False:
+                if tolerate_down == 0:
+                    log.error("ERROR: {} process on {} is not running".format(role, minion))
+                    ret = False
+                tolerate_down -= 1
+
+    return ret
 
 
-def wait(**kwargs):
+def mon(cluster='ceph'):
     """
-    Periodically check until all services are up or until the timeout is
-    reached.  Use a backoff for the delay to avoid filling logs.
+    Query all monitors.  If any are running, assume cluster is running and
+    return true.  The purpose of this function is to act as a conditional
+    to determines whether minion steps should happen serially or in parallel.
+    """
+    status = _status("I@cluster:{}".format(cluster), ['mon'], False)
+    for minion in status['mon']:
+        if status['mon'][minion]:
+            return True
+    return False
+
+
+def restart_required(role=None, cluster='ceph'):
+    """
+    Complement Runner call to cephprocesses.restart_required_lsof
+    """
+    assert role
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    local = salt.client.LocalClient()
+
+    role_search = "I@cluster:{} and I@roles:{}".format(cluster, role)
+    restart = local.cmd(role_search,
+                        'cephprocesses.restart_required_lsof',
+                        ["role={}".format(role)],
+                        expr_form="compound")
+
+    sys.stdout = _stdout
+    return restart
+
+
+def _status(search, roles, verbose):
+    """
+    Return a structure of roles with module results
+    """
+    # When search matches no minions, salt prints to stdout.  Suppress stdout.
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    status = {}
+    local = salt.client.LocalClient()
+
+    for role in roles:
+        role_search = search + " and I@roles:{}".format(role)
+        status[role] = local.cmd(role_search,
+                                 'cephprocesses.check',
+                                 roles=roles,
+                                 verbose=verbose,
+                                 expr_form="compound")
+
+    sys.stdout = _stdout
+    log.debug(pprint.pformat(status))
+    return status
+
+
+def _cached_roles(search):
+    """
+    Return the cached roles in a convenient structure.  Trust the cached
+    values from the master pillar since a downed minion will be absent
+    from any dynamic query.  Also, do not worry about downed minions that
+    are outside of the search criteria.
+    """
+    pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
+                                                     use_cached_grains=True,
+                                                     grains_fallback=False,
+                                                     opts=__opts__)
+
+    cached = pillar_util.get_minion_pillar()
+    roles = {}
+    for minion in cached:
+        if 'roles' in cached[minion]:
+            for role in cached[minion]['roles']:
+                roles.setdefault(role, []).append(minion)
+
+    log.debug(pprint.pformat(roles))
+    return roles.keys()
+
+
+def wait(cluster='ceph', **kwargs):
+    """
+    Wait for all processes to be up or until the timeout expires.
     """
     settings = {
-        'timeout': _timeout(),
+        'timeout': _timeout(cluster=cluster),
         'delay': 3
     }
     settings.update(kwargs)
+    search = "I@cluster:{}".format(cluster)
 
-    end_time = time.time() + settings['timeout']
-    current_delay = settings['delay']
-    while end_time > time.time():
-        if check():
-            log.debug("Services are up")
-            return True
-        time.sleep(current_delay)
-        if current_delay < 60:
-            current_delay += settings['delay']
-        else:
-            current_delay = 60
-    log.error("Timeout expired")
-    return False
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
 
+    status = {}
+    local = salt.client.LocalClient()
+    status = local.cmd(search,
+                       'cephprocesses.wait',
+                       ['timeout={}'.format(settings['timeout']),
+                        'delay={}'.format(settings['delay'])],
+                       expr_form="compound")
 
-def _process_map():
-    """
-    Create a map of processes that have deleted files.
-    """
-    procs = []
-    proc1 = Popen(shlex.split('lsof '), stdout=PIPE)
-    # pylint: disable=line-too-long
-    proc2 = Popen(shlex.split("awk 'BEGIN {IGNORECASE = 1} /deleted/ {print $1 \" \" $2 \" \" $4}'"),
-                  stdin=proc1.stdout, stdout=PIPE, stderr=PIPE)
-    proc1.stdout.close()
-    stdout, _ = proc2.communicate()
-    for proc_l in stdout.split('\n'):
-        proc = proc_l.split(' ')
-        proc_info = {}
-        if proc[0] and proc[1] and proc[2]:
-            proc_info['name'] = proc[0]
-            if proc_info['name'] == 'httpd-pre':
-                # lsof 'nicely' abbreviates httpd-prefork to httpd-pre
-                proc_info['name'] = 'httpd-prefork'
-            proc_info['pid'] = proc[1]
-            proc_info['user'] = proc[2]
-            procs.append(proc_info)
-        else:
-            continue
-    return procs
+    sys.stdout = _stdout
+    log.debug("status: {}".format(pprint.pformat(status)))
+    if False in status.values():
+        for minion in status:
+            if status[minion] is False:
+                log.error("minion {} failed".format(minion))
+        return False
+    return True
 
 
-def zypper_ps(role, lsof_map):
-    """
-    Gets services that need a restart from zypper
-    """
-    assert role
-    proc1 = Popen(shlex.split('zypper ps -sss'), stdout=PIPE)
-    stdout, _ = proc1.communicate()
-    processes_ = processes
-    # adding instead of overwriting, eh?
-    # radosgw is ceph-radosgw in zypper ps.
-    processes_['rgw'] = ['ceph-radosgw', 'radosgw', 'rgw']
-    # ganesha is called nfs-ganesha
-    processes_['ganesha'] = ['ganesha.nfsd', 'rpcbind', 'rpc.statd', 'nfs-ganesha']
-    for proc_l in stdout.split('\n'):
-        if '@' in proc_l:
-            proc_l = proc_l.split('@')[0]
-        if proc_l in processes_[role]:
-            lsof_map.append({'name': proc_l})
-    return lsof_map
-
-
-def restart_required_lsof(role=None):
-    """
-    Use the process map to determine if a service restart is required.
-    """
-    assert role
-    lsof_proc_map = _process_map()
-    proc_map = zypper_ps(role, lsof_proc_map)
-    for proc in proc_map:
-        if proc['name'] in processes[role]:
-            if role == 'openattic' and proc['user'] != 'openattic':
-                continue
-            log.info("Found deleted file for ceph service: {} -> Queuing a restart".format(role))
-            return True
-    return False
-
-
-def need_restart(role=None):
-    """
-    Condensed call for lsof and config change
-    TODO: Theoretically you can make config changes for individual
-          OSDs. We currently do not support that.
-    """
-    assert role
-    grain_name = "restart_{}".format(role)
-    if grain_name not in __grains__:
-        log.debug("There is no {} in the grains.".format(grain_name))
-        __grains__[grain_name] = False
-    if __grains__[grain_name] or restart_required_lsof(role=role):
-        log.info("Restarting ceph service: {} -> Queuing a restart".format(role))
-        return True
-    return False
-
-
-def _timeout():
+def _timeout(cluster='ceph'):
     """
     Assume 15 minutes for physical hardware since some hardware has long
     shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
     """
-    if __grains__['virtual'] == 'physical':
+    local = salt.client.LocalClient()
+    search = "I@cluster:{}".format(cluster)
+    virtual = local.cmd(search, 'grains.get', ['virtual'], expr_form="compound")
+    if 'physical' in virtual.values():
         return 900
     else:
         return 120
+
+__func_alias__ = {
+                 'help_': 'help',
+                 }

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# pylint: disable=modernize-parse-error,fixme,no-self-use
+"""
+This runner is here to detect config changes in the
+various configuration files to control service restarts.
+"""
 
 import os.path
 import hashlib
@@ -7,24 +12,30 @@ import logging
 # pylint: disable=import-error,3rd-party-module-not-gated
 import salt.client
 
-
 __opts__ = salt.config.client_config('/etc/salt/master')
-
 log = logging.getLogger(__name__)
 
+
 class Config(object):
+    """
+    Tracks the configuration files, related dependencies and checksums
+    """
+
     def __init__(self, service_name):
+        """
+        Initialize locations for configuration files
+        """
         self.base_dir = '/srv/salt/ceph/configuration/files/'
         self.conf_dir = '/srv/salt/ceph/configuration/files/ceph.conf.d/'
         self.checksum_dir = '/srv/salt/ceph/configuration/files/ceph.conf.checksum/'
         self.checksum_file = self.checksum_dir + service_name + '.conf'
         self.service_name = service_name
         self.service_conf_files = [self.conf_dir + service_name + '.conf']
-        self.dependencies = self.dependencies()
+        self.dependencies = self.depends()
         self.rgw_configurations()
         log.debug("dependencies: {}".format(self.dependencies))
 
-    def dependencies(self):
+    def depends(self):
         """
         Services might depend on each other and have to trigger a restart.
         I.e. Changes in the MDS section might affect the NFS-Ganesha service
@@ -47,15 +58,18 @@ class Config(object):
         local = salt.client.LocalClient()
         roles = []
         try:
-            roles = local.cmd("I@roles:master", 'pillar.get', [ 'rgw_configurations' ], expr_form="compound").values()[0]
+            roles = local.cmd("I@roles:master", 'pillar.get',
+                              ['rgw_configurations'],
+                              expr_form="compound").values()[0]
             log.debug("Querying pillar for rgw_configurations")
+        # pylint: disable=bare-except
         except:
             pass
         if not roles:
-            roles = [ 'rgw' ]
+            roles = ['rgw']
         for role in roles:
             if role == self.service_name:
-                self.dependencies[role] = [ role, 'global' ]
+                self.dependencies[role] = [role, 'global']
                 for dep in self.dependencies[role][1:]:
                     log.debug("Resolving RGW configurations files")
                     self.service_conf_files.append(self.conf_dir + dep + '.conf')
@@ -76,7 +90,8 @@ class Config(object):
                 checksums += md5
         if checksums:
             return hashlib.md5(checksums).hexdigest()
-        log.debug("No file found to generate a checksum from. Looked for {}".format(self.service_conf_files))
+        log.debug(("No file found to generate a checksum from. Looked for "
+                   "{}".format(self.service_conf_files)))
         if os.path.exists(self.checksum_file):
             os.remove(self.checksum_file)
         return None
@@ -122,7 +137,8 @@ class Config(object):
             self.write_checksum(current_cs)
             return True
 
-def help():
+
+def help_():
     """
     Usage
     """
@@ -137,8 +153,7 @@ def help():
              'salt-run changed.global:\n'
              'salt-run changed.client:\n\n'
              '    Shortcuts for many services\n'
-             '\n\n'
-    )
+             '\n\n')
     print usage
     return ""
 
@@ -164,30 +179,64 @@ def requires_conf_change(service, cluster='ceph'):
             return True
     return False
 
+
 def rgw():
+    """
+    Returns whether RadosGW configuration changed
+    """
     return requires_conf_change('rgw')
 
+
 def mds():
+    """
+    Returns whether CephFS configuration changed
+    """
     return requires_conf_change('mds')
 
+
 def osd():
+    """
+    Returns whether OSD configuration changed
+    """
     return requires_conf_change('osd')
 
+
 def mon():
+    """
+    Returns whether monitor configuration changed
+    """
     return requires_conf_change('mon')
 
+
 def mgr():
+    """
+    Returns whether monitor configuration changed
+    """
     return requires_conf_change('mgr')
 
+
 def global_():
+    """
+    Returns whether the global configuration changed
+    """
     return requires_conf_change('global')
 
+
 def client():
+    """
+    Returns whether the client configuration changed
+    """
     return requires_conf_change('client')
 
+
 def config(service):
+    """
+    Returns whether the configuration of the specified service changed
+    """
     return requires_conf_change(service)
 
+
 __func_alias__ = {
-                  'global_': 'global'
+                  'global_': 'global',
+                  'help_': 'help'
                  }
