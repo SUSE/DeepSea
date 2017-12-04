@@ -522,6 +522,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/configure/*.sls $(DESTDIR)/srv/salt/ceph/stage/configure/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/deploy
 	install -m 644 srv/salt/ceph/stage/deploy/*.sls $(DESTDIR)/srv/salt/ceph/stage/deploy/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/deploy/core
+	install -m 644 srv/salt/ceph/stage/deploy/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/deploy/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/discovery
 	install -m 644 srv/salt/ceph/stage/discovery/*.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/ganesha
