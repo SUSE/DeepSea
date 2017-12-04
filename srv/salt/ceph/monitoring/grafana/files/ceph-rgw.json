@@ -6,7 +6,7 @@
         "type": "grafana",
         "id": "grafana",
         "name": "Grafana",
-        "version": "4.1.0"
+        "version": "4.5.1"
       },
       {
         "type": "panel",
@@ -46,6 +46,8 @@
           {
             "aliasColors": {},
             "bars": false,
+            "dashLength": 10,
+            "dashes": false,
             "datasource": "Prometheus",
             "decimals": 0,
             "fill": 1,
@@ -72,6 +74,7 @@
             "points": false,
             "renderer": "flot",
             "seriesOverrides": [],
+            "spaceLength": 10,
             "span": 6,
             "stack": false,
             "steppedLine": true,
@@ -96,6 +99,7 @@
             },
             "type": "graph",
             "xaxis": {
+              "buckets": null,
               "mode": "time",
               "name": null,
               "show": true,
@@ -123,6 +127,8 @@
           {
             "aliasColors": {},
             "bars": false,
+            "dashLength": 10,
+            "dashes": false,
             "datasource": "Prometheus",
             "decimals": 0,
             "fill": 1,
@@ -147,6 +153,7 @@
             "points": false,
             "renderer": "flot",
             "seriesOverrides": [],
+            "spaceLength": 10,
             "span": 6,
             "stack": false,
             "steppedLine": true,
@@ -171,6 +178,7 @@
             },
             "type": "graph",
             "xaxis": {
+              "buckets": null,
               "mode": "time",
               "name": null,
               "show": true,
@@ -230,14 +238,31 @@
             "span": 3,
             "styles": [
               {
+                "alias": "Owner",
                 "colorMode": null,
                 "colors": [
                   "rgba(245, 54, 54, 0.9)",
                   "rgba(237, 129, 40, 0.89)",
                   "rgba(50, 172, 45, 0.97)"
                 ],
-                "decimals": 0,
-                "pattern": "/.*/",
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 2,
+                "pattern": "Metric",
+                "thresholds": [],
+                "type": "string",
+                "unit": "short"
+              },
+              {
+                "alias": "Total",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": null,
+                "pattern": "Current",
                 "thresholds": [],
                 "type": "number",
                 "unit": "none"
@@ -245,7 +270,8 @@
             ],
             "targets": [
               {
-                "expr": "sort_desc(count by(owner)(sum by (owner,bucket)(ceph_rgw_user_usage_ops_total)))",
+                "expr": "sort_desc(count by(owner)(sum by (owner,bucket)(ceph_rgw_bucket_stats_size_utilized)))",
+                "format": "time_series",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
@@ -255,7 +281,147 @@
             ],
             "timeFrom": "1h",
             "timeShift": null,
-            "title": "Top 10 - Buckets",
+            "title": "Top 10 - Buckets per user",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "datasource": "Prometheus",
+            "filterNull": false,
+            "fontSize": "100%",
+            "hideTimeOverride": true,
+            "id": 7,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 1,
+              "desc": true
+            },
+            "span": 3,
+            "styles": [
+              {
+                "alias": "Bucket",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 2,
+                "pattern": "Metric",
+                "thresholds": [],
+                "type": "string",
+                "unit": "short"
+              },
+              {
+                "alias": "Total",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 0,
+                "pattern": "Current",
+                "thresholds": [],
+                "type": "number",
+                "unit": "bytes"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "sort_desc(topk(10, ceph_rgw_bucket_stats_size_actual))",
+                "format": "time_series",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "{{bucket}}",
+                "refId": "A",
+                "step": 60
+              }
+            ],
+            "timeFrom": "1h",
+            "timeShift": null,
+            "title": "Top 10 - Bucket size",
+            "transform": "timeseries_aggregations",
+            "type": "table"
+          },
+          {
+            "columns": [
+              {
+                "text": "Current",
+                "value": "current"
+              }
+            ],
+            "datasource": "Prometheus",
+            "filterNull": false,
+            "fontSize": "100%",
+            "hideTimeOverride": true,
+            "id": 8,
+            "links": [],
+            "pageSize": null,
+            "scroll": true,
+            "showHeader": true,
+            "sort": {
+              "col": 1,
+              "desc": true
+            },
+            "span": 3,
+            "styles": [
+              {
+                "alias": "Bucket",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 2,
+                "pattern": "Metric",
+                "thresholds": [],
+                "type": "string",
+                "unit": "short"
+              },
+              {
+                "alias": "Total",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 0,
+                "pattern": "Current",
+                "thresholds": [],
+                "type": "number",
+                "unit": "none"
+              }
+            ],
+            "targets": [
+              {
+                "expr": "sort_desc(topk(10, ceph_rgw_bucket_stats_num_objects  ))",
+                "format": "time_series",
+                "interval": "$interval",
+                "intervalFactor": 1,
+                "legendFormat": "{{bucket}}",
+                "refId": "A",
+                "step": 60
+              }
+            ],
+            "timeFrom": "1h",
+            "timeShift": null,
+            "title": "Top 10 - Objects in bucket",
             "transform": "timeseries_aggregations",
             "type": "table"
           },
@@ -282,14 +448,31 @@
             "span": 3,
             "styles": [
               {
+                "alias": "Owner",
                 "colorMode": null,
                 "colors": [
                   "rgba(245, 54, 54, 0.9)",
                   "rgba(237, 129, 40, 0.89)",
                   "rgba(50, 172, 45, 0.97)"
                 ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 2,
+                "pattern": "Metric",
+                "thresholds": [],
+                "type": "string",
+                "unit": "short"
+              },
+              {
+                "alias": "Total",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
                 "decimals": 0,
-                "pattern": "/.*/",
+                "pattern": "Current",
                 "thresholds": [],
                 "type": "number",
                 "unit": "none"
@@ -298,6 +481,7 @@
             "targets": [
               {
                 "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_ops_total) by (owner)))",
+                "format": "time_series",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
@@ -334,14 +518,31 @@
             "span": 3,
             "styles": [
               {
+                "alias": "Owner",
                 "colorMode": null,
                 "colors": [
                   "rgba(245, 54, 54, 0.9)",
                   "rgba(237, 129, 40, 0.89)",
                   "rgba(50, 172, 45, 0.97)"
                 ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 2,
+                "pattern": "Metric",
+                "thresholds": [],
+                "type": "string",
+                "unit": "short"
+              },
+              {
+                "alias": "Total",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
                 "decimals": 0,
-                "pattern": "/.*/",
+                "pattern": "Current",
                 "thresholds": [],
                 "type": "number",
                 "unit": "bytes"
@@ -350,6 +551,7 @@
             "targets": [
               {
                 "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_sent_bytes_total) by (owner)))",
+                "format": "time_series",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
@@ -386,22 +588,40 @@
             "span": 3,
             "styles": [
               {
+                "alias": "Owner",
                 "colorMode": null,
                 "colors": [
                   "rgba(245, 54, 54, 0.9)",
                   "rgba(237, 129, 40, 0.89)",
                   "rgba(50, 172, 45, 0.97)"
                 ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "decimals": 2,
+                "pattern": "Metric",
+                "thresholds": [],
+                "type": "string",
+                "unit": "short"
+              },
+              {
+                "alias": "Total",
+                "colorMode": null,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
                 "decimals": 0,
-                "pattern": "/.*/",
+                "pattern": "Current",
                 "thresholds": [],
                 "type": "number",
-                "unit": "decbytes"
+                "unit": "bytes"
               }
             ],
             "targets": [
               {
                 "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_received_bytes_total) by (owner)))",
+                "format": "time_series",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "{{owner}}",
@@ -540,6 +760,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Object Gateway",
-    "version": 3
+    "version": 4
   }
 }
