@@ -84,7 +84,6 @@ class Config(object):
         for _file in self.service_conf_files:
             if os.path.exists(_file):
                 log.debug("Generating checksum for {}".format(_file))
-                # pylint: disable=resource-leakage
                 md5 = hashlib.md5(open(_file, 'rb').read()).hexdigest()
                 log.debug("Checksum: {}".format(md5))
                 checksums += md5
@@ -102,7 +101,6 @@ class Config(object):
         """
         if md5:
             log.debug("Writing md5 checksum {} to {}".format(md5, self.checksum_file))
-            # pylint: disable=resource-leakage
             with open(self.checksum_file, 'w') as _fd:
                 _fd.write(md5)
 
@@ -112,7 +110,6 @@ class Config(object):
         """
         if os.path.exists(self.checksum_file):
             log.debug("Reading existing md5 checksum from {}".format(self.checksum_file))
-            # pylint: disable=resource-leakage
             with open(self.checksum_file, 'r') as _fd:
                 md5 = _fd.readline().rstrip()
             return md5
