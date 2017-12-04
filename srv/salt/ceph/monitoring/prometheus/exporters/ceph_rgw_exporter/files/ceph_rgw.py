@@ -34,8 +34,8 @@ class CephRgwCollector(object):
     def _collect_user_list(self):
         return self._exec_rgw_admin(['metadata', 'list', 'user'])
 
-    def _collect_bucket_list(self):
-        return self._exec_rgw_admin(['bucket', 'list'])
+    def _collect_bucket_stats(self):
+        return self._exec_rgw_admin(['bucket', 'stats'])
 
     def _collect_usage_data(self):
         return self._exec_rgw_admin(['usage', 'show', '--show-log-sum=false'])
@@ -54,7 +54,19 @@ class CephRgwCollector(object):
         self._metrics.update({
             'bucket_count': prometheus_client.core.CounterMetricFamily(
                 'ceph_rgw_bucket_count',
-                'Number of buckets')
+                'Number of buckets'),
+            'bucket_stats_size_actual': prometheus_client.core.CounterMetricFamily(
+                'ceph_rgw_bucket_stats_size_actual',
+                'Actual bucket size',
+                labels=["bucket", "owner"]),
+            'bucket_stats_size_utilized': prometheus_client.core.CounterMetricFamily(
+                'ceph_rgw_bucket_stats_size_utilized',
+                'Utilized bucket size',
+                labels=["bucket", "owner"]),
+            'bucket_stats_num_objects': prometheus_client.core.CounterMetricFamily(
+                'ceph_rgw_bucket_stats_num_objects',
+                'Number of objects in bucket',
+                labels=["bucket", "owner"])
         })
 
     def _init_usage_metrics(self):
@@ -80,22 +92,41 @@ class CephRgwCollector(object):
     def _add_user_metrics(self, count):
         self._metrics['user_count'].add_metric([], count)
 
-    def _add_bucket_metrics(self, count):
-        self._metrics['bucket_count'].add_metric([], count)
+    def _add_bucket_metrics(self, data):
+        self._metrics['bucket_count'].add_metric([], len(data))
+        for bucket in data:
+            if not 'rgw.main' in bucket['usage'] or not bucket['usage']['rgw.main'].keys():
+                bucket['usage']['rgw.main'] = {}
+                bucket['usage']['rgw.main']['size_actual'] = 0
+                bucket['usage']['rgw.main']['size_utilized'] = 0
+                bucket['usage']['rgw.main']['num_objects'] = 0
+            self._metrics['bucket_stats_size_actual'].add_metric([
+                bucket['bucket'], bucket['owner']],
+                bucket['usage']['rgw.main']['size_actual'])
+            self._metrics['bucket_stats_size_utilized'].add_metric([
+                bucket['bucket'], bucket['owner']],
+                bucket['usage']['rgw.main']['size_utilized'])
+            self._metrics['bucket_stats_num_objects'].add_metric([
+                bucket['bucket'], bucket['owner']],
+                bucket['usage']['rgw.main']['num_objects'])
 
-    def _add_usage_metrics(self, bucket_name, bucket_owner, category):
-        self._metrics['ops'].add_metric([
-            bucket_name, bucket_owner,
-            category['category']], category['ops'])
-        self._metrics['successful_ops'].add_metric([
-            bucket_name, bucket_owner,
-            category['category']], category['successful_ops'])
-        self._metrics['bytes_sent'].add_metric([
-            bucket_name, bucket_owner,
-            category['category']], category['bytes_sent'])
-        self._metrics['bytes_received'].add_metric([
-            bucket_name, bucket_owner,
-            category['category']], category['bytes_received'])
+    def _add_usage_metrics(self, data):
+        if 'entries' in data:
+            for entry in data['entries']:
+                for bucket in entry['buckets']:
+                    for category in bucket['categories']:
+                        self._metrics['ops'].add_metric([
+                            bucket['bucket'], bucket['owner'],
+                            category['category']], category['ops'])
+                        self._metrics['successful_ops'].add_metric([
+                            bucket['bucket'], bucket['owner'],
+                            category['category']], category['successful_ops'])
+                        self._metrics['bytes_sent'].add_metric([
+                            bucket['bucket'], bucket['owner'],
+                            category['category']], category['bytes_sent'])
+                        self._metrics['bytes_received'].add_metric([
+                            bucket['bucket'], bucket['owner'],
+                            category['category']], category['bytes_received'])
 
     def collect(self):
         self._init_metrics()
@@ -107,20 +138,13 @@ class CephRgwCollector(object):
         # Process number of buckets.
         if not self.disable_bucket_metrics:
             self._init_bucket_metrics()
-            data = self._collect_bucket_list()
-            self._add_bucket_metrics(len(data))
+            data = self._collect_bucket_stats()
+            self._add_bucket_metrics(data)
         # Process the usage statistics.
         if not self.disable_usage_metrics:
             self._init_usage_metrics()
             data = self._collect_usage_data()
-            if 'entries' in data:
-                for entry in data['entries']:
-                    for bucket in entry['buckets']:
-                        for category in bucket['categories']:
-                            self._add_usage_metrics(
-                                bucket['bucket'],
-                                bucket['owner'],
-                                category)
+            self._add_usage_metrics(data)
         for metric in self._metrics.values():
             yield metric
 
