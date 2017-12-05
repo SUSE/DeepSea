@@ -5,6 +5,7 @@
       salt.state:
         - tgt: {{ master }}
         - sls: ceph.wait
+        - failhard: True
 
     check if all processes are still running on {{ host }}:
       salt.state:
