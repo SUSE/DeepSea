@@ -507,8 +507,11 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/storage/terminate/*.sls
 %config /srv/salt/ceph/restart/*.sls
 %config /srv/salt/ceph/restart/osd/*.sls
+%config /srv/salt/ceph/restart/osd/lax/*.sls
 %config /srv/salt/ceph/restart/mon/*.sls
+%config /srv/salt/ceph/restart/mon/lax/*.sls
 %config /srv/salt/ceph/restart/mgr/*.sls
+%config /srv/salt/ceph/restart/mgr/lax/*.sls
 %config /srv/salt/ceph/restart/mds/*.sls
 %config /srv/salt/ceph/restart/rgw/*.sls
 %config /srv/salt/ceph/restart/igw/*.sls

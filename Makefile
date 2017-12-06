@@ -429,12 +429,18 @@ copy-files:
 	# state files - restart - mon
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mon
 	install -m 644 srv/salt/ceph/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/restart/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mon/lax
+	install -m 644 srv/salt/ceph/restart/mon/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/mon/lax
 	# state files - restart - mgr
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mgr
 	install -m 644 srv/salt/ceph/restart/mgr/*.sls $(DESTDIR)/srv/salt/ceph/restart/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mgr/lax
+	install -m 644 srv/salt/ceph/restart/mgr/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/mgr/lax
 	# state files - restart - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/osd
 	install -m 644 srv/salt/ceph/restart/osd/*.sls $(DESTDIR)/srv/salt/ceph/restart/osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/osd/lax
+	install -m 644 srv/salt/ceph/restart/osd/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/osd/lax
 	# state files - restart - rgw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/rgw
 	install -m 644 srv/salt/ceph/restart/rgw/*.sls $(DESTDIR)/srv/salt/ceph/restart/rgw
