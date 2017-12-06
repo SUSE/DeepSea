@@ -1,5 +1,5 @@
 include:
   - .core
-  - ...restart.mon
-  - ...restart.osd
-  - ...restart.mgr
+  - ...restart.mon.lax
+  - ...restart.osd.lax
+  - ...restart.mgr.lax
