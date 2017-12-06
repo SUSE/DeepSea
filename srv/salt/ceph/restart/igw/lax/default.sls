@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if all processes are still running on {{ host }} after restarting igws:
+    check if igw processes are still running on {{ host }} after restarting igws:
       salt.state:
         - tgt: 'I@roles:igw'
         - tgt_type: compound
