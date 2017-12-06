@@ -1,24 +1,24 @@
 {% set master = salt['pillar.get']('master_minion') %}
-{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='storage') %}
     
-    wait until {{ host }} with role ganesha can be restarted:
+    wait until {{ host }} with role osd can be restarted:
       salt.state:
         - tgt: {{ master }}
         - sls: ceph.wait
         - failhard: True
 
-    check if all processes are still running on {{ host }}:
+    check if osd processes are still running on {{ host }} after restarting osds:
       salt.state:
-        - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+        - tgt: 'I@roles:storage'
         - tgt_type: compound
         - sls: ceph.processes
         - failhard: True
 
-    restarting ganesha on {{ host }}:
+    restarting osds on {{ host }}:
       salt.state:
         - tgt: {{ host }}
         - tgt_type: compound
-        - sls: ceph.ganesha.restart
+        - sls: ceph.osd.restart
         - failhard: True
 
 {% endfor %}
