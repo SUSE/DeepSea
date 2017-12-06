@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if rgw processes are still running on {{ host }} after restarting rgws:
+    check if all processes are still running on {{ host }} after restarting rgws:
       salt.state:
         - tgt: 'I@roles:rgw'
         - tgt_type: compound

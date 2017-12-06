@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if mds processes are still running on {{ host }} after restarting mdss:
+    check if all processes are still running on {{ host }} after restarting mdss:
       salt.state:
         - tgt: 'I@roles:mds'
         - tgt_type: compound

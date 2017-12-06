@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if openattic processes are still running on {{ host }} after restarting openattic:
+    check if all processes are still running on {{ host }} after restarting openattic:
       salt.state:
         - tgt: 'I@roles:openattic'
         - tgt_type: compound
