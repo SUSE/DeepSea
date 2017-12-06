@@ -513,10 +513,15 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/restart/mgr/*.sls
 %config /srv/salt/ceph/restart/mgr/lax/*.sls
 %config /srv/salt/ceph/restart/mds/*.sls
+%config /srv/salt/ceph/restart/mds/lax/*.sls
 %config /srv/salt/ceph/restart/rgw/*.sls
+%config /srv/salt/ceph/restart/rgw/lax/*.sls
 %config /srv/salt/ceph/restart/igw/*.sls
+%config /srv/salt/ceph/restart/igw/lax/*.sls
 %config /srv/salt/ceph/restart/ganesha/*.sls
+%config /srv/salt/ceph/restart/ganesha/lax/*.sls
 %config /srv/salt/ceph/restart/openattic/*.sls
+%config /srv/salt/ceph/restart/openattic/lax/*.sls
 %config /srv/salt/ceph/rgw/*.sls
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/files/*.yml
