@@ -22,7 +22,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.8
+Version:        @VERSION@
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -53,8 +53,6 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %build
 make DESTDIR=%{buildroot} pyc
-# rewrite version number in deepsea.spec that lives inside the tarball
-sed -i 's/^Version:.*/Version: %{version}/g' deepsea.spec
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files
