@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if osd processes are still running on {{ host }} after restarting osds:
+    check if all processes are still running on {{ host }} after restarting osds:
       salt.state:
         - tgt: 'I@roles:storage'
         - tgt_type: compound
