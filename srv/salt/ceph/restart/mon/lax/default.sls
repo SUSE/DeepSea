@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if all processes are still running on {{ host }} after restarting mons:
+    check if mon processes are still running on {{ host }} after restarting mons:
       salt.state:
         - tgt: 'I@roles:mon'
         - tgt_type: compound

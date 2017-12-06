@@ -7,7 +7,7 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if all processes are still running on {{ host }} after restarting mgrs:
+    check if mgr processes are still running on {{ host }} after restarting mgrs:
       salt.state:
         - tgt: 'I@roles:mgr'
         - tgt_type: compound
