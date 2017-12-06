@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
-import re
 from setuptools import setup
+
+DEEPSEA_VERSION = 'DEVVERSION'
 
 
 def _get_deepsea_version():
-    try:
-        with open('deepsea.spec', 'r') as f:
-            for line in f:
-                if line.startswith("Version:"):
-                    match = re.match('^Version:(.*)', line)
-                    if match:
-                        return match.group(1).strip()
-    except IOError:
-        return "(dev-version)"
+    return DEEPSEA_VERSION
+
 
 setup(
     name='deepsea',

@@ -1,5 +1,6 @@
 # Override this to install docs somewhere else
 DOCDIR = /usr/share/doc/packages
+VERSION?=$$(git describe | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
 usage:
 	@echo "Usage:"
@@ -10,6 +11,7 @@ usage:
 pyc:
 	find srv/ -name '*.py' -exec python -m py_compile {} \;
 	# deepsea-cli
+	sed -i "s/DEVVERSION/$(VERSION)/" setup.py
 	python setup.py build
 
 copy-files:
@@ -45,6 +47,7 @@ copy-files:
 	# runners
 	install -d -m 755 $(DESTDIR)/srv/modules/runners
 	install -m 644 srv/modules/runners/*.py* $(DESTDIR)/srv/modules/runners/
+	sed -i "s/DEVVERSION/$(VERSION)/" $(DESTDIR)/srv/modules/runners/deepsea.py
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks
@@ -568,6 +571,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install: copy-files
+	sed -i "s/DEVVERSION/$(VERSION)/" setup.py
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
@@ -585,8 +589,14 @@ rpm: tarball test
 
 # Removing test dependency until resolved
 tarball:
-	VERSION=`awk '/^Version/ {print $$2}' deepsea.spec`; \
-	git archive --prefix deepsea-$$VERSION/ -o ~/rpmbuild/SOURCES/deepsea-$$VERSION.tar.bz2 HEAD
+	$(eval TEMPDIR := $(shell mktemp -d))
+	mkdir $(TEMPDIR)/deepsea-$(VERSION)
+	git archive HEAD | tar -x -C $(TEMPDIR)/deepsea-$(VERSION)
+	sed -i "s/DEVVERSION/$(VERSION)/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py
+	sed -i "s/DEVVERSION/$(VERSION)/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
+	sed -i "s/DEVVERSION/$(VERSION)/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
+	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
+	rm -r $(TEMPDIR)
 
 test:
 	tox -e py27
