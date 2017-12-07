@@ -1,4 +1,36 @@
 -------------------------------------------------------------------
+Thu Dec  7 22:35:58 UTC 2017 - ejackson@suse.com
+
+- Version 0.9
+- Refresh package db
+- Reimplement restart orchestrations for config and binary changes
+- Support restart differences between upgrade, Stage 0 and Stage 3
+- Update man pages
+- Improve rgw.add_users
+- Begin benchmark-rbd role
+- Optimize bluestore argument handling
+- Support multiple ntp servers 
+- Grafana dashboard touch ups, include /var
+- Lint fixes, enforce via Travis
+- Correct behavior for failed engulf
+- Import Validate fix
+- Add sortbitwise flag
+- Use host grain for shortname, Crowbar compatibility
+- Use pyfakefs 3.2 for unit tests
+- Fix is_prepared for NVMe OSD
+- Include openATTIC, client processes in cephprocesses
+- Use mine.update instead of mine.restart
+- ui_iscsi fixes
+- Fix radosgw system user creation
+- Add selectable cron for radosgw-admin usage
+- Suppress ceph-disk deprecation warning
+- Support individual iSCSI gateways
+- Add version to Salt api
+- Fix OSD drain
+- QA restart tests, display rpm version
+- QA consolidate encryption, validate rgw system user
+
+-------------------------------------------------------------------
 Wed Oct 18 11:55:06 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.35
