@@ -41,6 +41,7 @@ packages:
     - tgt: 'I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.packages
+    - failhard: True
 
 configuration check:
   salt.state:
