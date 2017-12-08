@@ -2,3 +2,4 @@
 include:
   - .master
   - .minion
+  - ...restart

@@ -11,6 +11,7 @@ stage prep dependencies suse:
       - python-boto
       - python-rados
       - iperf
+      - lsof
     - fire_event: True
     - refresh: True
 
