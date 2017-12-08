@@ -153,7 +153,7 @@ unset noout after final iteration:
 
 set luminous osds: 
   salt.state:
-    - sls: ceph.setosdflags
+    - sls: ceph.setosdflags.requireosdrelease
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
