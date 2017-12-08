@@ -288,24 +288,112 @@ def images(**kwargs):
 
 def status(**kwargs):
     local = salt.client.LocalClient()
-    status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
-    result = True
-    for _, v in status.iteritems():
-        result = result and v
+    _status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
+    _targets = local.cmd('I@roles:igw', 'iscsi.targets', [], expr_form='compound')
+    result = {}
+    for minion in _status:
+        result[minion] = {
+            'active': _status[minion],
+            'targets': _targets[minion]
+        }
+        if not result[minion]['active']:
+            result[minion]['message'] = 'lrbd service is not running'
+    return result
+
+
+def _check_state_result(states):
+    """
+    Given the result of a state apply of a single minion, check if
+    all states were successful or not.
+
+    Returns True if all states were successful, and False otherwise
+    """
+    for _, state in states.items():
+        if not state['result']:
+            return False
+    return True
+
+
+def _normalize_minion_ids(minions):
+    """
+    Returns a list of minion ids from a list of hostnames that may be in the
+    short of full form.
+    """
+    # pylint: disable=E1101
+    hostnames = [k for k, _ in interfaces().items()]
+    _minions = []
+    for minion in minions:
+        if minion in hostnames:
+            _minions.append(minion)
+            continue
+        for fqdn in hostnames:
+            if fqdn.startswith(minion) and fqdn[len(minion)] == '.':
+                _minions.append(fqdn)
+                break
+    return _minions
+
+
+def _deploy_in_minions(minions):
+    """
+    Deploys the lrbd configurations in the respective iSCSI gateways specified in
+    the parameter minions.
+    """
+    result = {'success': True, 'minions': {}}
+
+    # First step import lrbd.conf to Ceph pool, any igw minion can do this
+    runner = salt.runner.RunnerClient(__opts__)
+    imp_minion = runner.cmd('select.one_minion', kwarg={'cluster': 'ceph', 'roles': 'igw'})
+    local = salt.client.LocalClient()
+    state_res = local.cmd(imp_minion, 'state.apply', ['ceph.igw.import'])
+    if not _check_state_result(state_res[imp_minion]):
+        result['success'] = False
+        result['message'] = 'Error applying lrbd.conf.'
+        return result
+
+    # Second step restart lrbd services
+    minions = _normalize_minion_ids(minions)
+
+    local = salt.client.LocalClient()
+    if minions:
+        target = 'L@{}'.format(','.join(minions))
+    else:
+        target = 'I@roles:igw'
+    state_res = local.cmd(target, 'state.apply', ['ceph.igw'], expr_form="compound")
+    for minion, states in state_res.items():
+        result['minions'][minion] = _check_state_result(states)
+        if not result['minions'][minion]:
+            result['success'] = False
+
+    if not result['success']:
+        result['message'] = 'Some minions failed to restart the lrbd service.'
     return result
 
 
 def deploy(**kwargs):
-    runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
-    result = runner.cmd('state.orch', ['ceph.stage.iscsi'], print_event=False)
-    return result['retcode'] == 0
+    """
+    Run iscsi orchestration
+    """
+    if 'minions' in kwargs and kwargs['minions']:
+        minions = kwargs['minions'].split(',')
+    else:
+        minions = []
+    return _deploy_in_minions(minions)
 
 
 def undeploy(**kwargs):
-    local = salt.client.LocalClient()
-    results = local.cmd('I@roles:igw', 'service.stop', ['lrbd'], expr_form='compound')
-    result = True
-    for _, v in results.iteritems():
-        result = result and v
-    return result
+    """
+    Stop the lrbd service
+    """
+    if 'minions' in kwargs and kwargs['minions']:
+        minions = kwargs['minions'].split(',')
+    else:
+        minions = []
+    minions = _normalize_minion_ids(minions)
 
+    local = salt.client.LocalClient()
+    if minions:
+        target = 'L@{}'.format(','.join(minions))
+    else:
+        target = 'I@roles:igw'
+    results = local.cmd(target, 'service.stop', ['lrbd'], expr_form='compound')
+    return results
