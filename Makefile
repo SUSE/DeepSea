@@ -11,10 +11,12 @@ usage:
 version:
 	@echo "version: "$(VERSION)
 
-pyc:
+setup.py:
+	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
+
+pyc: setup.py
 	find srv/ -name '*.py' -exec python -m py_compile {} \;
 	# deepsea-cli
-	sed -i "s/DEVVERSION/"$(VERSION)"/" setup.py
 	python setup.py build
 
 copy-files:
@@ -633,8 +635,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
-install: copy-files
-	sed -i "s/DEVVERSION/"$(VERSION)"/" setup.py
+install: copy-files setup.py
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
@@ -656,7 +657,7 @@ tarball:
 	$(eval TEMPDIR := $(shell mktemp -d))
 	mkdir $(TEMPDIR)/deepsea-$(VERSION)
 	git archive HEAD | tar -x -C $(TEMPDIR)/deepsea-$(VERSION)
-	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py
+	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in $(TEMPDIR)/deepsea-$(VERSION)/setup.py
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
 	mkdir -p ~/rpmbuild/SOURCES
