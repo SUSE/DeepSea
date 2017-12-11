@@ -11,10 +11,12 @@ usage:
 version:
 	@echo "version: "$(VERSION)
 
-pyc:
+setup.py:
+	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
+
+pyc: setup.py
 	find srv/ -name '*.py' -exec python -m py_compile {} \;
 	# deepsea-cli
-	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
 	python setup.py build
 
 copy-files:
@@ -633,7 +635,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
-install: copy-files
+install: copy-files setup.py
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
@@ -644,7 +646,6 @@ install: copy-files
 	systemctl restart salt-api
 	# deepsea-cli
 	zypper -n install python-setuptools python-click
-	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
 	python setup.py install --root=$(DESTDIR)/
 
 rpm: tarball test
