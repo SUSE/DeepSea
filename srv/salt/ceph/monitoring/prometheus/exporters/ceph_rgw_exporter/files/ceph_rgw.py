@@ -11,11 +11,9 @@ import sys
 import syslog
 
 class CephRgwCollector(object):
-    def __init__(self, name, disable_bucket_metrics, disable_usage_metrics,
-            disable_user_metrics):
+    def __init__(self, name, disable_bucket_metrics, disable_user_metrics):
         self.name = name
         self.disable_bucket_metrics = disable_bucket_metrics
-        self.disable_usage_metrics = disable_usage_metrics
         self.disable_user_metrics = disable_user_metrics
 
     def _exec_rgw_admin(self, args):
@@ -36,9 +34,6 @@ class CephRgwCollector(object):
 
     def _collect_bucket_stats(self):
         return self._exec_rgw_admin(['bucket', 'stats'])
-
-    def _collect_usage_data(self):
-        return self._exec_rgw_admin(['usage', 'show', '--show-log-sum=false'])
 
     def _init_metrics(self):
         self._metrics = {}
@@ -69,26 +64,6 @@ class CephRgwCollector(object):
                 labels=["bucket", "owner"])
         })
 
-    def _init_usage_metrics(self):
-        self._metrics.update({
-            'ops': prometheus_client.core.CounterMetricFamily(
-                'ceph_rgw_user_usage_ops_total',
-                'Number of operations',
-                labels=["bucket", "owner", "category"]),
-            'successful_ops': prometheus_client.core.CounterMetricFamily(
-                'ceph_rgw_user_usage_successful_ops_total',
-                'Number of successful operations',
-                labels=["bucket", "owner", "category"]),
-            'bytes_sent': prometheus_client.core.CounterMetricFamily(
-                'ceph_rgw_user_usage_sent_bytes_total',
-                'Number of bytes sent by the RADOS Gateway',
-                labels=["bucket", "owner", "category"]),
-            'bytes_received': prometheus_client.core.CounterMetricFamily(
-                'ceph_rgw_user_usage_received_bytes_total',
-                'Number of bytes received by the RADOS Gateway',
-                labels=["bucket", "owner", "category"])
-        })
-
     def _add_user_metrics(self, count):
         self._metrics['user_count'].add_metric([], count)
 
@@ -110,24 +85,6 @@ class CephRgwCollector(object):
                 bucket['bucket'], bucket['owner']],
                 bucket['usage']['rgw.main']['num_objects'])
 
-    def _add_usage_metrics(self, data):
-        if 'entries' in data:
-            for entry in data['entries']:
-                for bucket in entry['buckets']:
-                    for category in bucket['categories']:
-                        self._metrics['ops'].add_metric([
-                            bucket['bucket'], bucket['owner'],
-                            category['category']], category['ops'])
-                        self._metrics['successful_ops'].add_metric([
-                            bucket['bucket'], bucket['owner'],
-                            category['category']], category['successful_ops'])
-                        self._metrics['bytes_sent'].add_metric([
-                            bucket['bucket'], bucket['owner'],
-                            category['category']], category['bytes_sent'])
-                        self._metrics['bytes_received'].add_metric([
-                            bucket['bucket'], bucket['owner'],
-                            category['category']], category['bytes_received'])
-
     def collect(self):
         self._init_metrics()
         # Process number of users.
@@ -140,11 +97,6 @@ class CephRgwCollector(object):
             self._init_bucket_metrics()
             data = self._collect_bucket_stats()
             self._add_bucket_metrics(data)
-        # Process the usage statistics.
-        if not self.disable_usage_metrics:
-            self._init_usage_metrics()
-            data = self._collect_usage_data()
-            self._add_usage_metrics(data)
         for metric in self._metrics.values():
             yield metric
 
@@ -161,10 +113,6 @@ def parse_args():
         required=False)
     parser.add_argument(
         '--disable-bucket-metrics',
-        action='store_true',
-        required=False)
-    parser.add_argument(
-        '--disable-usage-metrics',
         action='store_true',
         required=False)
     return parser.parse_args()

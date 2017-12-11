@@ -54,12 +54,12 @@
             "id": 1,
             "legend": {
               "alignAsTable": true,
-              "avg": false,
+              "avg": true,
               "current": true,
               "hideEmpty": false,
               "hideZero": false,
-              "max": false,
-              "min": false,
+              "max": true,
+              "min": true,
               "rightSide": false,
               "show": true,
               "total": false,
@@ -81,6 +81,7 @@
             "targets": [
               {
                 "expr": "ceph_rgw_user_count",
+                "format": "time_series",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Total",
@@ -160,6 +161,7 @@
             "targets": [
               {
                 "expr": "ceph_rgw_bucket_count",
+                "format": "time_series",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Total",
@@ -422,216 +424,6 @@
             "timeFrom": "1h",
             "timeShift": null,
             "title": "Top 10 - Objects in bucket",
-            "transform": "timeseries_aggregations",
-            "type": "table"
-          },
-          {
-            "columns": [
-              {
-                "text": "Current",
-                "value": "current"
-              }
-            ],
-            "datasource": "Prometheus",
-            "filterNull": false,
-            "fontSize": "100%",
-            "hideTimeOverride": true,
-            "id": 6,
-            "links": [],
-            "pageSize": null,
-            "scroll": true,
-            "showHeader": true,
-            "sort": {
-              "col": 1,
-              "desc": true
-            },
-            "span": 3,
-            "styles": [
-              {
-                "alias": "Owner",
-                "colorMode": null,
-                "colors": [
-                  "rgba(245, 54, 54, 0.9)",
-                  "rgba(237, 129, 40, 0.89)",
-                  "rgba(50, 172, 45, 0.97)"
-                ],
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "decimals": 2,
-                "pattern": "Metric",
-                "thresholds": [],
-                "type": "string",
-                "unit": "short"
-              },
-              {
-                "alias": "Total",
-                "colorMode": null,
-                "colors": [
-                  "rgba(245, 54, 54, 0.9)",
-                  "rgba(237, 129, 40, 0.89)",
-                  "rgba(50, 172, 45, 0.97)"
-                ],
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "decimals": 0,
-                "pattern": "Current",
-                "thresholds": [],
-                "type": "number",
-                "unit": "none"
-              }
-            ],
-            "targets": [
-              {
-                "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_ops_total) by (owner)))",
-                "format": "time_series",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "{{owner}}",
-                "refId": "A",
-                "step": 60
-              }
-            ],
-            "timeFrom": "1h",
-            "timeShift": null,
-            "title": "Top 10 - Operations",
-            "transform": "timeseries_aggregations",
-            "type": "table"
-          },
-          {
-            "columns": [
-              {
-                "text": "Current",
-                "value": "current"
-              }
-            ],
-            "datasource": "Prometheus",
-            "filterNull": false,
-            "fontSize": "100%",
-            "hideTimeOverride": true,
-            "id": 4,
-            "links": [],
-            "pageSize": null,
-            "scroll": true,
-            "showHeader": true,
-            "sort": {
-              "col": 1,
-              "desc": true
-            },
-            "span": 3,
-            "styles": [
-              {
-                "alias": "Owner",
-                "colorMode": null,
-                "colors": [
-                  "rgba(245, 54, 54, 0.9)",
-                  "rgba(237, 129, 40, 0.89)",
-                  "rgba(50, 172, 45, 0.97)"
-                ],
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "decimals": 2,
-                "pattern": "Metric",
-                "thresholds": [],
-                "type": "string",
-                "unit": "short"
-              },
-              {
-                "alias": "Total",
-                "colorMode": null,
-                "colors": [
-                  "rgba(245, 54, 54, 0.9)",
-                  "rgba(237, 129, 40, 0.89)",
-                  "rgba(50, 172, 45, 0.97)"
-                ],
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "decimals": 0,
-                "pattern": "Current",
-                "thresholds": [],
-                "type": "number",
-                "unit": "bytes"
-              }
-            ],
-            "targets": [
-              {
-                "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_sent_bytes_total) by (owner)))",
-                "format": "time_series",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "{{owner}}",
-                "refId": "A",
-                "step": 60
-              }
-            ],
-            "timeFrom": "1h",
-            "timeShift": null,
-            "title": "Top 10 - Bandwidth (Sent)",
-            "transform": "timeseries_aggregations",
-            "type": "table"
-          },
-          {
-            "columns": [
-              {
-                "text": "Current",
-                "value": "current"
-              }
-            ],
-            "datasource": "Prometheus",
-            "filterNull": false,
-            "fontSize": "100%",
-            "hideTimeOverride": true,
-            "id": 5,
-            "links": [],
-            "pageSize": null,
-            "scroll": true,
-            "showHeader": true,
-            "sort": {
-              "col": 1,
-              "desc": true
-            },
-            "span": 3,
-            "styles": [
-              {
-                "alias": "Owner",
-                "colorMode": null,
-                "colors": [
-                  "rgba(245, 54, 54, 0.9)",
-                  "rgba(237, 129, 40, 0.89)",
-                  "rgba(50, 172, 45, 0.97)"
-                ],
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "decimals": 2,
-                "pattern": "Metric",
-                "thresholds": [],
-                "type": "string",
-                "unit": "short"
-              },
-              {
-                "alias": "Total",
-                "colorMode": null,
-                "colors": [
-                  "rgba(245, 54, 54, 0.9)",
-                  "rgba(237, 129, 40, 0.89)",
-                  "rgba(50, 172, 45, 0.97)"
-                ],
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "decimals": 0,
-                "pattern": "Current",
-                "thresholds": [],
-                "type": "number",
-                "unit": "bytes"
-              }
-            ],
-            "targets": [
-              {
-                "expr": "sort_desc(topk(10, sum(ceph_rgw_user_usage_received_bytes_total) by (owner)))",
-                "format": "time_series",
-                "interval": "$interval",
-                "intervalFactor": 1,
-                "legendFormat": "{{owner}}",
-                "refId": "A",
-                "step": 60
-              }
-            ],
-            "timeFrom": "1h",
-            "timeShift": null,
-            "title": "Top 10 - Bandwidth (Received)",
             "transform": "timeseries_aggregations",
             "type": "table"
           }
