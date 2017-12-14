@@ -647,7 +647,7 @@ install: copy-files
 	zypper -n install python-setuptools python-click
 	python setup.py install --root=$(DESTDIR)/
 
-rpm: tarball test
+rpm: pyc tarball test
 	sed -i '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec
 	rpmbuild -bb deepsea.spec
 
@@ -656,7 +656,7 @@ tarball:
 	$(eval TEMPDIR := $(shell mktemp -d))
 	mkdir $(TEMPDIR)/deepsea-$(VERSION)
 	git archive HEAD | tar -x -C $(TEMPDIR)/deepsea-$(VERSION)
-	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py
+	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in > $(TEMPDIR)/deepsea-$(VERSION)/setup.py
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
 	mkdir -p ~/rpmbuild/SOURCES
