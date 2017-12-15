@@ -1178,7 +1178,7 @@
             "valueMaps": [
               {
                 "op": "=",
-                "text": "N/A",
+                "text": "0 s",
                 "value": "null"
               }
             ],
@@ -2359,6 +2359,6 @@
     },
     "timezone": "browser",
     "title": "Ceph - Cluster",
-    "version": 12
+    "version": 13
   }
 }
