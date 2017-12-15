@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:rgw'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.rgw
         - failhard: True
 
     restarting rgw on {{ host }}:

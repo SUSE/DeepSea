@@ -594,6 +594,24 @@ copy-files:
 	# state files - check processes
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes
 	install -m 644 srv/salt/ceph/processes/*.sls $(DESTDIR)/srv/salt/ceph/processes/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/admin
+	install -m 644 srv/salt/ceph/processes/admin/*.sls $(DESTDIR)/srv/salt/ceph/processes/admin
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/rgw
+	install -m 644 srv/salt/ceph/processes/rgw/*.sls $(DESTDIR)/srv/salt/ceph/processes/rgw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/osd
+	install -m 644 srv/salt/ceph/processes/osd/*.sls $(DESTDIR)/srv/salt/ceph/processes/osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/openattic
+	install -m 644 srv/salt/ceph/processes/openattic/*.sls $(DESTDIR)/srv/salt/ceph/processes/openattic
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/mon
+	install -m 644 srv/salt/ceph/processes/mon/*.sls $(DESTDIR)/srv/salt/ceph/processes/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/mgr
+	install -m 644 srv/salt/ceph/processes/mgr/*.sls $(DESTDIR)/srv/salt/ceph/processes/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/mds
+	install -m 644 srv/salt/ceph/processes/mds/*.sls $(DESTDIR)/srv/salt/ceph/processes/mds
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/ganesha
+	install -m 644 srv/salt/ceph/processes/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/processes/ganesha
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/igw
+	install -m 644 srv/salt/ceph/processes/igw/*.sls $(DESTDIR)/srv/salt/ceph/processes/igw
 	# state files - warning
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning
 	install -m 644 srv/salt/ceph/warning/*.sls $(DESTDIR)/srv/salt/ceph/warning/

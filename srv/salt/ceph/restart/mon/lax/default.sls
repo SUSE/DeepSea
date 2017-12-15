@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:mon'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.mon
         - failhard: True
 
     restarting mons on {{ host }}:

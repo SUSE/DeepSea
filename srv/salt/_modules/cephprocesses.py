@@ -131,7 +131,7 @@ def wait(**kwargs):
     end_time = time.time() + settings['timeout']
     current_delay = settings['delay']
     while end_time > time.time():
-        if check():
+        if check(**kwargs):
             log.debug("Services are up")
             return True
         time.sleep(current_delay)
