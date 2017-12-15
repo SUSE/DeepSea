@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:openattic'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.openattic
         - failhard: True
 
     restarting openattic on {{ host }}:

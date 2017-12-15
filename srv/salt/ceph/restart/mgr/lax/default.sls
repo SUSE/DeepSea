@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:mgr'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.mgr
         - failhard: True
 
     restarting mgr on {{ host }}:

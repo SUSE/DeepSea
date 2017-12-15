@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:mds'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.mds
         - failhard: True
 
     restarting mds on {{ host }}:
