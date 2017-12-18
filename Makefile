@@ -127,6 +127,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/auth
 	install -m 644 srv/salt/ceph/ganesha/auth/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/benchmarks
+	install -m 644 srv/salt/ceph/ganesha/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/benchmarks/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/files
 	install -m 644 srv/salt/ceph/ganesha/files/*.j2 $(DESTDIR)/srv/salt/ceph/ganesha/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/config
@@ -147,6 +149,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/ganesha/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/restart/controlled
 	install -m 644 srv/salt/ceph/ganesha/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/controlled
+
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
@@ -649,7 +652,7 @@ install: copy-files setup.py
 	python setup.py install --root=$(DESTDIR)/
 
 rpm: pyc tarball test
-	sed -i '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec
+	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
@@ -658,7 +661,7 @@ tarball:
 	mkdir $(TEMPDIR)/deepsea-$(VERSION)
 	git archive HEAD | tar -x -C $(TEMPDIR)/deepsea-$(VERSION)
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in > $(TEMPDIR)/deepsea-$(VERSION)/setup.py
-	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
+	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec.in > $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
 	mkdir -p ~/rpmbuild/SOURCES
 	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .

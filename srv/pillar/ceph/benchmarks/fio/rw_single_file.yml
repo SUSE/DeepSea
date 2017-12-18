@@ -1,11 +1,18 @@
 template: rw_single_file.j2
-filesize: 1g
-blocksizes:
+filesize: 5g
+runtime: 300
+ramp_time: 60
+bs:
   - 4k
+  - 64k
   - 1m
   - 4m
   - 8m
-number_of_workers: 1
-operations:
+number_of_workers:
+  - 1
+  - 4
+  - 8
+  - 16
+op:
   - rw
   - randrw

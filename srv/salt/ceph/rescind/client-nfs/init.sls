@@ -1,4 +1,4 @@
 
 
 include:
-  - .{{ salt['pillar.get']('rescind_client-nfs', 'default') }}
+  - .{{ salt['pillar.get']('rescind_client-ganesha', 'default') }}

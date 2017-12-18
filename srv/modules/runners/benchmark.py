@@ -8,10 +8,12 @@ import ast
 import logging
 import datetime
 import ipaddress
+from itertools import product
 import jinja2
 import os
 import subprocess
 import sys
+import time
 import yaml
 
 log = logging.getLogger(__name__)
@@ -66,7 +68,7 @@ class Fio(object):
 
         # store client addresses preformatted for user with fio
         self.clients = clients
-
+        self.client_glob = client_glob
         self.bench_dir = bench_dir
         self.log_dir = log_dir
         self.work_dir = work_dir
@@ -83,43 +85,72 @@ class Fio(object):
             self.target,
             'fio',
             job_name,
-            datetime.datetime.now().strftime('%y-%m-%d_%H:%M:%S'))
+            datetime.datetime.now().strftime('%y-%m-%d_%H-%M-%S'))
         os.makedirs(job_log_dir)
-        log_args = ['--output={}/{}.json'.format(job_log_dir, 'output')]
-        client_jobs = []
-        '''
-        create a list that alternates between --client arguments and job files
-        e.g. [--client=host1, jobfile, --client=host2, jobfile]
-        fio expects a job file for every remote agent
-        '''
-        for client in self.clients:
-            jobfile = self._parse_job(job_spec, job_name, job_log_dir, client)
-            client_jobs.extend(['--client={}'.format(client)])
-            client_jobs.extend([jobfile])
 
-        output = subprocess.check_output(
-            [self.cmd] + self.cmd_global_args + log_args + client_jobs)
+        runner = salt.runner.RunnerClient(salt.config.client_config('/etc/salt/master'))
+
+        job = self._get_job_parameters(job_spec, job_log_dir)
+        # parse yaml and get job spec
+        job_product = self._get_exploded_job(job)
+
+        output = []
+        for job in job_product:
+            client_jobs = []
+            '''
+            create a list that alternates between --client arguments and job files
+            e.g. [--client=host1, jobfile, --client=host2, jobfile]
+            fio expects a job file for every remote agent
+            '''
+            job_name = '{}_{}_{}'.format(job['number_of_workers'], job['op'], job['bs'])
+            for client in self.clients:
+                job.update({'client': client})
+                jobfile = self._parse_job(job, job_name, job_log_dir, client)
+                client_jobs.extend(['--client={}'.format(client)])
+                client_jobs.extend([jobfile])
+
+            log_args = ['--output={}/{}.json'.format(job_log_dir, job_name)]
+            print('Running job {}'.format(job_name))
+            output.append(subprocess.check_output(
+                [self.cmd] + self.cmd_global_args + log_args + client_jobs))
+            minion = runner.cmd('select.one_minion', ['cluster=ceph',
+                                'roles=client--{}'.format(self.client_glob)],
+                               print_event=False)
+            print('Job done...using {} to cleanup bench files'.format(minion))
+            local_client.cmd(minion, 'cmd.run', ['rm {}/*'.format(self.work_dir)])
+            time.sleep(60)
 
         return output
 
-    def _parse_job(self, job_spec, job_name, job_log_dir, client):
-        # parse yaml and get job spec
-        job = self._get_job_parameters(job_spec, job_log_dir, client)
+    def _get_exploded_job(self, job):
+        list_entries = {k: v for k, v in job.items() if isinstance(v, list)}
+        list_keys = list_entries.keys()
+        scalar_values = {k: v for k, v in job.items() if not isinstance(v, list)}
+        perms = list(product(*list_entries.values()))
+        res = []
+        for perm in perms:
+            job = {}
+            job.update(scalar_values)
+            for i in range(0, len(list_entries)):
+                job.update({list_keys[i]: perm[i]})
+            res.append(job)
+        return res
 
+    def _parse_job(self, job, job_name, job_log_dir, client):
         # which template does the job want
         template = self.jinja_env.get_template(job['template'])
 
         # popluate template and return job file location
-        return self._populate_and_write_job(template, job, job_name, client)
+        return self._populate_and_write_job(template, job, job_name, client, job_log_dir)
 
-    def _populate_and_write_job(self, template, job, job_name, client):
-        jobfile = '{}/{}_{}'.format(self.job_dir, job_name, client)
+    def _populate_and_write_job(self, template, job, job_name, client, job_log_dir):
+        jobfile = '{}/{}_{}'.format(job_log_dir, job_name, client)
 
         # render template and save job file
         template.stream(job).dump(jobfile)
         return jobfile
 
-    def _get_job_parameters(self, job_spec, job_log_dir, client):
+    def _get_job_parameters(self, job_spec, job_log_dir):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
                 job = yaml.load(yml)
@@ -128,13 +159,14 @@ class Fio(object):
                 log.error(error)
                 raise error
         output_options = '''
-        write_bw_log={logdir}/output
-        write_lat_log={logdir}/output
-        write_hist_log={logdir}/output
-        write_iops_log={logdir}/output
+        #write_bw_log={logdir}/output
+        #write_lat_log={logdir}/output
+        #write_hist_log={logdir}/output
+        #write_iops_log={logdir}/output
         '''.format(logdir=job_log_dir)
-        job.update({'dir': self.work_dir, 'output_options': output_options,
-                    'client': client})
+        job.update({'dir': self.work_dir,
+                    'output_options': output_options,
+                   })
         return job
 
 
@@ -247,6 +279,29 @@ def cephfs(**kwargs):
 
     return True
 
+def ganesha(**kwargs):
+    """
+    Run ganesha benchmark jobs
+    """
+
+    client_glob = kwargs.get('client_glob','I@roles:client-nfs')
+    log.info('client glob is {}'.format(client_glob))
+
+    dir_options = __parse_and_set_dirs(kwargs)
+
+    default_collection = __parse_collection(
+        '{}/collections/default.yml'.format(dir_options['bench_dir']))
+
+    fio = Fio(client_glob, 'ganesha',
+              dir_options['bench_dir'],
+              dir_options['work_dir'],
+              dir_options['log_dir'],
+              dir_options['job_dir'])
+
+    for job_spec in default_collection['fs']:
+        print(fio.run(job_spec))
+
+    return True
 
 def baseline(margin=10, verbose=False, **kwargs):
     '''

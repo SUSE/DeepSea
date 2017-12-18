@@ -22,7 +22,7 @@
 # See also http://en.opensuse.org/openSUSE:Shared_library_packaging_policy
 
 Name:           deepsea
-Version:        0.9
+Version:        DEVVERSION
 Release:        0
 Summary:        Salt solution for deploying and managing Ceph
 
@@ -125,6 +125,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/ganesha/restart/force
 %dir /srv/salt/ceph/ganesha/restart/controlled
 %dir /srv/salt/ceph/ganesha/service
+%dir /srv/salt/ceph/ganesha/benchmarks
 %dir /srv/salt/ceph/igw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/igw/cache
 %dir /srv/salt/ceph/igw/config
