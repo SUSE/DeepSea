@@ -1,4 +1,5 @@
 setup.py
+deepsea.spec
 
 *.sw[pon]
 *~
