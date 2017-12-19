@@ -2,7 +2,7 @@
 include:
   - ceph.tools.fio.cleanup
 
-unmount cephfs:
+unmount nfs:
   mount.unmounted:
     - name: {{ salt['pillar.get']('benchmark:work-directory')}}
 

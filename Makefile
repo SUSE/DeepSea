@@ -149,7 +149,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/ganesha/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/restart/controlled
 	install -m 644 srv/salt/ceph/ganesha/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/restart/controlled
-
 	# state files - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw
 	install -m 644 srv/salt/ceph/igw/*.sls $(DESTDIR)/srv/salt/ceph/igw/
