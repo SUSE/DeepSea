@@ -270,7 +270,7 @@
             },
             "targets": [
               {
-                "expr": "count(ceph_pool_available_bytes)",
+                "expr": "count(ceph_pool_available_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -927,7 +927,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_osd_pgs)",
+                "expr": "avg(ceph_osd_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -983,7 +983,7 @@
               }
             ],
             "maxDataPoints": 100,
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "nullText": null,
             "postfix": "",
             "postfixFontSize": "50%",
@@ -1061,7 +1061,7 @@
               }
             ],
             "maxDataPoints": 100,
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "nullText": null,
             "postfix": "",
             "postfixFontSize": "50%",
@@ -1083,7 +1083,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_osd_perf_commit_latency_seconds)",
+                "expr": "avg(ceph_osd_perf_commit_latency_seconds{cluster='$cluster',instance='$instance',job='ceph-exporter'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -1139,7 +1139,7 @@
               }
             ],
             "maxDataPoints": 100,
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "nullText": null,
             "postfix": "",
             "postfixFontSize": "50%",
@@ -1162,7 +1162,7 @@
             },
             "targets": [
               {
-                "expr": "avg(ceph_monitor_latency_seconds)",
+                "expr": "avg(ceph_monitor_latency_seconds{cluster='$cluster',instance='$instance',job='ceph-exporter'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "",
@@ -1228,7 +1228,7 @@
             "linewidth": 0,
             "links": [],
             "minSpan": null,
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -1237,7 +1237,7 @@
               {
                 "alias": "Total Capacity",
                 "fill": 0,
-                "linewidth": 3,
+                "linewidth": 1,
                 "stack": false
               }
             ],
@@ -1293,7 +1293,7 @@
                 "label": null,
                 "logBase": 1,
                 "max": null,
-                "min": null,
+                "min": 0,
                 "show": true
               },
               {
@@ -1319,7 +1319,7 @@
             "decimals": 0,
             "editable": true,
             "error": false,
-            "fill": 1,
+            "fill": 0,
             "grid": {},
             "height": "300",
             "id": 3,
@@ -1335,17 +1335,17 @@
               "values": true
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
             "minSpan": null,
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
             "renderer": "flot",
             "seriesOverrides": [],
             "span": 4,
-            "stack": true,
+            "stack": false,
             "steppedLine": false,
             "targets": [
               {
@@ -1407,7 +1407,7 @@
             "datasource": "Prometheus",
             "editable": true,
             "error": false,
-            "fill": 1,
+            "fill": 0,
             "grid": {},
             "height": "300",
             "id": 7,
@@ -1423,16 +1423,16 @@
               "values": true
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
             "renderer": "flot",
             "seriesOverrides": [],
             "span": 4,
-            "stack": true,
+            "stack": false,
             "steppedLine": false,
             "targets": [
               {
@@ -1521,9 +1521,9 @@
               "values": true
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -1539,7 +1539,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "ceph_cluster_objects",
+                "expr": "ceph_cluster_objects{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Total",
@@ -1547,7 +1547,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_degraded_objects",
+                "expr": "ceph_degraded_objects{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Degraded",
@@ -1555,7 +1555,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_misplaced_objects",
+                "expr": "ceph_misplaced_objects{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Misplaced",
@@ -1620,9 +1620,9 @@
               "values": true
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -1638,7 +1638,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum(ceph_osd_pgs)",
+                "expr": "sum(ceph_osd_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'})",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Total",
@@ -1646,7 +1646,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_degraded_pgs",
+                "expr": "ceph_degraded_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Degraded",
@@ -1654,7 +1654,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_stale_pgs",
+                "expr": "ceph_stale_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Stale",
@@ -1662,7 +1662,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_unclean_pgs",
+                "expr": "ceph_unclean_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Unclean",
@@ -1670,7 +1670,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_undersized_pgs",
+                "expr": "ceph_undersized_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Undersized",
@@ -1678,7 +1678,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_stuck_degraded_pgs + ceph_stuck_stale_pgs + ceph_stuck_unclean_pgs + ceph_stuck_undersized_pgs",
+                "expr": "ceph_stuck_degraded_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'} + ceph_stuck_stale_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'} + ceph_stuck_unclean_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'} + ceph_stuck_undersized_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Stuck",
@@ -1743,9 +1743,9 @@
               "values": true
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -1761,7 +1761,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "ceph_stuck_degraded_pgs",
+                "expr": "ceph_stuck_degraded_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Degraded",
@@ -1769,7 +1769,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_stuck_stale_pgs",
+                "expr": "ceph_stuck_stale_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Stale",
@@ -1777,7 +1777,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_stuck_unclean_pgs",
+                "expr": "ceph_stuck_unclean_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Unclean",
@@ -1785,7 +1785,7 @@
                 "step": 60
               },
               {
-                "expr": "ceph_stuck_undersized_pgs",
+                "expr": "ceph_stuck_undersized_pgs{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Undersized",
@@ -1847,7 +1847,7 @@
             "datasource": "Prometheus",
             "editable": true,
             "error": false,
-            "fill": 1,
+            "fill": 0,
             "grid": {},
             "id": 15,
             "legend": {
@@ -1860,9 +1860,9 @@
               "values": false
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -1873,7 +1873,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "ceph_recovery_io_bytes",
+                "expr": "ceph_recovery_io_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Bytes",
@@ -1923,7 +1923,7 @@
             "datasource": "Prometheus",
             "editable": true,
             "error": false,
-            "fill": 1,
+            "fill": 0,
             "grid": {},
             "id": 16,
             "legend": {
@@ -1936,9 +1936,9 @@
               "values": false
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -1954,7 +1954,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "ceph_recovery_io_keys",
+                "expr": "ceph_recovery_io_keys{cluster='$cluster',instance='$instance',job='ceph-exporter'}",
                 "interval": "$interval",
                 "intervalFactor": 1,
                 "legendFormat": "Keys",
@@ -2004,7 +2004,7 @@
             "datasource": "Prometheus",
             "editable": true,
             "error": false,
-            "fill": 1,
+            "fill": 0,
             "grid": {},
             "id": 17,
             "legend": {
@@ -2017,9 +2017,9 @@
               "values": false
             },
             "lines": true,
-            "linewidth": 2,
+            "linewidth": 1,
             "links": [],
-            "nullPointMode": "connected",
+            "nullPointMode": "null",
             "percentage": false,
             "pointradius": 5,
             "points": false,
@@ -2083,7 +2083,7 @@
         "repeat": null,
         "repeatIteration": null,
         "repeatRowId": null,
-        "showTitle": false,
+        "showTitle": true,
         "title": "Recovery",
         "titleSize": "h6"
       },
