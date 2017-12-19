@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:igw'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.igw
         - failhard: True
 
     restarting igw on {{ host }}:

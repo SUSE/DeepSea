@@ -11,7 +11,7 @@
       salt.state:
         - tgt: 'I@roles:storage'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.osd
         - failhard: True
 
     restarting osds on {{ host }}:
