@@ -112,8 +112,7 @@ def _status(search, roles, verbose):
         role_search = search + " and I@roles:{}".format(role)
         status[role] = local.cmd(role_search,
                                  'cephprocesses.check',
-                                 roles=roles,
-                                 verbose=verbose,
+                                 kwarg={'roles': [role]},
                                  expr_form="compound")
 
     sys.stdout = _stdout
