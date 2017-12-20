@@ -1,4 +1,35 @@
 -------------------------------------------------------------------
+Wed Dec 20 13:25:04 UTC 2017 - jschmid@suse.de
+
+- Version 0.8.1 7d1afcbcb
+- fix: fail hard if osd drain fails to prevent data loss
+- fix: "NaN ns" in Dashboard (bsc1065590)
+- fix: Add db/wal/journal idents for encrypted disks
+- add: Safety net for a failed engulfment
+- add: add sortbitwise flag and split them up nicely 
+- fix: Fix is_prepared for NVMe
+- fix: Refactor Prometheus RGW exporter customization according to the DeepSea conventions.
+- fix: Quash ceph-disk deprecation warning
+- fix: spec/fix: add new Prometheus RGW exporter files
+- fix: resolve conflicts by applying current master files
+- fix: Correct variable name
+- fix: stage 3: don't update ceph packages, only instal
+- fix: Prevent shell expansion, add local deepsea.spec, add default
+- fix: Change state name to match the targeting
+- fix: Replace slspath with absolute file path.
+- fix: ui_iscsi: Retrieve target status information
+- fix: fix directories not owned by a package
+- fix: allow independent service checks
+- fix: rename verbosity parameter to match with the module
+- bugs addressed: 
+  - bsc#1068622
+  - bsc#1043862
+  - bsc#1064439
+  - bsc#1071719
+  - bsc#1071835 
+  - bsc#1068626
+
+-------------------------------------------------------------------
 Mon Nov 6 10:16:07 UTC 2017 - jschmid@suse.de
 
 - Version 0.8 ecbc24759d047be517a309c05674a0a7e9b5ddc2
