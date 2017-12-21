@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Wed Dec 21 16:27:04 UTC 2017 - jschmid@suse.de
+
+- Version 0.8.2 347c327de
+- packaging related fixes
+- deepsea.version returns proper struct
+- Display '0 s' instead of 'N/A' in grafana dashboard
+- Refactor Prometheus RGW exporter 
+
+-------------------------------------------------------------------
 Wed Dec 20 13:25:04 UTC 2017 - jschmid@suse.de
 
 - Version 0.8.1 
