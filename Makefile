@@ -667,7 +667,7 @@ install: copy-files setup.py
 	python setup.py install --root=$(DESTDIR)/
 
 rpm: pyc tarball test
-	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
+	sed -i '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec
 	rpmbuild -bb deepsea.spec
 
 # Removing test dependency until resolved
@@ -676,7 +676,7 @@ tarball:
 	mkdir $(TEMPDIR)/deepsea-$(VERSION)
 	git archive HEAD | tar -x -C $(TEMPDIR)/deepsea-$(VERSION)
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in > $(TEMPDIR)/deepsea-$(VERSION)/setup.py
-	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec.in > $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
+	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
 	mkdir -p ~/rpmbuild/SOURCES
 	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
