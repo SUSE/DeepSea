@@ -6,6 +6,6 @@ remove_rgw_exporter_cron_job:
 
 install_rgw_exporter_cron_job:
   cron.present:
-    - name: '/var/lib/prometheus/node-exporter/ceph_rgw.py --disable-usage-metrics > /var/lib/prometheus/node-exporter/ceph_rgw.prom 2> /dev/null'
+    - name: '/var/lib/prometheus/node-exporter/ceph_rgw.py --disable-bucket-metrics > /var/lib/prometheus/node-exporter/ceph_rgw.prom 2> /dev/null'
     - minute: '*/5'
     - identifier: 'Prometheus rgw_exporter cron job'
