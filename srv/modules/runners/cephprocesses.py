@@ -36,7 +36,7 @@ def help_():
 
 
 # pylint: disable=dangerous-default-value
-def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
+def check(cluster='ceph', roles=[], tolerate_down=0, quiet=False):
     """
     Query the status of running processes for each role.  Also, verify that
     all minions assigned roles do respond.  Return False if any fail.
@@ -46,7 +46,7 @@ def check(cluster='ceph', roles=[], tolerate_down=0, verbose=True):
     if not roles:
         roles = _cached_roles(search)
 
-    status = _status(search, roles, verbose)
+    status = _status(search, roles, quiet)
 
     log.debug("roles: {}".format(pprint.pformat(roles)))
     log.debug("status: {}".format(pprint.pformat(status)))
@@ -97,7 +97,7 @@ def restart_required(role=None, cluster='ceph'):
     return restart
 
 
-def _status(search, roles, verbose):
+def _status(search, roles, quiet):
     """
     Return a structure of roles with module results
     """
@@ -112,8 +112,8 @@ def _status(search, roles, verbose):
         role_search = search + " and I@roles:{}".format(role)
         status[role] = local.cmd(role_search,
                                  'cephprocesses.check',
-                                 roles=roles,
-                                 verbose=verbose,
+                                 kwarg={'roles': [role]},
+                                 quiet=quiet,
                                  expr_form="compound")
 
     sys.stdout = _stdout

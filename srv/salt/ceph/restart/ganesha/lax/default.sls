@@ -7,11 +7,11 @@
         - sls: ceph.wait
         - failhard: True
 
-    check if ganehsa processes are still running on {{ host }}:
+    check if ganesha processes are still running on {{ host }}:
       salt.state:
         - tgt: 'I@roles:ganesha'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.ganesha
         - failhard: True
 
     restarting ganesha on {{ host }}:

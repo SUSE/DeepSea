@@ -258,13 +258,21 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/osd
+%dir /srv/salt/ceph/restart/osd/lax
 %dir /srv/salt/ceph/restart/mon
+%dir /srv/salt/ceph/restart/mon/lax
 %dir /srv/salt/ceph/restart/mgr
+%dir /srv/salt/ceph/restart/mgr/lax
 %dir /srv/salt/ceph/restart/rgw
+%dir /srv/salt/ceph/restart/rgw/lax
 %dir /srv/salt/ceph/restart/igw
+%dir /srv/salt/ceph/restart/igw/lax
 %dir /srv/salt/ceph/restart/mds
+%dir /srv/salt/ceph/restart/mds/lax
 %dir /srv/salt/ceph/restart/ganesha
+%dir /srv/salt/ceph/restart/ganesha/lax
 %dir /srv/salt/ceph/restart/openattic
+%dir /srv/salt/ceph/restart/openattic/lax
 %dir /srv/salt/ceph/rgw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/rgw/cache
 %dir /srv/salt/ceph/rgw/files
@@ -338,6 +346,15 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/warning
 %dir /srv/salt/ceph/warning/noout
 %dir /srv/salt/ceph/processes
+%dir /srv/salt/ceph/processes/admin
+%dir /srv/salt/ceph/processes/ganesha
+%dir /srv/salt/ceph/processes/igw
+%dir /srv/salt/ceph/processes/mds
+%dir /srv/salt/ceph/processes/mgr
+%dir /srv/salt/ceph/processes/mon
+%dir /srv/salt/ceph/processes/openattic
+%dir /srv/salt/ceph/processes/osd
+%dir /srv/salt/ceph/processes/rgw
 %{_mandir}/man7/deepsea*.7.gz
 %{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
@@ -589,6 +606,15 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls
 %config /srv/salt/ceph/processes/*.sls
+%config /srv/salt/ceph/processes/admin/*.sls
+%config /srv/salt/ceph/processes/ganesha/*.sls
+%config /srv/salt/ceph/processes/igw/*.sls
+%config /srv/salt/ceph/processes/mds/*.sls
+%config /srv/salt/ceph/processes/mgr/*.sls
+%config /srv/salt/ceph/processes/mon/*.sls
+%config /srv/salt/ceph/processes/openattic/*.sls
+%config /srv/salt/ceph/processes/osd/*.sls
+%config /srv/salt/ceph/processes/rgw/*.sls
 %dir %{_libexecdir}/deepsea
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
