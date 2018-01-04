@@ -1230,8 +1230,8 @@
             "minSpan": null,
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -1340,8 +1340,8 @@
             "minSpan": null,
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [],
             "span": 4,
@@ -1427,8 +1427,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [],
             "span": 4,
@@ -1525,8 +1525,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -1624,8 +1624,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -1747,8 +1747,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -1864,8 +1864,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [],
             "span": 4,
@@ -1940,8 +1940,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -2021,8 +2021,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -2129,14 +2129,14 @@
               "title": "OSD Utilization",
               "tooltip": {
                 "show": true,
-                "showHistogram": false
+                "showHistogram": true
               },
               "type": "heatmap",
               "xAxis": {
                 "show": true
               },
               "xBucketNumber": null,
-              "xBucketSize": "1m",
+              "xBucketSize": "",
               "yAxis": {
                 "decimals": null,
                 "format": "bytes",

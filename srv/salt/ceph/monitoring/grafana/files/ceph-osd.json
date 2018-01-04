@@ -150,8 +150,8 @@
             "links": [],
             "nullPointMode": "connected",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "seriesOverrides": [
               {
@@ -460,8 +460,8 @@
               "lines": true,
               "fill": 1,
               "linewidth": 1,
-              "points": false,
-              "pointradius": 5,
+              "points": true,
+              "pointradius": 1,
               "bars": false,
               "stack": false,
               "percentage": false,

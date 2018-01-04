@@ -62,8 +62,8 @@
             "links": [],
             "nullPointMode": "null",
             "percentage": false,
-            "pointradius": 5,
-            "points": false,
+            "pointradius": 1,
+            "points": true,
             "renderer": "flot",
             "repeat": null,
             "scopedVars": {
