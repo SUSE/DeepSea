@@ -90,6 +90,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/collections
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/fio
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
+%dir %attr(0755, salt, salt) /srv/pillar/ceph/monitoring
 %dir /srv/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
@@ -370,6 +371,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/deepsea_minions.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
+%config %attr(-, salt, salt) /srv/pillar/ceph/monitoring/monitoring.cfg
 /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2

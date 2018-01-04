@@ -69,6 +69,8 @@ copy-files:
 	install -m 644 srv/pillar/ceph/deepsea_minions.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
+	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/monitoring
+	install -m 644 srv/pillar/ceph/monitoring/monitoring.cfg $(DESTDIR)/srv/pillar/ceph/monitoring/monitoring.cfg
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
 	# man pages
 	install -d -m 755 $(DESTDIR)/usr/share/man/man7
