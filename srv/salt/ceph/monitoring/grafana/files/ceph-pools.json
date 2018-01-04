@@ -543,8 +543,8 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "text": "1m",
-            "value": "1m"
+            "text": "auto",
+            "value": "$__auto_interval"
           },
           "datasource": null,
           "hide": 0,
@@ -554,12 +554,12 @@
           "name": "interval",
           "options": [
             {
-              "selected": false,
+              "selected": true,
               "text": "auto",
               "value": "$__auto_interval"
             },
             {
-              "selected": true,
+              "selected": false,
               "text": "1m",
               "value": "1m"
             },
@@ -626,7 +626,7 @@
           "multiFormat": "glob",
           "name": "cluster",
           "options": [],
-          "query": "ceph_health_status{job='ceph-exporter'}",
+          "query": "ceph_health_status{instance='$instance',job='ceph-exporter'}",
           "refresh": 1,
           "regex": ".*cluster=\"(.*?)\".*",
           "sort": 0,
@@ -649,7 +649,7 @@
           "multiFormat": "glob",
           "name": "instance",
           "options": [],
-          "query": "ceph_health_status{job='ceph-exporter'}",
+          "query": "ceph_health_status{cluster='$cluster',job='ceph-exporter'}",
           "refresh": 1,
           "regex": ".*instance=\"(.*?)\".*",
           "sort": 0,
@@ -669,7 +669,7 @@
           "multi": false,
           "name": "pool",
           "options": [],
-          "query": "label_values(ceph_pool_objects_total, pool)",
+          "query": "label_values(ceph_pool_objects_total{cluster='$cluster',instance='$instance',job='ceph-exporter'}, pool)",
           "refresh": 1,
           "regex": "",
           "sort": 0,

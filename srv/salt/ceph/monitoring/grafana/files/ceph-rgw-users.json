@@ -493,9 +493,8 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "selected": true,
-            "text": "1m",
-            "value": "1m"
+            "text": "auto",
+            "value": "$__auto_interval"
           },
           "hide": 0,
           "label": "Interval",
