@@ -12,8 +12,10 @@ grafana-server:
 
 wait-for-grafana-http:
   cmd.run:
-    - require: grafana-server
-    - watch: grafana
+    - require:
+      - service: grafana-server
+    - watch:
+      - pkg: grafana
     - name: |
          SLEEP_SECONDS=5
          CURL_CMD="curl -s -H \"Content-Type: application/json\" \
