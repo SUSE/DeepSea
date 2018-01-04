@@ -12,10 +12,12 @@ grafana-server:
 
 wait-for-grafana-http:
   cmd.run:
+    - require: grafana-server
+    - watch: grafana
     - name: |
          SLEEP_SECONDS=5
          CURL_CMD="curl -s -H \"Content-Type: application/json\" \
-           -H \"{{ auth_header }}\" -XGET http://{{ host }}:3000/api/datasources"
+           -XGET http://admin:admin@localhost:3000/api/datasources"
          i=0
          eval $CURL_CMD
          curl_ret=$?
