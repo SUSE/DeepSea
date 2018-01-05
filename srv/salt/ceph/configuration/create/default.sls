@@ -1,4 +1,3 @@
-
 removing minion cache:
   file.absent:
     - name: /var/cache/salt/minion/files/base/ceph/configuration
@@ -7,8 +6,8 @@ removing minion cache:
   file.managed:
     - source: salt://ceph/configuration/files/ceph.conf.j2
     - template: jinja
-    - user: salt
-    - group: salt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
     - mode: 644
     - makedirs: True
     - fire_event: True

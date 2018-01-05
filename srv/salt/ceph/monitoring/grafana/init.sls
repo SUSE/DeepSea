@@ -1,3 +1,16 @@
+{% if grains.get('os', '') == 'CentOS' %}
+
+configure_grafana_repo:
+  pkgrepo.managed:
+    - name: grafana-repo
+    - humanname: CentoOS-$releasever - Grafana Repo
+    - baseurl: https://packagecloud.io/grafana/stable/el/$releasever/$basearch/
+    - gpgcheck: False
+    - enabled: True
+    - fire_event: True
+
+{% endif %}
+
 grafana:
   pkg.installed:
     - name: grafana

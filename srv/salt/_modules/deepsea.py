@@ -95,3 +95,23 @@ def render_sls(state_arg):
         return result
     else:
         return None
+
+
+def user():
+    """
+    Returns the system user name for running the salt-master and own files
+    """
+    if __grains__.get('os_family', '') == 'Suse':
+        return 'salt'
+    else:
+        return 'root'
+
+
+def group():
+    """
+    Returns the system group name used for running the salt-master and own files
+    """
+    if __grains__.get('os_family', '') == 'Suse':
+        return 'salt'
+    else:
+        return 'root'

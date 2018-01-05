@@ -1,4 +1,3 @@
-
 igw nop:
   test.nop
 
@@ -23,11 +22,11 @@ demo image:
 
 /srv/salt/ceph/igw/cache/lrbd.conf:
   file.managed:
-    - source: 
+    - source:
       - salt://ceph/igw/files/lrbd.conf.j2
     - template: jinja
-    - user: salt
-    - group: salt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
     - mode: 600
 
 # this will guarantee that lrbd.conf will be seen by minions

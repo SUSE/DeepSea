@@ -2,6 +2,26 @@
 DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
+OS=$(shell source /etc/os-release ; echo $$ID)
+ifeq ($(OS), opensuse)
+USER=salt
+GROUP=salt
+PKG_INSTALL=zypper -n install
+else
+ifeq ($(OS), sles)
+USER=salt
+GROUP=salt
+PKG_INSTALL=zypper -n install
+else
+USER=root
+GROUP=root
+ifeq ($(OS), centos)
+PKG_INSTALL=yum install -y
+endif
+endif
+endif
+
+
 usage:
 	@echo "Usage:"
 	@echo -e "\tmake install\tInstall DeepSea on this host"
@@ -675,28 +695,29 @@ copy-files:
 	# in a buildroot on OBS, hence the leading '-' to ignore failures
 	# and '|| true' to suppress some error output, but will work fine
 	# in development when root runs `make install`.
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/admin/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/ganesha/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/igw/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mds/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mgr/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mon/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openattic/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/osd/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
+
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/admin/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/ganesha/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/igw/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/mds/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/mgr/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/mon/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/openattic/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/osd/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/rgw/cache || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install: copy-files setup.py
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
-	chown salt:salt $(DESTDIR)/etc/salt/master.d/*
+	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-	chown -R salt /srv/pillar/ceph
+	chown -R $(USER) /srv/pillar/ceph
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls
 	systemctl restart salt-master
-	zypper -n install salt-api
+	$(PKG_INSTALL) salt-api python-ipaddress
 	systemctl restart salt-api
 	# deepsea-cli
-	zypper -n install python-setuptools python-click
+	$(PKG_INSTALL) python-setuptools python-click
 	python setup.py install --root=$(DESTDIR)/
 
 rpm: pyc tarball test
