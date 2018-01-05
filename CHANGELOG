@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Fri Jan  5 22:12:29 UTC 2018 - ejackson@suse.com
+
+- Version 0.9.1
+- Fix ceph package install instead of latest
+- Change spec file version management
+- Initial Openstack support
+- Initial CentOS support
+
+-------------------------------------------------------------------
 Thu Dec  7 22:35:58 UTC 2017 - ejackson@suse.com
 
 - Version 0.9
