@@ -53,8 +53,6 @@ A collection of Salt files providing a deployment of Ceph as a series of stages.
 
 %build
 make DESTDIR=%{buildroot} pyc VERSION=%{version}
-# rewrite version number in deepsea.spec that lives inside the tarball
-sed -i 's/^Version:.*/Version: %{version}/g' deepsea.spec
 
 %install
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files VERSION=%{version}
