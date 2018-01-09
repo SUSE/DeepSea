@@ -186,6 +186,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/igw/sysconfig/*.sls $(DESTDIR)/srv/salt/ceph/igw/sysconfig/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -m 644 srv/salt/ceph/igw/restart/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/force
+	install -m 644 srv/salt/ceph/igw/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/force
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/reload
+	install -m 644 srv/salt/ceph/igw/restart/reload/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/reload
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
@@ -631,6 +635,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/radosgw/*.sls $(DESTDIR)/srv/salt/ceph/stage/radosgw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/services
 	install -m 644 srv/salt/ceph/stage/services/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/services/core
+	install -m 644 srv/salt/ceph/stage/services/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sync
 	install -m 644 srv/salt/ceph/sync/*.sls $(DESTDIR)/srv/salt/ceph/sync/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags

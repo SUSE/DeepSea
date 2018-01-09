@@ -27,7 +27,7 @@ processes = {'mon': ['ceph-mon'],
              'mgr': ['ceph-mgr'],
              'storage': ['ceph-osd'],
              'mds': ['ceph-mds'],
-             'igw': [],
+             'igw': ['lrbd'],
              'rgw': ['radosgw'],
              'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
              'admin': [],
@@ -40,8 +40,14 @@ processes = {'mon': ['ceph-mon'],
              'benchmark-fs': [],
              'master': []}
 
+# Processes like lrbd have an inverted logic
+# if they are running it means that the service is _NOT_ ready
+# as opposed to the the services in the 'processes' map.
+absent_processes = {'igw': ['lrbd']}
+
 
 def check(results=False, quiet=False, **kwargs):
+
     """
     Query the status of running processes for each role.  Return False if any
     fail.  If results flag is set, return a dictionary of the form:
@@ -77,10 +83,18 @@ def check(results=False, quiet=False, **kwargs):
                 # path is more reliable.
                 pdict = running_proc.as_dict(attrs=['pid', 'name', 'exe', 'uids'])
                 pdict_exe = os.path.basename(pdict['exe'])
+                pdict_name = pdict['name']
                 pdict_pid = pdict['pid']
                 # Convert the numerical UID to name.
                 pdict_uid = pwd.getpwuid(pdict['uids'].real).pw_name
-                if pdict_exe in processes[role]:
+                if pdict_exe in processes[role] or pdict_name in processes[role]:
+                    # When we don't have a binary but a python program
+                    # we want to use it's name for the 'exe'
+                    # Example:
+                    # pdict_exe for a lrbd is '/usr/bin/python2.7'
+                    # pdict['name'] is the actual name of the .py file to be executed
+                    if 'python' in pdict_exe:
+                        pdict_exe = pdict_name
                     # Verify httpd-worker pid belongs to openattic.
                     if (role != 'openattic') or (role == 'openattic' and pdict_uid == 'openattic'):
                         if pdict_exe in res['up']:
@@ -88,13 +102,23 @@ def check(results=False, quiet=False, **kwargs):
                         else:
                             res['up'][pdict_exe] = [pdict_pid]
 
-            # Any processes for this role that aren't running, mark them down.
-            for proc in processes[role]:
-                if proc not in res['up']:
-                    if not quiet:
-                        log.error("ERROR: process {} for role {} is not running".format(proc, role))
-                    running = False
-                    res['down'] += [proc]
+            if role in absent_processes.keys():
+                for proc in absent_processes[role]:
+                    if proc in res['up']:
+                        # running is deceptive here
+                        # running indicates wheter the service is in it's expected state
+                        running = False
+                        # pylint: disable=line-too-long
+                        log.error("ERROR: process {} for role {} is pending(working)".format(proc, role))
+            else:
+                for proc in processes[role]:
+                    if proc not in res['up']:
+                        if not quiet:
+                            # pylint: disable=line-too-long
+                            log.error("ERROR: process {} for role {} is not running".format(proc, role))
+                        running = False
+                        res['down'] += [proc]
+
             # pylint: disable=fixme
             # FIXME: Map osd.ids to processes.pid to improve qualitify of logging
             # currently you can only say how many osds/ if any are down, but not

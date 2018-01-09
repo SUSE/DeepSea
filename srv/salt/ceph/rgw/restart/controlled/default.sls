@@ -14,7 +14,6 @@ unset rgw restart grain:
     - key: restart_rgw
     - val: False
 
-
 {% else %}
 
 rgwrestart.noop:
