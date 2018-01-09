@@ -135,6 +135,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/auth
 %dir /srv/salt/ceph/igw/keyring
 %dir /srv/salt/ceph/igw/restart
+%dir /srv/salt/ceph/igw/restart/force
+%dir /srv/salt/ceph/igw/restart/reload
 %dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/mds
 %dir %attr(0700, salt, salt) /srv/salt/ceph/mds/cache
@@ -303,6 +305,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/radosgw
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
+%dir /srv/salt/ceph/stage/services/core
 %dir /srv/salt/ceph/tools
 %dir /srv/salt/ceph/tools/benchmarks
 %dir /srv/salt/ceph/tools/fio
@@ -415,6 +418,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/auth/*.sls
 %config /srv/salt/ceph/igw/keyring/*.sls
 %config /srv/salt/ceph/igw/restart/*.sls
+%config /srv/salt/ceph/igw/restart/force/*.sls
+%config /srv/salt/ceph/igw/restart/reload/*.sls
 %config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
@@ -577,6 +582,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/radosgw/*.sls
 %config /srv/salt/ceph/stage/removal/*.sls
 %config /srv/salt/ceph/stage/services/*.sls
+%config /srv/salt/ceph/stage/services/core/*.sls
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/sysctl/*.sls
 %config /srv/salt/ceph/sysctl/files/*.conf

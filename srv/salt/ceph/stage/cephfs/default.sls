@@ -16,11 +16,5 @@ mds:
     - tgt_type: compound
     - sls: ceph.mds
 
-restart mds:
-  salt.state:
-    - tgt: "I@roles:mds and I@cluster:ceph"
-    - tgt_type: compound
-    - sls: ceph.mds.restart
-
 {% endif %}
 

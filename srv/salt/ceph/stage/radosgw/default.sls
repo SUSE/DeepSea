@@ -28,16 +28,6 @@ setup prometheus rgw exporter:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
 
-{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-
-restart {{config}}:
-  salt.state:
-    - tgt: "I@roles:{{ config }} and I@cluster:ceph"
-    - tgt_type: compound
-    - sls: ceph.rgw.restart
-
-{% endfor %}
-
 rgw demo buckets:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
