@@ -67,11 +67,12 @@ configuration:
 {% set ret_osd = salt['saltutil.runner']('changed.osd') %}
 {% set ret_mgr = salt['saltutil.runner']('changed.mgr') %}
 {% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-{% set ret_rgw_conf = salt.saltutil.runner('changed.config', service=config) %}
+{% set ret_rgw_conf = salt.saltutil.runner('changed.config', role=config) %}
 {% endfor %}
 {% set ret_client = salt['saltutil.runner']('changed.client') %}
 {% set ret_global = salt['saltutil.runner']('changed.global') %}
 {% set ret_mds = salt['saltutil.runner']('changed.mds') %}
+{% set ret_igw = salt['saltutil.runner']('changed.igw') %}
 
 admin:
   salt.state:

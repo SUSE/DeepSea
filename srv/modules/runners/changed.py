@@ -16,38 +16,80 @@ __opts__ = salt.config.client_config('/etc/salt/master')
 log = logging.getLogger(__name__)
 
 
-class Config(object):
+class UnknownRole(Exception):
     """
-    Tracks the configuration files, related dependencies and checksums
+    Raise when passed an unknown type or role to
+    Role().
+    """
+    pass
+
+
+class Role(object):
+    """
+    Class for roles to access meta data more easily
     """
 
-    def __init__(self, service_name):
-        """
-        Initialize locations for configuration files
-        """
-        self.base_dir = '/srv/salt/ceph/configuration/files/'
-        self.conf_dir = '/srv/salt/ceph/configuration/files/ceph.conf.d/'
-        self.checksum_dir = '/srv/salt/ceph/configuration/files/ceph.conf.checksum/'
-        self.checksum_file = self.checksum_dir + service_name + '.conf'
-        self.service_name = service_name
-        self.service_conf_files = [self.conf_dir + service_name + '.conf']
-        self.dependencies = self.depends()
+    def __init__(self, **kwargs):
+        self._role_name = kwargs.get('role_name')
+        self.conf_dir = kwargs.get('conf_dir', '/srv/salt/ceph/configuration/files/ceph.conf.d/')
+        self.conf_filename = kwargs.get('conf_filename', self._role_name)
+        self.conf_extension = kwargs.get('conf_extension', '.conf')
+        self._conf_files = [self.conf_dir + self.conf_filename + self.conf_extension]
+        self._depends = [self]
         self.rgw_configurations()
-        log.debug("dependencies: {}".format(self.dependencies))
 
-    def depends(self):
+    @property
+    def name(self):
         """
-        Services might depend on each other and have to trigger a restart.
-        I.e. Changes in the MDS section might affect the NFS-Ganesha service
-        hence the service should also be restarted.
-        # TODO for other services and complete tree
+        Getter for name attr
         """
-        return {'mds': ['mds'],
-                'mon': ['mon'],
-                'mgr': ['mgr'],
-                'osd': ['osd'],
-                'client': ['client'],
-                'global': ['global']}
+        return self._role_name
+
+    @name.setter
+    def name(self, name):
+        """
+        Setter for name attr
+        """
+        self._role_name = name
+
+    @property
+    def conf_files(self):
+        """
+        Returns corresponding config files
+        """
+        return self._conf_files
+
+    def add_conf_file(self, conf_file):
+        """
+        Adds config files to list
+        """
+        self._conf_files.append(conf_file)
+
+    @property
+    def dependencies(self):
+        """
+        Returns dependency list
+        """
+        return self._depends
+
+    def add_dependencies(self, role):
+        """
+        Adds Role to list of dependencies
+        """
+        if isinstance(role, list):
+            # also if the containting items are instance of Role
+            self._depends.extend(role)
+        elif isinstance(role, Role):
+            self._depends.append(role)
+        else:
+            raise UnknownRole
+
+    def dependencies_unwrapped(self):
+        """
+        Return a list of human readable names of Roles
+        DEV/DEBUG
+        """
+        return [dep.name for dep in self.dependencies]
 
     def rgw_configurations(self):
         """
@@ -68,20 +110,34 @@ class Config(object):
         if not roles:
             roles = ['rgw']
         for role in roles:
-            if role == self.service_name:
-                self.dependencies[role] = [role, 'global']
-                for dep in self.dependencies[role][1:]:
-                    log.debug("Resolving RGW configurations files")
-                    self.service_conf_files.append(self.conf_dir + dep + '.conf')
+            if role == self.name:
+                self.add_dependencies(Role(role_name='global'))
+
+
+class Config(object):
+    """
+    Tracks the configuration files, related dependencies and checksums
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Initialize locations for configuration files
+        """
+        self.role = kwargs.get('role')
+        self.base_dir = '/srv/salt/ceph/configuration/files/'
+        self.checksum_dir = self.base_dir + 'ceph.conf.checksum/'
+        self.checksum_file = self.checksum_dir + self.role.conf_filename + self.role.conf_extension
+        log.debug("dependencies of role {}: {}".format(self.role.name,
+                                                       self.role.dependencies_unwrapped()))
 
     def create_checksum(self):
         """
         Creating a checksums of checksums to detect a change
-        even if there are multiple files used to configure a service.
+        even if there are multiple files used to configure a role.
         Cleanup old checksumfiles if the config was removed.
         """
         checksums = ''
-        for _file in self.service_conf_files:
+        for _file in self.role.conf_files:
             if os.path.exists(_file):
                 log.debug("Generating checksum for {}".format(_file))
                 # pylint: disable=resource-leakage
@@ -91,7 +147,7 @@ class Config(object):
         if checksums:
             return hashlib.md5(checksums).hexdigest()
         log.debug(("No file found to generate a checksum from. Looked for "
-                   "{}".format(self.service_conf_files)))
+                   "{}".format(self.role.conf_files)))
         if os.path.exists(self.checksum_file):
             os.remove(self.checksum_file)
         return None
@@ -123,17 +179,17 @@ class Config(object):
         """
         Compare md5s and return status
         """
-        log.info("Checking service {}".format(self.service_name))
+        log.info("Checking role {}".format(self.role.name))
         previous_cs = self.read_checksum()
         current_cs = self.create_checksum()
         if not (current_cs or previous_cs):
-            log.info("No config file {}".format(self.service_conf_files))
+            log.info("No config file {}".format(self.role.conf_files))
             return False
         if current_cs == previous_cs:
-            log.info("No change in configuration detected for service {}".format(self.service_name))
+            log.info("No change in configuration detected for role {}".format(self.role.name))
             return False
         if current_cs != previous_cs:
-            log.info("Change in configuration detected for service {}".format(self.service_name))
+            log.info("Change in configuration detected for role {}".format(self.role.name))
             self.write_checksum(current_cs)
             return True
 
@@ -142,9 +198,9 @@ def help_():
     """
     Usage
     """
-    usage = ('salt-run changed.requires_conf_change service:\n'
-             'salt-run changed.config service:\n\n'
-             '    Checks whether the user configured files for the named service has changed\n'
+    usage = ('salt-run changed.requires_conf_change role:\n'
+             'salt-run changed.config name=role:\n\n'
+             '    Checks whether the user configured files for the named role has changed\n'
              '\n\n'
              'salt-run changed.rgw:\n'
              'salt-run changed.mds:\n'
@@ -152,30 +208,32 @@ def help_():
              'salt-run changed.mon:\n'
              'salt-run changed.global:\n'
              'salt-run changed.client:\n\n'
-             '    Shortcuts for many services\n'
+             '    Shortcuts for many roles\n'
              '\n\n')
     print usage
     return ""
 
 
-def requires_conf_change(service, cluster='ceph'):
+def requires_conf_change(**kwargs):
     """
-    If any of the dependent services received a change
+    If any of the dependent roles received a change
     in the its config, retrun True
     """
-    cfg = Config(service)
+    cfg = Config(**kwargs)
+    role = cfg.role
+    cluster = kwargs.get('cluster', 'ceph')
+    if not isinstance(role, Role):
+        raise UnknownRole
     # pylint: disable=invalid-name
     local = salt.client.LocalClient()
-    if service not in cfg.dependencies:
-        return "Service {} not defined".format(service)
-    for deps in cfg.dependencies[service]:
-        if Config(deps).has_change():
-            if service == 'osd':
-                service = 'storage'
-            search = 'I@cluster:{} and I@roles:{}'.format(cluster, service)
+    if role not in cfg.role.dependencies:
+        return "Role {} not defined".format(role.name)
+    for deps in cfg.role.dependencies:
+        if Config(role=deps).has_change():
+            search = 'I@cluster:{} and I@roles:{}'.format(cluster, role.name)
             local.cmd(search, 'grains.setval',
-                      ["restart_{}".format(service), True],
-                      expr_form="compound")
+                      ["restart_{}".format(role.name), True],
+                      tgt_type="compound")
             return True
     return False
 
@@ -184,56 +242,66 @@ def rgw():
     """
     Returns whether RadosGW configuration changed
     """
-    return requires_conf_change('rgw')
+    return requires_conf_change(role=Role(role_name='rgw'))
 
 
 def mds():
     """
     Returns whether CephFS configuration changed
     """
-    return requires_conf_change('mds')
+    return requires_conf_change(role=Role(role_name='mds'))
 
 
 def osd():
     """
     Returns whether OSD configuration changed
     """
-    return requires_conf_change('osd')
+    return requires_conf_change(role=Role(role_name='storage',
+                                          conf_filename='osd'))
 
 
 def mon():
     """
     Returns whether monitor configuration changed
     """
-    return requires_conf_change('mon')
+    return requires_conf_change(role=Role(role_name='mon'))
 
 
 def mgr():
     """
     Returns whether monitor configuration changed
     """
-    return requires_conf_change('mgr')
+    return requires_conf_change(role=Role(role_name='mgr'))
 
 
 def global_():
     """
     Returns whether the global configuration changed
     """
-    return requires_conf_change('global')
+    return requires_conf_change(role=Role(role_name='global'))
 
 
 def client():
     """
     Returns whether the client configuration changed
     """
-    return requires_conf_change('client')
+    return requires_conf_change(role=Role(role_name='client'))
 
 
-def config(service):
+def igw():
     """
-    Returns whether the configuration of the specified service changed
+    Returns whether igw configuration has changed
     """
-    return requires_conf_change(service)
+    return requires_conf_change(role=Role(role_name='igw',
+                                          conf_dir='/srv/salt/ceph/igw/cache/',
+                                          conf_filename='lrbd'))
+
+
+def config(**kwargs):
+    """
+    Returns whether the configuration of the specified role changed
+    """
+    return requires_conf_change(role=Role(**kwargs))
 
 
 __func_alias__ = {
