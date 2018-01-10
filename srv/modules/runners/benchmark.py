@@ -153,8 +153,7 @@ def __parse_and_set_dirs(kwargs):
             dir_options[option] = kwargs[option]
             log.info('{} is {}'.format(option, work_dir))
         else:
-            raise KeyError('{} not specified'.format(option))
-            return 1
+            log.info('{} is unset'.format(option))
 
     __opts__ = salt.config.client_config('/etc/salt/master')
     # bench_dir = ''
@@ -191,6 +190,9 @@ def help():
              '\n\n'
              'salt-run benchmark.baseline work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
              '    Run Baseline benchmarks\n'
+             '\n\n'
+             'salt-run benchmark.blockdev work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
+             '    Run local block device benchmarks (e.g. premapped kRBD or iSCSI)\n'
              '\n\n'
     )
     print usage
@@ -297,6 +299,32 @@ def baseline(margin=10, verbose=False, **kwargs):
         __print_verbose(dev_percent, perf_abs, ids, margin)
     else:
         __print_outliers(dev_percent, perf_abs, ids, margin)
+
+    return True
+
+
+def blockdev(**kwargs):
+    """
+    Run block device benchmark job
+    """
+
+    client_glob = kwargs.get('client_glob',
+                             'I@roles:benchmark-blockdev and I@cluster:ceph')
+    log.info('client glob is {}'.format(client_glob))
+
+    dir_options = __parse_and_set_dirs(kwargs)
+
+    default_collection = __parse_collection(
+        '{}/collections/default.yml'.format(dir_options['bench_dir']))
+
+    fio = Fio(client_glob, 'blockdev',
+              dir_options['bench_dir'],
+              None,
+              dir_options['log_dir'],
+              dir_options['job_dir'])
+
+    for job_spec in default_collection['blockdev']:
+        print(fio.run(job_spec))
 
     return True
 
