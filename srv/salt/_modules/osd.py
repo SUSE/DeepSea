@@ -1201,6 +1201,7 @@ class OSDCommands(object):
             with open(filename, 'r') as osd_type:
                 return osd_type.read().rstrip()
 
+    # pylint: disable=too-many-return-statements
     def is_incorrect(self):
         """
         Check that an OSD is configured properly.  Compare formats, separate
@@ -1238,11 +1239,17 @@ class OSDCommands(object):
                         result = self._check_device(pathname, 'block.wal', self.osd.wal, self.osd.wal_size)
                         if result:
                             return True
+                    else:
+                        # Missing WAL
+                        return True
                 if self.osd.db:
                     if os.path.exists("{}/block.db".format(pathname)):
                         result = self._check_device(pathname, 'block.db', self.osd.db, self.osd.db_size)
                         if result:
                             return True
+                    else:
+                        # Missing DB
+                        return True
 
         return False
 
