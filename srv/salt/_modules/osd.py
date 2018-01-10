@@ -1259,6 +1259,7 @@ class OSDCommands(object):
         log.info("activate: {}".format(cmd))
         return cmd
 
+    # pylint: disable=too-many-return-statements
     def is_incorrect(self):
         """
         Check that an OSD is configured properly.  Compare formats, separate
@@ -1301,6 +1302,9 @@ class OSDCommands(object):
                                                     self.osd.wal_size)
                         if result:
                             return True
+                    else:
+                        # Missing WAL
+                        return True
                 if self.osd.db:
                     if os.path.exists("{}/block.db".format(pathname)):
                         result = self._check_device(pathname, 'block.db',
@@ -1308,6 +1312,9 @@ class OSDCommands(object):
                                                     self.osd.db_size)
                         if result:
                             return True
+                    else:
+                        # Missing DB
+                        return True
 
         return False
 
