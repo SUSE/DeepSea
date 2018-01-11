@@ -585,7 +585,7 @@ echo "igw info script running as $(whoami) on $(hostname --fqdn)"
 rpm -q lrbd || true
 lrbd --output || true
 ls -lR /sys/kernel/config/target/ || true
-netstat --tcp --listening --numeric-ports
+ss --tcp --numeric state listening
 echo "See 3260 there?"
 echo "Result: OK"
 EOF
