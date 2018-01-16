@@ -1,6 +1,6 @@
 .TH deepsea 7
 .SH NAME
-deepsea stage 3 \- a deeper insight
+DeepSea stage 3 \- a deeper insight
 .SH DESCRIPTION
 .B DeepSea Stage 3 (Deploy)
 is a Salt orchestration that deploys the core services of ceph
@@ -12,10 +12,11 @@ After configuration and setup stages have been completed successfully we are rea
 
 .B Validation:
 .RS
-Deepsea performs a set of system validation tests before running the ramainder of the stage.
+DeepSea performs a set of system validation tests before running the ramainder of the stage.
 
 * DEV_ENV
-  This option tells you if a Developer Environment is expected. Setting this option bypasses some validations that would lead to insufficient replication or data insafety.
+  This option tells you if a Developer Environment is expected. Setting this option bypasses some validations that 
+  would lead to insufficient replication or data insafety.
   Do not set this option in production.
 
 .B Disabled validations:
@@ -86,7 +87,9 @@ please consult the README under this directory for more information.
 
 .B Check for configuration changes
 .RS
-Due to this design we can determine what service experienced a configration change and needs a restart. Please note that when you change something in the above mentioned ceph.conf.d/ directory, stage.3 has to be run in order to apply the changes and distribute the ceph.conf back to the nodes.
+Due to this design we can determine what service experienced a configration change and needs a restart. 
+Please note that when you change something in the above mentioned ceph.conf.d/ directory, stage.3 has to 
+be run in order to apply the changes and distribute the ceph.conf back to the nodes.
 .RE
 
 .B Admin role
@@ -111,7 +114,9 @@ Handle OSD role. Push keyring to configured node and run the osd.deploy module
 
 .B OSD grains
 .RS
-To track internally which WAL/DB partition belongs to which disks without the disk being mounted we store the information about this in a 'grain'. A grain is a salt concept which you can read about here: https://docs.saltstack.com/en/latest/topics/grains/
+To track internally which WAL/DB partition belongs to which disks without the disk being mounted we store the 
+information about this in a 'grain'. A grain is a salt concept which you can read about here: 
+https://docs.saltstack.com/en/latest/topics/grains/
 .RE
 
 .B Set Sysctl values
@@ -126,8 +131,10 @@ Setup RBD and ceph exporter
 
 .RE
 .SS Restart
-As we installed updates on the cluster, the services might be pointing to old and/or deleted files still. In order to apply the correct versions we might need to perform a restart for those services.
-Deepsea initiates the 'restart orchestration'. This operation performs checks to determine whether a service restrart is required or not. There are two types of criteria which can trigger a restart.
+As we installed updates on the cluster, the services might be pointing to old and/or deleted files still. 
+In order to apply the correct versions we might need to perform a restart for those services.
+DeepSea initiates the 'restart orchestration'. This operation performs checks to determine whether a service 
+restrart is required or not. There are two types of criteria which can trigger a restart.
 
 .B Deleted Files
 and
@@ -135,9 +142,9 @@ and
 
 The process of restarting services also happens in a non-disruptive manner by only restarting 
 .B one service at a time
-followed by checking if it's up again and only then continue. Here again, the orchestration exits if an error is detected to prevent harm.
-The restart happens automatically and will not impact your ability to read/write data to the cluster via any interface.
-After stage.3 only 
+followed by checking if it's up again and only then continue. Here again, the orchestration exits if an error is 
+detected to prevent harm. The restart happens automatically and will not impact your ability to read/write 
+data to the cluster via any interface.  After stage.3 only 
 .B core services (osd,mon,mgr)
 are being restarted.
 
@@ -146,8 +153,9 @@ are being restarted.
 deepsea salt-run state.orch ceph.stage.3
 .PP
 This command can also be used with the
-.B deepsea cli
-to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent during execution and only report when complete.
+.B DeepSea cli
+to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent during execution 
+and only report when complete.
 .PP
 deepsea stage run ceph.stage.3
 

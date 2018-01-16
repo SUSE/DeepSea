@@ -1,23 +1,24 @@
 .TH deepsea 7
 .SH NAME
-deepsea stage 1 \- a deeper insight
+DeepSea stage 1 \- a deeper insight
 .SH DESCRIPTION
 .B DeepSea Stage 1 (Discovery)
-is a Salt orchestration that is there to discover disks and network interfaces and tries to depict them in a file hirarchy.
+is a Salt orchestration that is there to discover disks and network interfaces and tries to 
+depict them in a file hirarchy.
 .RE
 .PD
 .SH Preface
 .PP
-Deepsea tries to detect disks that can be converted to OSDs. In order to use those disks they have to look like spare disks (no partitions).
-We don't use disks that have partitions on them to avoid overwriting data.
+DeepSea tries to detect disks that can be converted to OSDs. In order to use those disks they have 
+to look like spare disks (no partitions). We don't use disks that have partitions on them to avoid overwriting data.
 .B Validation:
 .RS
-Deepsea performs a set of system validation tests before running the ramainder of the stage.
+DeepSea performs a set of system validation tests before running the ramainder of the stage.
 
 * salt-api
   Is the salt-api running
 
-* Deepsea minion
+* DeepSea minion
   See deepsea-minions (7)
 
 * master minion
@@ -35,7 +36,8 @@ Detect network interfaces and create the directory hierarchy you find under
 
 .B Propose cluster layout for OSDs
 .RS
-Deepsea creates a proposal based on your HDD-SSD-NVME distrubtion across the clsuter. Please see the help page of this runner:
+DeepSea creates a proposal based on your HDD-SSD-NVME distrubtion across the clsuter. 
+Please see the help page of this runner:
 
 salt-run proposal.help
 .RE
@@ -46,8 +48,9 @@ salt-run proposal.help
 deepsea salt-run state.orch ceph.stage.1
 .PP
 This command can also be used with the
-.B deepsea cli
-to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent during execution and only report when complete.
+.B DeepSea cli
+to give feedback during the process from the Salt event bus. Salt orchestrations are unnervingly silent during 
+execution and only report when complete.
 .PP
 deepsea stage run ceph.stage.1
 

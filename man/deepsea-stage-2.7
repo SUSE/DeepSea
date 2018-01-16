@@ -1,14 +1,15 @@
 .TH deepsea 7
 .SH NAME
-deepsea stage 2 \- a deeper insight
+DeepSea stage 2 \- a deeper insight
 .SH DESCRIPTION
 .B DeepSea Stage 2 (Configure)
-is a Salt orchestration that sets up the salt-pillar and distributes keys to the cluster. It also sets up the monitoring.
+is a Salt orchestration that sets up the salt-pillar and distributes keys to the cluster. 
+It also sets up the monitoring.
 .RE
 .PD
 .SH Preface
 .PP
-Deepsea retrieves it's data from a so called 'Pillar'. This is a salt concept that's worth reading about.
+DeepSea retrieves it's data from a so called 'Pillar'. This is a salt concept that's worth reading about.
 See https://docs.saltstack.com/en/latest/topics/tutorials/pillar.html
 
 .B Push proposals:
@@ -18,7 +19,7 @@ After you configured your policy.cfg to your likings, those file-based changes m
 
 .B Generate keys
 .RS
-Ceph needs authentifaction keys for each service. Based on your role assignment Deepsea generates those.
+Ceph needs authentifaction keys for each service. Based on your role assignment DeepSea generates those.
 .RE
 
 .B Setup monitoring
@@ -31,8 +32,9 @@ Prometheus and it's exporters aswell as grafana is configured. Please see deepse
 deepsea salt-run state.orch ceph.stage.2
 .PP
 This command can also be used with the
-.B deepsea cli
-to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent during execution and only report when complete.
+.B DeepSea cli
+to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent during 
+execution and only report when complete.
 .PP
 deepsea stage run ceph.stage.2
 
