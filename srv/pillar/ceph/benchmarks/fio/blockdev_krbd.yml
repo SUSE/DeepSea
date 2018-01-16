@@ -1,0 +1,12 @@
+template: blockdev_krbd.j2
+# size in bytes, as it's multiplied by worker_index for offset
+# i.e. total blockdev size must be >= size * number_of_workers
+# 1024 * 1024 * 1024
+size: 1073741824
+nrfiles: 1
+blocksizes:
+  - 4m
+number_of_workers: 4
+worker_stagger_delay: 0
+operations:
+  - rw
