@@ -73,6 +73,7 @@ cat_salt_config
 run_stage_0 "$CLI"
 run_stage_1 "$CLI"
 policy_cfg_base
+policy_cfg_mon_flex
 policy_cfg_storage 1 # one node will be a "client" (no storage role)
 if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
     policy_cfg_mds
