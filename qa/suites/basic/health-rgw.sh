@@ -36,7 +36,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,ssl" \
+TEMP=$(getopt -o h --long "cli,help,ssl" \
      -n 'health-rgw.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
