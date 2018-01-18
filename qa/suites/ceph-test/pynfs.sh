@@ -37,7 +37,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "fsal:,help" \
+TEMP=$(getopt -o h --long "cli,fsal:,help" \
      -n 'pynfs.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
