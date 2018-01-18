@@ -38,7 +38,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,fsal:" \
+TEMP=$(getopt -o h --long "cli,fsal:,help" \
      -n 'health-nfs-ganesha.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
