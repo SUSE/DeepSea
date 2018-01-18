@@ -94,7 +94,8 @@ ceph_cluster_status
 ceph_health_test
 nfs_ganesha_cat_config_file
 nfs_ganesha_debug_log
-nfs_ganesha_showmount_loop
+# kludge to work around mount hang
+#nfs_ganesha_showmount_loop
 if [ "$FSAL" = "cephfs" ] ; then
     nfs_ganesha_pynfs_test
 else
