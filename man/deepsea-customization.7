@@ -16,7 +16,8 @@ internally this looks in
 include:
   - .{{ salt['pillar.get']('refresh_init', 'default') }}
 
-which looks for a value of 'refresh_init' in the pillar. When it's not found it defaults to the name 'default' which is the name of the file in the directory. (Ignore the file extension)
+which looks for a value of 'refresh_init' in the pillar. When it's not found it defaults to the name 'default' 
+which is the name of the file in the directory. (Ignore the file extension)
 
 .B /srv/salt/ceph/refresh/default.sls
 
