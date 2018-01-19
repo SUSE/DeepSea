@@ -25,6 +25,7 @@ cat_salt_config
 run_stage_0
 run_stage_1
 policy_cfg_base
+policy_cfg_mon_flex
 policy_cfg_storage 1 # one node will be a "client" (no storage role)
 cat_policy_cfg
 run_stage_2
