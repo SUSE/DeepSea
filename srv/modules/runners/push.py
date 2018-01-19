@@ -244,13 +244,20 @@ class PillarData(object):
         common = {}
         with open(filename, "r") as policy:
             for line in policy:
+                log.debug(line)
                 # strip comments from the end of the line
                 line = re.sub(r'\s+#.*$', '', line)
                 line = line.strip()
                 if line.startswith('#') or not line:
                     log.debug("Ignoring '{}'".format(line))
                     continue
-                files = _parse(self.proposals_dir + "/" + line)
+                try:
+                    files = _parse(self.proposals_dir + "/" + line)
+                except ValueError:
+                    log.exception('''
+                    ERROR: Mailformed {}: {}
+                    '''.format(filename, line))
+                    files = []
                 if not files:
                     log.warning("{} matched no files".format(line))
                 log.debug(line)
