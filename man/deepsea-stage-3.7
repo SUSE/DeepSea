@@ -15,9 +15,10 @@ After configuration and setup stages have been completed successfully we are rea
 DeepSea performs a set of system validation tests before running the ramainder of the stage.
 
 * DEV_ENV
-  This option tells you if a Developer Environment is expected. Setting this option bypasses some validations that 
-  would lead to insufficient replication or data insafety.
-  Do not set this option in production.
+  Set this option to 'true' for development environments. Some validations will be bypassed such as 
+  requiring minimums for Ceph monitors and storage nodes. This potentially lead to insufficient 
+  replication and data insafety.
+  Do not set this option in production!
 
 .B Disabled validations:
   * monitors
