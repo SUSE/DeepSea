@@ -107,3 +107,6 @@ junit*.xml
 
 # ctag files
 tags
+
+# backup
+*.bak

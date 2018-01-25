@@ -4,7 +4,10 @@
 Runner to remove a single osd
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.runner
 
@@ -18,7 +21,7 @@ def help_():
     usage = ('salt-run remove.osd id:\n\n'
              '    Removes an OSD\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -41,7 +44,7 @@ def osd(id_, drain=False):
 
     local_cli = salt.client.LocalClient()
 
-    osds = local_cli.cmd('I@roles:storage', 'osd.list', expr_form='compound')
+    osds = local_cli.cmd('I@roles:storage', 'osd.list', tgt_type='compound')
 
     host = ''
     for _osd in osds:
@@ -52,9 +55,9 @@ def osd(id_, drain=False):
         log.error('No OSD with ID {} found...giving up'.format(id_))
         return False
 
-    master_minion = local_cli.cmd('I@roles:master', 'pillar.get',
-                                  ['master_minion'],
-                                  expr_form='compound').items()[0][1]
+    master_minion = list(local_cli.cmd('I@roles:master', 'pillar.get',
+                                       ['master_minion'],
+                                       tgt_type='compound').items())[0][1]
 
     if drain:
         log.info('Draining OSD {} now'.format(id_))

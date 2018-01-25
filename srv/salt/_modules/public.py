@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
+
 """
 Functions related to the public network
 """

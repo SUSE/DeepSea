@@ -9,9 +9,12 @@ those sites with existing Salt minions that should not be storage hosts, this
 variable can be customized to any Salt target.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 
 log = logging.getLogger(__name__)
@@ -42,7 +45,7 @@ class DeepseaMinions(object):
         # Relying on side effect - pylint: disable=unused-variable
         ret = self.local.cmd('*', 'saltutil.pillar_refresh')
         minions = self.local.cmd('*', 'pillar.get', ['deepsea_minions'],
-                                 expr_form="compound")
+                                 tgt_type="compound")
         sys.stdout = _stdout
         for minion in minions:
             if minions[minion]:
@@ -63,9 +66,9 @@ class DeepseaMinions(object):
             result = self.local.cmd(self.deepsea_minions,
                                     'pillar.get',
                                     ['id'],
-                                    expr_form="compound")
+                                    tgt_type="compound")
             sys.stdout = _stdout
-            return result.keys()
+            return list(result.keys())
         return []
 
 
@@ -79,7 +82,7 @@ def help_():
              'salt-run deepsea_minions.matches:\n\n'
              '    Returns an array of matched minions\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 

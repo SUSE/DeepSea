@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+
 """
 Intervention into special conditions during package management
 """
 from __future__ import absolute_import
 from subprocess import Popen, PIPE
-from platform import linux_distribution
 import logging
 import os
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
+from helper import _convert_out
 
 log = logging.getLogger(__name__)
 
@@ -25,14 +27,14 @@ class PackageManager(object):
         self.kernel = kwargs.get('kernel', False)
         self.reboot = kwargs.get('reboot', True)
 
-        self.platform = linux_distribution()[0].lower()
+        self.platform = __grains__['os'].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
             # pylint: disable=invalid-name
             self.pm = Zypper(**kwargs)
         elif "ubuntu" in self.platform or "debian" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
-            # pylint: disable=invalid-name,redefined-variable-type
+            # pylint: disable=redefined-variable-type
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
@@ -80,9 +82,10 @@ class Apt(PackageManager):
         """
         self._refresh()
         cmd = "/usr/lib/update-notifier/apt-check"
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         # pylint: disable=unused-variable
-        stdout, stderr = proc.communicate()
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        _, stderr = proc.communicate()
+        stderr = _convert_out(stderr)
         for cn_err in stderr.split(";"):
             if int(cn_err) > 0:
                 log.info('Update Needed')

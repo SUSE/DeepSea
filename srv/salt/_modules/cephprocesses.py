@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 Operations for Ceph processes to roles
 """
@@ -12,6 +13,7 @@ import shlex
 # pylint: disable=import-error,3rd-party-module-not-gated
 from subprocess import Popen, PIPE
 import psutil
+from helper import _convert_out
 
 log = logging.getLogger(__name__)
 
@@ -116,7 +118,7 @@ def down(**kwargs):
     Based on check(), return True/False if all Ceph processes that are meant
     to be running on a node are down.
     """
-    return True if not check(True, True)['up'].values() else False
+    return True if not list(check(True, True)['up'].values()) else False
 
 
 def wait(**kwargs):
@@ -156,6 +158,7 @@ def _process_map():
                   stdin=proc1.stdout, stdout=PIPE, stderr=PIPE)
     proc1.stdout.close()
     stdout, _ = proc2.communicate()
+    stdout = _convert_out(stdout)
     for proc_l in stdout.split('\n'):
         proc = proc_l.split(' ')
         proc_info = {}
@@ -179,6 +182,7 @@ def zypper_ps(role, lsof_map):
     assert role
     proc1 = Popen(shlex.split('zypper ps -sss'), stdout=PIPE)
     stdout, _ = proc1.communicate()
+    stdout = _convert_out(stdout)
     processes_ = processes
     # adding instead of overwriting, eh?
     # radosgw is ceph-radosgw in zypper ps.
@@ -233,5 +237,4 @@ def _timeout():
     """
     if __grains__['virtual'] == 'physical':
         return 900
-    else:
-        return 120
+    return 120

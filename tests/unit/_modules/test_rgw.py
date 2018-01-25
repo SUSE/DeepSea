@@ -1,6 +1,8 @@
 import pytest
 import salt.client
 import os
+import sys
+sys.path.insert(0, 'srv/salt/_modules')
 from pyfakefs import fake_filesystem, fake_filesystem_glob
 
 from mock import patch, MagicMock

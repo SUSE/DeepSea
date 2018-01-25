@@ -3,6 +3,8 @@
 """
 Display the sharedsecret for the Salt API
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 
 
@@ -13,7 +15,7 @@ def help_():
     usage = ('salt-run sharedsecret.show:\n\n'
              '    Shows the shared secret for the Salt API\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 

@@ -9,6 +9,7 @@ common packages:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.packages.common
+    - failhard: True
 
 sync:
   salt.state:

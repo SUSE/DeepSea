@@ -7,10 +7,13 @@ upgrade is safe.  All expected processes are running.
 A secondary purpose is a utility to check the current state of all processes.
 """
 
+from __future__ import print_function
+from __future__ import absolute_import
 import pprint
 import os
 import sys
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils
 import salt.utils.master
@@ -22,16 +25,16 @@ def help_():
     """
     Usage
     """
-    usage = ('salt-run cephprocesses.check:\n\n'
-             '    Checks the process status according to assigned role\n'
-             '\n\n'
-             'salt-run cephprocesses.mon:\n\n'
-             '    Query monitors to determine if Ceph cluster is active\n'
-             '\n\n'
-             'salt-run cephprocesses.wait:\n\n'
-             '    Wait for all processes to be up according to assigned roles\n'
-             '\n\n')
-    print usage
+    usage = ("""salt-run cephprocesses.check
+                   Checks the process status according to assigned role.
+
+                salt-run cephprocesses.mon
+                   Query monitors to determine if Ceph cluster is active.
+
+                salt-run cephprocesses.wait
+                   Wait for all processes to be up according to assigned roles.
+             """)
+    print(usage)
     return ""
 
 
@@ -91,7 +94,7 @@ def restart_required(role=None, cluster='ceph'):
     restart = local.cmd(role_search,
                         'cephprocesses.restart_required_lsof',
                         ["role={}".format(role)],
-                        expr_form="compound")
+                        tgt_type="compound")
 
     sys.stdout = _stdout
     return restart
@@ -114,7 +117,7 @@ def _status(search, roles, quiet):
                                  'cephprocesses.check',
                                  kwarg={'roles': [role]},
                                  quiet=quiet,
-                                 expr_form="compound")
+                                 tgt_type="compound")
 
     sys.stdout = _stdout
     log.debug(pprint.pformat(status))
@@ -141,7 +144,7 @@ def _cached_roles(search):
                 roles.setdefault(role, []).append(minion)
 
     log.debug(pprint.pformat(roles))
-    return roles.keys()
+    return list(roles.keys())
 
 
 def wait(cluster='ceph', **kwargs):
@@ -164,11 +167,11 @@ def wait(cluster='ceph', **kwargs):
                        'cephprocesses.wait',
                        ['timeout={}'.format(settings['timeout']),
                         'delay={}'.format(settings['delay'])],
-                       expr_form="compound")
+                       tgt_type="compound")
 
     sys.stdout = _stdout
     log.debug("status: {}".format(pprint.pformat(status)))
-    if False in status.values():
+    if False in list(status.values()):
         for minion in status:
             if status[minion] is False:
                 log.error("minion {} failed".format(minion))
@@ -183,8 +186,8 @@ def _timeout(cluster='ceph'):
     """
     local = salt.client.LocalClient()
     search = "I@cluster:{}".format(cluster)
-    virtual = local.cmd(search, 'grains.get', ['virtual'], expr_form="compound")
-    if 'physical' in virtual.values():
+    virtual = local.cmd(search, 'grains.get', ['virtual'], tgt_type="compound")
+    if 'physical' in list(virtual.values()):
         return 900
     else:
         return 120

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=fixme
+
 """
 Generates hardware profiles for Ceph storage nodes
 """
 
 from __future__ import absolute_import
-# pylint: disable=import-error
+# pylint: disable=import-error, redefined-builtin,3rd-party-module-not-gated
 import logging
+from salt.ext.six.moves import range
 import cephdisks
 # pylint: disable=incompatible-py3-code
 log = logging.getLogger(__name__)
@@ -32,13 +34,13 @@ class Proposal(object):
         self._parse_args(kwargs)
         # we differentiate 3 kinds of drives for now
         self.nvme = [disk for disk in disks if disk['Driver'] ==
-                     self.NVME_DRIVER and disk['rotational'] is '0']
+                     self.NVME_DRIVER and disk['rotational'] == '0']
         self.ssd = [disk for disk in disks if disk['Driver'] !=
-                    self.NVME_DRIVER and disk['rotational'] is '0']
-        self.spinner = [disk for disk in disks if disk['rotational'] is '1']
-        log.warn(self.nvme)
-        log.warn(self.ssd)
-        log.warn(self.spinner)
+                    self.NVME_DRIVER and disk['rotational'] == '0']
+        self.spinner = [disk for disk in disks if disk['rotational'] == '1']
+        log.warning(self.nvme)
+        log.warning(self.ssd)
+        log.warning(self.spinner)
 
     def _parse_args(self, kwargs):
         """
@@ -98,7 +100,7 @@ class Proposal(object):
 
         # uncertain how hacky this is. This branch is taken if any 2 out of
         # there lists are empty
-        if sum([not self.nvme, not self.ssd, not self.spinner]) is 2:
+        if sum([not self.nvme, not self.ssd, not self.spinner]) == 2:
             log.debug('found only one type of disks...proposing standalone')
             return proposals
 

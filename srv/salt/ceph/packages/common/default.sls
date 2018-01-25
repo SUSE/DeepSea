@@ -8,8 +8,8 @@ stage prep dependencies suse:
       - lsscsi
       - pciutils
       - gptfdisk
-      - python-boto
-      - python-rados
+      - python3-boto
+      - python3-rados
       - iperf
       - lsof
     - fire_event: True
@@ -23,7 +23,7 @@ stage prep dependencies ubuntu:
       - lsscsi
       - pciutils
       - gdisk
-      - python-boto
+      - python3-boto
       - python-rados
       - iperf
     - fire_event: True
@@ -46,8 +46,8 @@ stage prep dependencies CentOS:
       - lsscsi
       - pciutils
       - gdisk
-      - python-boto
-      - python-rados
+      - python3-boto
+      - python3-rados
       - iperf3
       - lshw
       - hwinfo

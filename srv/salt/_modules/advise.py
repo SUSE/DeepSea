@@ -22,7 +22,7 @@ def reboot(running, installed):
     log.info(message)
 
     proc = Popen(["/usr/bin/wall"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    proc.communicate(input=message)
+    proc.communicate(input=message.encode('ascii'))
 
     return True
 

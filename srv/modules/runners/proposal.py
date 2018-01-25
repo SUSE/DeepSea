@@ -4,12 +4,14 @@
 Generates the hardware profiles for a minion
 """
 from __future__ import absolute_import
+from __future__ import print_function
 import pprint
 from os.path import isdir, isfile
 import os
 # pylint: disable=redefined-builtin
 from sys import exit
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import yaml
 # pylint: disable=import-error
@@ -124,8 +126,8 @@ def _parse_args(kwargs):
               ' another name'))
         exit(-1)
     if args.get('encryption') != '' and args.get('encryption') != 'dmcrypt':
-        print(('ERROR: encryption{} is not supported. Currently only '
-               '"dmcrypt" is supported.').format(args.get('encryption')))
+        print((('ERROR: encryption{} is not supported. Currently only '
+               '"dmcrypt" is supported.').format(args.get('encryption'))))
         exit(-1)
 
     return args
@@ -137,13 +139,13 @@ def _propose(node, proposal, args):
     """
     profile = {}
     for device in proposal:
-        key, value = device.items()[0]
+        key, value = list(device.items())[0]
         dev_par = {}
         format_ = args.get('format')
         if isinstance(value, dict):
             assert format_ == 'bluestore'
             # pylint: disable=invalid-name
-            db, wal = value.items()[0]
+            db, wal = list(value.items())[0]
             dev_par['wal'] = wal
             dev_par['db'] = db
             dev_par['wal_size'] = args.get('wal-size')
@@ -187,7 +189,7 @@ def help_():
     """
     Usage
     """
-    print USAGE
+    print(USAGE)
 
 
 def test(**kwargs):
@@ -199,7 +201,7 @@ def test(**kwargs):
     local_client = salt.client.LocalClient()
 
     proposals = local_client.cmd(args['target'], 'proposal.test',
-                                 expr_form='compound', kwarg=args)
+                                 tgt_type='compound', kwarg=args)
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
@@ -217,7 +219,7 @@ def peek(**kwargs):
     local_client = salt.client.LocalClient()
 
     proposals = local_client.cmd(args['target'], 'proposal.generate',
-                                 expr_form='compound', kwarg=args)
+                                 tgt_type='compound', kwarg=args)
 
     # determine which proposal to choose
     for node, proposal in proposals.items():
@@ -230,7 +232,7 @@ def _write_proposal(prop, profile_dir):
     """
     Save the proposal for a specific minion
     """
-    node, proposal = prop.items()[0]
+    node, proposal = list(prop.items())[0]
 
     # write out roles
     role_file = '{}/cluster/{}.sls'.format(profile_dir, node)
@@ -244,7 +246,7 @@ def _write_proposal(prop, profile_dir):
     profile_file = '{}/stack/default/ceph/minions/{}.yml'.format(profile_dir,
                                                                  node)
     if isfile(profile_file):
-        log.warn('not overwriting existing proposal {}'.format(node))
+        log.warning('not overwriting existing proposal {}'.format(node))
         return
 
     # write storage profile
@@ -291,7 +293,7 @@ def populate(**kwargs):
     local_client = salt.client.LocalClient()
 
     proposals = local_client.cmd(args['target'], 'proposal.generate',
-                                 expr_form='compound', kwarg=args)
+                                 tgt_type='compound', kwarg=args)
 
     # check if profile of 'name' exists
     profile_dir = '{}/profile-{}'.format(BASE_DIR, args['name'])

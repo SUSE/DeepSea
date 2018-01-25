@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=fixme
+
 """
 RadosGW related functions for users, configurations, keys and buckets
 """
@@ -11,13 +12,17 @@ from subprocess import Popen, PIPE
 import os
 import json
 import re
+try:
+    import salt.config
+except ImportError:
+    logging.error("Could not import salt.config")
 # pylint: disable=import-error,3rd-party-module-not-gated
 import boto
 # pylint: disable=import-error,3rd-party-module-not-gated
 import boto.s3.connection
 # pylint: disable=import-error,3rd-party-module-not-gated
 import boto.exception
-import salt.config
+from helper import _convert_out, _run
 
 log = logging.getLogger(__name__)
 
@@ -61,14 +66,11 @@ def users(realm='default', contains=None):
     Return the list of users for a realm.
     """
     cmd = "radosgw-admin user list --rgw-realm={}".format(realm)
-    log.info("cmd: {}".format(cmd))
-    proc = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
-    proc.wait()
-    log.debug("rc: {}".format(proc.returncode))
-    if proc.returncode != '0':
+    retcode, stdout, _ = _run(cmd)
+    if retcode != '0':
         if contains:
-            return [item for item in json.loads(proc.stdout.read()) if contains in item]
-        return json.loads(proc.stdout.read())
+            return [item for item in json.loads(stdout) if contains in item]
+        return json.loads(stdout)
     return []
 
 
@@ -114,14 +116,20 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
                 filename = "{}/user.{}.json".format(pathname, user['uid'])
                 with open(filename, "w") as _json:
                     for line in proc.stdout:
+                        line = _convert_out(line)
                         _json.write(line)
                 for line in proc.stderr:
+                    line = _convert_out(line)
                     log.info("stderr: {}".format(line))
                     proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
                     with open(filename, "w") as _json:
+                        # pylint: disable=redefined-outer-name
                         for line in proc.stdout:
+                            line = _convert_out(line)
                             _json.write(line)
+                    # pylint: disable=redefined-outer-name
                     for line in proc.stderr:
+                        line = _convert_out(line)
                         log.info("stderr: {}".format(line))
 
                 proc.wait()
@@ -137,8 +145,10 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
                     proc = Popen(args, stdout=PIPE, stderr=PIPE)
                     with open(filename, "w") as _json:
                         for line in proc.stdout:
+                            line = _convert_out(line)
                             _json.write(line)
                     for line in proc.stderr:
+                        line = _convert_out(line)
                         log.info("stderr: {}".format(line))
                     proc.wait()
 
@@ -246,7 +256,7 @@ def endpoints(cluster='ceph'):
         local = salt.client.LocalClient()
 
         fqdns = local.cmd('I@roles:'+ rgw_conf_files[pathname], 'grains.item',
-                          ['fqdn'], expr_form="compound")
+                          ['fqdn'], tgt_type="compound")
         for _, grains in fqdns.items():
             log.warning("fqdns: {}".format(fqdns))
             result.append({

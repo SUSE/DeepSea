@@ -96,7 +96,7 @@ class SimplePrinter(MonitorListener):
                         PP.println("  {}:".format(minion))
                         ret_data = event.raw_event['data']['return']
                         if isinstance(ret_data, dict):
-                            ret_data = ret_data.values()
+                            ret_data = list(ret_data.values())
                         if isinstance(ret_data, list):
                             for substep in ret_data:
                                 if isinstance(substep, dict):

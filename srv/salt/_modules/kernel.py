@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 Some distributions include multiple kernels and may default to a minimal
 kernel in some cases.  Some Ceph services rely on  kernel modules that will
@@ -22,15 +23,23 @@ example,
 """
 
 from __future__ import absolute_import
-from subprocess import Popen, PIPE
 import logging
 import re
 import os
-import salt.client
-
-from salt.exceptions import CommandExecutionError
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
+from helper import _run
 
 log = logging.getLogger(__name__)
+
+try:
+    import salt.client
+except ImportError:
+    logging.error('Could not import salt.client')
+
+try:
+    from salt.exceptions import CommandExecutionError
+except ImportError:
+    logging.error('Could not import salt.exceptions')
 
 
 def replace(**kwargs):
@@ -73,8 +82,9 @@ def _kernel_pkg():
     query = _query_command(_boot_image(kernel))
     if query:
         log.debug("query: {}".format(query))
-        proc = Popen(query, stdout=PIPE, stderr=PIPE)
-        package = proc.stdout.read().rstrip('\n')
+        _, stdout, _ = _run(query)
+        package = stdout
+
         log.info("package: {}".format(package))
         return package
     return
@@ -87,6 +97,7 @@ def _boot_image(contents):
     boot_image = None
     try:
         boot_image = re.split(r'[= ]', contents)[1]
+        boot_image = re.sub(r" ?\([^)]+\)", "", boot_image)
         log.info("running image: {}".format(boot_image))
     except IndexError:
         log.error("BOOT_IMAGE missing")

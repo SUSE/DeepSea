@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim: ts=8 et sw=4 sts=4
 # pylint: disable=fixme
+
 """
 Inspects an existing cluter to extract the configuration
 """
@@ -12,6 +13,7 @@ import json
 import logging
 # pylint: disable=import-error,3rd-party-module-not-gated
 import psutil
+from helper import _convert_out
 
 log = logging.getLogger(__name__)
 
@@ -81,9 +83,9 @@ def _get_disk_id(partition):
 
     # We should only ever have one entry that we return.
     if out:
+        out = _convert_out(out)
         return out.rstrip()
-    else:
-        return partition
+    return partition
 
 
 def _get_osd_type(part_dict):
@@ -152,6 +154,7 @@ def _get_partition_size(partition):
     size, err = blockdev_cmd.communicate()
 
     try:
+        size = _convert_out(size)
         size = _convert_size(int(size))
     # pylint: disable=unused-variable
     except ValueError as err:
@@ -211,6 +214,9 @@ def get_ceph_disks_yml(**kwargs):
     ceph_disk_list = Popen("PYTHONWARNINGS=ignore ceph-disk list --format=json",
                            stdout=PIPE, stderr=PIPE, shell=True)
     out, err = ceph_disk_list.communicate()
+    out = _convert_out(out)
+    err = _convert_out(err)
+
     ceph_disks = {"ceph":
                   {"storage":
                    {"osds": {}}}}
@@ -237,8 +243,8 @@ def get_ceph_disks_yml(**kwargs):
                     elif osd_type == "bluestore":
                         _append_bs_to_ceph_disk(ceph_disks, path, part_dict)
                     else:
-                        log.warn(("Unable to engulf OSD at {}. Unsupported "
-                                  "type. Skipping.".format(path)))
+                        log.warning(("Unable to engulf OSD at {}. Unsupported "
+                                     "type. Skipping.".format(path)))
 
     return ceph_disks
 
@@ -303,5 +309,6 @@ def get_keyring(**kwargs):
     cmd = Popen("ceph auth get " + kwargs["key"], stdout=PIPE, stderr=PIPE, shell=True)
     # pylint: disable=unused-variable
     out, err = cmd.communicate()
+    out = _convert_out(out)
 
     return out if out else None

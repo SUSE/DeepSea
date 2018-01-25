@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 Ganesha configuration and exports
 """
@@ -6,6 +7,7 @@ Ganesha configuration and exports
 from __future__ import absolute_import
 
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 from salt import client as SaltClient
 
 try:
