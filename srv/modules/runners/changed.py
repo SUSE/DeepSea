@@ -6,6 +6,8 @@ This runner is here to detect config changes in the
 various configuration files to control service restarts.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os.path
 import hashlib
 import logging
@@ -58,9 +60,9 @@ class Config(object):
         local = salt.client.LocalClient()
         roles = []
         try:
-            roles = local.cmd("I@roles:master", 'pillar.get',
-                              ['rgw_configurations'],
-                              expr_form="compound").values()[0]
+            roles = list(local.cmd("I@roles:master", 'pillar.get',
+                                   ['rgw_configurations'],
+                                   tgt_type="compound").values())[0]
             log.debug("Querying pillar for rgw_configurations")
         # pylint: disable=bare-except
         except:
@@ -88,7 +90,7 @@ class Config(object):
                 log.debug("Checksum: {}".format(md5))
                 checksums += md5
         if checksums:
-            return hashlib.md5(checksums).hexdigest()
+            return hashlib.md5(checksums.encode('ascii')).hexdigest()
         log.debug(("No file found to generate a checksum from. Looked for "
                    "{}".format(self.service_conf_files)))
         if os.path.exists(self.checksum_file):
@@ -151,7 +153,7 @@ def help_():
              'salt-run changed.client:\n\n'
              '    Shortcuts for many services\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -172,7 +174,7 @@ def requires_conf_change(service, cluster='ceph'):
             search = 'I@cluster:{} and I@roles:{}'.format(cluster, service)
             local.cmd(search, 'grains.setval',
                       ["restart_{}".format(service), True],
-                      expr_form="compound")
+                      tgt_type="compound")
             return True
     return False
 

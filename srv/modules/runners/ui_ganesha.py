@@ -14,10 +14,13 @@ exports.
 """
 
 from __future__ import absolute_import
+from __future__ import print_function
 import json
 import os
-import salt.client
 import yaml
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
+from salt.ext.six.moves import range
+import salt.client
 
 
 class GaneshaConfParser(object):
@@ -269,7 +272,7 @@ class Ganesha(object):
         Wrapper for Salt module since multiple values may be returned
         """
         target = "I@roles:{}".format(role) if not minion else role
-        result = local_client.cmd(target, fun, args, expr_form="compound")
+        result = local_client.cmd(target, fun, args, tgt_type="compound")
         if minion:
             return result[role]
         return [val for _, val in result.items()] if only_vals else result
@@ -399,7 +402,7 @@ class Ganesha(object):
                                 Dumper=friendly_dumper,
                                 default_flow_style=False))
         # refresh pillar
-        local_client.cmd("I@roles:master", 'saltutils.pillar_refresh', [''], expr_form="compound")
+        local_client.cmd("I@roles:master", 'saltutils.pillar_refresh', [''], tgt_type="compound")
 
     @staticmethod
     def save_exports(exports):
@@ -519,7 +522,7 @@ def help_():
              'salt-run ui_ganesha.stop_exports:\n\n'
              '    Stops the ganesha service for each minion\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 

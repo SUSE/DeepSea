@@ -8,7 +8,10 @@
 The collection of functions for OSDs that are no longer present.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 
 log = logging.getLogger(__name__)
@@ -24,7 +27,7 @@ def help_():
              'salt-run rescinded.osds:\n\n'
              '    Returns the list of OSDs for minions that are no longer mounted\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -38,13 +41,13 @@ def ids(cluster, **kwargs):
     # Restrict search to this cluster
     search = "I@cluster:{}".format(cluster)
 
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
     _ids = []
     for minion in pillar_data:
         if ('roles' in pillar_data[minion] and
             'storage' in pillar_data[minion]['roles']):
             continue
-        data = local.cmd(minion, 'osd.list', [], expr_form="glob")
+        data = local.cmd(minion, 'osd.list', [], tgt_type="glob")
         _ids.extend(data[minion])
     return _ids
 
@@ -56,7 +59,7 @@ def osds(cluster='ceph'):
     search = "I@cluster:{} and I@roles:storage".format(cluster)
 
     local = salt.client.LocalClient()
-    data = local.cmd(search, 'osd.rescinded', [], expr_form="compound")
+    data = local.cmd(search, 'osd.rescinded', [], tgt_type="compound")
     _ids = []
     for minion in data:
         if isinstance(data[minion], list):

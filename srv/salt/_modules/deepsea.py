@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0111
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 
 from __future__ import absolute_import
 
@@ -60,8 +61,7 @@ def _render_state(state_name):
     except TypeError:
         if state_name.endswith('.init'):
             return None  # sls file does not exist
-        else:
-            return _render_state("{}.init".format(state_name))
+        return _render_state("{}.init".format(state_name))
     result = __salt__['slsutil.renderer']('/tmp/dest.sls')
 
     nresult = OrderedDict()
@@ -93,8 +93,7 @@ def render_sls(state_arg):
             content = _serialize_ordered_dict(content)
             result[state_name] = content
         return result
-    else:
-        return None
+    return None
 
 
 def user():
@@ -103,8 +102,7 @@ def user():
     """
     if __grains__.get('os_family', '') == 'Suse':
         return 'salt'
-    else:
-        return 'root'
+    return 'root'
 
 
 def group():
@@ -113,5 +111,4 @@ def group():
     """
     if __grains__.get('os_family', '') == 'Suse':
         return 'salt'
-    else:
-        return 'root'
+    return 'root'

@@ -2,7 +2,7 @@
 install rgw:
   pkg.installed:
     - pkgs:
-      - python-boto
+      - python3-boto
     - refresh: True
 
 {% for user in salt['rgw.users'](contains="demo") %}

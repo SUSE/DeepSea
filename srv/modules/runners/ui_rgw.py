@@ -11,10 +11,12 @@ is getting the credentials for an administrative user which is implemented
 here.
 """
 from __future__ import absolute_import
+from __future__ import print_function
 import logging
 import os
 import json
 import glob
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.minions
 
@@ -118,7 +120,7 @@ def help_():
              'salt-run ui_rgw.token data:\n\n'
              '    Returns radosgw-token result from supplied data\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -161,7 +163,7 @@ def token(**kwargs):
                        ['radosgw-token --encode --ttype={} --access={} --secret={}'.format(ttype,
                                                                                            access,
                                                                                            secret)],
-                       expr_form="compound")
+                       tgt_type="compound")
     return _token
 
 __func_alias__ = {

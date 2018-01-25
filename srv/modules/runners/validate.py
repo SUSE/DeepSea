@@ -13,6 +13,8 @@ prerequisite is that osd assignment must be decided before segregating types
 of hardware.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 import ipaddress
 import json
@@ -24,10 +26,11 @@ import glob
 from subprocess import Popen, PIPE
 from collections import OrderedDict
 import yaml
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.error
 # pylint: disable=relative-import
-import deepsea_minions
+from . import deepsea_minions
 
 
 log = logging.getLogger(__name__)
@@ -66,7 +69,7 @@ class PrettyPrinter(object):
                                                   passed[attr],
                                                   Bcolors.ENDC)
             log.info("VALIDATE PASSED  " + format_str)
-            print format_str
+            print(format_str)
         for attr in errors.keys():
             format_str = "{:25}: {}{}{}{}".format(attr,
                                                   Bcolors.BOLD,
@@ -74,7 +77,7 @@ class PrettyPrinter(object):
                                                   errors[attr],
                                                   Bcolors.ENDC)
             log.info("VALIDATE ERROR   " + format_str)
-            print format_str
+            print(format_str)
         for attr in warnings.keys():
             format_str = "{:25}: {}{}{}{}".format(attr,
                                                   Bcolors.BOLD,
@@ -82,7 +85,7 @@ class PrettyPrinter(object):
                                                   warnings[attr],
                                                   Bcolors.ENDC)
             log.info("VALIDATE WARNING " + format_str)
-            print format_str
+            print(format_str)
 
     def print_result(self):
         """
@@ -221,7 +224,7 @@ class Validate(object):
         if 'DEV_ENV' in os.environ:
             return os.environ['DEV_ENV'].lower() != 'false'
         elif self.data:
-            any_minion = self.data.keys()[0]
+            any_minion = list(self.data.keys())[0]
             if 'DEV_ENV' in self.data[any_minion]:
                 return self.data[any_minion]['DEV_ENV']
         return False
@@ -254,7 +257,7 @@ class Validate(object):
         """
         Validate fsid from first entry
         """
-        fsid = self.data[self.data.keys()[0]].get("fsid", "")
+        fsid = self.data[list(self.data.keys())[0]].get("fsid", "")
         log.debug("fsid: {}".format(fsid))
         if fsid:
             if len(fsid) == 36:
@@ -508,11 +511,11 @@ class Validate(object):
                 msg = "host {} is missing {}".format(node, name)
                 self.errors.setdefault(name, []).append(msg)
 
-        if len(same_hosts.keys()) > 1:
-            msg = "Different entries {}".format(same_hosts.keys())
+        if len(list(same_hosts.keys())) > 1:
+            msg = "Different entries {}".format(list(same_hosts.keys()))
             self.errors.setdefault(name, []).append(msg)
         elif same_hosts:
-            count = len(same_hosts.keys()[0].split(","))
+            count = len(list(same_hosts.keys())[0].split(","))
             if (not self.in_dev_env and count < 3) or (self.in_dev_env and count < 1):
                 if self.in_dev_env:
                     msg = "Must have at least one monitor"
@@ -626,12 +629,12 @@ class Validate(object):
         """
         Check that time server is available
         """
-        time_init = self.data[self.data.keys()[0]].get("time_init", "")
+        time_init = self.data[list(self.data.keys())[0]].get("time_init", "")
         if time_init == 'disabled':
             self.passed['time_server'] = "disabled"
             return
 
-        time_server = self.data[self.data.keys()[0]].get("time_server", "")
+        time_server = self.data[list(self.data.keys())[0]].get("time_server", "")
         if not isinstance(time_server, list):
             time_server = [time_server]
         for server in time_server:
@@ -672,7 +675,7 @@ class Validate(object):
                 # Would use file.contains if it supported '='
                 result = local.cmd(node, 'file.search',
                                    ['/etc/ceph/ceph.conf', r'port\=80\b'],
-                                   expr_form="glob")
+                                   tgt_type="glob")
                 if result[node]:
                     msg = "rgw port conflicts with openATTIC on {} - check ceph.conf".format(node)
                     self.errors.setdefault('openattic', []).append(msg)
@@ -730,7 +733,7 @@ class Validate(object):
         local = salt.client.LocalClient()
         for node in self.data.keys():
             data = local.cmd(self.data[node]['master_minion'],
-                             'pillar.get', ['master_minion'], expr_form="glob")
+                             'pillar.get', ['master_minion'], tgt_type="glob")
             break
         if data:
             self.passed['master_minion'] = "valid"
@@ -749,7 +752,7 @@ class Validate(object):
         target = deepsea_minions.DeepseaMinions()
         search = target.deepsea_minions
         local = salt.client.LocalClient()
-        contents = local.cmd(search, 'pkg.latest_version', ['ceph'], expr_form="compound")
+        contents = local.cmd(search, 'pkg.latest_version', ['ceph'], tgt_type="compound")
         for minion, version in contents.items():
             if not version:
                 info = local.cmd(minion, 'pkg.info_installed', ['ceph'])
@@ -922,7 +925,7 @@ def help_():
               'salt-run validate.saltapi:\n\n'
               '    Verify that the Salt API is working\n'
               '\n\n')
-    print _usage
+    print(_usage)
     return ""
 
 
@@ -930,8 +933,8 @@ def usage(func='None'):
     """
     Short usage
     """
-    print "salt-run validate.{} cluster_name".format(func)
-    print "salt-run validate.{} cluster=cluster_name".format(func)
+    print("salt-run validate.{} cluster_name".format(func))
+    print("salt-run validate.{} cluster=cluster_name".format(func))
 
 
 def pillars(**kwargs):
@@ -970,7 +973,7 @@ def discovery(cluster=None, printer=None, **kwargs):
             # Salt accepts either list or string as target
             search = "I@cluster:{}".format(cluster)
 
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
 
     printer = get_printer(**kwargs)
     valid = Validate(cluster, data=pillar_data, printer=printer)
@@ -1002,8 +1005,8 @@ def pillar(cluster=None, printer=None, **kwargs):
     # Restrict search to this cluster
     search = "I@cluster:{}".format(cluster)
 
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
-    grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
+    grains_data = local.cmd(search, 'grains.items', [], tgt_type="compound")
 
     printer = get_printer(**kwargs)
     valid = Validate(cluster, pillar_data, grains_data, printer)
@@ -1037,8 +1040,8 @@ def deploy(**kwargs):
     target = deepsea_minions.DeepseaMinions()
     search = target.deepsea_minions
     local = salt.client.LocalClient()
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
-    grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
+    grains_data = local.cmd(search, 'grains.items', [], tgt_type="compound")
     printer = get_printer(**kwargs)
 
     valid = Validate("deploy", pillar_data, grains_data, printer)
@@ -1059,7 +1062,7 @@ def saltapi(**kwargs):
     search = target.deepsea_minions
     local = salt.client.LocalClient()
 
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
     printer = get_printer(**kwargs)
 
     valid = Validate("salt-api", pillar_data, [], printer)
@@ -1088,7 +1091,7 @@ def setup(**kwargs):
     search = target.deepsea_minions
     local = salt.client.LocalClient()
 
-    pillar_data = local.cmd(search, 'pillar.items', [], expr_form="compound")
+    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
     printer = get_printer(**kwargs)
 
     valid = Validate("setup", pillar_data, [], printer)

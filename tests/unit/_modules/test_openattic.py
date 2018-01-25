@@ -5,6 +5,8 @@ import os
 from pyfakefs import fake_filesystem_unittest
 from mock import MagicMock, patch, mock
 
+import sys
+sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import openattic
 from salt.exceptions import CommandExecutionError
 

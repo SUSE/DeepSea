@@ -16,6 +16,8 @@ from .salt_event import EventListener
 from .salt_event import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
 from .stage_parser import SLSParser, SaltRunner, SaltState, SaltModule, SaltBuiltIn, \
                           RenderingException
+from six.moves import range
+from functools import reduce
 
 
 # pylint: disable=C0111
@@ -240,7 +242,7 @@ class Stage(object):
             if self.current_step == 0 and curr_step.start_event is None:
                 # check for duplicates before starting step 1
                 for ex_step in self._dynamic_steps.values():
-                    if (ex_step.name == step.name and ex_step.targets.keys() == event.targets and
+                    if (ex_step.name == step.name and list(ex_step.targets.keys()) == event.targets and
                             ex_step.args_str == step.args_str):
                         # possible parsing generated duplicate
                         return None, None, None
@@ -660,7 +662,7 @@ class Monitor(threading.Thread):
                                 "on=%s",
                                 step.order,
                                 self._running_stage.total_steps(), step.name, step.args_str,
-                                step.targets.keys())
+                                list(step.targets.keys()))
                     self._fire_event('step_state_finished', step)
             else:
                 if not step.jid:
@@ -683,7 +685,7 @@ class Monitor(threading.Thread):
         if isinstance(step, Stage.TargetedStep):
             logger.info("Started State step: [%s/%s] name=%s(%s) on=%s", step.order,
                         self._running_stage.total_steps(), step.name, step.args_str,
-                        step.targets.keys())
+                        list(step.targets.keys()))
             self._fire_event('step_state_started', step)
         else:
             logger.info("Started Runner step: [%s/%s] name=%s(%s)", step.order,

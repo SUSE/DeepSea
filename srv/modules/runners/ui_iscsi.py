@@ -15,12 +15,15 @@ Guiding ideas:
   modules with Salt mines.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 import sys
 import os
 import json
 import urllib
 import yaml
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.minions
 
@@ -61,7 +64,7 @@ class Iscsi(object):
         _stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
 
-        igws = self.local.cmd("I@roles:igw", 'grains.get', ['ipv4'], expr_form="compound")
+        igws = self.local.cmd("I@roles:igw", 'grains.get', ['ipv4'], tgt_type="compound")
         sys.stdout = _stdout
         if wrapped:
             data = []
@@ -130,6 +133,7 @@ class Iscsi(object):
             # (ie. where the frontend is hosted on a different server than
             # salt-api) useless.
             if 'contenttype' in kwargs and not kwargs['contenttype']:
+                # pylint: disable=no-member
                 contents = urllib.unquote(kwargs['data'])
             else:
                 contents = kwargs['data']
@@ -160,7 +164,7 @@ class Iscsi(object):
                                 Dumper=self.friendly_dumper,
                                 default_flow_style=False))
         # refresh pillar
-        self.local.cmd("I@roles:master", 'saltutils.pillar_refresh', [''], expr_form="compound")
+        self.local.cmd("I@roles:master", 'saltutils.pillar_refresh', [''], tgt_type="compound")
 
     def canned_populate(self, canned):
         """
@@ -241,7 +245,7 @@ def help_():
              'salt-run ui_iscsi.undeploy:\n\n'
              '    Stops lrbd\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -296,8 +300,8 @@ def status(**kwargs):
     Check the systemd status of lrbd
     """
     local = salt.client.LocalClient()
-    _status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], expr_form='compound')
-    _targets = local.cmd('I@roles:igw', 'iscsi.targets', [], expr_form='compound')
+    _status = local.cmd('I@roles:igw', 'service.status', ['lrbd'], tgt_type='compound')
+    _targets = local.cmd('I@roles:igw', 'iscsi.targets', [], tgt_type='compound')
     result = {}
     for minion in _status:
         result[minion] = {
@@ -366,7 +370,7 @@ def _deploy_in_minions(minions):
         target = 'L@{}'.format(','.join(minions))
     else:
         target = 'I@roles:igw'
-    state_res = local.cmd(target, 'state.apply', ['ceph.igw'], expr_form="compound")
+    state_res = local.cmd(target, 'state.apply', ['ceph.igw'], tgt_type="compound")
     for minion, states in state_res.items():
         result['minions'][minion] = _check_state_result(states)
         if not result['minions'][minion]:
@@ -403,7 +407,7 @@ def undeploy(**kwargs):
         target = 'L@{}'.format(','.join(minions))
     else:
         target = 'I@roles:igw'
-    results = local.cmd(target, 'service.stop', ['lrbd'], expr_form='compound')
+    results = local.cmd(target, 'service.stop', ['lrbd'], tgt_type='compound')
     return results
 
 

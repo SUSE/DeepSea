@@ -5,8 +5,11 @@
 Utilities that return preferred orders of minions
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 
 
@@ -19,7 +22,7 @@ def help_():
              'salt-run orderednodes.unique cluster=ceph:\n\n'
              '    Returns an array of sorted minions according to role\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -62,8 +65,8 @@ def unique(cluster='ceph', exclude=[]):
     roles = [role for role in roles if role not in exclude]
     for role in roles:
         nodes = client.cmd("I@roles:{} and {}".format(role, cluster_assignment),
-                           'pillar.get', ['roles'], expr_form="compound")
-        all_clients += nodes.keys()
+                           'pillar.get', ['roles'], tgt_type="compound")
+        all_clients += list(nodes.keys())
 
     sys.stdout = _stdout
     return _preserve_order_sorted(all_clients)

@@ -12,6 +12,8 @@ This runner will rely on file existence, creation and removal.  If a system
 is loaded, operations will block but eventually complete.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 import logging
 import os
@@ -19,6 +21,7 @@ import glob
 
 import salt.loader
 import salt.utils.event
+import salt.ext.six as six
 
 log = logging.getLogger(__name__)
 
@@ -224,7 +227,7 @@ def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
+    return {k: v for k, v in six.iteritems(settings) if not k.startswith('__')}
 
 
 def help_():
@@ -298,7 +301,7 @@ def help_():
              '        salt-run filequeue.vacant abc\n'
              '        salt-run filequeue.vacant abc queue=prep\n'
              '        salt-run filequeue.vacant item=abc queue=prep\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -341,7 +344,7 @@ def dequeue(**kwargs):
     log.debug("dequeue: kwargs = {}".format(_skip_dunder(kwargs)))
     filequeue = FileQueue(**kwargs)
     with Lock(filequeue.settings):
-        oldest = filequeue.items()[0]
+        oldest = list(filequeue.items())[0]
         filequeue.remove(oldest)
     return oldest
 
@@ -353,7 +356,7 @@ def pop(**kwargs):
     log.debug("pop: kwargs = {}".format(_skip_dunder(kwargs)))
     filequeue = FileQueue(**kwargs)
     with Lock(filequeue.settings):
-        newest = filequeue.items()[-1]
+        newest = list(filequeue.items())[-1]
         filequeue.remove(newest)
     return newest
 
@@ -376,7 +379,7 @@ def items(**kwargs):
     log.debug("items: kwargs = {}".format(_skip_dunder(kwargs)))
     filequeue = FileQueue(**kwargs)
     with Lock(filequeue.settings):
-        return "\n".join(filequeue.items())
+        return "\n".join(list(filequeue.items()))
 
 
 def empty(**kwargs):

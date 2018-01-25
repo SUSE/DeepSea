@@ -32,15 +32,16 @@ Url:            https://github.com/suse/deepsea
 Source0:        %{name}-%{version}.tar.bz2
 
 BuildRequires:  salt-master
-BuildRequires:  python-setuptools
+BuildRequires:  python3-setuptools
 Requires:       salt-master
 Requires:       salt-minion
 Requires:       salt-api
-Requires:       python-ipaddress
-Requires:       python-netaddr
-Requires:       python-rados
-Requires:       python-setuptools
-Requires:       python-click
+Requires:       python3-netaddr
+Requires:       python3-rados
+Requires:       python3-setuptools
+Requires:       python3-configobj
+Requires:       python3-six
+Requires:       python3-click
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
@@ -58,7 +59,7 @@ make DESTDIR=%{buildroot} pyc VERSION=%{version}
 make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files VERSION=%{version}
 %__rm -f %{buildroot}/%{_mandir}/man?/*.gz
 %__gzip %{buildroot}/%{_mandir}/man?/deepsea*
-python setup.py install --prefix=%{_prefix} --root=%{buildroot}
+python3 setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %post
 if [ $1 -eq 1 ] ; then
@@ -78,19 +79,25 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %files
 %defattr(-,root,root,-)
 %{_bindir}/deepsea
-%{python_sitelib}/deepsea/
-%{python_sitelib}/deepsea-%{version}-py%{python_version}.egg-info
+%{python3_sitelib}/deepsea/
+%{python3_sitelib}/deepsea-%{version}-py%{python3_version}.egg-info
 /srv/modules/pillar/stack.py*
-%dir /srv/modules/runners
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/stack
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/collections
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/fio
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
-%dir /srv/modules
-%dir /srv/modules/pillar
+%dir /srv/__pycache__
 %dir /srv/salt/_modules
+%dir /srv/salt/__pycache__
+%dir /srv/salt/_modules/__pycache__
+%dir /srv/modules
+%dir /srv/modules/__pycache__
+%dir /srv/modules/runners
+%dir /srv/modules/runners/__pycache__
+%dir /srv/modules/pillar
+%dir /srv/modules/pillar/__pycache__
 %dir %attr(0755, salt, salt) /srv/salt/ceph
 %dir /srv/salt/ceph/admin
 %dir %attr(0700, salt, salt) /srv/salt/ceph/admin/cache
@@ -177,6 +184,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
+%dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/files
 %dir /srv/salt/ceph/monitoring/prometheus/files
 %dir /srv/salt/ceph/noout
@@ -399,6 +407,12 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/deepsea_minions.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
+%config /srv/modules/__pycache__/*.pyc
+%config /srv/modules/runners/__pycache__/*.pyc
+%config /srv/modules/pillar/__pycache__/*.pyc
+%config /srv/salt/_modules/__pycache__/*.pyc
+%config /srv/salt/__pycache__/*.pyc
+%config /srv/__pycache__/*.pyc
 /srv/salt/_modules/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
@@ -479,7 +493,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/monitoring/prometheus/exporters/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron/*.sls
-%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/*
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/*.py
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__/*.pyc
 %config /srv/salt/ceph/monitoring/prometheus/exporters/files/*
 %config /srv/salt/ceph/monitoring/prometheus/files/*.j2
 %config /srv/salt/ceph/noout/set/*.sls

@@ -3,7 +3,7 @@ install rgw:
   pkg.installed:
     - pkgs:
       - ceph-radosgw
-      - python-boto
+      - python3-boto
     - refresh: True
 
 add users:

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: skip-file
 # pylint: disable=modernize-parse-error,too-few-public-methods
 #
 # The salt-api calls functions with keywords that are not needed
@@ -10,12 +11,15 @@
  Current task is to create/migrate /var/lib/ceph to btrfs subvolumes if applicable.
 """
 
+from __future__ import print_function
+from __future__ import absolute_import
 import os
 import logging
 import salt.client
 import salt.utils.error
 # pylint: disable=relative-import
-import deepsea_minions
+from . import deepsea_minions
+import six
 
 log = logging.getLogger(__name__)
 
@@ -112,7 +116,7 @@ def _analyze_ceph_statedirs(statedirs):
                'to_correct_cow': [], 'alt_fs': [], 'ceph_down': []}
 
     # pylint: disable=too-many-nested-blocks
-    for minion, statedir in statedirs.iteritems():
+    for minion, statedir in six.iteritems(statedirs):
         if statedir.device.fstype == 'btrfs':
             if statedir.exists:
                 # OK, path exists, is there a subvolume mounted on it?
@@ -157,29 +161,29 @@ def create_var(**kwargs):
     results = _analyze_ceph_statedirs(statedirs)
 
     if not results['to_create']:
-        print "{}No nodes marked for subvolume creation.{}".format(BOLD, ENDC)
+        print("{}No nodes marked for subvolume creation.{}".format(BOLD, ENDC))
         return True
 
     for _minion in results['to_create']:
         if ret:
-            print "{}{}: Beginning creation...{}".format(BOLD, _minion, ENDC)
-            for minion, ret in local.cmd(_minion, 'fs.instantiate_btrfs_subvolume',
+            print("{}{}: Beginning creation...{}".format(BOLD, _minion, ENDC))
+            for minion, ret in six.iteritems(local.cmd(_minion, 'fs.instantiate_btrfs_subvolume',
                                          ["path={}".format(path), "subvol=@{}".format(path)],
-                                         expr_form='compound').iteritems():
+                                         tgt_type='compound')):
                 if not ret:
-                    print ("{}{}: {}Failed to properly create and mount"
+                    print("{}{}: {}Failed to properly create and mount"
                            "@{} onto {}{}.  {}Check the local minion logs for "
                            "further details.{}".format(BOLD, minion, RED, path,
                                                        path, ENDC, BOLD, ENDC))
                 else:
-                    print ("{}{}: {}Successfully created and mounted @{} onto "
+                    print("{}{}: {}Successfully created and mounted @{} onto "
                            "{}.{}".format(BOLD, minion, GREEN, path, path, ENDC))
                     ret = _correct_ceph_statedir_attrs(minion)
 
     if ret:
-        print "{}Success.{}".format(GREEN, ENDC)
+        print("{}Success.{}".format(GREEN, ENDC))
     else:
-        print "{}Failure detected, not proceeding with further creations.{}".format(RED, ENDC)
+        print("{}Failure detected, not proceeding with further creations.{}".format(RED, ENDC))
 
     return ret
 
@@ -197,18 +201,18 @@ def migrate_var(**kwargs):
     results = _analyze_ceph_statedirs(statedirs)
 
     if not results['to_migrate']:
-        print "{}No nodes marked for subvolume migration.{}".format(BOLD, ENDC)
+        print("{}No nodes marked for subvolume migration.{}".format(BOLD, ENDC))
         return True
 
     for _minion in results['to_migrate']:
         if ret:
-            print "{}{}: Beginning migration...{}".format(BOLD, _minion, ENDC)
-            for minion, ret in local.cmd(_minion, 'fs.migrate_path_to_btrfs_subvolume',
+            print("{}{}: Beginning migration...{}".format(BOLD, _minion, ENDC))
+            for minion, ret in six.iteritems(local.cmd(_minion, 'fs.migrate_path_to_btrfs_subvolume',
                                          ["path={}".format(path), "subvol=@{}".format(path)],
-                                         expr_form='compound').iteritems():
+                                         tgt_type='compound')):
                 # Human intervention needed.
                 if ret is None:
-                    print ("{}{}: {}Failure detected while migrating {} to "
+                    print("{}{}: {}Failure detected while migrating {} to "
                            "btrfs subvolume.  This failure is potentially "
                            "serious and will require manual intervention on "
                            "the node to determine the cause.  Please check "
@@ -218,7 +222,7 @@ def migrate_var(**kwargs):
                            "status.{}".format(BOLD, minion, RED, path, path,
                                               ENDC, BOLD, ENDC, RED, ENDC))
                 elif ret is False:
-                    print ("{}{}: {}Failure detected while migrating {} to "
+                    print("{}{}: {}Failure detected while migrating {} to "
                            "btrfs subvolume.  We have failed to properly "
                            "migrate {}, however, we have hopefully recoveRED "
                            "to the previous state and Ceph should again be "
@@ -230,13 +234,13 @@ def migrate_var(**kwargs):
                                               path, ENDC, BOLD, ENDC, YELLOW,
                                               ENDC))
                 else:
-                    print "{}{}: {}Successfully migrated.{}".format(BOLD, minion, GREEN, ENDC)
+                    print("{}{}: {}Successfully migrated.{}".format(BOLD, minion, GREEN, ENDC))
                     ret = _correct_ceph_statedir_attrs(_minion)
 
     if ret:
-        print "{}Success.{}".format(GREEN, ENDC)
+        print("{}Success.{}".format(GREEN, ENDC))
     else:
-        print "{}Failure detected, not proceeding with further migrations.{}".format(RED, ENDC)
+        print("{}Failure detected, not proceeding with further migrations.{}".format(RED, ENDC))
 
     return ret
 
@@ -253,19 +257,19 @@ def _correct_ceph_statedir_attrs(minion=None):
 
     if minion:
         # Omit /var/lib/ceph/osd directory, as underneath we may have OSDs mounted.
-        for minion, rets in local.cmd(minion, 'fs.add_attrs',
+        for minion, rets in six.iteritems(local.cmd(minion, 'fs.add_attrs',
                                       ["path={}".format(path), "attrs={}".format(attrs),
                                        "rec={}".format(recursive), "omit={}/osd".format(path)],
-                                      expr_form='compound').iteritems():
-            for _path, ret in rets.iteritems():
+                                      tgt_type='compound')):
+            for _path, ret in six.iteritems(rets):
                 if not ret:
-                    print ("{}{}: {}Failed to recursively disable "
+                    print("{}{}: {}Failed to recursively disable "
                            "copy-on-write for {}.{}".format(BOLD, minion, RED,
                                                             _path, ENDC))
                     ret = False
 
         if ret:
-            print ("{}{}: {}Successfully disabled copy-on-write for {} and "
+            print("{}{}: {}Successfully disabled copy-on-write for {} and "
                    "it's contents.{}".format(BOLD, minion, GREEN, path, ENDC))
 
     return ret
@@ -284,16 +288,16 @@ def correct_var_attrs(**kwargs):
     results = _analyze_ceph_statedirs(statedirs)
 
     if not all_btrfs_nodes and not results['to_correct_cow']:
-        print "{}No nodes marked for copy-on-write correction.{}".format(BOLD, ENDC)
+        print("{}No nodes marked for copy-on-write correction.{}".format(BOLD, ENDC))
         return True
 
     # If all_btrfs_nodes == True, correct COW on all nodes regardless whether
     # they're in results['to_correct_cow'].
     # Only really useful if the admin manually set No_COW on /var/lib/ceph,
     # but didn't recursively set all files underneath.
-    for minion, statedir in statedirs.iteritems():
+    for minion, statedir in six.iteritems(statedirs):
         if not statedir.exists:
-            print "{}{}: {} not found.{}".format(BOLD, minion, path, ENDC)
+            print("{}{}: {} not found.{}".format(BOLD, minion, path, ENDC))
 
         if statedir.exists and statedir.device.fstype == 'btrfs':
             minion_to_correct = None
@@ -307,9 +311,9 @@ def correct_var_attrs(**kwargs):
                 ret = False
 
     if ret:
-        print "{}Success.{}".format(GREEN, ENDC)
+        print("{}Success.{}".format(GREEN, ENDC))
     else:
-        print "{}Failure detected disabling copy-on-write for {}.{}".format(RED, path, ENDC)
+        print("{}Failure detected disabling copy-on-write for {}.{}".format(RED, path, ENDC))
 
     return ret
 
@@ -328,9 +332,9 @@ def _inspect_ceph_statedir(path):
     # A container of Path's keyed on minion id.
     statedirs = {}
 
-    for minion, path_info in local.cmd(search, 'fs.inspect_path',
+    for minion, path_info in six.iteritems(local.cmd(search, 'fs.inspect_path',
                                        ["path={}".format(path)],
-                                       expr_form='compound').iteritems():
+                                       tgt_type='compound')):
         statedirs[minion] = Path(path, path_info['attrs'], path_info['exists'],
                                  path_info['type'],
                                  Device(path_info['dev_info']['dev'],
@@ -357,33 +361,33 @@ def inspect_var(**kwargs):
     results = _analyze_ceph_statedirs(statedirs)
 
     if not quiet:
-        print "{}Inspecting Ceph Statedir ({})...{}".format(BOLD, path, ENDC)
-        for minion, statedir in statedirs.iteritems():
-            print "{}{}:{} {}".format(BOLD, minion, ENDC, statedir)
-        print ""
+        print("{}Inspecting Ceph Statedir ({})...{}".format(BOLD, path, ENDC))
+        for minion, statedir in six.iteritems(statedirs):
+            print("{}{}:{} {}".format(BOLD, minion, ENDC, statedir))
+        print("")
 
     if not quiet:
         # Offer some suggestions.
         # Migration/Creation/COW adjustment.
 
         if results['ceph_down']:
-            print ("{}The following nodes have Ceph processes which are "
+            print("{}The following nodes have Ceph processes which are "
                    "currently down:{}".format(RED, ENDC))
             for minion in results['ceph_down']:
-                print "{}".format(minion)
-            print ("{}Determine the nature of the failures before "
+                print("{}".format(minion))
+            print("{}Determine the nature of the failures before "
                    "proceeding.{}\n".format(RED, ENDC))
 
         if results['to_migrate']:
-            print "{}For the following nodes using btrfs:{}".format(YELLOW, ENDC)
+            print("{}For the following nodes using btrfs:{}".format(YELLOW, ENDC))
             for minion in results['to_migrate']:
-                print "{}".format(minion)
-            print ("{}{} exists, but no btrfs subvolume is mounted.  "
+                print("{}".format(minion))
+            print("{}{} exists, but no btrfs subvolume is mounted.  "
                    "Run: {}{}salt-run fs.migrate_var{}{} to "
                    "migrate {} to the btrfs subvolume "
                    "@{}{}".format(YELLOW, path, ENDC, BOLD, ENDC, YELLOW, path,
                                   path, ENDC))
-            print ("{}You may then run: {}{}salt-run fs.inspect_var {}{}to "
+            print("{}You may then run: {}{}salt-run fs.inspect_var {}{}to "
                    "check the status.{}\n".format(YELLOW, ENDC, BOLD, ENDC,
                                                   YELLOW, ENDC))
         else:
@@ -392,14 +396,14 @@ def inspect_var(**kwargs):
             pass
 
         if results['to_create']:
-            print "{}For the following nodes using btrfs:{}".format(YELLOW, ENDC)
+            print("{}For the following nodes using btrfs:{}".format(YELLOW, ENDC))
             for minion in results['to_create']:
-                print "{}".format(minion)
-            print ("{}{} does not yet exist.  "
+                print("{}".format(minion))
+            print("{}{} does not yet exist.  "
                    "Run: {}{}salt-run fs.create_var{}{} to create and mount "
                    "the btrfs subvolume @{} onto {}.{}".format(YELLOW, path, ENDC, BOLD,
                                                                ENDC, YELLOW, path, path, ENDC))
-            print ("{}You may then run: {}{}salt-run fs.inspect_var {}{}to check the "
+            print("{}You may then run: {}{}salt-run fs.inspect_var {}{}to check the "
                    "status.{}\n".format(YELLOW, ENDC, BOLD, ENDC, YELLOW, ENDC))
         else:
             # Migration also creates subvolumes, so let's not confuse the admin.
@@ -409,23 +413,23 @@ def inspect_var(**kwargs):
                 pass
 
         if results['to_correct_cow']:
-            print "{}For the following nodes using btrfs:{}".format(YELLOW, ENDC)
+            print("{}For the following nodes using btrfs:{}".format(YELLOW, ENDC))
             for minion in results['to_correct_cow']:
-                print "{}".format(minion)
-            print ("{}A btrfs subvolume is mounted on {}{}.  However, "
+                print("{}".format(minion))
+            print("{}A btrfs subvolume is mounted on {}{}.  However, "
                    "copy-on-write is enabled.  Run: {}{}salt-run "
                    "fs.correct_var_attrs{}{} to disable "
                    "copy-on-write.".format(YELLOW, path, ENDC, BOLD, ENDC,
                                            YELLOW, ENDC))
-            print ("{}You may then run: {}{}salt-run fs.inspect_var {}{}to "
+            print("{}You may then run: {}{}salt-run fs.inspect_var {}{}to "
                    "check the status.{}\n".format(YELLOW, ENDC, BOLD, ENDC,
                                                   YELLOW, ENDC))
         else:
             # Migration also sets No_COW, so let's not confuse the admin.
             if not results['to_migrate']:
-                print ("{}No nodes found needing adjustment of copy-on-write "
+                print("{}No nodes found needing adjustment of copy-on-write "
                        "for {}.{}".format(GREEN, path, ENDC))
-                print ("{}NOTE: If copy-on-write was disabled manually for "
+                print("{}NOTE: If copy-on-write was disabled manually for "
                        "{}, you may still want to run {}{}salt-run "
                        "fs.correct_var_attrs all_btrfs_nodes=True{}{} to "
                        "correct all relevant files contained within {} on all "
@@ -434,19 +438,19 @@ def inspect_var(**kwargs):
                                                          path, ENDC))
 
         if results['ok']:
-            print ("{}The following btrfs nodes have @{} correctly mounted on "
+            print("{}The following btrfs nodes have @{} correctly mounted on "
                    "{}, and do not require any subvolume "
                    "manipulation:{}".format(GREEN, path, path, ENDC))
             for minion in results['ok']:
-                print "{}".format(minion)
-            print ""
+                print("{}".format(minion))
+            print("")
 
         if results['alt_fs']:
-            print ("{}The following nodes are not using btrfs, and hence no "
+            print("{}The following nodes are not using btrfs, and hence no "
                    "action is needed:{}".format(GREEN, ENDC))
             for minion in results['alt_fs']:
-                print "{}".format(minion)
-            print ""
+                print("{}".format(minion))
+            print("")
 
     return True
 
@@ -455,21 +459,21 @@ def help_():
     """
     Usage.
     """
-    usage = ("salt-run fs.inspect_var\n\n"
-             "    Inspects /var/lib/ceph, provides mountpoint and device "
-             "information along with suggestions regarding "
-             "migration of /var/lib/ceph to a btrfs subvolume if applicable.\n"
-             "\n\n"
-             "salt-run fs.create_var\n\n"
-             "    Creates /var/lib/ceph (if not yet present) as a btrfs subvolume.\n"
-             "\n\n"
-             "salt-run fs.migrate_var\n\n"
-             "    Migrates /var/lib/ceph to a btrfs subvolume (@/var/lib/ceph) if applicable.\n"
-             "\n\n"
-             "salt-run fs.correct_var_attrs [all_btrfs_nodes=True]\n\n"
-             "    Disables copy-on-write for /var/lib/ceph on btrfs if applicable.\n"
-             "\n\n")
-    print usage
+    usage = ("""salt-run fs.inspect_var
+                 Inspects /var/lib/ceph, provides mountpoint and device
+                 information along with suggestions regarding migration of 
+                 /var/lib/ceph to a btrfs subvolume if applicable.
+
+             salt-run fs.create_var
+                 Creates /var/lib/ceph (if not yet present) as a btrfs subvolume.
+
+             salt-run fs.migrate_var
+                 Migrates /var/lib/ceph to a btrfs subvolume (@/var/lib/ceph) if applicable.
+
+             salt-run fs.correct_var_attrs [all_btrfs_nodes=True]
+                 Disables copy-on-write for /var/lib/ceph on btrfs if applicable
+             """)
+    print(usage)
     return ""
 
 __func_alias__ = {

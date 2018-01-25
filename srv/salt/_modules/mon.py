@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 The need for this module is that the roles show the intended state and not
 the current state.  Once the admin unassigns the monitor role, the pillar
@@ -9,6 +10,7 @@ from __future__ import absolute_import
 import json
 import logging
 # pylint: disable=import-error,3rd-party-module-not-gated
+import salt.ext.six as six
 import rados
 # pylint: disable=incompatible-py3-code
 log = logging.getLogger(__name__)
@@ -73,7 +75,7 @@ def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
+    return {k: v for k, v in six.iteritems(settings) if not k.startswith('__')}
 
 __func_alias__ = {
                  'list_': 'list',

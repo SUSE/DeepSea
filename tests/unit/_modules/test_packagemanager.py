@@ -1,5 +1,9 @@
 import pytest
 from srv.salt._modules.packagemanager import PackageManager, Zypper, Apt
+from srv.salt._modules import packagemanager as pm
+import sys
+sys.path.insert(0, 'srv/salt/_modules')
+from srv.salt._modules.helper import _run
 from mock import MagicMock, patch, mock
 
 
@@ -8,49 +12,44 @@ class TestPackageManager():
     This class contains a set of functions that test srv.salt._modules.packagemanager
     '''
 
-    @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    def test_PackageManager_opensuse(self, dist_return):
+    def test_PackageManager_opensuse(self):
         """
         Test Packagemanager assignments based on `patform` mocks.
         """
-        dist_return.return_value = ('opensuse', 42.1, 'x86_64')
+        pm.__grains__ = {'os': 'opensuse'}
         ret = PackageManager()
         assert isinstance(ret.pm, Zypper) is True
 
-    @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    def test_PackageManager_suse(self, dist_return):
+    def test_PackageManager_suse(self):
         """
         Test Packagemanager assignments based on `patform` mocks.
         """
-        dist_return.return_value = ('SUSE', '12.2', 'x86_64')
+        pm.__grains__ = {'os': 'suse'}
         ret = PackageManager()
         assert isinstance(ret.pm, Zypper) is True
 
-    @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    def test_PackageManager_debian(self, dist_return):
+    def test_PackageManager_debian(self):
         """
         Test Packagemanager assignments based on `patform` mocks.
         """
-        dist_return.return_value = ('debian', '8', 'x86_64')
+        pm.__grains__ = {'os': 'debian'}
         ret = PackageManager()
         assert isinstance(ret.pm, Apt) is True
 
-    @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
-    def test_PackageManager_ubuntu(self, dist_return):
+    def test_PackageManager_ubuntu(self):
         """
         Test Packagemanager assignments based on `patform` mocks.
         """
-        dist_return.return_value = ('ubuntu', '23', 'x86_64')
+        pm.__grains__ = {'os': 'ubuntu'}
         ret = PackageManager()
         assert isinstance(ret.pm, Apt) is True
 
-    @mock.patch('srv.salt._modules.packagemanager.linux_distribution')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
-    def test_not_implemented(self, po, dist_return):
+    def test_not_implemented(self, po):
         """
         Your platform is not supported
         """
-        dist_return.return_value = ('ScientificLinux', '42.2', 'x86_64')
+        pm.__grains__ = {'os': 'UnknownOS'}
         with pytest.raises(ValueError) as excinfo:
             PackageManager()
         excinfo.match('Failed to detect PackageManager for OS.*')
@@ -63,12 +62,9 @@ class TestZypper():
         """
         Fixture to always get Zypper.
         """
-        self.linux_dist = patch('srv.salt._modules.packagemanager.linux_distribution')
-        self.lnx_dist_object = self.linux_dist.start()
-        self.lnx_dist_object.return_value = ('opensuse', '42.2', 'x86_64')
+        pm.__grains__ = {'os': 'suse'}
         args = {'debug': False, 'kernel': False, 'reboot': False}
         yield PackageManager(**args).pm
-        self.linux_dist.stop()
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     def test__refresh(self, po, zypp):
@@ -256,13 +252,9 @@ class TestApt():
         """
         Fixture to always get Apt.
         """
-        self.linux_dist = patch('srv.salt._modules.packagemanager.linux_distribution')
-        self.lnx_dist_object = self.linux_dist.start()
-        self.lnx_dist_object.return_value = ('ubuntu', '42.2', 'x86_64')
-        # Test all permutations of :debug :kernel and :reboot
+        pm.__grains__ = {'os': 'ubuntu'}
         args = {'debug': False, 'kernel': False, 'reboot': False}
         yield PackageManager(**args).pm
-        self.linux_dist.stop()
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     def test__refresh(self, po, apt):

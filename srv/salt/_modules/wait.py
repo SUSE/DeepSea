@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 Heath related checks for Ceph
 """
@@ -8,6 +9,7 @@ import json
 import time
 import logging
 # pylint: disable=import-error,3rd-party-module-not-gated
+import salt.ext.six as six
 import rados
 # pylint: disable=incompatible-py3-code
 log = logging.getLogger(__name__)
@@ -89,9 +91,8 @@ class HealthCheck(object):
         if settings['negate']:
             log.debug("status != {}".format(settings['status']))
             return current != settings['status']
-        else:
-            log.debug("status == {}".format(settings['status']))
-            return current == settings['status']
+        log.debug("status == {}".format(settings['status']))
+        return current == settings['status']
 
     def just(self):
         """
@@ -129,4 +130,4 @@ def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
+    return {k: v for k, v in six.iteritems(settings) if not k.startswith('__')}

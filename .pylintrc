@@ -46,7 +46,7 @@ fileperms-default=0644
 fileperms-ignore-paths=setup.py,tests/runtests.py,tests/jenkins*.py,tests/saltsh.py,tests/buildpackage.py
 
 # Minimum Python Version To Enforce
-minimum-python-version = 2.7
+minimum-python-version = 3.4
 
 # Allowed 3rd-party package imports
 allowed-3rd-party-modules = msgpack,
@@ -54,6 +54,8 @@ allowed-3rd-party-modules = msgpack,
   yaml,
   jinja2,
   Crypto,
+  salt.ext.six.moves,
+  helper,
   requests,
   libcloud,
   zmq,
@@ -86,7 +88,9 @@ disable=W0142,
   W1202,
   E1320,
   E8402,
-  E8731
+  E8731, 
+  W1202,
+  W0141 
 #  E8121,
 #  E8122,
 #  E8123,

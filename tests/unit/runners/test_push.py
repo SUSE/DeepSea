@@ -1,6 +1,8 @@
 from pyfakefs import fake_filesystem as fake_fs
 from pyfakefs import fake_filesystem_glob as fake_glob
 from mock import patch, mock_open, MagicMock
+import sys
+sys.path.insert(0, 'srv/modules/pillar')
 from srv.modules.runners import push
 
 fs = fake_fs.FakeFilesystem()

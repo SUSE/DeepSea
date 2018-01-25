@@ -1,5 +1,7 @@
 import pytest
-from srv.salt._modules import cephdisks
+import sys
+sys.path.insert(0, 'srv/salt/_modules')
+from srv.salt._modules import cephdisks, helper
 from mock import MagicMock, patch, mock_open, mock
 from tests.unit.helper.output import OutputHelper
 
@@ -47,7 +49,7 @@ class TestHardwareDetections():
         Given we do not have that tool installed or privileges. 
         And explicitly tell `which` so.
         """
-        with pytest.raises(StandardError):
+        with pytest.raises(Exception):
             hwd._which('notthere', failhard=True)
 
     def test_which_failure_raise(self, hwd):
@@ -55,7 +57,7 @@ class TestHardwareDetections():
         Given we do not have that tool installed or privileges.
         And don't explicitly tell `which` so.
         """
-        with pytest.raises(StandardError):
+        with pytest.raises(Exception):
             hwd._which('notthere')
 
     def test_which_failure_raise_param_error(self, hwd):
@@ -63,7 +65,7 @@ class TestHardwareDetections():
         Given we do not have that tool installed or privileges.
         And tell which the wrong type(argument).
         """
-        with pytest.raises(StandardError):
+        with pytest.raises(Exception):
             hwd._which('notthere', 'StringTrue')
 
     def test_is_rotational(self, hwd):

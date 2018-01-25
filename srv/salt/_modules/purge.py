@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 Cleanup related operations for resetting the Salt environment and removing
 a Ceph cluster

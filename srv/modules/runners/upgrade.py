@@ -3,6 +3,9 @@
 """
 Verify that an automated upgrade is possible
 """
+from __future__ import absolute_import
+from __future__ import print_function
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.error
 
@@ -31,7 +34,7 @@ class UpgradeValidation(object):
         Check for shared monitor and storage roles
         """
         search = "I@cluster:{}".format(self.cluster)
-        pillar_data = self.local.cmd(search, 'pillar.items', [], expr_form="compound")
+        pillar_data = self.local.cmd(search, 'pillar.items', [], tgt_type="compound")
         for host in pillar_data:
             if 'roles' in pillar_data[host]:
                 if ('storage' in pillar_data[host]['roles']
@@ -50,7 +53,7 @@ class UpgradeValidation(object):
         Check for shared master and storage role
         """
         search = "I@roles:master"
-        pillar_data = self.local.cmd(search, 'pillar.items', [], expr_form="compound")
+        pillar_data = self.local.cmd(search, 'pillar.items', [], tgt_type="compound")
         # in case of multimaster
         for host in pillar_data:
             if 'roles'in pillar_data[host]:
@@ -72,7 +75,7 @@ def help_():
     usage = ('salt-run upgrade.check:\n\n'
              '    Performs a series of checks to verify that upgrades are possible\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -85,7 +88,7 @@ def check():
     for chk in checks:
         ret, msg = chk()
         if not ret:
-            print msg
+            print(msg)
             return ret
     return ret
 
