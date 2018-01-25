@@ -8,7 +8,7 @@ function ceph_conf_upstream_rbd_default_features {
   # features" setting in ceph.conf, so the default value will be used
   #
   sed -i '/^rbd default features =/d' \
-      /srv/salt/ceph/configuration/files/ceph.conf.rbd
+      /srv/salt/ceph/configuration/files/rbd.conf
 }
 
 function ceph_test_librbd_can_be_run {
