@@ -20,6 +20,7 @@
 set -ex
 BASEDIR=$(pwd)
 source $BASEDIR/common/common.sh
+source $BASEDIR/common/nfs-ganesha.sh
 
 function usage {
     set +x
@@ -72,11 +73,14 @@ ceph_conf_small_cluster
 run_stage_3 "$CLI"
 ceph_cluster_status
 create_all_pools_at_once iscsi-images cephfs_data cephfs_metadata
+nfs_ganesha_no_root_squash
 run_stage_4 "$CLI"
 ceph_cluster_status
+ceph_health_test
+nfs_ganesha_cat_config_file
+nfs_ganesha_debug_log
 rgw_curl_test
 rgw_user_and_bucket_list
-ceph_health_test
 ceph_version_test
 run_stage_0 "$CLI"
 
