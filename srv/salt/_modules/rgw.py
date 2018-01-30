@@ -262,6 +262,8 @@ def s3connect(user):
     """
     Return an S3 connection
     """
+    if access_key(user) is None or secret_key(user) is None:
+        return
     endpoint = endpoints()[0]
 
     s3conn = boto.connect_s3(
@@ -280,6 +282,8 @@ def create_bucket(**kwargs):
     Create a bucket for a user
     """
     s3conn = s3connect(kwargs['user'])
+    if s3conn is None:
+        return False
     try:
         s3conn.create_bucket(kwargs['bucket_name'])
     except boto.exception.S3CreateError:
@@ -292,6 +296,8 @@ def lookup_bucket(user, bucket):
     Query a bucket for a user
     """
     s3conn = s3connect(user)
+    if s3conn is None:
+        return False
     if s3conn.lookup(bucket, validate=True) is None:
         return False
 
