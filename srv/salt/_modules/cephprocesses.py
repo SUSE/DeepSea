@@ -37,6 +37,7 @@ processes = {'mon': ['ceph-mon'],
              'client-nfs': [],
              'client-radosgw': [],
              'benchmark-blockdev': [],
+             'benchmark-fs': [],
              'master': []}
 
 
