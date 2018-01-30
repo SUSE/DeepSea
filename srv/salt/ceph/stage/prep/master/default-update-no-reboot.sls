@@ -8,15 +8,15 @@ validate failed:
 
 {% endif %}
 
-salt-api:
-  salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - sls: ceph.salt-api
-
 sync master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.sync
+
+salt-api:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.salt-api
 
 {% set notice = salt['saltutil.runner']('advise.salt_run') %}
 
