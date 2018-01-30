@@ -29,9 +29,10 @@ set node exporter service args:
     - name: /etc/sysconfig/prometheus-node_exporter
     - mode: 644
     - contents: |
-        ARGS="-collector.diskstats.ignored-devices=^(ram|loop|fd)\d+$ \
-              -collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/) \
-              -collector.textfile.directory=/var/lib/prometheus/node-exporter"
+        ARGS="--collector.diskstats.ignored-devices=^(ram|loop|fd)\d+$ \
+              --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/) \
+              --collector.textfile.directory=/var/lib/prometheus/node-exporter \
+              --collector.bonding --collector.ntp"
 
 {% if grains.get('os', '') == 'CentOS' %}
 
