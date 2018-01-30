@@ -1,3 +1,4 @@
+# fs collection is used by both client-cephfs and benchmark-fs roles
 fs:
   - fio/rw_single_file.yml
   - fio/rw_many_files.yml

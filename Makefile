@@ -388,6 +388,9 @@ copy-files:
 	# state files - benchmark-blockdev
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/benchmarks/blockdev/
 	install -m 644 srv/salt/ceph/benchmarks/blockdev/*.sls $(DESTDIR)/srv/salt/ceph/benchmarks/blockdev/
+	# state files - benchmark-fs
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/benchmarks/fs/
+	install -m 644 srv/salt/ceph/benchmarks/fs/*.sls $(DESTDIR)/srv/salt/ceph/benchmarks/fs/
 	# state files - reactor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reactor
 	install -m 644 srv/salt/ceph/reactor/*.sls $(DESTDIR)/srv/salt/ceph/reactor/
