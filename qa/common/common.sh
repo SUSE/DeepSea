@@ -567,6 +567,7 @@ function rados_write_test {
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
 ceph osd pool create write_test 8 8
+ceph osd pool application enable write_test deepsea_qa
 echo "dummy_content" > verify.txt
 rados -p write_test put test_object verify.txt
 rados -p write_test get test_object verify_returned.txt
