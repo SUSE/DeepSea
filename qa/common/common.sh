@@ -571,7 +571,7 @@ ceph osd pool application enable write_test deepsea_qa
 echo "dummy_content" > verify.txt
 rados -p write_test put test_object verify.txt
 rados -p write_test get test_object verify_returned.txt
-test `cat verify.txt` = `cat verify_returned.txt`
+test "x$(cat verify.txt)" = "x$(cat verify_returned.txt)"
 echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
