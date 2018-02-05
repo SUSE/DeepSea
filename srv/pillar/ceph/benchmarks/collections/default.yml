@@ -3,3 +3,5 @@ fs:
   - fio/rw_many_files.yml
 rbd:
   - fio/base_rbd.yml
+blockdev:
+  - fio/blockdev_krbd.yml

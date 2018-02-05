@@ -548,7 +548,8 @@ class CephRoles(object):
         """
         Allows admins to target non-Ceph minions
         """
-        roles = [ 'client-cephfs', 'client-radosgw', 'client-iscsi', 'client-nfs', 'benchmark-rbd'  ]
+        roles = [ 'client-cephfs', 'client-radosgw', 'client-iscsi',
+                  'client-nfs', 'benchmark-rbd', 'benchmark-blockdev' ]
         self.available_roles.extend(roles)
 
         for role in roles:
