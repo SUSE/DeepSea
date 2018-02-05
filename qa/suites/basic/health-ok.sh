@@ -92,5 +92,8 @@ run_stage_3 "$CLI"
 restart_services
 mon_restarted "0" # 0 means restarted
 osd_restarted "0"
+# make sure still in HEALTH_OK
+ceph_cluster_status
+ceph_health_test
 
 echo "OK"
