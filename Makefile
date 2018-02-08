@@ -478,6 +478,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage/terminate
 	install -m 644 srv/salt/ceph/rescind/storage/terminate/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/terminate/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/time
+	install -m 644 srv/salt/ceph/rescind/time/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/time/chrony
+	install -m 644 srv/salt/ceph/rescind/time/chrony/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/chrony
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
+	install -m 644 srv/salt/ceph/rescind/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
@@ -630,6 +636,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/time/default.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -m 644 srv/salt/ceph/time/disabled.sls $(DESTDIR)/srv/salt/ceph/time/
 	install -m 644 srv/salt/ceph/time/init.sls $(DESTDIR)/srv/salt/ceph/time/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/chrony
+	install -m 644 srv/salt/ceph/time/chrony/*.sls $(DESTDIR)/srv/salt/ceph/time/chrony/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/chrony/files
+	install -m 644 srv/salt/ceph/time/chrony/files/*.j2 $(DESTDIR)/srv/salt/ceph/time/chrony/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp
 	install -m 644 srv/salt/ceph/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/time/ntp/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/time/ntp/files

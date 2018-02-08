@@ -849,7 +849,6 @@ class CephCluster(object):
         filename = "{}/global.yml".format(stack_dir)
         contents = {}
         contents['time_server'] = '{{pillar.get("master_minion")}}'
-        contents['time_init'] = 'ntp'
 
         self.writer.write(filename, contents)
 
