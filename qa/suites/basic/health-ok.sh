@@ -77,6 +77,7 @@ ceph_cluster_status
 ceph_health_test
 ceph_log_grep_enoent_eaccess
 test_systemd_ceph_osd_target_wants
+create_all_pools_at_once write_test
 rados_write_test
 ceph_version_test
 run_stage_0 "$CLI"
@@ -91,5 +92,8 @@ run_stage_3 "$CLI"
 restart_services
 mon_restarted "0" # 0 means restarted
 osd_restarted "0"
+# make sure still in HEALTH_OK
+ceph_cluster_status
+ceph_health_test
 
 echo "OK"
