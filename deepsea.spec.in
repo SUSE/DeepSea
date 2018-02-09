@@ -283,6 +283,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/time/ntp
 %dir /srv/salt/ceph/rescind/openattic
 %dir /srv/salt/ceph/rescind/openattic/keyring
+%dir /srv/salt/ceph/rescind/tuned
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/osd
 %dir /srv/salt/ceph/restart/osd/lax
@@ -349,6 +350,13 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/time/chrony/files
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/time/ntp/files
+%dir /srv/salt/ceph/tuned
+%dir /srv/salt/ceph/tuned/mgr
+%dir /srv/salt/ceph/tuned/mon
+%dir /srv/salt/ceph/tuned/osd
+%dir /srv/salt/ceph/tuned/ses-mgr
+%dir /srv/salt/ceph/tuned/ses-mon
+%dir /srv/salt/ceph/tuned/ses-osd
 %dir /srv/salt/ceph/maintenance
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/maintenance/noout
@@ -586,6 +594,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/time/*.sls
 %config /srv/salt/ceph/rescind/time/chrony/*.sls
 %config /srv/salt/ceph/rescind/time/ntp/*.sls
+%config /srv/salt/ceph/rescind/tuned/*.sls
 %config /srv/salt/ceph/rescind/openattic/*.sls
 %config /srv/salt/ceph/rescind/openattic/keyring/*.sls
 %config /srv/salt/ceph/reset/*.sls
@@ -657,6 +666,12 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/time/chrony/files/*.j2
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/time/ntp/files/*.j2
+%config /srv/salt/ceph/tuned/mgr/*.sls
+%config /srv/salt/ceph/tuned/mon/*.sls
+%config /srv/salt/ceph/tuned/osd/*.sls
+%config /srv/salt/ceph/tuned/ses-mgr/tuned.conf
+%config /srv/salt/ceph/tuned/ses-mon/tuned.conf
+%config /srv/salt/ceph/tuned/ses-osd/tuned.conf
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls

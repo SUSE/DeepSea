@@ -593,6 +593,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/time/chrony/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/chrony
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
 	install -m 644 srv/salt/ceph/rescind/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/tuned
+	install -m 644 srv/salt/ceph/rescind/tuned/*.sls $(DESTDIR)/srv/salt/ceph/rescind/tuned/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
@@ -672,6 +674,22 @@ copy-files:
 	install -m 644 srv/salt/ceph/sysctl/*.sls $(DESTDIR)/srv/salt/ceph/sysctl
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sysctl/files
 	install -m 644 srv/salt/ceph/sysctl/files/*.conf $(DESTDIR)/srv/salt/ceph/sysctl/files
+	# state files - tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/mgr
+	install -m 644 srv/salt/ceph/tuned/osd/*.sls $(DESTDIR)/srv/salt/ceph/tuned/osd
+	install -m 644 srv/salt/ceph/tuned/mon/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mon
+	install -m 644 srv/salt/ceph/tuned/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mgr
+	# conf files - tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/ses-osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/ses-mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/ses-mgr
+	install -m 644 srv/salt/ceph/tuned/ses-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/ses-osd
+	install -m 644 srv/salt/ceph/tuned/ses-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/ses-mon
+	install -m 644 srv/salt/ceph/tuned/ses-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/ses-mgr
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
