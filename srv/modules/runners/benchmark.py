@@ -191,8 +191,11 @@ def help():
              'salt-run benchmark.baseline work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
              '    Run Baseline benchmarks\n'
              '\n\n'
-             'salt-run benchmark.blockdev work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
+             'salt-run benchmark.blockdev log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
              '    Run local block device benchmarks (e.g. premapped kRBD or iSCSI)\n'
+             '\n\n'
+             'salt-run benchmark.fs work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
+             '    Run local filesystem benchmarks (e.g. premounted NFS or SMB/CIFS)\n'
              '\n\n'
     )
     print usage
@@ -324,6 +327,32 @@ def blockdev(**kwargs):
               dir_options['job_dir'])
 
     for job_spec in default_collection['blockdev']:
+        print(fio.run(job_spec))
+
+    return True
+
+
+def fs(**kwargs):
+    """
+    Run local (premounted) fs benchmark jobs
+    """
+
+    client_glob = kwargs.get('client_glob',
+                             'I@roles:benchmark-fs and I@cluster:ceph')
+    log.info('client glob is {}'.format(client_glob))
+
+    dir_options = __parse_and_set_dirs(kwargs)
+
+    default_collection = __parse_collection(
+        '{}/collections/default.yml'.format(dir_options['bench_dir']))
+
+    fio = Fio(client_glob, 'fs',
+              dir_options['bench_dir'],
+              dir_options['work_dir'],
+              dir_options['log_dir'],
+              dir_options['job_dir'])
+
+    for job_spec in default_collection['fs']:
         print(fio.run(job_spec))
 
     return True
