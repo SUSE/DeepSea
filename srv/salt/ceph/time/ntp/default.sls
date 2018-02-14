@@ -4,6 +4,9 @@
 {% set time_server = [time_server] %}
 {% endif %}
 
+include:
+  - ...rescind.time.chrony
+
 install_ntp_packages:
   pkg.installed:
     - pkgs:

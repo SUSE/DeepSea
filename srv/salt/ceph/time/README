@@ -1,12 +1,24 @@
-Set up NTP to manage system time
+Set up Chrony or ntp to manage system time.  Chrony is preferred.
 
-Ceph relies on loosely synchronized clocks. DeepSea will by default start an
-NTP client on each cluster node and point it to the NTP server running on the
-Salt Master if and only if the ntpd.service systemd unit is not running.
+Ceph relies on synchronized clocks. DeepSea will by default start a chrony 
+client on each minion.  If chrony is not available, then ntp must be selected
+in the pillar.  In either case, the default time server is the Salt master 
+unless overridden.  The Salt master must be configured manually.  (Salt can be
+used for setting up a time server, but admins have strong opinions about the
+correct configuration for time.  The Salt master is suitable for virtual
+environments.)
 
-If you want DeepSea to always overwrite an existing NTP configuration set
-"time_init: ntp" in the pillar.
+To force the time server to use chrony, ntp or be disabled, add one of the 
+following to /srv/pillar/ceph/stack/global.yml:
 
-To disable all NTP management set "time_init: disabled" in the pillar. Note
-that the admin should have some form of time synchronisation set up in this
-case, otherwise Ceph might not function reliably.
+time_init: chrony
+time_init: ntp
+time_init: disabled
+
+Run Stage 2 or `salt '*' saltutil.refresh_pillar` to update the pillar.
+
+** Developer note
+Each state file removes the other configuration.  Chrony will remove ntp and
+ntp will remove chrony.  If a third system is ever supported, the removal of
+the configuration could be separated.  Although rescind seems like an
+appropriate place, rescind is based on role assignments.
