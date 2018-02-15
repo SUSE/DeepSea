@@ -8,22 +8,26 @@ is a Salt orchestration that removes roles.
 .PD
 .SH Preface
 .PP
-This stage is used to remove services from nodes.
+This stage removes configurations from the Ceph cluster and individual minions. The states related to removing Ceph configurations are in 
+.B /srv/salt/ceph/remove
+and those related to rescinding roles from minions are in
+.B /srv/salt/ceph/rescind. 
 
-.B Services:
+.B Services
 .RS
-If you remove a service from your policy.cfg and apply it to the pillar by running stage.2 
-.B (see deepsea-stage-2 (7)) 
-running stage.5 will remove all traces of the service from the node.
+To remove a service from a minion, remove the role assignment from the policy.cfg, run Stage 2 - see
+.B deepsea-stage-2(7) 
+and then run Stage 5.
 .RE
 
-.SH Example
-deepsea salt-run state.orch ceph.stage.5
+.SH EXAMPLE
+salt-run state.orch ceph.stage.5
 .PP
 This command can also be used with the
-.B DeepSea cli
-to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent 
-during execution and only report when complete.
+.B deepsea(1)
+to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent during execution and only report when complete.
+.PP
+deepsea salt-run state.orch ceph.stage.5
 .PP
 deepsea stage run ceph.stage.5
 

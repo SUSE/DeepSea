@@ -2,22 +2,20 @@
 .SH NAME
 DeepSea customization
 .SH DESCRIPTION
-.B SLS 
-is short for Salt State Files. Those files are used to define a state you wish a node to be in.
-DeepSea has the concept of a 'default' file that will be executed when you invoke a salt state.
-For example when you want to execute a refresh on the pillar you do,
+.B SLS
+is short for Salt State Files. These files define a state for the minion.  DeepSea has the concept of a 'default' file when salt states are invoked.
+For example, to execute a refresh on the pillar run:
 
 .B salt -G 'deepsea:*' state.apply ceph.refresh
 
-internally this looks in
+Internally this uses
 
 .B /srv/salt/ceph/refresh/init.sls
 
 include:
   - .{{ salt['pillar.get']('refresh_init', 'default') }}
 
-which looks for a value of 'refresh_init' in the pillar. When it's not found it defaults to the name 'default' 
-which is the name of the file in the directory. (Ignore the file extension)
+which looks for 'refresh_init' in the pillar. When it's not found, the expression defaults to the name 'default' which is the name of the file in the directory (with the sls file extension).
 
 .B /srv/salt/ceph/refresh/default.sls
 
@@ -25,26 +23,27 @@ refresh_pillar:
   module.run:
     - name: saltutil.refresh_pillar
 
-This advises salt to to execute the 
-.B module: saltutil 
-
-which with it's function 
+Salt executes the
 
 .B refresh_pillar
 
-If you, for any reason, want to change this behavior. You can add a file to 
+function from the module
+
+.B saltutil.
+
+To change this behavior, add a file to
 
 .B /srv/salt/ceph/refresh
 
-called 
+called
 
 .B custom.sls
 
-and fill it with your desired module.
+and fill it with your desired steps. The file can have a more meaningful name, but any default prefixes are reserved for DeepSea.
 
-In order to get your custom state loaded instead of the default one, you have to change the 
+In order to get your custom state loaded instead of the default one, change or add
 
-.B refresh_init 
+.B refresh_init
 
 value by editing
 
@@ -60,23 +59,22 @@ To try it:
 
 will now load your custom.sls.
 
-.SH More examples
+.SH MORE EXAMPLES
 
 
-DeepSea ships a number of non-default states that can be used. For example we offer alternating stage.0s which 
-have either updates or reboots (or both) disabled.
+DeepSea ships a number of non-default states that can be used. For example we offer alternate orchestrations for Stage 0, which have either updates or reboots (or both) disabled.
 
-To apply those you'd have to add 
+To apply those, add
 
 .B stage_prep_minion: default-no-update-no-reboot
 
 .B stage_prep_master: default-no-update-no-reboot
 
-to 
+to
 
 .B /srv/pillar/ceph/stack/global.yml
 
-To find all alternating files for the stages go into 
+To find all alternate files for the stages, see
 
 .B /srv/salt/ceph/stage/{0..5}/
 
