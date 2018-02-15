@@ -320,7 +320,8 @@ EOF
 }
 
 function policy_cfg_openattic_with_rgw {
-  local TOTALNODES=$(json_total_nodes) test -n "$TOTALNODES"
+  local TOTALNODES=$(json_total_nodes)
+  test -n "$TOTALNODES"
   if [ "$TOTALNODES" -eq 1 ] ; then
     echo "Only one node in cluster; colocating rgw and openattic roles"
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
@@ -412,6 +413,55 @@ function policy_cfg_nfs_ganesha {
 # Role assignment - NFS-Ganesha (first node)
 role-ganesha/cluster/*.sls slice=[:1]
 EOF
+}
+
+
+#
+# functions for creating pools
+#
+
+function pgs_per_pool {
+  local TOTALPOOLS=$1
+  test -n "$TOTALPOOLS"
+  local TOTALOSDS=$(json_total_osds)
+  test -n "$TOTALOSDS"
+  # given the total number of pools and OSDs,
+  # assume triple replication and equal number of PGs per pool
+  # and aim for 100 PGs per OSD
+  let "TOTALPGS = $TOTALOSDS * 100"
+  let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
+  echo $PGSPEROSD
+}
+
+function create_pool {
+  # Special-purpose function for creating pools incrementally. For example,
+  # if your test case needs 2 pools "foo" and "bar", but you cannot create
+  # them all at once for some reason. Otherwise, use create_all_pools_at_once.
+  #
+  # sample usage:
+  #
+  # create_pool foo 2
+  # ... do something ...
+  # create_pool bar 2
+  # ... do something else ...
+  #
+  local POOLNAME=$1
+  test -n "$POOLNAME"
+  local TOTALPOOLS=$2
+  test -n "$TOTALPOOLS"
+  local PGSPERPOOL=$(pgs_per_pool $TOTALPOOLS)
+  ceph osd pool create $POOLNAME $PGSPERPOOL $PGSPERPOOL replicated
+}
+
+function create_all_pools_at_once {
+  # sample usage: create_all_pools_at_once foo bar
+  local TOTALPOOLS="${#@}"
+  local PGSPERPOOL=$(pgs_per_pool $TOTALPOOLS)
+  for POOLNAME in "$@"
+  do
+      ceph osd pool create $POOLNAME $PGSPERPOOL $PGSPERPOOL replicated
+  done
+  ceph osd pool ls detail
 }
 
 

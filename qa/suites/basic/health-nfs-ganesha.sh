@@ -90,6 +90,9 @@ run_stage_2 "$CLI"
 ceph_conf_small_cluster
 run_stage_3 "$CLI"
 ceph_cluster_status
+if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
+  create_all_pools_at_once cephfs_data cephfs_metadata
+fi
 nfs_ganesha_no_root_squash
 run_stage_4 "$CLI"
 ceph_cluster_status

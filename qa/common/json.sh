@@ -1,5 +1,6 @@
 #
-# This file is part of the DeepSea integration test suite
+# This file is part of the DeepSea integration test suite.
+# It contains various cluster introspection functions.
 #
 
 function json_total_nodes {
@@ -15,4 +16,9 @@ function _json_nodes_of_role_x {
 function json_storage_nodes {
   # number of storage nodes in the cluster
   _json_nodes_of_role_x storage
+}
+
+function json_total_osds {
+  # total number of OSDs in the cluster
+  ceph osd ls --format json | jq '. | length'
 }
