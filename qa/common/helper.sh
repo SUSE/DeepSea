@@ -79,12 +79,12 @@ function _client_node {
   #
   # FIXME: migrate this to "salt --static --out json ... | jq ..."
   #
-  salt --no-color -C 'not I@roles:storage' test.ping | grep -o -P '^\S+(?=:)' | head -1
+  salt --no-color -C 'not I@roles:storage' test.ping | grep -o -P '^\S+(?=:)' | sort | head -1
 }
 
 function _first_x_node {
   local ROLE=$1
-  salt --no-color -C "I@roles:$ROLE" test.ping | grep -o -P '^\S+(?=:)' | head -1
+  salt --no-color -C "I@roles:$ROLE" test.ping | grep -o -P '^\S+(?=:)' | sort | head -1
 }
 
 function _run_test_script_on_node {
