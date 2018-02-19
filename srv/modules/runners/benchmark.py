@@ -51,7 +51,9 @@ class Fio(object):
         ip_filter = lambda add: ipaddress.ip_address(
             add.decode()) in ipaddress.ip_network(public_network.decode())
         for minion, ip_list in minion_ip_lists.items():
+            # TODO get rid of clients
             clients.extend(list(filter(ip_filter, ip_list)))
+            minion_ip_lists[minion] = filter(ip_filter, ip_list)
 
         if not clients:
             raise Exception(
@@ -64,8 +66,8 @@ class Fio(object):
 
         self.cmd_global_args = ['--output-format=json']
 
-        # store client addresses preformatted for user with fio
-        self.clients = clients
+        # store client addresses preformatted for use with fio
+        self.minion_ip_lists = minion_ip_lists
 
         self.bench_dir = bench_dir
         self.log_dir = log_dir
@@ -92,9 +94,11 @@ class Fio(object):
         e.g. [--client=host1, jobfile, --client=host2, jobfile]
         fio expects a job file for every remote agent
         '''
-        for client in self.clients:
-            jobfile = self._parse_job(job_spec, job_name, job_log_dir, client)
-            client_jobs.extend(['--client={}'.format(client)])
+        #for client in self.clients:
+        for minion, client in self.minion_ip_lists.items():
+            jobfile = self._parse_job(job_spec, job_name, job_log_dir,
+                                      client[0], minion)
+            client_jobs.extend(['--client={}'.format(client[0])])
             client_jobs.extend([jobfile])
 
         output = subprocess.check_output(
@@ -102,9 +106,9 @@ class Fio(object):
 
         return output
 
-    def _parse_job(self, job_spec, job_name, job_log_dir, client):
+    def _parse_job(self, job_spec, job_name, job_log_dir, client, minion):
         # parse yaml and get job spec
-        job = self._get_job_parameters(job_spec, job_log_dir, client)
+        job = self._get_job_parameters(job_spec, job_log_dir, client, minion)
 
         # which template does the job want
         template = self.jinja_env.get_template(job['template'])
@@ -119,7 +123,7 @@ class Fio(object):
         template.stream(job).dump(jobfile)
         return jobfile
 
-    def _get_job_parameters(self, job_spec, job_log_dir, client):
+    def _get_job_parameters(self, job_spec, job_log_dir, client, minion):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
                 job = yaml.load(yml)
@@ -133,8 +137,22 @@ class Fio(object):
         write_hist_log={logdir}/output
         write_iops_log={logdir}/output
         '''.format(logdir=job_log_dir)
+        ret = local_client.cmd(
+            minion, 'pillar.get', ['ceph:storage:osds'], expr_form='compound')
+        log.warn('local disks for {} are {}'.format(minion, ret[minion]))
+        local_disks = set()
+        if not ret[minion]:
+            ret[minion] = {}
+        for osd, args in ret[minion].items():
+            local_disks.add(osd)
+            if 'wal' in args:
+                local_disks.add(args['wal'])
+            if 'db' in args:
+                local_disks.add(args['db'])
+
+        log.warn('local disks for {} are {}'.format(minion, local_disks))
         job.update({'dir': self.work_dir, 'output_options': output_options,
-                    'client': client})
+                    'client': client, 'local_disks': list(local_disks)})
         return job
 
 
@@ -324,6 +342,33 @@ def blockdev(**kwargs):
               dir_options['job_dir'])
 
     for job_spec in default_collection['blockdev']:
+        print(fio.run(job_spec))
+
+    return True
+
+
+
+def osd_blockdev(**kwargs):
+    """
+    Run block device benchmark job
+    """
+
+    client_glob = kwargs.get('client_glob',
+                             'I@roles:storage and I@cluster:ceph')
+    log.info('client glob is {}'.format(client_glob))
+
+    dir_options = __parse_and_set_dirs(kwargs)
+
+    default_collection = __parse_collection(
+        '{}/collections/default.yml'.format(dir_options['bench_dir']))
+
+    fio = Fio(client_glob, 'blockdev',
+              dir_options['bench_dir'],
+              None,
+              dir_options['log_dir'],
+              dir_options['job_dir'])
+
+    for job_spec in default_collection['osd_blockdev']:
         print(fio.run(job_spec))
 
     return True

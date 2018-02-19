@@ -1,0 +1,27 @@
+[global]
+ioengine=psync
+direct=1
+time_based=1
+runtime=60
+offset_increment=1G
+
+{% for dev in local_disks %}
+{% for op in operations %}
+{% for bs in blocksizes %}
+{% for workers in number_of_workers %}
+{% for worker in range(0, workers) %}
+[worker{{ worker }}/{{ workers }}_{{ dev }}_{{ bs }}_{{ op }}]
+  {% if loop.index0 == 0 %}
+  stonewall
+  {% endif %}
+  rw={{ op }}
+  filename={{ dev }}
+  blocksize={{ bs }}
+  offset={{ loop.index0 * size }}
+  size={{ size }}
+
+{% endfor %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
