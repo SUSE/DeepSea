@@ -24,7 +24,7 @@ stage prep dependencies ubuntu:
       - pciutils
       - gdisk
       - python3-boto
-      - python-rados
+      - python3-rados
       - iperf
     - fire_event: True
     - refresh: True
@@ -51,7 +51,6 @@ stage prep dependencies CentOS:
       - iperf3
       - lshw
       - hwinfo
-      - python-ipaddress
       - python-netaddr
     - fire_event: True
     - refresh: True

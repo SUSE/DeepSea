@@ -12,6 +12,6 @@ remove_rgw_exporter:
 
 uninstall_package:
   pkg.removed:
-    - name: python-prometheus-client
+    - name: python3-prometheus-client
 
 {% endif %}

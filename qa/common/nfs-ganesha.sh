@@ -150,7 +150,7 @@ function assert_success {
 }
 
 echo "nfs-ganesha PyNFS test script running as $(whoami) on $(hostname --fqdn)"
-zypper --non-interactive install --no-recommends krb5-devel python-devel
+zypper --non-interactive install --no-recommends krb5-devel python3-devel
 git clone --depth 1 https://github.com/supriti/Pynfs
 cd Pynfs
 ./setup.py build

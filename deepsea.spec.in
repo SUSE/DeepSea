@@ -36,7 +36,6 @@ BuildRequires:  python3-setuptools
 Requires:       salt-master
 Requires:       salt-minion
 Requires:       salt-api
-Requires:       python3-ipaddr
 Requires:       python3-netaddr
 Requires:       python3-rados
 Requires:       python3-setuptools

@@ -742,18 +742,18 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
-install: copy-files setup.py
+install: pyc copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 	chown -R $(USER) /srv/pillar/ceph
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls
 	systemctl restart salt-master
-	$(PKG_INSTALL) salt-api python-ipaddress
+	$(PKG_INSTALL) salt-api
 	systemctl restart salt-api
 	# deepsea-cli
 	$(PKG_INSTALL) python3-setuptools python3-click
-	# python setup.py install --root=$(DESTDIR)/
+	python3 setup.py install --root=$(DESTDIR)/
 
 rpm: pyc tarball test
 	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec

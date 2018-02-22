@@ -557,7 +557,7 @@ function ceph_health_test {
 function salt_api_test {
   echo "Salt API test: BEGIN"
   systemctl status salt-api.service
-  curl http://${SALT_MASTER}:8000/ | python -m json.tool
+  curl http://${SALT_MASTER}:8000/ | python3 -m json.tool
   echo "Salt API test: END"
 }
 
