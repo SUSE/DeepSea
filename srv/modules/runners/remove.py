@@ -25,24 +25,31 @@ def help_():
     return ""
 
 
-def osd(id_, drain=False):
+def osd(id_, drain=False, timeout='300'):
     """
     Removes an OSD gracefully
     """
+    local_cli = salt.client.LocalClient()
     runner_cli = salt.runner.RunnerClient(
-        salt.config.client_config('/etc/salt/master'))
+                 salt.config.client_config('/etc/salt/master'))
 
-    if not runner_cli.cmd('disengage.check'):
+    # passing arg via CLI has precedence
+    if timeout == '300':
+        dsd = local_cli.cmd('I@roles:master',
+                            'pillar.get', ['disengage_safety_duration'],
+                             expr_form='compound').items()[0][1]
+        if dsd:
+            timeout = dsd
+
+    if not runner_cli.cmd('disengage.check', arg=["timeout={}".format(timeout)]):
         log.error(('Safety is not disengaged...refusing to remove OSD',
-                  ' run "salt-run disengage.safety" first'
+                   ' run "salt-run disengage.safety" first'
                    ' THIS WILL CAUSE DATA LOSS.'))
         return False
 
     if id_ < 0:
         log.error('Bogus id supplied...OSDs have IDs >= 0')
         return False
-
-    local_cli = salt.client.LocalClient()
 
     osds = local_cli.cmd('I@roles:storage', 'osd.list', tgt_type='compound')
 

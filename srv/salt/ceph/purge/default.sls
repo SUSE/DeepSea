@@ -1,5 +1,5 @@
-
-{% if salt['saltutil.runner']('disengage.check', cluster='ceph') == False %}
+{% set dsd = salt['pillar.get']('disengage_safety_duration', 300) %}
+{% if salt['saltutil.runner']('disengage.check', cluster='ceph', timeout=dsd) == False %}
 safety is engaged:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
