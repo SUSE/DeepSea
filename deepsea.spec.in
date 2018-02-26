@@ -111,7 +111,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0700, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.checksum
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/configuration/create
-%dir /srv/salt/ceph/diagnose
 %dir /srv/salt/ceph/ganesha
 %dir /srv/salt/ceph/ganesha/auth
 %dir %attr(0700, salt, salt) /srv/salt/ceph/ganesha/cache
@@ -414,8 +413,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/configuration/files/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.import
 /srv/salt/ceph/configuration/files/ceph.conf.d/README
-/srv/salt/ceph/diagnose/README.md
-%config /srv/salt/ceph/diagnose/*.sls
 %config /srv/salt/ceph/ganesha/*.sls
 %config /srv/salt/ceph/ganesha/auth/*.sls
 %config /srv/salt/ceph/ganesha/config/*.sls
