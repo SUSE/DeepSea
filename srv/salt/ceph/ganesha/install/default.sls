@@ -20,4 +20,5 @@ install_ganesha:
 {% if grains.get('os_family', '') == 'Suse' %}
         - nfs-ganesha-utils
 {% endif %}
+    - install_recommends: False
     - fire_event: True
