@@ -1734,8 +1734,8 @@ class OSDDevices(object):
         """
         if os.path.exists(device):
             if os.path.exists(pathname):
-                cmd = (r"find -L {} -samefile {} \( -name ata* -o "
-                       r"-name nvme* \)".format(pathname, device))
+                cmd = (r"find -L {} -samefile {} \( -name ata* -o -name scsi* "
+                       r"-o -name nvme* \)".format(pathname, device))
                 _, _stdout, _stderr = _run(cmd)
                 if _stdout:
                     return _stdout.split()[-1]
