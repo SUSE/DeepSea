@@ -547,6 +547,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/all/*.sls $(DESTDIR)/srv/salt/ceph/stage/all/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/cephfs
 	install -m 644 srv/salt/ceph/stage/cephfs/*.sls $(DESTDIR)/srv/salt/ceph/stage/cephfs/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/cephfs/core
+	install -m 644 srv/salt/ceph/stage/cephfs/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/cephfs/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/configure
 	install -m 644 srv/salt/ceph/stage/configure/*.sls $(DESTDIR)/srv/salt/ceph/stage/configure/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/deploy
@@ -557,10 +559,16 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/discovery/*.sls $(DESTDIR)/srv/salt/ceph/stage/discovery/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/ganesha
 	install -m 644 srv/salt/ceph/stage/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/stage/ganesha/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/ganesha/core
+	install -m 644 srv/salt/ceph/stage/ganesha/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/ganesha/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi
 	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi/core
+	install -m 644 srv/salt/ceph/stage/iscsi/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic
 	install -m 644 srv/salt/ceph/stage/openattic/*.sls $(DESTDIR)/srv/salt/ceph/stage/openattic/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic/core
+	install -m 644 srv/salt/ceph/stage/openattic/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/openattic/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/prep
 	install -m 644 srv/salt/ceph/stage/prep/*.sls $(DESTDIR)/srv/salt/ceph/stage/prep/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/prep/master
@@ -571,10 +579,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/removal/*.sls $(DESTDIR)/srv/salt/ceph/stage/removal/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/radosgw
 	install -m 644 srv/salt/ceph/stage/radosgw/*.sls $(DESTDIR)/srv/salt/ceph/stage/radosgw/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/radosgw/core
+	install -m 644 srv/salt/ceph/stage/radosgw/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/radosgw/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/services
 	install -m 644 srv/salt/ceph/stage/services/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/services/core
-	install -m 644 srv/salt/ceph/stage/services/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sync
 	install -m 644 srv/salt/ceph/sync/*.sls $(DESTDIR)/srv/salt/ceph/sync/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags
