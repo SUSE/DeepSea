@@ -24,6 +24,21 @@ install node exporter package:
 
 {% endif %}
 
+# this switch should detect whicch node_exporter version we have. From 0.15.2
+# the node exporter options start with -- and additional options exist
+{% if salt['cmd.run']('node_exporter -h 2>&1 | grep "\-\-"') == "" %}
+
+set node exporter service args:
+  file.managed:
+    - name: /etc/sysconfig/prometheus-node_exporter
+    - mode: 644
+    - contents: |
+        ARGS="-collector.diskstats.ignored-devices=^(ram|loop|fd)\d+$ \
+              -collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/) \
+              -collector.textfile.directory=/var/lib/prometheus/node-exporter"
+
+{% else %}
+
 set node exporter service args:
   file.managed:
     - name: /etc/sysconfig/prometheus-node_exporter
@@ -33,6 +48,8 @@ set node exporter service args:
               --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/) \
               --collector.textfile.directory=/var/lib/prometheus/node-exporter \
               --collector.bonding --collector.ntp"
+
+{% endif %}
 
 {% if grains.get('os', '') == 'CentOS' %}
 
