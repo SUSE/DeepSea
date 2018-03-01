@@ -1,4 +1,20 @@
 -------------------------------------------------------------------
+Thu Mar  1 16:45:00 UTC 2018
+
+- Version 0.9.2
+- Stage 4 restart complete
+- Support prometheus 0.15 node-exporter
+- Fixes for device discovery, wal/db checks
+- Switch to chrony
+- Add s3 checks 
+- Many QA additions
+- Add blockdev benchmark
+- cleanup, remove diagnose files
+- Add editorconfig
+- Swap salt-api and sync order
+- Improve policy.cfg error handling
+
+-------------------------------------------------------------------
 Fri Jan  5 22:12:29 UTC 2018 - ejackson@suse.com
 
 - Version 0.9.1
