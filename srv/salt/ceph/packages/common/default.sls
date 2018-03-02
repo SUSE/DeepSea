@@ -1,4 +1,5 @@
 {% set os = salt['grains.get']('os') %}
+{% set osmajorrelease = salt['grains.get']('osmajorrelease') %}
 
 {% if os == 'SUSE' %}
 
@@ -8,7 +9,11 @@ stage prep dependencies suse:
       - lsscsi
       - pciutils
       - gptfdisk
+{% if osmajorrelease|int > 12 and osmajorrelease|int != 42 %}
+      - python2-boto
+{% else %}
       - python-boto
+{% endif %}
       - python-rados
       - iperf
       - lsof
@@ -46,7 +51,11 @@ stage prep dependencies CentOS:
       - lsscsi
       - pciutils
       - gdisk
+{% if osmajorrelease|int > 6 %}
+      - python2-boto
+{% else %}
       - python-boto
+{% endif %}
       - python-rados
       - iperf3
       - lshw
