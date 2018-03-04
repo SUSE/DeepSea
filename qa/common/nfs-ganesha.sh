@@ -150,6 +150,12 @@ function assert_success {
 }
 
 echo "nfs-ganesha PyNFS test script running as $(whoami) on $(hostname --fqdn)"
+set +x
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
 zypper --non-interactive install --no-recommends krb5-devel python3-devel
 git clone --depth 1 https://github.com/supriti/Pynfs
 cd Pynfs
