@@ -68,11 +68,20 @@ function assert_enhanced_getopt {
 # functions for setting up the Salt Master node so it can run these tests
 #
 
+function zypper_ref {
+    set +x
+    for delay in 60 60 60 60 ; do
+        zypper --non-interactive --gpg-auto-import-keys refresh && break
+        sleep $delay
+    done
+    set -x
+}
+
 function install_deps {
   echo "Installing dependencies on the Salt Master node"
-  DEPENDENCIES="jq
+  local DEPENDENCIES="jq
   "
-  zypper --non-interactive --no-gpg-checks refresh
+  zypper_ref
   for d in $DEPENDENCIES ; do
     zypper --non-interactive install --no-recommends $d
   done
@@ -92,7 +101,7 @@ function run_stage_1 {
 }
 
 function run_stage_2 {
-  salt '*' cmd.run "zypper --non-interactive --no-gpg-checks refresh"
+  salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
   _run_stage 2 "$@"
   salt_pillar_items
 }
@@ -654,9 +663,13 @@ function iscsi_mount_and_sanity_test {
   local CLIENTNODE=$(_client_node)
   local IGWNODE=$(_first_x_node igw)
   cat << EOF > $TESTSCRIPT
-set -ex
+set -e
 trap 'echo "Result: NOT_OK"' ERR
-zypper --non-interactive --no-gpg-checks refresh
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
 zypper --non-interactive install --no-recommends open-iscsi multipath-tools
 systemctl start iscsid.service
 sleep 5
