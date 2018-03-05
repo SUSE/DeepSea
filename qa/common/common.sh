@@ -726,3 +726,29 @@ echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }
+
+function configure_OSD_to_filestore {
+	salt-run proposal.populate format=filestore name=filestore 
+	chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
+	sed -i 's/profile-default/profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
+}
+
+function check_OSD_type {
+	salt \* pillar.get ceph
+	salt \* cmd.run "for i in \$(mount|grep ceph|awk '{print \$3}');do cat \${i}/type;done"
+}
+
+function migrate_to_bluestore {
+	salt-run state.orch ceph.migrate.policy
+	sed -i 's/profile-filestore/migrated-profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
+	salt-run disengage.safety
+	salt-run state.orch ceph.migrate.osds
+}
+
+function disable_restart_in_stage_0 {
+	cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
+	cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
+	cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
+	cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
+}
+
