@@ -22,6 +22,9 @@ else
     exit 1
 fi
 
+# show which repos are active/enabled
+zypper lr -upEP
+
 # show salt RPM version in log and fail if salt is not installed
 rpm -q salt-master
 rpm -q salt-minion
