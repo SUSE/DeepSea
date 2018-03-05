@@ -754,14 +754,24 @@ class Validate(object):
         local = salt.client.LocalClient()
         contents = local.cmd(search, 'pkg.latest_version', ['ceph-common'], tgt_type="compound")
         for minion, version in contents.items():
+            # sometimes, version contains a string value
+            # other times, it contains an empty dict
+            log.debug("VALIDATE ceph_version: minion ->{}<- latest_version version ->{}<-"
+                      .format(minion, version))
             if not version:
                 info = local.cmd(minion, 'pkg.info_installed', ['ceph-common'])
                 if info and 'version' in info[minion]['ceph-common']:
                     version = info[minion]['ceph-common']['version']
+                    log.debug("VALIDATE ceph_version: minion ->{}<- info_installed version ->{}<-"
+                              .format(minion, version))
                 else:
-                    self.errors.setdefault('ceph_version', []).append(
-                        "No Ceph version is available for installation in {}".format(minion))
-                    continue
+                    failmsg = ("No Ceph version is available for installation on minion {}"
+                               .format(minion))
+                    if self.in_dev_env:
+                        log.warning('VALIDATE ceph_version: ' + failmsg)
+                    else:
+                        self.errors.setdefault('ceph_version', []).append(failmsg)
+                        continue
 
             colon_idx = version.find(':')
             if colon_idx != -1:
@@ -769,10 +779,15 @@ class Validate(object):
             dash_idx = version.rfind('-')
             if dash_idx != -1:
                 version = version[:dash_idx]
+            log.debug("VALIDATE ceph_version: minion ->{}<- final munged version ->{}<-"
+                      .format(minion, version))
+            assert isinstance(version, str), "version value is not a string"
+            # FIXME: "10.10" < "10.2" in Python terms, but not in terms of
+            # version numbering semantics
             if version < JEWEL_VERSION:
                 self.errors.setdefault('ceph_version', []).append(
-                    "The Ceph version available in {} is older than 'jewel' (10.2)"
-                    .format(minion))
+                    "The Ceph version available on minion {} ({}) is older than 'jewel' ({})"
+                    .format(minion, version, JEWEL_VERSION))
 
         self._set_pass_status('ceph_version')
 
