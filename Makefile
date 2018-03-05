@@ -34,7 +34,7 @@ version:
 setup.py:
 	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
 
-pyc: setup.py
+pyc: install-deps setup.py
 	#make sure to create bytecode with the correct version
 	find srv/ -name '*.py' -exec python3 -m py_compile {} \;
 	# deepsea-cli
@@ -742,7 +742,10 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
-install: pyc copy-files
+install-deps:
+	$(PKG_INSTALL) python3-setuptools python3-click
+
+install: install-deps pyc copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
@@ -752,7 +755,6 @@ install: pyc copy-files
 	$(PKG_INSTALL) salt-api
 	systemctl restart salt-api
 	# deepsea-cli
-	$(PKG_INSTALL) python3-setuptools python3-click
 	python3 setup.py install --root=$(DESTDIR)/
 
 rpm: pyc tarball test
