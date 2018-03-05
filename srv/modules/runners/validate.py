@@ -752,12 +752,12 @@ class Validate(object):
         target = deepsea_minions.DeepseaMinions()
         search = target.deepsea_minions
         local = salt.client.LocalClient()
-        contents = local.cmd(search, 'pkg.latest_version', ['ceph'], tgt_type="compound")
+        contents = local.cmd(search, 'pkg.latest_version', ['ceph-common'], tgt_type="compound")
         for minion, version in contents.items():
             if not version:
-                info = local.cmd(minion, 'pkg.info_installed', ['ceph'])
-                if info and 'version' in info[minion]['ceph']:
-                    version = info[minion]['ceph']['version']
+                info = local.cmd(minion, 'pkg.info_installed', ['ceph-common'])
+                if info and 'version' in info[minion]['ceph-common']:
+                    version = info[minion]['ceph-common']['version']
                 else:
                     self.errors.setdefault('ceph_version', []).append(
                         "No Ceph version is available for installation in {}".format(minion))
