@@ -935,11 +935,6 @@ class OSDPartitions(object):
                 raise RuntimeError("{} failed".format(cmd))
             log.info("partprobe disk")
             self._part_probe(device)
-            log.info("partprobe partition")
-            if 'nvme' in device:
-                self._part_probe("{}p{}".format(device, number))
-            else:
-                self._part_probe("{}{}".format(device, number))
             # Seems odd to wipe a just created partition ; however, ghost
             # filesystems on reused disks seem to be an issue
             if os.path.exists("{}{}".format(device, number)):
