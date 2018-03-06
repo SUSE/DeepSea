@@ -951,6 +951,7 @@ class TestOSDPartitions():
         obj._bluestore_partitions()
         mock_log.warning.assert_called_with("DB size is unsupported for same device of /dev/sdx")
 
+    @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd._run')
@@ -983,6 +984,7 @@ class TestOSDPartitions():
         run_mock.assert_any_call('dd if=/dev/zero of=/dev/nvme0n12 bs=4096 count=1 oflag=direct')
         #                                                       ^^ that's wrong imho
 
+    @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd._run')
@@ -1039,6 +1041,7 @@ class TestOSDPartitions():
             run_mock.assert_any_call('/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1')
             assert '/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1 failed' in str(excinfo.value)
 
+    @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd._run')
