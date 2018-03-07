@@ -6,6 +6,8 @@ Some operations are inherently dangerous, but still necessary.  Allow
 the modification timestamp of a file to give a window in which to run.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import time
 
@@ -29,7 +31,7 @@ def help_():
              'salt-run disengage.check:\n\n'
              '    Check whether the timestamp is less than a minute old\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 

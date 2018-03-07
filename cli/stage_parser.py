@@ -10,7 +10,7 @@ import logging
 import os
 import pickle
 import pwd
-import StringIO
+from io import StringIO
 
 from collections import OrderedDict, defaultdict
 from multiprocessing import Process, Queue
@@ -19,6 +19,7 @@ import salt.client
 import salt.exceptions
 
 from .common import redirect_stdout, redirect_stderr
+import six
 
 
 # pylint: disable=C0103
@@ -111,12 +112,10 @@ class SLSRendererMetaClass(type):
         return cls._CALLER_
 
 
-class SLSRenderer(object):
+class SLSRenderer(six.with_metaclass(SLSRendererMetaClass, object)):
     """
     Helper class to render sls files
     """
-
-    __metaclass__ = SLSRendererMetaClass
 
     @staticmethod
     def render(file_name):
@@ -125,8 +124,8 @@ class SLSRenderer(object):
         Args:
             file_name (str): the sls file path
         """
-        err = StringIO.StringIO()
-        out = StringIO.StringIO()
+        err = StringIO()
+        out = StringIO()
         exception = None
         with redirect_stderr(err):
             with redirect_stdout(out):
@@ -157,7 +156,7 @@ class SLSRenderer(object):
         result = OrderedDict()
         kv_array = [(key, val) for key, val in udict.items()]
         # pylint: disable=W1699
-        kv_array.sort(key=lambda (_, val): val['__order__'])
+        kv_array.sort(key=lambda __val: __val[1]['__order__'])
         for key, val in kv_array:
             result[key] = SLSRenderer._deserialize_ordered_dict(val['__val__'])
         return result
@@ -178,7 +177,7 @@ class SLSRenderer(object):
                 with redirect_stderr(fnull):
                     with redirect_stdout(fnull):
                         out = SLSRenderer.local.cmd(target, 'deepsea.render_sls', [states],
-                                                    expr_form="compound")
+                                                    tgt_type="compound")
             for key, val in out.items():
                 if isinstance(val, str):
                     logger.info("call to deepsea module returned: %s", val)
@@ -186,7 +185,7 @@ class SLSRenderer(object):
                         if not retry:
                             logger.info("deepsea module not available: syncing modules")
                             SLSRenderer.local.cmd(target, 'saltutil.sync_modules', [],
-                                                  expr_form="compound")
+                                                  tgt_type="compound")
                             return SLSRenderer.render_states(target_states, True)
                         else:
                             logger.error("deepsea module not available")
@@ -198,7 +197,7 @@ class SLSRenderer(object):
                         result[state_name] = {}
                     result[state_name][key] = SLSRenderer._deserialize_ordered_dict(content)
         for key, val in result.items():
-            logger.info("Rendered state %s for minions=%s", key, val.keys())
+            logger.info("Rendered state %s for minions=%s", key, list(val.keys()))
         return result
 
 

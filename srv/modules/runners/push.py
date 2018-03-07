@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=modernize-parse-error,anomalous-backslash-in-string
+
 """
 This runner is the complement to the populate.proposals runner.
 
@@ -46,18 +47,22 @@ All files are overwritten in the destination tree /srv/pillar/ceph/stack/default
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import errno
 import glob
 import logging
-import imp
 import re
 import shutil
+import sys
 import yaml
+sys.path.append('/srv/modules/pillar')
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin,wrong-import-position
+from stack import _merge_dict
+import salt.ext.six as six
 
-CUR_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
-STACK_PATH = os.path.abspath('{}/../pillar/stack.py'.format(CUR_FILE_PATH))
-STACK = imp.load_source('pillar.stack', STACK_PATH)
+
 log = logging.getLogger(__name__)
 
 
@@ -71,7 +76,7 @@ def help_():
              'salt-run push.convert:\n\n'
              '    Converts the hardware profiles from filestore to bluestore\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -295,7 +300,7 @@ def _migrate(yml, filename):
         for osd in yml['storage']['osds']:
             yml['ceph']['storage']['osds'][osd] = {'format': 'bluestore'}
         for entry in yml['storage']['data+journals']:
-            for osd, journal in entry.iteritems():
+            for osd, journal in six.iteritems(entry):
                 yml['ceph']['storage']['osds'][osd] = {'format': 'bluestore',
                                                        'wal': journal,
                                                        'db': journal}
@@ -360,7 +365,7 @@ def _merge(pathname, common):
         with open(filename, "r") as content:
             content = yaml.safe_load(content)
             # pylint: disable=protected-access
-            merged = STACK._merge_dict(merged, content)
+            merged = _merge_dict(merged, content)
     return merged
 
 

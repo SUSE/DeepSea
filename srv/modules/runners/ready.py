@@ -7,8 +7,11 @@ a warning is more appropriate.
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import logging
 from collections import OrderedDict
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.error
 
@@ -52,7 +55,7 @@ class Checks(object):
         """
         contents = self.local.cmd(self.search, 'cmd.shell',
                                   ['/usr/sbin/iptables -S'],
-                                  expr_form="compound")
+                                  tgt_type="compound")
         for minion in contents:
             # Accept custom named chains
             if not contents[minion].startswith(("-P INPUT ACCEPT\n"
@@ -73,7 +76,7 @@ class Checks(object):
         contents = self.local.cmd(self.search, 'cmd.shell',
                                   [('/usr/sbin/apparmor_status --enabled '
                                     '2>/dev/null; echo $?')],
-                                  expr_form="compound")
+                                  tgt_type="compound")
         for minion in contents:
             if contents[minion] and int(contents[minion]) == 0:
                 msg = "enabled on minion {}".format(minion)
@@ -89,11 +92,11 @@ class Checks(object):
         Produce nicely colored output
         """
         for attr in self.passed.keys():
-            print "{:25}: {}{}{}{}".format(attr, Bcolors.BOLD, Bcolors.OKGREEN,
-                                           self.passed[attr], Bcolors.ENDC)
+            print("{:25}: {}{}{}{}".format(attr, Bcolors.BOLD, Bcolors.OKGREEN,
+                                           self.passed[attr], Bcolors.ENDC))
         for attr in self.warnings.keys():
-            print "{:25}: {}{}{}{}".format(attr, Bcolors.BOLD, Bcolors.WARNING,
-                                           self.warnings[attr], Bcolors.ENDC)
+            print("{:25}: {}{}{}{}".format(attr, Bcolors.BOLD, Bcolors.WARNING,
+                                           self.warnings[attr], Bcolors.ENDC))
 
 
 def help_():
@@ -105,7 +108,7 @@ def help_():
              'salt-run ready.check fail_on_warning=False:\n\n'
              '    Check for firewall and apparmor configurations\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 

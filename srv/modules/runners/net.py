@@ -1,21 +1,36 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=modernize-parse-error,unused-argument
+# pylint: skip-file
+
 """
 Network utilities
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 import logging
 import operator
 import re
-import salt.client
-
 # pylint: disable=import-error,3rd-party-module-not-gated
 from netaddr import IPNetwork, IPAddress
 # pylint: disable=relative-import
-import deepsea_minions
+# pylint: disable=import-error,3rd-party-module-not-gated,blacklisted-external-import,blacklisted-module
+from six.moves import range
+# pylint: disable=incompatible-py3-code
+from . import deepsea_minions
 
 log = logging.getLogger(__name__)
+
+try:
+    import salt.client
+except ImportError:
+    log.error('Could not import salt.client')
+
+try:
+    import salt.ext.six as six
+except ImportError:
+    log.error('Could not import salt.ext.six')
 
 
 def help_():
@@ -40,7 +55,7 @@ def help_():
              'salt-run net.iperf exclude=target:\n\n'
              '    Summarizes bandwidth throughput between minion interfaces\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -50,8 +65,8 @@ def get_cpu_count(server):
     """
     local = salt.client.LocalClient()
     result = local.cmd("S@{} or {}".format(server, server),
-                       'grains.item', ['num_cpus'], expr_form="compound")
-    cpu_core = result.values()[0]['num_cpus']
+                       'grains.item', ['num_cpus'], tgt_type="compound")
+    cpu_core = list(result.values())[0]['num_cpus']
     return cpu_core
 
 
@@ -84,7 +99,6 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
     addresses = []
     local = salt.client.LocalClient()
     # Salt targets can use list or string
-    # pylint: disable=redefined-variable-type
     if cluster:
         search = "I@cluster:{}".format(cluster)
 
@@ -93,16 +107,16 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
             log.debug("iperf: search {} ".format(search))
 
         public_networks = local.cmd(search, 'pillar.item',
-                                    ['public_network'], expr_form="compound")
+                                    ['public_network'], tgt_type="compound")
         log.debug("iperf: public_network {} ".format(public_networks))
         cluster_networks = local.cmd(search, 'pillar.item',
-                                     ['cluster_network'], expr_form="compound")
+                                     ['cluster_network'], tgt_type="compound")
         log.debug("iperf: cluster_network {} ".format(cluster_networks))
-        total = local.cmd(search, 'grains.get', ['ipv4'], expr_form="compound")
+        total = local.cmd(search, 'grains.get', ['ipv4'], tgt_type="compound")
         log.debug("iperf: total grains.get {} ".format(total))
         public_addresses = []
         cluster_addresses = []
-        for host in sorted(total.iterkeys()):
+        for host in sorted(six.iterkeys(total)):
             if 'public_network' in public_networks[host]:
                 public_addresses.extend(
                     _address(total[host],
@@ -118,9 +132,9 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         p_result = _create_client(public_addresses)
         _create_server(cluster_addresses)
         c_result = _create_client(cluster_addresses)
-        p_sort = _add_unit(sorted(p_result.items(),
+        p_sort = _add_unit(sorted(list(p_result.items()),
                                   key=operator.itemgetter(1), reverse=True))
-        c_sort = _add_unit(sorted(c_result.items(),
+        c_sort = _add_unit(sorted(list(c_result.items()),
                                   key=operator.itemgetter(1), reverse=True))
 
         if output:
@@ -136,13 +150,14 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
                             "Fastest 2 hosts": c_sort[:2]}})
             return result
     else:
+        # pylint: disable=redefined-variable-type
         search = deepsea_minions.DeepseaMinions().deepsea_minions
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))
         addresses = local.cmd(search, 'grains.get',
-                              ['ipv4'], expr_form="compound")
-        addresses = _flatten(addresses.values())
+                              ['ipv4'], tgt_type="compound")
+        addresses = _flatten(list(addresses.values()))
         # Lazy loopback removal - use ipaddress when adding IPv6
         try:
             if addresses:
@@ -155,7 +170,7 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
             log.debug("ping: remove {} ip doesn't exist".format(ex_ip))
         _create_server(addresses)
         result = _create_client(addresses)
-        sort_result = _add_unit(sorted(result.items(),
+        sort_result = _add_unit(sorted(list(result.items()),
                                        key=operator.itemgetter(1),
                                        reverse=True))
         if output:
@@ -192,7 +207,7 @@ def _create_server(addresses):
                       .format(server, count, 5200+count))
             start_service.append(local.cmd("S@{}".format(server),
                                            'multi.iperf_server_cmd',
-                                           [count, 5200+count], expr_form="compound"))
+                                           [count, 5200+count], tgt_type="compound"))
 
 
 def _create_client(addresses):
@@ -210,7 +225,7 @@ def _create_client(addresses):
         clients.remove(server)
         clients_size = len(clients)
         # pylint: disable=invalid-name
-        for x in xrange(0, cpu_core, clients_size):
+        for x in range(0, cpu_core, clients_size):
             # pylint: disable=invalid-name
             for y, client in enumerate(clients):
                 log.debug("net.iperf._create_client:")
@@ -222,7 +237,7 @@ def _create_client(addresses):
                             "S@"+client,
                             'multi.iperf',
                             [server, x/clients_size, 5200+x+y],
-                            expr_form="compound"))
+                            tgt_type="compound"))
                     log.debug("net.iperf._create_client:")
                     log.debug("calling from client:{} ".format(client))
                     log.debug("to server:{} ".format(server))
@@ -286,7 +301,7 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
 
     extra_kwargs = _skip_dunder(kwargs)
     if _skip_dunder(kwargs):
-        print "Unsupported parameters:{}".format(" ,".join(extra_kwargs.keys()))
+        print("Unsupported parameters:{}".format(" ,".join(list(extra_kwargs.keys()))))
         text = re.sub(re.compile("^ {12}", re.MULTILINE), "", '''
             salt-run net.ping [cluster] [exclude]
 
@@ -307,11 +322,10 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                 salt-run net.ping exclude=S@192.168.21.0/29
                 salt-run net.ping exclude="E@host*,host-osd-name*,192.168.1.1"
         ''')
-        print text
+        print(text)
         return ""
 
     local = salt.client.LocalClient()
-    # pylint: disable=redefined-variable-type
     if cluster:
         search = "I@cluster:{}".format(cluster)
         if exclude_string:
@@ -319,10 +333,10 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
             log.debug("ping: search {} ".format(search))
         networks = local.cmd(search, 'pillar.item',
                              ['cluster_network', 'public_network'],
-                             expr_form="compound")
-        total = local.cmd(search, 'grains.get', ['ipv4'], expr_form="compound")
+                             tgt_type="compound")
+        total = local.cmd(search, 'grains.get', ['ipv4'], tgt_type="compound")
         addresses = []
-        for host in sorted(total.iterkeys()):
+        for host in sorted(six.iterkeys(total)):
             if 'cluster_network' in networks[host]:
                 addresses.extend(_address(total[host],
                                           networks[host]['cluster_network']))
@@ -330,15 +344,16 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                 addresses.extend(_address(total[host],
                                           networks[host]['public_network']))
     else:
+        # pylint: disable=redefined-variable-type
         search = deepsea_minions.DeepseaMinions().deepsea_minions
 
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))
         addresses = local.cmd(search, 'grains.get',
-                              ['ipv4'], expr_form="compound")
+                              ['ipv4'], tgt_type="compound")
 
-        addresses = _flatten(addresses.values())
+        addresses = _flatten(list(addresses.values()))
         # Lazy loopback removal - use ipaddress when adding IPv6
         try:
             if addresses:
@@ -349,12 +364,12 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                     addresses.remove(ex_ip)
         except ValueError:
             log.debug("ping: remove {} ip doesn't exist".format(ex_ip))
-    if ping_type is "jumbo":
+    if ping_type == "jumbo":
         results = local.cmd(search, 'multi.jumbo_ping',
-                            addresses, expr_form="compound")
+                            addresses, tgt_type="compound")
     else:
         results = local.cmd(search, 'multi.ping',
-                            addresses, expr_form="compound")
+                            addresses, tgt_type="compound")
     _summarize(len(addresses), results)
     return ""
 
@@ -433,8 +448,7 @@ def _exclude_filter(excluded):
         return new_compound_excluded, None
     elif iplist:
         return None, iplist
-    else:
-        return None, None
+    return None, None
 
 
 def _flatten(_list):
@@ -454,7 +468,7 @@ def _summarize(total, results):
     errored = []
     slow = []
     log.debug("_summarize: results {}".format(results))
-    for host in sorted(results.iterkeys()):
+    for host in sorted(six.iterkeys(results)):
         if results[host]['succeeded'] == total:
             success.append(host)
         if 'failed' in results[host]:
@@ -471,14 +485,14 @@ def _summarize(total, results):
     else:
         avg = 0
 
-    print "Succeeded: {} addresses from {} minions average rtt {} ms".format(
-        total, len(success), "{0:.2f}".format(avg))
+    print("Succeeded: {} addresses from {} minions average rtt {} ms".format(
+        total, len(success), "{0:.2f}".format(avg)))
     if slow:
-        print "Warning: \n    {}".format("\n    ".join(slow))
+        print("Warning: \n    {}".format("\n    ".join(slow)))
     if failed:
-        print "Failed: \n    {}".format("\n    ".join(failed))
+        print("Failed: \n    {}".format("\n    ".join(failed)))
     if errored:
-        print "Errored: \n    {}".format("\n    ".join(errored))
+        print("Errored: \n    {}".format("\n    ".join(errored)))
 
 
 def _iperf_result_get_server(result):
@@ -514,10 +528,10 @@ def _summarize_iperf(results):
                 server_results[result[host]['server']] +=\
                         " {} iperf error check installation.".format(host)
 
-    for key, result in server_results.iteritems():
+    for key, result in six.iteritems(server_results):
         total = 0
         speed = result.split('Mbits/sec')
-        speed = filter(None, speed)
+        speed = [_f for _f in speed if _f]
         try:
             for value in speed:
                 total += float(value.strip())
@@ -532,7 +546,7 @@ def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
+    return {k: v for k, v in six.iteritems(settings) if not k.startswith('__')}
 
 __func_alias__ = {
                  'help_': 'help',

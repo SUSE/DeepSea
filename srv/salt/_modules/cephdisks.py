@@ -1,17 +1,28 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=fixme,modernize-parse-error
+
 """
 Operations for finding blank drives or Ceph disks
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import re
 import xml.etree.ElementTree as et
 from glob import glob
 from subprocess import Popen, PIPE
 import logging
+# pylint: disable=import-error
+from helper import _convert_out
 
 log = logging.getLogger(__name__)
+
+try:
+    import salt.ext.six as six
+except ImportError:
+    log.error("Could not import salt.ext.six")
+
 
 VERSION = 0.2
 
@@ -71,8 +82,7 @@ class HardwareDetections(object):
             rotational = _fd.readline().rstrip('\n')
         if rotational == "1":
             return rotational
-        else:
-            return "0"
+        return "0"
 
     def _return_device_bus_id(self, device):
         """
@@ -87,6 +97,7 @@ class HardwareDetections(object):
         cmd = lsscsi_path
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
+            line = _convert_out(line)
             if device in line:
                 match = re.match(r'\[(.*?)\]', line)
                 if len(match.group(1).split(":")) >= 2:
@@ -94,9 +105,8 @@ class HardwareDetections(object):
                     return match.group(1).split(":")[-2]
                     # is [0:0:ID:0] a fixed format?
                     # check on other machines
-                else:
-                    log.warning("Could not retrieve bus_id for {}").format(device)
-                    return None
+                log.warning("Could not retrieve bus_id for {}").format(device)
+                return None
 
     def _query_disktype(self, device, raid_ctrl, base):
         """
@@ -126,6 +136,7 @@ class HardwareDetections(object):
                 log.info("{}\nrc: {} - {}".format(cmd, proc.returncode, proc.stderr.read()))
                 raise RuntimeError("Smartctl failure")
             for line in proc.stdout:
+                line = _convert_out(line)
                 # ADD PARSING HERE TO DETECT FAILURE
                 if "A mandatory SMART command failed" in line:
                     log.warning("Something went wrong during smartctl query")
@@ -161,8 +172,7 @@ class HardwareDetections(object):
                 info['controller_name'] = self.hw_raid_name
                 log.info("Using user-provided options for raidname and raidtype")
                 return info
-            else:
-                return self._hw_raid_ctrl_detection()
+            return self._hw_raid_ctrl_detection()
         elif self.software_raid:
             log.info('Found a software raid setup')
             info['raidtype'] = 'software'
@@ -186,6 +196,7 @@ class HardwareDetections(object):
         # TODO: See if other places are also infected
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
+            line = _convert_out(line)
             # match one of the available raid ctrls
             # areca, megaraid, 3ware, hprr
             if 'megaraid' in line.lower():
@@ -248,12 +259,12 @@ class HardwareDetections(object):
         elif failhard is True:
             msg = "Can't find the tool: {}. Please Install it in order to resume.".format(program)
             log.info(msg)
-            raise StandardError(msg)
+            raise Exception(msg)
         else:
             msg = ("Parameter <failhard> needs to be bool(True) or bool(False) "
                    "but was: {}".format(str(failhard)))
             log.info(msg)
-            raise StandardError(msg)
+            raise Exception(msg)
 
     def _find_detection_tool(self, overwrite_method=None):
         """
@@ -298,6 +309,7 @@ class HardwareDetections(object):
         cmd = "{} --disk --only /dev/{}".format(hwinfo_path, device)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
+            line = _convert_out(line)
             match = re.match("  ([^:]+): (.*)", line)
             if match:
                 if match.group(1) == "Capacity":
@@ -328,6 +340,7 @@ class HardwareDetections(object):
         stdout, stderr = proc.communicate()
         if stdout:
             for line in stdout:
+                line = _convert_out(line)
                 if 'by-id' in line:
                     return "/dev/" + line.split()[1]
         elif stderr:
@@ -356,6 +369,7 @@ class HardwareDetections(object):
             cmd = "{} -i {} {}".format(sgdisk_path, partition_id, device)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             for line in proc.stdout:
+                line = _convert_out(line)
                 if line.startswith("Partition GUID code:"):
                     for guuid_code in guuid_table.values():
                         if guuid_code in line:
@@ -380,6 +394,7 @@ class HardwareDetections(object):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = proc.communicate()
         if stdout:
+            stdout = _convert_out(stdout)
             data = et.fromstring(stdout)
         elif stderr:
             err_msg = "Something went wrong during 'lshw' execution"
@@ -400,7 +415,7 @@ class HardwareDetections(object):
                 if isinstance(ident, list):
                     ident = ident[0]
                 results[ident] = {}
-                for key, attr in attributes.iteritems():
+                for key, attr in six.iteritems(attributes):
                     if node.find(key) is not None:
                         if key == 'size':
                             # Is the MB/GB/TB suffix important enough to add checking for it?
@@ -458,6 +473,7 @@ class HardwareDetections(object):
             # Skip partitioned, non-osd drives
             partitions = glob(base + "/" + device + "*")
             if partitions:
+                # pylint: disable=unused-variable
                 for partition in partitions:
                     if 'nvme' in device:
                         ids = [re.sub(r'.+p(\d+)', r'\1', partition)
@@ -505,7 +521,7 @@ def version():
     """
     Displays version
     """
-    print VERSION
+    print(VERSION)
 
 
 __func_alias__ = {

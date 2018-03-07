@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # pylint: skip-file
 
+from __future__ import print_function
+from __future__ import absolute_import
 import salt.client
 import salt.config
 
@@ -13,6 +15,9 @@ import os
 import subprocess
 import sys
 import yaml
+from six.moves import filter
+from six.moves import zip
+from functools import reduce
 
 log = logging.getLogger(__name__)
 local_client = salt.client.LocalClient()
@@ -39,10 +44,10 @@ class Fio(object):
         '''
         public_network = list(local_client.cmd(
             'I@roles:mon', 'pillar.get',
-            ['public_network'], expr_form='compound').values())[0]
+            ['public_network'], tgt_type='compound').values())[0]
 
         minion_ip_lists = local_client.cmd(
-            client_glob, 'network.ip_addrs', [], expr_form='compound')
+            client_glob, 'network.ip_addrs', [], tgt_type='compound')
 
         if not minion_ip_lists:
             raise Exception('No minions found for glob {}'.format(client_glob))
@@ -182,23 +187,19 @@ def help():
     """
     Usage
     """
-    usage = ('salt-run benchmark.rbd work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
-             '    Run RBD benchmarks\n'
-             '\n\n'
-             'salt-run benchmark.cephfs work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
-             '    Run CephFS benchmarks\n'
-             '\n\n'
-             'salt-run benchmark.baseline work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
-             '    Run Baseline benchmarks\n'
-             '\n\n'
-             'salt-run benchmark.blockdev log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
-             '    Run local block device benchmarks (e.g. premapped kRBD or iSCSI)\n'
-             '\n\n'
-             'salt-run benchmark.fs work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target:\n\n'
-             '    Run local filesystem benchmarks (e.g. premounted NFS or SMB/CIFS)\n'
-             '\n\n'
-    )
-    print usage
+    usage = ("""salt-run benchmark.rbd work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target
+
+                 Run RBD benchmarks
+
+                salt-run benchmark.cephfs work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target
+
+                 Run CephFS benchmarks
+
+             salt-run benchmark.baseline work_dir=/path log_dir=/path job_dir=/path default_collection=simple.yml client_glob=target
+
+                 Run Baseline benchmarks
+             """)
+    print(usage)
     return ""
 
 def rbd(**kwargs):
@@ -264,7 +265,7 @@ def baseline(margin=10, verbose=False, **kwargs):
 
     # get all osd ids for a given client_glob
     osd_list = local_client.cmd(client_glob,
-        'osd.list', [], expr_form='compound')
+        'osd.list', [], tgt_type='compound')
 
     if not osd_list:
         raise Exception('No OSDs found for glob {}'.format(client_glob))
@@ -272,9 +273,9 @@ def baseline(margin=10, verbose=False, **kwargs):
     ids = [osd_id for (osd, osd_ids) in osd_list.items() for osd_id in osd_ids]
 
     # gotta get the master_minion...not pretty but works
-    master_minion = local_client.cmd(
+    master_minion = list(local_client.cmd(
         'I@roles:master', 'pillar.get',
-        ['master_minion'], expr_form='compound').items()[0][1]
+        ['master_minion'], tgt_type='compound').items())[0][1]
 
     sys.stdout.write('\nRunning osd benchmarks')
     sys.stdout.flush()

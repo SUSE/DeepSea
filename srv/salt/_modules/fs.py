@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=fixme
+
 """
 ------------------------------------------------------------------------------
 fs.py
@@ -14,36 +15,13 @@ import logging
 import os
 import tempfile
 import shutil
-import pprint
 import uuid
 import time
-from subprocess import Popen, PIPE
 # pylint: disable=import-error,3rd-party-module-not-gated
 import psutil
+from helper import _run
 
 log = logging.getLogger(__name__)
-
-# ------------------------------------------------------------------------------
-# Utility functions.
-# ------------------------------------------------------------------------------
-
-
-def _run(cmd):
-    """
-    NOTE: Taken from osd.py module.
-    """
-    log.info(cmd)
-    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-    proc.wait()
-    _stdout = proc.stdout.read().rstrip()
-    _stderr = proc.stdout.read().rstrip()
-    log.debug("return code: {}".format(proc.returncode))
-    log.debug(_stdout)
-    log.debug(_stderr)
-    log.debug(pprint.pformat(proc.stdout.read()))
-    log.debug(pprint.pformat(proc.stderr.read()))
-    # return proc.returncode, _stdout, _stderr
-    return proc.returncode, _stdout, _stderr
 
 
 def _systemctl_cmd_target(cmd, target):
@@ -135,7 +113,7 @@ def _ceph_is_down():
     omit_list = ['httpd-prefork', 'ganesha.nfsd', 'rpcbind', 'rpc.statd']
 
     while retries and not down:
-        running_procs = __salt__['cephprocesses.check'](results=True, quiet=True)['up'].keys()
+        running_procs = list(__salt__['cephprocesses.check'](results=True, quiet=True)['up'].keys())
         if not running_procs:
             down = True
         else:
@@ -636,7 +614,7 @@ def _chattr(op, path, attrs, rec, omit):
     omit = omit.split(',') if omit else []
 
     # Verify op.
-    if op not in supported_ops.keys():
+    if op not in list(supported_ops.keys()):
         log.error(("Unable to manipulate attrs for '{}': unsuppurted chattr op:"
                    "{}.".format(path, op)))
         rets[path] = False

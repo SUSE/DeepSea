@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
+
 """
 OpenATTIC configuration operations
 """
 
 from __future__ import absolute_import
 import os
+import logging
 from shutil import copyfile
 # pylint: disable=import-error,3rd-party-module-not-gated
 import configobj
-import salt.utils
 
-from salt.exceptions import CommandExecutionError
+log = logging.getLogger(__name__)
+
+try:
+    import salt.utils
+except ImportError:
+    logging.error("Could not import salt.util")
+
+try:
+    from salt.exceptions import CommandExecutionError
+except ImportError:
+    logging.error("Could not import salt.util")
 
 
 def _write_config_file(config_file, config):

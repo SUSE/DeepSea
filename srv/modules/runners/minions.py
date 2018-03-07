@@ -4,8 +4,11 @@
 Small collection of functions intended for all minions.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.key
 import salt.client
 import salt.utils
@@ -26,7 +29,7 @@ def help_():
              'salt-run minions.message content=message:\n\n'
              '    Logs a warning message\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -58,11 +61,11 @@ def ready(**kwargs):
             if settings['search']:
                 results = client.cmd(settings['search'], 'test.ping',
                                      timeout=__opts__['timeout'],
-                                     expr_form="compound")
+                                     tgt_type="compound")
             else:
                 results = client.cmd('*', 'test.ping', timeout=__opts__['timeout'])
         except SaltClientError as client_error:
-            print client_error
+            print(client_error)
             return ret
 
         actual = set(results.keys())
@@ -81,12 +84,12 @@ def ready(**kwargs):
             expected = set(key.list_keys()['minions'])
 
         if actual == expected:
-            log.warn("All minions are ready")
+            log.warning("All minions are ready")
             break
-        log.warn("Waiting on {}".format(",".join(list(expected - actual))))
+        log.warning("Waiting on {}".format(",".join(list(expected - actual))))
         if end_time:
             if end_time < time.time():
-                log.warn("Timeout reached")
+                log.warning("Timeout reached")
                 if settings['exception']:
                     msg = ("Timeout reached. "
                            "{} seems to be down.").format(",".join(list(expected - actual)))
@@ -101,7 +104,7 @@ def message(**kwargs):
     """
     Pass along a message
     """
-    log.warn("{}".format(kwargs['content']))
+    log.warning("{}".format(kwargs['content']))
     return ""
 
 __func_alias__ = {

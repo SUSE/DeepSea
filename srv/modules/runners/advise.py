@@ -8,7 +8,10 @@ and purpose but different functions.
 Note: a runner's output displays immediately unlike a module
 """
 
+from __future__ import print_function
+from __future__ import absolute_import
 import logging
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 
 log = logging.getLogger(__name__)
@@ -27,7 +30,7 @@ def help_():
              'salt-run advise.networks:\n\n'
              '    Passive message about public and cluster networks\n'
              '\n\n')
-    print usage
+    print(usage)
     return ""
 
 
@@ -61,7 +64,7 @@ def salt_upgrade():
         continue the upgrade.
         ***************************************************'''
 
-    print message
+    print(message)
     return message
 
 
@@ -76,7 +79,7 @@ def no_cluster_detected():
         setup DeepSea correctly and start the upgrade again.
         ***************************************************'''
 
-    print message
+    print(message)
     return message
 
 
@@ -91,8 +94,9 @@ def networks():
     bold = '\033[1m'
     endc = '\033[0m'
 
-    print "{:25}: {}{}{}".format('public network', bold, ", ".join(filter(None, public)), endc)
-    print "{:25}: {}{}{}".format('cluster network', bold, ", ".join(filter(None, cluster)), endc)
+    # pylint: disable=line-too-long
+    print("{:25}: {}{}{}".format('public network', bold, ", ".join([_f for _f in public if _f]), endc))
+    print("{:25}: {}{}{}".format('cluster network', bold, ", ".join([_f for _f in cluster if _f]), endc))
     return ""
 
 __func_alias__ = {
