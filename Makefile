@@ -34,7 +34,7 @@ version:
 setup.py:
 	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
 
-pyc: 
+pyc: setup.py 
 	#make sure to create bytecode with the correct version
 	find srv/ -name '*.py' -exec python3 -m py_compile {} \;
 	find cli/ -name '*.py' -exec python3 -m py_compile {} \;
@@ -754,7 +754,7 @@ copy-files:
 install-deps:
 	$(PKG_INSTALL) python3-setuptools python3-click
 
-install: setup.py pyc install-deps copy-files
+install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
@@ -766,7 +766,7 @@ install: setup.py pyc install-deps copy-files
 	# deepsea-cli
 	python3 setup.py install --root=$(DESTDIR)/
 
-rpm: setup.py tarball test
+rpm: tarball test
 	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
 	rpmbuild -bb deepsea.spec
 
