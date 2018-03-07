@@ -883,11 +883,12 @@ class Validate(object):
             if target.matches:
                 self.passed['deepsea_minions'] = "valid"
             else:
-                msg = ("No minions matched for {} - check "
-                       "/srv/pillar/ceph/deepsea_minions.sls".format(target.deepsea_minions))
+                # pylint: disable=line-too-long
+                msg = ("No minions matched for {} - See `man deepsea-minions`".format(target.deepsea_minions))
                 self.errors['deepsea_minions'] = [msg]
         else:
-            msg = "deepsea_minions not defined - check /srv/pillar/ceph/deepsea_minions.sls"
+            msg = ("deepsea_minions not defined - " +
+                   "See `/srv/pillar/ceph/deepsea_minions.sls` for details")
             self.errors['deepsea_minions'] = [msg]
 
     def report(self):
