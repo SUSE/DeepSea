@@ -21,24 +21,6 @@ endif
 endif
 endif
 
-
-usage:
-	@echo "Usage:"
-	@echo -e "\tmake install\tInstall DeepSea on this host"
-	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
-	@echo -e "\tmake test\tRun unittests"
-
-version:
-	@echo "version: "$(VERSION)
-
-setup.py:
-	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
-
-pyc: setup.py 
-	#make sure to create bytecode with the correct version
-	find srv/ -name '*.py' -exec python3 -m py_compile {} \;
-	find cli/ -name '*.py' -exec python3 -m py_compile {} \;
-
 copy-files:
 	# salt-master config files
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
@@ -751,10 +733,27 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
+usage:
+	@echo "Usage:"
+	@echo -e "\tmake install\tInstall DeepSea on this host"
+	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
+	@echo -e "\tmake test\tRun unittests"
+
+version:
+	@echo "version: "$(VERSION)
+
+setup.py:
+	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
+
+pyc:
+	#make sure to create bytecode with the correct version
+	find srv/ -name '*.py' -exec python3 -m py_compile {} \;
+	find cli/ -name '*.py' -exec python3 -m py_compile {} \;
+
 install-deps:
 	$(PKG_INSTALL) python3-setuptools python3-click
 
-install: pyc install-deps copy-files
+install: install-deps setup.py pyc copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
