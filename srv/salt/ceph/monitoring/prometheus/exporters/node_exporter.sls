@@ -1,32 +1,6 @@
-{% if grains.get('os', '') == 'CentOS' %}
-install_prometheus_repo:
-  pkgrepo.managed:
-    - name: prometheus-rpm_release
-    - humanname: Prometheus release repo
-    - baseurl: https://packagecloud.io/prometheus-rpm/release/el/$releasever/$basearch
-    - gpgcheck: False
-    - enabled: True
-    - fire_event: True
-
-install_node_exporter:
-  pkg.installed:
-    - name: node_exporter
-    - refresh: True
-    - fire_event: True
-
-{% else %}
-
-install node exporter package:
-  pkg.installed:
-    - name: golang-github-prometheus-node_exporter
-    - refresh: True
-    - fire_event: True
-
-{% endif %}
-
 # this switch should detect whicch node_exporter version we have. From 0.15.2
 # the node exporter options start with -- and additional options exist
-{% if salt['cmd.run']('node_exporter -h 2>&1 | grep "\-\-"') == "" %}
+{% if salt['cmd.run']('node_exporter -h 2>&1 | grep -q "\-\-"') != 0 %}
 
 set node exporter service args:
   file.managed:
