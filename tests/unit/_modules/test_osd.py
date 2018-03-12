@@ -2061,6 +2061,40 @@ class Test_is_incorrect():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
+    def test_is_incorrect_bluestore_no_wal_config(self, osdc_o):
+        """
+        Check bluestore OSD with existing wal, but no wal config
+        """
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-2 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    def test_is_incorrect_bluestore_no_db_config(self, osdc_o):
+        """
+        Check bluestore OSD with existing db, but no db config
+        """
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-3 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
     @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_wal(self, readlink, run, osdc_o):
