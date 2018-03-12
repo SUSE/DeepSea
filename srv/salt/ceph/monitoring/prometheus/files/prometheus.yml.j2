@@ -11,10 +11,27 @@ rule_files: []
 
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: 'ceph-exporter'
-    static_configs:
-      - targets: ['{{ salt['cmd.run']('cat /etc/salt/minion_id') }}:9128']
-
-  - job_name: 'node-exporter'
+  - job_name: 'ceph-mgr'
+    scrape_interval: {{ salt['pillar.get']('monitoring:scrape_interval:ceph', '10s')|yaml }}
     file_sd_configs:
-      - files: [ '/etc/prometheus/ses_nodes/*.yml' ]
+      - files: [ '/etc/prometheus/ses/mgr_exporter.yml' ]
+    relabel_configs: {{ salt['pillar.get']('monitoring:relabel_config:ceph', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:metric_relabel_config:ceph', [])|yaml }}
+  - job_name: 'node-exporter'
+    scrape_interval: {{ salt['pillar.get']('monitoring:scrape_interval:node', '10s')|yaml }}
+    file_sd_configs:
+      - files: [ '/etc/prometheus/ses/node_*.yml' ]
+    relabel_configs: {{ salt['pillar.get']('monitoring:relabel_config:node', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:metric_relabel_config:node', [])|yaml }}
+  - job_name: 'prometheus'
+    scrape_interval: {{ salt['pillar.get']('monitoring:scrape_interval:prometheus', '10s')|yaml }}
+    static_configs:
+      - targets: {{ salt.saltutil.runner('select.minions', format='{}:9090', cluster='ceph', roles='prometheus')|yaml }}
+    relabel_configs: {{ salt['pillar.get']('monitoring:relabel_config:prometheus', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:metric_relabel_config:prometheus', [])|yaml }}
+  - job_name: 'grafana'
+    scrape_interval: {{ salt['pillar.get']('monitoring:scrape_interval:grafana', '10s')|yaml }}
+    static_configs:
+      - targets: {{ salt.saltutil.runner('select.minions', format='{}:3000', cluster='ceph', roles='grafana')|yaml }}
+    relabel_configs: {{ salt['pillar.get']('monitoring:relabel_config:grafana', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:metric_relabel_config:grafana', [])|yaml }}

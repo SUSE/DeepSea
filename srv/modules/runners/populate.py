@@ -523,7 +523,7 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = ['admin', 'mon', 'mds', 'mgr', 'igw']
+        roles = ['admin', 'mon', 'mds', 'mgr', 'igw', 'grafana', 'prometheus']
         roles += self._rgw_configurations()
         roles += self._ganesha_configurations()
         self.available_roles.extend(roles)
