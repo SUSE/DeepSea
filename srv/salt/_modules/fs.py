@@ -728,7 +728,7 @@ def get_uuid(dev_path='', **kwargs):
     rc, _stdout, _stderr = _run(cmd)
 
     if rc == 0 and _stdout:
-	return os.path.basename(_stdout)
+	return os.path.basename(_stdout.split()[-1])
     else:
 	log.error("Failed to determine uuid of '{}'.".format(dev_path))
 	return None
