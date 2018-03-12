@@ -523,7 +523,7 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = ['admin', 'mon', 'mds', 'mgr', 'igw']
+        roles = ['admin', 'mon', 'mds', 'mgr', 'igw', 'grafana', 'prometheus']
         roles += self._rgw_configurations()
         roles += self._ganesha_configurations()
         self.available_roles.extend(roles)
@@ -742,6 +742,25 @@ class CephCluster(object):
     Generate cluster assignment files
     """
 
+    monitoring_default_config = {'monitoring': {
+        'prometheus': {
+            'rule_files': [],
+            'scrape_interval': {
+                'ceph': '10s',
+                'node': '10s',
+                'prometheus': '10s',
+                'grafana': '10s'},
+            'relabel_config': {
+                'ceph': [],
+                'node': [],
+                'prometheus': [],
+                'grafana': []},
+            'metric_relabel_config': {
+                'ceph': [],
+                'node': [],
+                'prometheus': [],
+                'grafana': []}}}}
+
     def __init__(self, settings, writer, **kwargs):
         """
         Track cluster names, set minions to actively responding minions
@@ -804,6 +823,7 @@ class CephCluster(object):
         __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
         contents = {}
         contents['time_server'] = '{}'.format(__salt__['master.minion']())
+        contents.update(self.monitoring_default_config)
 
         self.writer.write(filename, contents)
 

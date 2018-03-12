@@ -11,10 +11,27 @@ rule_files: []
 
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: 'ceph-exporter'
-    static_configs:
-      - targets: ['{{ salt['cmd.run']('cat /etc/salt/minion_id') }}:9128']
-
-  - job_name: 'node-exporter'
+  - job_name: 'ceph-mgr'
+    scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:ceph', '10s')|yaml }}
     file_sd_configs:
-      - files: [ '/etc/prometheus/ses_nodes/*.yml' ]
+      - files: [ '/etc/prometheus/SUSE/ceph/mgr_exporter.yml' ]
+    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:ceph', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:ceph', [])|yaml }}
+  - job_name: 'node-exporter'
+    scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:node', '10s')|yaml }}
+    file_sd_configs:
+      - files: [ '/etc/prometheus/SUSE/node_exporter/*.yml' ]
+    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:node', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', [])|yaml }}
+  - job_name: 'prometheus'
+    scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:prometheus', '10s')|yaml }}
+    file_sd_configs:
+      - files: [ '/etc/prometheus/SUSE/prometheus/*.yml' ]
+    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:prometheus', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:prometheus', [])|yaml }}
+  - job_name: 'grafana'
+    scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:grafana', '10s')|yaml }}
+    file_sd_configs:
+      - files: [ '/etc/prometheus/SUSE/grafana/*.yml' ]
+    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:grafana', [])|yaml }}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:grafana', [])|yaml }}

@@ -35,11 +35,23 @@ show networks:
 
 {% endfor %}
 
-setup monitoring:
+populate scrape configs:
   salt.state:
     - tgt: {{ master }}
     - tgt_type: compound
-    - sls: ceph.monitoring
+    - sls: ceph.monitoring.prometheus.populate_scrape_configs
+
+install prometheus:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.install
+
+push scrape configs:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.push_scrape_configs
 
 install and setup node exporters:
   salt.state:
@@ -51,3 +63,19 @@ advise OSDs:
   salt.runner:
     - name: advise.osds
 
+# install grafana:
+#   salt.state:
+#     - tgt: 'I@roles:grafana and I@cluster:ceph'
+#     - tgt_type: compound
+#     - sls: ceph.monitoring.grafana
+# 
+# setup grafana auth:
+#   salt.state:
+#     - tgt: {{ salt['pillar.get']('master_minion') }}
+#     - sls: ceph.monitoring.grafana.auth
+# 
+# setup grafana dashboards:
+#   salt.state:
+#     - tgt: {{ salt['pillar.get']('master_minion') }}
+#     - sls: ceph.monitoring.grafana.dashboards
+# 
