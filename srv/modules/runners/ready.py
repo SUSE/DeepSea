@@ -69,18 +69,44 @@ class Checks(object):
 
     def apparmor(self):
         """
-        Scan minions for apparmor settings.  
+        Scan minions for apparmor settings.
         """
-        contents = self.local.cmd(self.search , 'cmd.shell', [ '/usr/sbin/apparmor_status --enabled 2>/dev/null; echo $?' ], expr_form="compound")
+        contents = self.local.cmd(self.search, 'cmd.shell',
+                                  [('/usr/sbin/aa-status --enabled '
+                                    '2>/dev/null; echo $?')],
+                                  expr_form="compound")
+        # check if all file.managed for the profiles would apply
+        # cleanly using test=True. If so salt returns 'result': True
+        # burried in its return structure
+        profile_test = self.local.cmd(self.search, 'state.apply',
+                                      ['ceph.apparmor.profiles'],
+                                      kwarg={'test': 'true'},
+                                      expr_form="compound")
+
+        minions_with_apparmor = 0
+        minions_with_profiles = 0
         for minion in contents:
             if contents[minion] and int(contents[minion]) == 0:
-                msg = "enabled on minion {}".format(minion)
-                if 'apparmor' in self.warnings:
-                    self.warnings['apparmor'].append(msg)
-                else:
-                    self.warnings['apparmor'] = [ msg ]
-        if 'apparmor' not in self.warnings:
+                minions_with_apparmor += 1
+                # aggregate the number of 'result': True we got
+                profiles_present = [v['result'] for k, v in
+                                    profile_test[minion].items()
+                                    if v['result'] == True]
+                # and compare to number of file.managed state we have, i.e. the
+                # number of profiles
+                if len(profile_test[minion]) == len(profiles_present):
+                    minions_with_profiles += 1
+        if minions_with_apparmor == 0:
             self.passed['apparmor'] = "disabled"
+        else:
+            msg = ('enabled on {}/{} minions; {} minions have all ceph.apparmor'
+                   ' profiles').format(minions_with_apparmor,
+                                       len(profile_test),
+                                       minions_with_profiles)
+            if minions_with_apparmor == minions_with_profiles:
+                self.passed['apparmor'] = msg
+            else:
+                self.warnings['apparmor'] = msg
 
 
     def report(self):
