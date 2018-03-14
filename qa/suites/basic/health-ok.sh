@@ -5,11 +5,11 @@
 # This script runs DeepSea stages 0-3 to deploy a Ceph cluster, optionally
 # with data-at-rest encryption of OSDs, on all the nodes that have at least
 # one external disk drive. After stage 3 completes, the script checks for
-# HEALTH_OK and tests the "ceph.restart" orchestration.
+# HEALTH_OK and tests the "ceph.restart" orchestration if --mini is not provided.
 #
 # The script makes no assumptions beyond those listed in qa/README.
 #
-# On success (HEALTH_OK is reached and "ceph.restart" orchestration behaves
+# On success (HEALTH_OK is reached and optionally "ceph.restart" orchestration behaves
 # as expected), the script returns 0. On failure, for whatever reason, the
 # script returns non-zero.
 #
@@ -32,6 +32,7 @@ function usage {
     echo "Options:"
     echo "    --cli         Use DeepSea CLI"
     echo "    --encryption  Deploy OSDs with data-at-rest encryption"
+    echo "    --mini        Only uses a bare minimum of tests"
     echo "    --help        Display this usage message"
     exit 1
 }
@@ -47,10 +48,12 @@ eval set -- "$TEMP"
 # process options
 CLI=""
 ENCRYPTION=""
+MINI=""
 while true ; do
     case "$1" in
         --cli) CLI="cli" ; shift ;;
         --encrypted|--encryption) ENCRYPTION="encryption" ; shift ;;
+        --mini|--smoke) MINI="mini" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
@@ -80,20 +83,22 @@ test_systemd_ceph_osd_target_wants
 create_all_pools_at_once write_test
 rados_write_test
 ceph_version_test
-run_stage_0 "$CLI"
-restart_services
-mon_restarted "1" # 1 means not restarted
-osd_restarted "1"
-# apply config change
-change_osd_conf
-change_mon_conf
-# construct and spread config
-run_stage_3 "$CLI"
-restart_services
-mon_restarted "0" # 0 means restarted
-osd_restarted "0"
-# make sure still in HEALTH_OK
-ceph_cluster_status
-ceph_health_test
+if [ -z "$MINI" ] ; then
+    run_stage_0 "$CLI"
+    restart_services
+    mon_restarted "1" # 1 means not restarted
+    osd_restarted "1"
+    # apply config change
+    change_osd_conf
+    change_mon_conf
+    # construct and spread config
+    run_stage_3 "$CLI"
+    restart_services
+    mon_restarted "0" # 0 means restarted
+    osd_restarted "0"
+    # make sure still in HEALTH_OK
+    ceph_cluster_status
+    ceph_health_test
+fi
 
 echo "OK"
