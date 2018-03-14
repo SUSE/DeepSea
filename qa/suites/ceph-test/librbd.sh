@@ -17,8 +17,13 @@
 #
 
 set -ex
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 
 install_deps
 cat_salt_config
