@@ -1,0 +1,17 @@
+# vim:syntax=apparmor
+# Author: Jan Fajerski <jfajerski@suse.com>
+#include <tunables/global>
+
+/usr/bin/radosgw {
+  #include <ceph.d/common>
+  #include <abstractions/openssl>
+
+  capability chown,
+
+  /usr/bin/radosgw mr,
+
+  /etc/mime.types r,
+
+  /proc/*/net/psched r,
+}
+
