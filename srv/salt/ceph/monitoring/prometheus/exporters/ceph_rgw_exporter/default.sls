@@ -3,7 +3,7 @@ install_package:
   {% if grains.get('os', '') == 'CentOS' %}
     - name: python2-prometheus_client
   {% else %}
-    - name: python-prometheus-client
+    - name: python3-prometheus-client
   {% endif %}
     - refresh: True
 
