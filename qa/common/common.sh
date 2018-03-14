@@ -1,8 +1,12 @@
 #
 # This file is part of the DeepSea integration test suite
 #
+# It *must* be called like so:
+#
+#     source $BASEDIR/common/common.sh $BASEDIR
+#
 
-BASEDIR=$(pwd)
+BASEDIR=${1}
 source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
