@@ -1,0 +1,10 @@
+#include <tunables/global>
+
+# vim:syntax=apparmor
+# Author: Jan Fajerski <jfajerski@suse.com>
+
+/usr/bin/ceph-mds {
+  #include <ceph.d/common>
+
+  /usr/bin/ceph-mds mr,
+}
