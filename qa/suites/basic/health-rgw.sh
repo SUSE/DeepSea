@@ -18,16 +18,21 @@
 #
 
 set -ex
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 
 function usage {
     set +x
-    echo "${0} - script for testing RADOS Gateway deployment"
+    echo "$SCRIPTNAME - script for testing RADOS Gateway deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli] [--ssl]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--ssl]"
     echo
     echo "Options:"
     echo "    --cli      Use DeepSea CLI"

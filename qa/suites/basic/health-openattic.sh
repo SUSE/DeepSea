@@ -18,17 +18,22 @@
 #
 
 set -ex
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 source $BASEDIR/common/nfs-ganesha.sh
 
 function usage {
     set +x
-    echo "${0} - script for testing openATTIC deployment"
+    echo "$SCRIPTNAME - script for testing openATTIC deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli]"
     echo
     echo "Options:"
     echo "    --cli      Use DeepSea CLI"
