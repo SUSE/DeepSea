@@ -409,11 +409,14 @@ EOF
 }
 
 function policy_cfg_nfs_ganesha {
+  # takes as argument number of NFS-Ganesha nodes to deploy
+  if [[ $# == 0 ]]; then nfs_nodes_num=1;else nfs_nodes_num=$1;fi
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - NFS-Ganesha (first node)
-role-ganesha/cluster/*.sls slice=[:1]
+# Role assignment - NFS-Ganesha 
+role-ganesha/cluster/*.sls slice=[:$nfs_nodes_num]
 EOF
 }
+
 
 
 #
@@ -726,3 +729,20 @@ echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }
+
+function _get_fqdn_from_pillar_role {
+	# input argument is pillar role 
+	salt -C I@roles:${1} grains.item fqdn --out yaml|grep fqdn|sed 's/fqdn: //g'|tr -d ' '
+}
+
+function _get_fqdn_from_salt_grain_key {
+	# input argument is salt grain key
+	salt -C G@${1}:* grains.item fqdn --out yaml|grep fqdn|sed 's/fqdn: //g'|tr -d ' '
+}
+
+function _get_salt_grain_value {
+	# input argument is salt grain key
+	salt -C G@${1}:* grains.item $1 --out=yaml|grep $1|sed -e "s|${1}:||g"|tr -d ' '
+}
+
+
