@@ -89,18 +89,25 @@ function _first_x_node {
 }
 
 function _run_test_script_on_node {
-  local TESTSCRIPT=$1
+  local TESTSCRIPT=$1 # on success, TESTSCRIPT must output the exact string
+                      # "Result: OK" on a line by itself, otherwise it will
+                      # be considered to have failed
   local TESTNODE=$2
   local ASUSER=$3
   salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT
   local LOGFILE=/tmp/test_script.log
+  local STDERR_LOGFILE=/tmp/test_script_stderr.log
   if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
-    salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>&1 | tee $LOGFILE
+    salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>$STDERR_LOGFILE | tee $LOGFILE
   else
-    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>&1 | tee $LOGFILE
+    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>$STDERR_LOGFILE | tee $LOGFILE
   fi
-  local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
-  test "x$RESULT" = "xOK"
+  local RESULT=$(grep -o -P '(?<=Result: )(OK)$' $LOGFILE) # since the script
+                                # is run by salt, the output appears indented
+  test "x$RESULT" = "xOK" && return
+  echo "The test script that ran on $TESTNODE failed. The stderr output was as follows:"
+  cat $STDERR_LOGFILE
+  exit 1
 }
 
 function _grace_period {
