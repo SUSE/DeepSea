@@ -6,13 +6,14 @@
 
 function _report_stage_failure_and_die {
   local stage_num=$1
-  local stage_log_path=$2
-  local number_of_failures=$3
+  #local stage_log_path=$2
+  #local number_of_failures=$3
 
   test -z $number_of_failures && number_of_failures="unknown number of"
   echo "********** Stage $stage_num failed with $number_of_failures failures **********"
-  echo "Here comes the log:"
-  cat $stage_log_path
+  echo "Here comes the systemd log:"
+  #cat $stage_log_path
+  journalctl -r | head -n 500
   exit 1
 }
 
@@ -50,10 +51,10 @@ function _run_stage {
               echo "DeepSea stage OK"
           else
               echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-              exit 1
+              _report_stage_failure_and_die $stage_num
           fi
       else
-          exit 1
+          _report_stage_failure_and_die $stage_num
       fi
       set -e
       return
@@ -67,11 +68,11 @@ function _run_stage {
   if [[ "$STAGE_FINISHED" ]]; then
     FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
     if [[ "$FAILED" -gt "0" ]]; then
-      _report_stage_failure_and_die $stage_num $stage_log_path $FAILED
+      _report_stage_failure_and_die $stage_num
     fi
     echo "********** Stage $stage_num completed successefully **********"
   else
-    _report_stage_failure_and_die $stage_num $stage_log_path
+    _report_stage_failure_and_die $stage_num
   fi
 }
 
