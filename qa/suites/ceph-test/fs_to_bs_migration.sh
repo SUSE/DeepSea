@@ -23,7 +23,7 @@ run_stage_1
 policy_cfg_base
 policy_cfg_mon_flex
 policy_cfg_storage # no node will be a "client"
-configure_OSD_to_filestore
+configure_all_OSDs_to_filestore
 cat_policy_cfg
 run_stage_2
 ceph_conf_small_cluster
@@ -31,10 +31,10 @@ ceph_conf_mon_allow_pool_delete
 run_stage_3
 ceph_cluster_status
 ceph_health_test
-check_OSD_type
+check_OSD_type filestore
 migrate_to_bluestore
 ceph_health_test
-check_OSD_type
+check_OSD_type bluestore
 
 echo "OK"
 
