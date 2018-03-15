@@ -38,13 +38,7 @@ setup monitoring:
     - tgt_type: compound
     - sls: ceph.monitoring
 
-install node exporters:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - tgt_type: compound
-    - sls: ceph.monitoring.prometheus.exporters.node_exporter_package
-
-setup node exporters:
+install and setup node exporters:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
