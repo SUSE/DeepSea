@@ -708,6 +708,7 @@ orchestration completes.
 %package qa
 Summary:        DeepSea integration test scripts
 Group:          System/Libraries
+Requires:       jq
 Recommends:     deepsea
 
 %description qa
