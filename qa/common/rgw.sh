@@ -137,11 +137,11 @@ function rgw_ssl_init {
 }
 
 function rgw_configure_2_zones {
-	realm=suseqa
+    realm=suseqa
     zonegroup=eu
     zone1=eu-east-1
     zone2=eu-east-2
-    zone_user=zadmin
+    zone_user=zoneadmin
     rgw1_hostname=$(salt -C 'I@roles:rgw'  network.get_hostname --out txt|awk -F "." '{print $1}'|head -n 1);echo $rgw1_hostname
     rgw2_hostname=$(salt -C 'I@roles:rgw'  network.get_hostname --out txt|awk -F "." '{print $1}'|grep -v $rgw1_hostname);echo $rgw2_hostname
     rgw1_IP=$(salt $rgw1_hostname\* network.ipaddrs --out txt|awk -F "'" '{print $2}'|head -n 1|tr -d ' ')
@@ -172,12 +172,27 @@ function rgw_configure_2_zones {
     salt ${rgw2_hostname}\* cmd.run "systemctl restart ceph-radosgw@rgw.${rgw2_hostname}.service"
     rgw2_service_running=$(salt ${rgw2_hostname}\* service.status ceph-radosgw@rgw.${rgw2_hostname}.service --out txt|awk -F ':' '{print $2}'|tr -d ' ')
     [[ $rgw2_service_running == 'True' ]] && echo "RGW service running."
-    sleep 5
+    timeout_counter=1
+    while sleep 5
+    do 
+      radosgw-admin sync status|grep syncing && break || echo waiting
+      if [[ timeout_counter -gt 20 ]];then echo "Error: Sync TIMEOUT.";exit 1;fi
+      ((timeout_counter++))
+    done
     radosgw-admin sync status 
-    radosgw-admin sync status | grep "data is caught up with source"
     radosgw-admin user list --rgw-zone=$zone2|grep $zone_user # checking if user replicated to secondary zone 
-    curl $rgw1_IP 
-    curl $rgw2_IP
+    curl $rgw1_IP|grep anonymous
+    curl $rgw2_IP|grep anonymous
 }
- 
+
+function rgw_python-booto_rw_test {
+    # iterate trough each RGW node and execute python script 
+    # argument is rgw user id
+    for i in $(salt -C 'I@roles:rgw'  network.get_hostname --out txt|awk -F "." '{print $1}')
+    do
+        RGW_IP_ADDR=$(salt $i\* network.ipaddrs --out txt|awk -F "'" '{print $2}')
+        RGW_TCP_port=$(cat /etc/ceph/ceph.conf|grep -A 5 client.rgw.$i|grep "civetweb port"|grep -oE "[1-9][0-9]+")
+        python common/rgw_s3_rw_test.py $RGW_IP_ADDR:$RGW_TCP_port $1
+    done
+} 
 

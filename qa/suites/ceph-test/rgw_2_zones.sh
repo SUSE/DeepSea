@@ -39,6 +39,7 @@ ceph_cluster_status
 ceph_health_test
 run_stage_4
 rgw_configure_2_zones
+rgw_python-booto_rw_test zoneadmin
 
 echo "OK"
 
