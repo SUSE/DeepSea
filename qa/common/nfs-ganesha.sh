@@ -13,9 +13,6 @@ function nfs_ganesha_no_root_squash {
   sed -i '/Access_Type = RW;/a \\tSquash = No_root_squash;' $GANESHAJ2
 }
 
-#
-# Since we don't seem to be using NFSv4, the effect of this option is unclear
-#
 function nfs_ganesha_no_grace_period {
   local GANESHAJ2=/srv/salt/ceph/ganesha/files/ganesha.conf.j2
   cat <<EOF >>$GANESHAJ2
@@ -29,6 +26,7 @@ function nfs_ganesha_debug_log {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
+echo "WWWW"
 echo "nfs-ganesha debug log script running as $(whoami) on $(hostname --fqdn)"
 sed -i 's/NIV_EVENT/NIV_DEBUG/g' /etc/sysconfig/nfs-ganesha
 cat /etc/sysconfig/nfs-ganesha
@@ -64,7 +62,7 @@ function nfs_ganesha_mount {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-echo "nfs-ganesha mount test script"
+echo "WWWW nfs-ganesha mount test script"
 test ! -e $NFS_MOUNTPOINT
 mkdir $NFS_MOUNTPOINT
 test -d $NFS_MOUNTPOINT
@@ -91,6 +89,7 @@ function nfs_ganesha_umount {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
+echo "WWWW"
 echo "nfs-ganesha umount test script running as $(whoami) on $(hostname --fqdn)"
 umount $NFS_MOUNTPOINT
 rm -rf $NFS_MOUNTPOINT
@@ -121,6 +120,7 @@ function nfs_ganesha_write_test {
   cat <<EOF > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
+echo "WWWW"
 echo "nfs-ganesha write test script"
 ! test -e $TOUCHFILE
 touch $TOUCHFILE
