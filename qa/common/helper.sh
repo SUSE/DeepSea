@@ -6,13 +6,14 @@
 
 function _report_stage_failure_and_die {
   local stage_num=$1
-  local stage_log_path=$2
-  local number_of_failures=$3
+  #local stage_log_path=$2
+  #local number_of_failures=$3
 
   test -z $number_of_failures && number_of_failures="unknown number of"
   echo "********** Stage $stage_num failed with $number_of_failures failures **********"
-  echo "Here comes the log:"
-  cat $stage_log_path
+  echo "Here comes the systemd log:"
+  #cat $stage_log_path
+  journalctl -r | head -n 500
   exit 1
 }
 
@@ -50,10 +51,10 @@ function _run_stage {
               echo "DeepSea stage OK"
           else
               echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-              exit 1
+              _report_stage_failure_and_die $stage_num
           fi
       else
-          exit 1
+          _report_stage_failure_and_die $stage_num
       fi
       set -e
       return
@@ -67,11 +68,11 @@ function _run_stage {
   if [[ "$STAGE_FINISHED" ]]; then
     FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
     if [[ "$FAILED" -gt "0" ]]; then
-      _report_stage_failure_and_die $stage_num $stage_log_path $FAILED
+      _report_stage_failure_and_die $stage_num
     fi
     echo "********** Stage $stage_num completed successefully **********"
   else
-    _report_stage_failure_and_die $stage_num $stage_log_path
+    _report_stage_failure_and_die $stage_num
   fi
 }
 
@@ -88,18 +89,25 @@ function _first_x_node {
 }
 
 function _run_test_script_on_node {
-  local TESTSCRIPT=$1
+  local TESTSCRIPT=$1 # on success, TESTSCRIPT must output the exact string
+                      # "Result: OK" on a line by itself, otherwise it will
+                      # be considered to have failed
   local TESTNODE=$2
   local ASUSER=$3
   salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT
   local LOGFILE=/tmp/test_script.log
+  local STDERR_LOGFILE=/tmp/test_script_stderr.log
   if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
-    salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>&1 | tee $LOGFILE
+    salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>$STDERR_LOGFILE | tee $LOGFILE
   else
-    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>&1 | tee $LOGFILE
+    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>$STDERR_LOGFILE | tee $LOGFILE
   fi
-  local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
-  test "x$RESULT" = "xOK"
+  local RESULT=$(grep -o -P '(?<=Result: )(OK)$' $LOGFILE) # since the script
+                                # is run by salt, the output appears indented
+  test "x$RESULT" = "xOK" && return
+  echo "The test script that ran on $TESTNODE failed. The stderr output was as follows:"
+  cat $STDERR_LOGFILE
+  exit 1
 }
 
 function _grace_period {
