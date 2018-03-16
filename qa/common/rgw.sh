@@ -65,7 +65,12 @@ set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
 RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-zypper --non-interactive --no-gpg-checks refresh
+set +x
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
 zypper --non-interactive install --no-recommends curl libxml2-tools
 RGWXMLOUT=/tmp/rgw_test.xml
 curl $RGWNODE > $RGWXMLOUT
@@ -86,10 +91,15 @@ set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
 RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-zypper --non-interactive --no-gpg-checks refresh
+set +x
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
 zypper --non-interactive install --no-recommends curl libxml2-tools
 RGWXMLOUT=/tmp/rgw_test.xml
-curl -k https://$RGWNODE  > $RGWXMLOUT
+curl -k https://$RGWNODE > $RGWXMLOUT
 test -f $RGWXMLOUT
 xmllint $RGWXMLOUT
 grep anonymous $RGWXMLOUT
@@ -125,3 +135,49 @@ function rgw_ssl_init {
     popd
     rgw_add_ssl_global
 }
+
+function rgw_configure_2_zones {
+	realm=suseqa
+    zonegroup=eu
+    zone1=eu-east-1
+    zone2=eu-east-2
+    zone_user=zadmin
+    rgw1_hostname=$(salt -C 'I@roles:rgw'  network.get_hostname --out txt|awk -F "." '{print $1}'|head -n 1);echo $rgw1_hostname
+    rgw2_hostname=$(salt -C 'I@roles:rgw'  network.get_hostname --out txt|awk -F "." '{print $1}'|grep -v $rgw1_hostname);echo $rgw2_hostname
+    rgw1_IP=$(salt $rgw1_hostname\* network.ipaddrs --out txt|awk -F "'" '{print $2}'|head -n 1|tr -d ' ')
+    [[ -n $rgw1_IP ]] && echo $rgw1_IP || exit 1
+    rgw2_IP=$(salt $rgw2_hostname\* network.ipaddrs --out txt|awk -F "'" '{print $2}'|head -n 1|tr -d ' ')
+    [[ -n $rgw2_IP ]] && echo $rgw1_IP || exit 1
+    SYSTEM_ACCESS_KEY=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
+    SYSTEM_SECRET_KEY=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1)
+    sed -i "/client.rgw.${rgw1_hostname}/a\rgw_zone=$zone1" /etc/ceph/ceph.conf
+    sed -i "/client.rgw.${rgw2_hostname}/a\rgw_zone=$zone2" /etc/ceph/ceph.conf
+    salt-cp '*' '/etc/ceph/ceph.conf' '/etc/ceph/'
+    radosgw-admin realm create --rgw-realm=$realm --default
+    radosgw-admin zonegroup delete --rgw-zonegroup=default
+    radosgw-admin zone delete --rgw-zone=default 
+    radosgw-admin zonegroup create --rgw-zonegroup=$zonegroup --endpoints=http://${rgw1_IP}:80 --master --default
+    radosgw-admin zone create --rgw-zonegroup=$zonegroup --rgw-zone=$zone1 \
+    --endpoints=http://${rgw1_IP}:80 --access-key=$SYSTEM_ACCESS_KEY --secret=$SYSTEM_SECRET_KEY --master --default
+    radosgw-admin user create --uid=$zone_user --display-name="Zone User - primary zone" --access-key=$SYSTEM_ACCESS_KEY --secret=$SYSTEM_SECRET_KEY --system
+    radosgw-admin user list --rgw-zone=$zone1
+    radosgw-admin period get
+    radosgw-admin period update --commit
+    salt ${rgw1_hostname}\* cmd.run "systemctl restart ceph-radosgw@rgw.${rgw1_hostname}.service"
+    rgw1_service_running=$(salt ${rgw1_hostname}\* service.status ceph-radosgw@rgw.${rgw1_hostname}.service --out txt|awk -F ':' '{print $2}'|tr -d ' ')
+    [[ $rgw1_service_running == 'True' ]] && echo "RGW service running."
+    radosgw-admin zone create --rgw-zonegroup=$zonegroup --endpoints=http://${rgw2_IP}:80 \
+    --rgw-zone=$zone2 --access-key=$SYSTEM_ACCESS_KEY --secret=$SYSTEM_SECRET_KEY
+    radosgw-admin period update --commit
+    salt ${rgw2_hostname}\* cmd.run "systemctl restart ceph-radosgw@rgw.${rgw2_hostname}.service"
+    rgw2_service_running=$(salt ${rgw2_hostname}\* service.status ceph-radosgw@rgw.${rgw2_hostname}.service --out txt|awk -F ':' '{print $2}'|tr -d ' ')
+    [[ $rgw2_service_running == 'True' ]] && echo "RGW service running."
+    sleep 5
+    radosgw-admin sync status 
+    radosgw-admin sync status | grep "data is caught up with source"
+    radosgw-admin user list --rgw-zone=$zone2|grep $zone_user # checking if user replicated to secondary zone 
+    curl $rgw1_IP 
+    curl $rgw2_IP
+}
+ 
+
