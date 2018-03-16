@@ -49,7 +49,12 @@ set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
 RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-zypper --non-interactive --no-gpg-checks refresh
+set +x
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
 zypper --non-interactive install --no-recommends curl libxml2-tools
 RGWXMLOUT=/tmp/rgw_test.xml
 curl $RGWNODE > $RGWXMLOUT
@@ -70,10 +75,15 @@ set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
 RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-zypper --non-interactive --no-gpg-checks refresh
+set +x
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
 zypper --non-interactive install --no-recommends curl libxml2-tools
 RGWXMLOUT=/tmp/rgw_test.xml
-curl -k https://$RGWNODE  > $RGWXMLOUT
+curl -k https://$RGWNODE > $RGWXMLOUT
 test -f $RGWXMLOUT
 xmllint $RGWXMLOUT
 grep anonymous $RGWXMLOUT
