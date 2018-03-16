@@ -742,3 +742,43 @@ echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }
+
+function configure_all_OSDs_to_filestore {
+	salt-run proposal.populate format=filestore name=filestore 
+	chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
+	sed -i 's/profile-default/profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
+}
+
+function verify_OSD_type {
+    # checking with 'ceph osd metadata' command
+    # 1st input argument: type 'filestore' or 'bluestore'
+    # 2nd input argument: OSD ID 
+    osd_type=$(ceph osd metadata $2 -f json-pretty | jq '.osd_objectstore')
+    if [[ $osd_type != \"$1\" ]]
+        then 
+        echo "Error: Object store type is not $1 for OSD.ID : $2"
+        exit 1
+    else
+        echo OSD.${2} $osd_type
+    fi
+}
+
+function check_OSD_type {  
+    # expecting as argument 'filestore' or 'bluestore' 
+    for i in $(ceph osd ls);do verify_OSD_type $1 $i;done
+}
+
+function migrate_to_bluestore {
+	salt-run state.orch ceph.migrate.policy
+	sed -i 's/profile-filestore/migrated-profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
+	salt-run disengage.safety
+	salt-run state.orch ceph.migrate.osds
+}
+
+function disable_restart_in_stage_0 {
+	cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
+	cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
+	cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
+	cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
+}
+
