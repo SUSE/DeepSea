@@ -194,7 +194,7 @@ class Util(object):
         return [elem.strip() for elem in list_str.split(delim) if elem.strip()]
 
 
-JEWEL_VERSION = "10.2"
+LUMINOUS_VERSION = "11.2"
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -782,12 +782,12 @@ class Validate(object):
             log.debug("VALIDATE ceph_version: minion ->{}<- final munged version ->{}<-"
                       .format(minion, version))
             assert isinstance(version, str), "version value is not a string"
-            # FIXME: "10.10" < "10.2" in Python terms, but not in terms of
+            # FIXME: "11.10" < "11.2" in Python terms, but not in terms of
             # version numbering semantics
-            if version < JEWEL_VERSION:
+            if version < LUMINOUS_VERSION:
                 self.errors.setdefault('ceph_version', []).append(
-                    "The Ceph version available on minion {} ({}) is older than 'jewel' ({})"
-                    .format(minion, version, JEWEL_VERSION))
+                    "The Ceph version available on minion {} ({}) is older than 'luminous' ({})"
+                    .format(minion, version, LUMINOUS_VERSION))
 
         self._set_pass_status('ceph_version')
 
