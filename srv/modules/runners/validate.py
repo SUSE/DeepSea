@@ -25,6 +25,7 @@ import sys
 import glob
 from subprocess import Popen, PIPE
 from collections import OrderedDict
+from distutils.version import LooseVersion
 import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
@@ -782,9 +783,27 @@ class Validate(object):
             log.debug("VALIDATE ceph_version: minion ->{}<- final munged version ->{}<-"
                       .format(minion, version))
             assert isinstance(version, str), "version value is not a string"
-            # FIXME: "11.10" < "11.2" in Python terms, but not in terms of
-            # version numbering semantics
-            if version < LUMINOUS_VERSION:
+
+            # "11.10" < "11.2" in Python terms, but not in terms of
+            # version numbering semantics, so we have to break the version number
+            # down into its integer components and compare those separately.
+            #
+            # We can assume that Ceph version numbers will always begin with X.Y.Z
+            # where X, Y, and Z are integers. Here, we are only interested in X and Y.
+            #
+            # In other words, there must be at least two version components and
+            # both must be convertible into integers.
+
+            if not all(s.isdigit() for s in version.split(".")[0:2]):
+                failmsg = ("Minion {} reports unparseable Ceph version {}"
+                           .format(minion, version))
+                if self.in_dev_env:
+                    log.warning('VALIDATE ceph_version: ' + failmsg)
+                else:
+                    self.errors.setdefault('ceph_version', []).append(failmsg)
+                    continue
+
+            if LooseVersion(version) < LooseVersion(LUMINOUS_VERSION):
                 self.errors.setdefault('ceph_version', []).append(
                     "The Ceph version available on minion {} ({}) is older than 'luminous' ({})"
                     .format(minion, version, LUMINOUS_VERSION))
