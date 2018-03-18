@@ -2434,3 +2434,61 @@ class Test_is_incorrect():
         ret = obj.is_incorrect()
         assert ret == True
 
+class TestCephPGS:
+
+    def test_pg_value(self):
+        """
+        """
+        states = [{'name': 'active+clean', 'num': 11}]
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            ceph_pgs = osd.CephPGs()
+            ret = ceph_pgs._pg_value(states)
+            assert ret == 11
+
+    def test_pg_value_missing(self):
+        """
+        """
+        states = []
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            ceph_pgs = osd.CephPGs()
+            ret = ceph_pgs._pg_value(states)
+            assert ret == 0
+
+    @patch('srv.salt._modules.osd.CephPGs.pg_states')
+    def test_quiescent(self, pg_states):
+        """
+        """
+        pg_states.return_value = [{'name': 'active+clean', 'num': 11}]
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            ceph_pgs = osd.CephPGs()
+            ceph_pgs.settings = {'timeout': 1, 'delay': 1}
+            ret = ceph_pgs.quiescent()
+            assert ret == None
+
+    @patch('time.sleep')
+    @patch('srv.salt._modules.osd.CephPGs.pg_states')
+    def test_quiescent_timeout(self, pg_states, sleep):
+        """
+        """
+        pg_states.return_value = [{}, {}]
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            ceph_pgs = osd.CephPGs()
+            ceph_pgs.settings = {'timeout': 1, 'delay': 1}
+
+            with pytest.raises(RuntimeError) as excinfo:
+                ret = ceph_pgs.quiescent()
+                assert 'Timeout expired' in str(excinfo.value)
+
+    @patch('time.sleep')
+    @patch('srv.salt._modules.osd.CephPGs.pg_states')
+    def test_quiescent_delay_is_zero(self, pg_states, sleep):
+        """
+        """
+        pg_states.return_value = [{}, {}]
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            ceph_pgs = osd.CephPGs()
+            ceph_pgs.settings = {'timeout': 1, 'delay': 0}
+
+            with pytest.raises(ValueError) as excinfo:
+                ret = ceph_pgs.quiescent()
+                assert 'The delay cannot be 0' in str(excinfo.value)
