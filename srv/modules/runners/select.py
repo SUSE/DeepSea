@@ -22,7 +22,10 @@ def help_():
     """
     usage = ('salt-run select.minions key=value [key=value...]:\n'
              'salt-run select.minions host=True key=value [key=value...]:\n\n'
+             'salt-run select.minions host=True format="{}" key=value [key=value...]:\n\n'
              '    Return an array of minions based on the target criteria\n'
+             '    possibly formatted with format string\n'
+             '    Note that the format string must contain exactly one {}\n'
              '\n\n'
              'salt-run select.one_minion key=value [key=value...]:\n\n'
              '    Return a random single minion that meets the critieria\n'
@@ -51,10 +54,12 @@ def _grain_host(client, minion):
     return list(client.cmd(minion, 'grains.item', ['host']).values())[0]['host']
 
 
-def minions(host=False, **kwargs):
+def minions(host=False, format='{}', **kwargs):
     """
     Some targets needs to match all minions within a search criteria.
     """
+    if not isinstance(format, str):
+        raise TypeError("format argument is not a string")
     criteria = []
     for key in kwargs:
         if key[0] == "_":
@@ -77,8 +82,8 @@ def minions(host=False, **kwargs):
     sys.stdout = _stdout
 
     if host:
-        return [_grain_host(local, k) for k in _minions.keys()]
-    return list(_minions.keys())
+        return [format.format(_grain_host(local, k)) for k in _minions.keys()]
+    return [format.format(m) for m in _minions.keys()]
 
 
 def one_minion(**kwargs):
