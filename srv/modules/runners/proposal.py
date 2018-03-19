@@ -115,6 +115,11 @@ base_dir = '/srv/pillar/ceph/proposals'
 def _parse_args(kwargs):
     args = std_args.copy()
     args.update(kwargs)
+    if 'kwargs' in kwargs:
+        args.update(kwargs['kwargs'])
+        args.pop('kwargs')
+    log.info("args: {}".format(args))
+
     if args.get('name') == 'import':
         print(('ERROR: profile name import is a reserved name. Please use'
               ' another name'))
