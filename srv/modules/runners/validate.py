@@ -25,7 +25,7 @@ import sys
 import glob
 from subprocess import Popen, PIPE
 from collections import OrderedDict
-from distutils.version import LooseVersion
+from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error,blacklisted-module
 import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
