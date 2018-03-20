@@ -189,6 +189,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/openattic
 %dir /srv/salt/ceph/openattic/auth
 %dir /srv/salt/ceph/openstack
+%dir %attr(0700, salt, salt) /srv/salt/ceph/openstack/cache
 %dir /srv/salt/ceph/openstack/cinder
 %dir /srv/salt/ceph/openstack/cinder/auth
 %dir /srv/salt/ceph/openstack/cinder/files

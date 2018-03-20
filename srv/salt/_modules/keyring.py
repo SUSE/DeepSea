@@ -63,10 +63,10 @@ def file_(component, name=None):
         return "/srv/salt/ceph/rgw/cache/" + name + ".keyring"
 
     elif component == "cinder":
-        return "/srv/salt/ceph/openstack/cinder/cache/cinder.keyring"
+        return "/srv/salt/ceph/openstack/cache/cinder.keyring"
 
     elif component == "glance":
-        return "/srv/salt/ceph/openstack/glance/cache/glance.keyring"
+        return "/srv/salt/ceph/openstack/cache/glance.keyring"
 
     elif component == "ganesha":
         return "/srv/salt/ceph/ganesha/cache/" + name + ".keyring"

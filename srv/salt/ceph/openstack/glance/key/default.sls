@@ -9,6 +9,7 @@
     - mode: 600
     - makedirs: True
     - context:
+      client: client.glance
       secret: {{ salt['keyring.secret'](keyring_file) }}
     - fire_event: True
 
