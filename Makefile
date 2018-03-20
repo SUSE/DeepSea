@@ -738,6 +738,7 @@ copy-files:
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mgr/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mon/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openattic/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openstack/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/rgw/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum
@@ -752,6 +753,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mgr/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mon/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openattic/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openstack/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/osd/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true

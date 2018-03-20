@@ -9,6 +9,7 @@
     - mode: 600
     - makedirs: True
     - context:
+      client: client.cinder
       secret: {{ salt['keyring.secret'](keyring_file) }}
     - fire_event: True
 
