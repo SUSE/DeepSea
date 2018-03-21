@@ -1,154 +1,162 @@
 {
-  "overwrite": true,
-  "dashboard": {
-    "__requires": [
-      {
-        "type": "grafana",
-        "id": "grafana",
-        "name": "Grafana",
-        "version": "3.1.1"
-      },
-      {
-        "type": "panel",
-        "id": "graph",
-        "name": "Graph",
-        "version": ""
-      },
-      {
-        "type": "datasource",
-        "id": "prometheus",
-        "name": "Prometheus",
-        "version": "1.0.0"
-      },
-      {
-        "type": "panel",
-        "id": "singlestat",
-        "name": "Singlestat",
-        "version": ""
-      }
-    ],
-    "annotations": {
-      "list": []
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "3.1.1"
     },
-    "description": "Ceph RBD status.\r\n",
-    "editable": false,
-    "graphTooltip": 0,
-    "hideControls": false,
-    "id": null,
-    "links": [],
-    "refresh": "30s",
-    "rows": [
-      {
-        "collapse": false,
-        "height": 218,
-        "panels": [
-          {
-            "aliasColors": {},
-            "bars": false,
-            "datasource": null,
-            "fill": 1,
-            "id": 1,
-            "legend": {
-              "avg": false,
-              "current": false,
-              "max": false,
-              "min": false,
-              "show": true,
-              "total": false,
-              "values": false
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "singlestat",
+      "name": "Singlestat",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "description": "Ceph RBD status.\r\n",
+  "editable": false,
+  "graphTooltip": 0,
+  "hideControls": false,
+  "id": null,
+  "links": [],
+  "refresh": "30s",
+  "rows": [
+    {
+      "collapse": false,
+      "height": 218,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": null,
+          "fill": 1,
+          "id": 1,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "repeat": null,
+          "scopedVars": {
+            "image": {
+              "selected": true,
+              "text": "bar",
+              "value": "bar"
+            }
+          },
+          "seriesOverrides": [],
+          "span": 12,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "ceph_rbd_image_bytes_provisioned{image=~\"$image\",pool=~\"$pool\"}",
+              "intervalFactor": 2,
+              "legendFormat": "Bytes provisioned",
+              "metric": "ceph_rbd_image_bytes_provisioned",
+              "refId": "A",
+              "step": 40
             },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "percentage": false,
-            "pointradius": 5,
-            "points": false,
-            "renderer": "flot",
-            "repeat": null,
-            "scopedVars": {
-              "image": {
-                "selected": true,
-                "text": "bar",
-                "value": "bar"
-              }
+            {
+              "expr": "ceph_rbd_image_bytes_used{image=~\"$image\",pool=~\"$pool\"}",
+              "intervalFactor": 2,
+              "legendFormat": "Bytes used",
+              "metric": "ceph_rbd_image_bytes_used",
+              "refId": "B",
+              "step": 40
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "RBD Stats - $image",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "bytes",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
             },
-            "seriesOverrides": [],
-            "span": 12,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "ceph_rbd_image_bytes_provisioned{image=~\"$image\",pool=~\"$pool\"}",
-                "intervalFactor": 2,
-                "legendFormat": "Bytes provisioned",
-                "metric": "ceph_rbd_image_bytes_provisioned",
-                "refId": "A",
-                "step": 40
-              },
-              {
-                "expr": "ceph_rbd_image_bytes_used{image=~\"$image\",pool=~\"$pool\"}",
-                "intervalFactor": 2,
-                "legendFormat": "Bytes used",
-                "metric": "ceph_rbd_image_bytes_used",
-                "refId": "B",
-                "step": 40
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeShift": null,
-            "title": "RBD Stats - $image",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "format": "bytes",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ]
-          }
-        ],
-        "repeat": "image",
-        "repeatIteration": null,
-        "repeatRowId": null,
-        "showTitle": false,
-        "title": "Ceph RBDs",
-        "titleSize": "h6"
-      }
-    ],
-    "schemaVersion": 14,
-    "style": "dark",
-    "tags": [
-      "ceph",
-      "rbd",
-      "deepsea",
-      "SES"
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        }
+      ],
+      "repeat": "image",
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Ceph RBDs",
+      "titleSize": "h6"
+    }
+  ],
+  "schemaVersion": 14,
+  "style": "dark",
+  "tags": [
+    "ceph",
+    "rbd",
+    "deepsea",
+    "SES"
     ],
     "templating": {
       "list": [
+        {
+          "hide": 0,
+          "label": null,
+          "name": "datasource",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "",
+          "type": "datasource"
+        },
         {
           "auto": true,
           "auto_count": 10,
@@ -228,7 +236,7 @@
           "allFormat": "glob",
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "hideLabel": false,
           "includeAll": true,
@@ -251,7 +259,7 @@
           "allFormat": "glob",
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "hideLabel": false,
           "includeAll": false,
@@ -274,7 +282,7 @@
           "allFormat": "glob",
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "hideLabel": false,
           "includeAll": false,
@@ -296,7 +304,7 @@
         {
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "includeAll": true,
           "label": "RBD Image",
@@ -347,5 +355,4 @@
     "timezone": "browser",
     "title": "Ceph - RBD",
     "version": 3
-  }
 }

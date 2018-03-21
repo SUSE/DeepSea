@@ -1,6 +1,4 @@
-{
-  "overwrite": true,
-  "dashboard": {
+  {
     "__requires": [
       {
         "type": "grafana",
@@ -51,7 +49,7 @@
               "rgba(237, 129, 40, 0.89)",
               "rgba(245, 54, 54, 0.9)"
             ],
-            "datasource": "Prometheus",
+            "datasource": "$datasource",
             "editable": true,
             "error": false,
             "format": "percent",
@@ -127,7 +125,7 @@
           {
             "aliasColors": {},
             "bars": false,
-            "datasource": "Prometheus",
+            "datasource": "$datasource",
             "decimals": 2,
             "editable": true,
             "error": false,
@@ -235,7 +233,7 @@
           {
             "aliasColors": {},
             "bars": false,
-            "datasource": "Prometheus",
+            "datasource": "$datasource",
             "decimals": 5,
             "editable": true,
             "error": false,
@@ -327,7 +325,7 @@
           {
             "aliasColors": {},
             "bars": false,
-            "datasource": "Prometheus",
+            "datasource": "$datasource",
             "decimals": 2,
             "editable": true,
             "error": false,
@@ -509,6 +507,16 @@
     "templating": {
       "list": [
         {
+          "hide": 0,
+          "label": null,
+          "name": "datasource",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "",
+          "type": "datasource"
+        },
+        {
           "auto": true,
           "auto_count": 10,
           "auto_min": "1m",
@@ -587,7 +595,7 @@
           "allFormat": "glob",
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "hideLabel": false,
           "includeAll": false,
@@ -610,7 +618,7 @@
           "allFormat": "glob",
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "hideLabel": false,
           "includeAll": false,
@@ -632,7 +640,7 @@
         {
           "allValue": null,
           "current": {},
-          "datasource": "Prometheus",
+          "datasource": "$datasource",
           "hide": 0,
           "includeAll": false,
           "label": "OSD",
@@ -684,4 +692,3 @@
     "title": "Ceph - OSD",
     "version": 3
   }
-}
