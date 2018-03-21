@@ -63,19 +63,14 @@ advise OSDs:
   salt.runner:
     - name: advise.osds
 
-# install grafana:
-#   salt.state:
-#     - tgt: 'I@roles:grafana and I@cluster:ceph'
-#     - tgt_type: compound
-#     - sls: ceph.monitoring.grafana
-# 
-# setup grafana auth:
-#   salt.state:
-#     - tgt: {{ salt['pillar.get']('master_minion') }}
-#     - sls: ceph.monitoring.grafana.auth
-# 
-# setup grafana dashboards:
-#   salt.state:
-#     - tgt: {{ salt['pillar.get']('master_minion') }}
-#     - sls: ceph.monitoring.grafana.dashboards
-# 
+populate grafana datasources:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.monitoring.grafana.populate_datasources
+
+install grafana:
+  salt.state:
+    - tgt: 'I@roles:grafana and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.grafana
