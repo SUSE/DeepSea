@@ -527,7 +527,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/restart/controlled/*.sls
 %config /srv/salt/ceph/monitoring/*.sls
 %config /srv/salt/ceph/monitoring/grafana/*.sls
-%config /srv/salt/ceph/monitoring/grafana/files/*.json
+%config /srv/salt/ceph/monitoring/grafana/files/*.j2
 %config /srv/salt/ceph/monitoring/prometheus/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/*.sls
