@@ -25,6 +25,7 @@ import sys
 import glob
 from subprocess import Popen, PIPE
 from collections import OrderedDict
+from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error,blacklisted-module
 import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
@@ -194,7 +195,7 @@ class Util(object):
         return [elem.strip() for elem in list_str.split(delim) if elem.strip()]
 
 
-JEWEL_VERSION = "10.2"
+LUMINOUS_VERSION = "11.2"
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -752,16 +753,26 @@ class Validate(object):
         target = deepsea_minions.DeepseaMinions()
         search = target.deepsea_minions
         local = salt.client.LocalClient()
-        contents = local.cmd(search, 'pkg.latest_version', ['ceph'], tgt_type="compound")
+        contents = local.cmd(search, 'pkg.latest_version', ['ceph-common'], tgt_type="compound")
         for minion, version in contents.items():
+            # sometimes, version contains a string value
+            # other times, it contains an empty dict
+            log.debug("VALIDATE ceph_version: minion ->{}<- latest_version version ->{}<-"
+                      .format(minion, version))
             if not version:
-                info = local.cmd(minion, 'pkg.info_installed', ['ceph'])
-                if info and 'version' in info[minion]['ceph']:
-                    version = info[minion]['ceph']['version']
+                info = local.cmd(minion, 'pkg.info_installed', ['ceph-common'])
+                if info and 'version' in info[minion]['ceph-common']:
+                    version = info[minion]['ceph-common']['version']
+                    log.debug("VALIDATE ceph_version: minion ->{}<- info_installed version ->{}<-"
+                              .format(minion, version))
                 else:
-                    self.errors.setdefault('ceph_version', []).append(
-                        "No Ceph version is available for installation in {}".format(minion))
-                    continue
+                    failmsg = ("No Ceph version is available for installation on minion {}"
+                               .format(minion))
+                    if self.in_dev_env:
+                        log.warning('VALIDATE ceph_version: ' + failmsg)
+                    else:
+                        self.errors.setdefault('ceph_version', []).append(failmsg)
+                        continue
 
             colon_idx = version.find(':')
             if colon_idx != -1:
@@ -769,10 +780,33 @@ class Validate(object):
             dash_idx = version.rfind('-')
             if dash_idx != -1:
                 version = version[:dash_idx]
-            if version < JEWEL_VERSION:
+            log.debug("VALIDATE ceph_version: minion ->{}<- final munged version ->{}<-"
+                      .format(minion, version))
+            assert isinstance(version, str), "version value is not a string"
+
+            # "11.10" < "11.2" in Python terms, but not in terms of
+            # version numbering semantics, so we have to break the version number
+            # down into its integer components and compare those separately.
+            #
+            # We can assume that Ceph version numbers will always begin with X.Y.Z
+            # where X, Y, and Z are integers. Here, we are only interested in X and Y.
+            #
+            # In other words, there must be at least two version components and
+            # both must be convertible into integers.
+
+            if not all(s.isdigit() for s in version.split(".")[0:2]):
+                failmsg = ("Minion {} reports unparseable Ceph version {}"
+                           .format(minion, version))
+                if self.in_dev_env:
+                    log.warning('VALIDATE ceph_version: ' + failmsg)
+                else:
+                    self.errors.setdefault('ceph_version', []).append(failmsg)
+                    continue
+
+            if LooseVersion(version) < LooseVersion(LUMINOUS_VERSION):
                 self.errors.setdefault('ceph_version', []).append(
-                    "The Ceph version available in {} is older than 'jewel' (10.2)"
-                    .format(minion))
+                    "The Ceph version available on minion {} ({}) is older than 'luminous' ({})"
+                    .format(minion, version, LUMINOUS_VERSION))
 
         self._set_pass_status('ceph_version')
 
