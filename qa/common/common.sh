@@ -427,6 +427,9 @@ role-ganesha/cluster/*.sls slice=[:1]
 EOF
 }
 
+function ceph_apparmor {
+    salt '*' state.apply ceph.apparmor
+}
 
 #
 # functions for creating pools
