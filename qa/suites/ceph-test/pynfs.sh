@@ -91,7 +91,7 @@ fi
 policy_cfg_nfs_ganesha
 cat_policy_cfg
 run_stage_2 "$CLI"
-ceph_conf_small_cluster
+ceph_conf_adjustments
 run_stage_3 "$CLI"
 ceph_cluster_status
 if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
