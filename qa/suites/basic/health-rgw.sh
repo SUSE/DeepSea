@@ -76,8 +76,9 @@ set -x
 
 $BASEDIR/suites/basic/health-stages.sh "$CLI" "$ENCRYPTION" "--rgw" "$SSL"
 
-rgw_curl_test
-if [ -n "$SSL" ] ; then
+if [ -z "$SSL" ] ; then
+    rgw_curl_test
+else
     rgw_curl_test_ssl
     validate_rgw_cert_perm
 fi
