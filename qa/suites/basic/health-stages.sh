@@ -126,7 +126,7 @@ policy_cfg_storage "$CLIENT_NODES" "$ENCRYPTION"
 cat_policy_cfg
 rgw_demo_users
 run_stage_2 "$CLI"
-ceph_conf_small_cluster "$DASHBOARD"
+ceph_conf_adjustments "$DASHBOARD"
 run_stage_3 "$CLI"
 
 # pre-create pools with calculated number of PGs so we don't get health

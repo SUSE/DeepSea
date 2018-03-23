@@ -156,42 +156,39 @@ foo = bar
 EOF
 }
 
-function ceph_conf_small_cluster {
-  local DASHBOARD=${1}
-  local STORAGENODES=$(json_storage_nodes)
-  if [ -n "$DASHBOARD" ] ; then
-    echo "Adjusting ceph.conf for deployment of dashboard MGR module"
+function ceph_conf_adjustments {
+    local DASHBOARD=${1}
+    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+mon allow pool delete = true
+keyring = /etc/ceph/ceph.client.admin.keyring
+EOF
+    if [ -n "$DASHBOARD" ] ; then
+      echo "Adjusting ceph.conf for deployment of dashboard MGR module"
     cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
 mgr initial modules = dashboard
 EOF
-  fi
-  test ! -z "$STORAGENODES"
-  if [ "x$STORAGENODES" = "x1" ] ; then
-    # 1 node, 2 OSDs
-    echo "Adjusting ceph.conf for operation with 1 storage node"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    fi
+    local STORAGENODES=$(json_storage_nodes)
+    test ! -z "$STORAGENODES"
+    if [ "x$STORAGENODES" = "x1" ] ; then
+      # 1 node, 2 OSDs
+      echo "Adjusting ceph.conf for operation with 1 storage node"
+      cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 16
 osd pool default size = 2
 osd crush chooseleaf type = 0 # failure domain == osd
 EOF
-  elif [ "x$STORAGENODES" = "x2" ] ; then
-    # 2 nodes, 4 OSDs
-    echo "Adjusting ceph.conf for operation with 2 storage nodes"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    elif [ "x$STORAGENODES" = "x2" ] ; then
+      # 2 nodes, 4 OSDs
+      echo "Adjusting ceph.conf for operation with 2 storage nodes"
+      cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 8
 osd pool default size = 2
 EOF
-  else
-    echo "Three or more storage nodes; not adjusting ceph.conf"
-    # TODO: look up default value of "mon pg warn min per osd"
-  fi
-}
-
-function ceph_conf_mon_allow_pool_delete {
-    echo "Adjusting ceph.conf to allow pool deletes"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
-mon allow pool delete = true
-EOF
+    else
+      echo "Three or more storage nodes; not adjusting ceph.conf"
+      # TODO: look up default value of "mon pg warn min per osd"
+    fi
 }
 
 #
