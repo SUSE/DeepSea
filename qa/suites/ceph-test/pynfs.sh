@@ -28,16 +28,17 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli] [--fsal={cephfs,rgw,both}]"
+    echo "  ${0} [-h,--help] [--apparmor] [--cli] [--fsal={cephfs,rgw,both}]"
     echo
     echo "Options:"
+    echo "    --apparmor Use AppArmor"
     echo "    --cli      Use DeepSea CLI"
     echo "    --fsal     Defaults to cephfs"
     echo "    --help     Display this usage message"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,fsal:,help" \
+TEMP=$(getopt -o h --long "apparmor,cli,fsal:,help" \
      -n 'pynfs.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -46,10 +47,12 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 eval set -- "$TEMP"
 
 # process options
+APPARMOR=""
 CLI=""
 FSAL=cephfs
 while true ; do
     case "$1" in
+        --apparmor) APPARMOR="$1" ; shift ;;
         --cli) CLI="cli" ; shift ;;
         --fsal) FSAL=$2 ; shift ; shift ;;
         -h|--help) usage ;;    # does not return
@@ -70,6 +73,7 @@ echo "Testing deployment with FSAL ->$FSAL<-"
 assert_enhanced_getopt
 install_deps
 cat_salt_config
+test -n "$APPARMOR" && ceph_apparmor
 run_stage_0 "$CLI"
 run_stage_1 "$CLI"
 policy_cfg_base

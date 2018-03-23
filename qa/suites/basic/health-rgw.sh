@@ -27,16 +27,17 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli] [--ssl]"
+    echo "  ${0} [-h,--help] [--apparmor] [--cli] [--ssl]"
     echo
     echo "Options:"
+    echo "    --apparmor Use AppArmor"
     echo "    --cli      Use DeepSea CLI"
     echo "    --help     Display this usage message"
     echo "    --ssl      Use SSL (https, port 443) with RGW"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,help,ssl" \
+TEMP=$(getopt -o h --long "apparmor,cli,help,ssl" \
      -n 'health-rgw.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -45,10 +46,12 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 eval set -- "$TEMP"
 
 # process options
+APPARMOR=""
 CLI=""
 SSL=""
 while true ; do
     case "$1" in
+        --apparmor) APPARMOR="$1" ; shift ;;
         --cli) CLI="cli" ; shift ;;
         -h|--help) usage ;;    # does not return
         --ssl) SSL="ssl" ; shift ;;
@@ -60,6 +63,7 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
+test -n "$APPARMOR" && ceph_apparmor
 run_stage_0 "$CLI"
 if [ -n "$SSL" ] ; then
     echo "Testing RGW deployment with SSL"
