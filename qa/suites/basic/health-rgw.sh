@@ -85,8 +85,9 @@ run_stage_3 "$CLI"
 ceph_cluster_status
 run_stage_4 "$CLI"
 ceph_cluster_status
-rgw_curl_test
-if [ -n "$SSL" ] ; then
+if [ -z "$SSL" ] ; then
+    rgw_curl_test
+else
     rgw_curl_test_ssl
     validate_rgw_cert_perm
 fi
