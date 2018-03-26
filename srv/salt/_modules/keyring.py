@@ -10,7 +10,6 @@ import struct
 import base64
 import time
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
-from helper import _convert_out
 
 
 def secret(filename):
@@ -38,7 +37,7 @@ def gen_secret():
     key = os.urandom(16)
     header = struct.pack('<hiih', 1, int(time.time()), 0, len(key))
     keyring = base64.b64encode(header + key)
-    return _convert_out(keyring)
+    return __salt__['helper.convert_out'](keyring)
 
 
 # pylint: disable=too-many-return-statements

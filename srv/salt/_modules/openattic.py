@@ -14,11 +14,6 @@ import configobj
 log = logging.getLogger(__name__)
 
 try:
-    import salt.utils
-except ImportError:
-    logging.error("Could not import salt.util")
-
-try:
     from salt.exceptions import CommandExecutionError
 except ImportError:
     logging.error("Could not import salt.util")
@@ -30,7 +25,7 @@ def _write_config_file(config_file, config):
     """
     conf_content = ""
     write_log = set()
-    with salt.utils.fopen(config_file, "r") as fir:
+    with open(config_file, "r") as fir:
         for line in fir:
             sline = line.strip()
             idx = sline.find('=')
@@ -56,7 +51,7 @@ def _write_config_file(config_file, config):
             conf_content += '{}={}\n'.format(key, val_str)
 
     try:
-        with salt.utils.fopen(config_file, "w") as fiw:
+        with open(config_file, "w") as fiw:
             fiw.write(conf_content)
     except IOError as ex:
         if ex.errno == 13:

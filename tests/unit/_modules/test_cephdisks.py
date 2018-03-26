@@ -2,9 +2,11 @@ import pytest
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import cephdisks, helper
-from mock import MagicMock, patch, mock_open, mock
+from mock import MagicMock, patch, mock_open, mock, create_autospec
 from tests.unit.helper.output import OutputHelper
+from tests.unit.helper.fixtures import helper_specs
 
+DEFAULT_MODULE=cephdisks
 
 class TestHardwareDetections():
     '''
@@ -18,14 +20,16 @@ class TestHardwareDetections():
         Patched method are tested separately.
 
         scope: class
-        return: instance of 
+        return: instance of
                 <class srv.salt._modules.cephdisks.HardwareDetections>
         """
         self.hw_detection_method = patch('srv.salt._modules.cephdisks.HardwareDetections._find_detection_tool')
         self.hw_dtctr = self.hw_detection_method.start()
         self.hw_dtctr.return_value = '/a/valid/path'
-        yield cephdisks.HardwareDetections()
+        cephdisks = helper_specs(module=DEFAULT_MODULE)()
+        yield cephdisks
         self.hw_detection_method.stop()
+
 
     @pytest.fixture(scope='module')
     def output_helper(self):
@@ -35,22 +39,22 @@ class TestHardwareDetections():
         """
         Given we have that tool, return the full path
         """
-        assert hwd._which('cat') is not None
+        assert hwd.HardwareDetections()._which('cat') is not None
 
     def test_which_failure(self, hwd):
         """
         Given we do not have that tool installed or privileges.
         But tell which to not raise an error.
         """
-        assert hwd._which('notthere', failhard=False) is None
+        assert hwd.HardwareDetections()._which('notthere', failhard=False) is None
 
     def test_which_failure_explicit_raise(self, hwd):
         """
-        Given we do not have that tool installed or privileges. 
+        Given we do not have that tool installed or privileges.
         And explicitly tell `which` so.
         """
         with pytest.raises(Exception):
-            hwd._which('notthere', failhard=True)
+            hwd.HardwareDetections()._which('notthere', failhard=True)
 
     def test_which_failure_raise(self, hwd):
         """
@@ -58,7 +62,7 @@ class TestHardwareDetections():
         And don't explicitly tell `which` so.
         """
         with pytest.raises(Exception):
-            hwd._which('notthere')
+            hwd.HardwareDetections()._which('notthere')
 
     def test_which_failure_raise_param_error(self, hwd):
         """
@@ -66,34 +70,34 @@ class TestHardwareDetections():
         And tell which the wrong type(argument).
         """
         with pytest.raises(Exception):
-            hwd._which('notthere', 'StringTrue')
+            hwd.HardwareDetections()._which('notthere', 'StringTrue')
 
     def test_is_rotational(self, hwd):
         read_data = "1"
         with patch("srv.salt._modules.cephdisks.open", mock_open(read_data=read_data)) as mock_file:
             expect = read_data
-            out = hwd._is_rotational('disk/in/question')
+            out = hwd.HardwareDetections()._is_rotational('disk/in/question')
             assert expect == out
 
     def test_is_rotational_not(self, hwd):
         read_data = "0"
         with patch("srv.salt._modules.cephdisks.open", mock_open(read_data=read_data)) as mock_file:
             expect = read_data
-            out = hwd._is_rotational('disk/in/question')
+            out = hwd.HardwareDetections()._is_rotational('disk/in/question')
             assert expect == out
 
     def test_is_removable_not(self, hwd):
         read_data = "0"
         with patch("srv.salt._modules.cephdisks.open", mock_open(read_data=read_data)) as mock_file:
             expect = None
-            out = hwd._is_removable('disk/in/question')
+            out = hwd.HardwareDetections()._is_removable('disk/in/question')
             assert expect == out
 
     def test_is_removable(self, hwd):
         read_data = "1"
         with patch("srv.salt._modules.cephdisks.open", mock_open(read_data=read_data)) as mock_file:
             expect = True
-            out = hwd._is_removable('disk/in/question')
+            out = hwd.HardwareDetections()._is_removable('disk/in/question')
             assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -102,7 +106,7 @@ class TestHardwareDetections():
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lsscsi_with_raid_fail['stdout']
         expect = output_helper.lsscsi_with_raid_fail['expected_return']
-        out = hwd._return_device_bus_id(output_helper.lsscsi_with_raid_fail['device'])
+        out = hwd.HardwareDetections()._return_device_bus_id(output_helper.lsscsi_with_raid_fail['device'])
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -111,7 +115,7 @@ class TestHardwareDetections():
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lsscsi_with_raid_success['stdout']
         expect = output_helper.lsscsi_with_raid_success['expected_return']
-        out = hwd._return_device_bus_id(output_helper.lsscsi_with_raid_success['device'])
+        out = hwd.HardwareDetections()._return_device_bus_id(output_helper.lsscsi_with_raid_success['device'])
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -120,7 +124,7 @@ class TestHardwareDetections():
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.sgdisk_invalid['stdout']
         expect = output_helper.sgdisk_invalid['expected_return']
-        out = hwd._osd('/dev/sda', ['1', '2', '3', '4'])
+        out = hwd.HardwareDetections()._osd('/dev/sda', ['1', '2', '3', '4'])
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -129,7 +133,7 @@ class TestHardwareDetections():
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.sgdisk_valid_osd_data['stdout']
         expect = output_helper.sgdisk_valid_osd_data['expected_return']
-        out = hwd._osd('/dev/sdb', ['1', '2', '3', '4'])
+        out = hwd.HardwareDetections()._osd('/dev/sdb', ['1', '2', '3', '4'])
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -138,24 +142,24 @@ class TestHardwareDetections():
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.sgdisk_valid_journal['stdout']
         expect = output_helper.sgdisk_valid_journal['expected_return']
-        out = hwd._osd('/dev/sdn', ['1', '2', '3', '4'])
+        out = hwd.HardwareDetections()._osd('/dev/sdn', ['1', '2', '3', '4'])
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
     def test__hwinfo(self, po, wm, output_helper, hwd):
-        """ 
+        """
         No negative test needed here.
         Won't test hwinfo itself here
         """
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.hwinfo['stdout']
         args = output_helper.hwinfo['function_args']
-        out = hwd._hwinfo(args)
+        out = hwd.HardwareDetections()._hwinfo(args)
         expect = output_helper.hwinfo['expected_return']
         assert out != {}
         assert type(out) == dict
-        assert expect == out 
+        assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._return_device_bus_id')
@@ -167,7 +171,7 @@ class TestHardwareDetections():
         po.return_value.returncode = 0
         po.return_value.stdout = output_helper.smartctl_spinner_valid['stdout']
         expect = output_helper.smartctl_spinner_valid['expected_return']
-        out = hwd._query_disktype('sda', {'controller_name': 'megaraid'}, 'base')
+        out = hwd.HardwareDetections()._query_disktype('sda', {'controller_name': 'megaraid'}, 'base')
         assert expect, out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -180,8 +184,8 @@ class TestHardwareDetections():
         po.return_value.returncode = 0
         po.return_value.stdout = output_helper.smartctl_solid_state_valid['stdout']
         expect = output_helper.smartctl_solid_state_valid['expected_return']
-        out = hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
-        assert expect == out 
+        out = hwd.HardwareDetections()._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
+        assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._return_device_bus_id')
@@ -193,7 +197,7 @@ class TestHardwareDetections():
         ret_bus_id.return_value = True
         po.return_value.returncode = 1
         po.return_value.stdout = output_helper.smartctl_invalid['stdout']
-        out = hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
+        out = hwd.HardwareDetections()._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
         assert ir.called
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -206,7 +210,7 @@ class TestHardwareDetections():
         ret_bus_id.return_value = True
         po.return_value.returncode = 0
         po.return_value.stdout = output_helper.smartctl_invalid['stdout']
-        out = hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
+        out = hwd.HardwareDetections()._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
         expect = output_helper.smartctl_invalid['expected_return']
         assert expect == out
 
@@ -218,7 +222,7 @@ class TestHardwareDetections():
         """ Assume ret_bus_id False """
         wm.return_value = '/valid/path'
         ret_bus_id.return_value = False
-        hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
+        hwd.HardwareDetections()._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
         assert ir.called is True
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -230,9 +234,9 @@ class TestHardwareDetections():
         wm.return_value = '/valid/path'
         ret_bus_id.return_value = True
         po.side_effect = StandardError
-        hwd._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
+        hwd.HardwareDetections()._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
         assert ir.called is True
-    
+
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._hw_raid_ctrl_detection')
     def test_hw_raid_ctrl_detection_custom_hwraid(self, hw_raid_detection):
         """ No hw_raid_name is set """
@@ -254,7 +258,7 @@ class TestHardwareDetections():
         hwd = cephdisks.HardwareDetections()
         # TRAVIS SAYS THIS IS NOT CALLED
         hwd._detect_raidctrl()
-        assert hw_raid_detection.called is True 
+        assert hw_raid_detection.called is True
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._hw_raid_ctrl_detection')
     def test_hw_raid_ctrl_detection_custom_software(self, hw_raid_detection):
@@ -266,35 +270,35 @@ class TestHardwareDetections():
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
-    def test_hw_raid_ctrl_detection_megaraid(self, po, wm, output_helper, hwd): 
+    def test_hw_raid_ctrl_detection_megaraid(self, po, wm, output_helper, hwd):
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lspci_out_hwraid_megaraid['stdout']
         expect = {}
         expect['controller_name'] = output_helper.lspci_out_hwraid_megaraid['controller_name']
         expect['raidtype'] = output_helper.lspci_out_hwraid_megaraid['raidtype']
-        out = hwd._hw_raid_ctrl_detection()
+        out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
-    def test_hw_raid_ctrl_detection_aacraid(self, po, wm, output_helper, hwd): 
+    def test_hw_raid_ctrl_detection_aacraid(self, po, wm, output_helper, hwd):
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lspci_out_hwraid_aacraid['stdout']
         expect = {}
         expect['controller_name'] = output_helper.lspci_out_hwraid_aacraid['controller_name']
         expect['raidtype'] = output_helper.lspci_out_hwraid_aacraid['raidtype']
-        out = hwd._hw_raid_ctrl_detection()
+        out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
-    def test_hw_raid_ctrl_detection_3ware(self, po, wm, output_helper, hwd): 
+    def test_hw_raid_ctrl_detection_3ware(self, po, wm, output_helper, hwd):
         wm.return_value = '/valid/path'
         po.return_value.stdout = output_helper.lspci_out_hwraid_3ware['stdout']
         expect = {}
         expect['controller_name'] = output_helper.lspci_out_hwraid_3ware['controller_name']
         expect['raidtype'] = output_helper.lspci_out_hwraid_3ware['raidtype']
-        out = hwd._hw_raid_ctrl_detection()
+        out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -305,7 +309,7 @@ class TestHardwareDetections():
         expect = {}
         expect['controller_name'] = output_helper.lspci_out_hwraid_areca['controller_name']
         expect['raidtype'] = output_helper.lspci_out_hwraid_areca['raidtype']
-        out = hwd._hw_raid_ctrl_detection()
+        out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -316,7 +320,7 @@ class TestHardwareDetections():
         expect = {}
         expect['controller_name'] = output_helper.lspci_out_hwraid_cciss['controller_name']
         expect['raidtype'] = output_helper.lspci_out_hwraid_cciss['raidtype']
-        out = hwd._hw_raid_ctrl_detection()
+        out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -327,7 +331,7 @@ class TestHardwareDetections():
         expect = {}
         expect['controller_name'] = None
         expect['raidtype'] = None
-        out = hwd._hw_raid_ctrl_detection()
+        out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
@@ -339,34 +343,34 @@ class TestHardwareDetections():
         process_mock = mock.Mock()
         attrs = {'communicate.return_value': (output_helper.lshw_out['stdout'], 'error')}
         process_mock.configure_mock(**attrs)
-        po.return_value = process_mock 
-        out = hwd._lshw()
+        po.return_value = process_mock
+        out = hwd.HardwareDetections()._lshw()
         expected = output_helper.lshw_out['expected_return']
         assert out == expected
-        
+
     @mock.patch('srv.salt._modules.cephdisks.Popen')
     def test__udevadm(self, po, output_helper, hwd):
         # additional test for virtualized env?
         process_mock = mock.Mock()
         attrs = {'communicate.return_value': (output_helper._udevadm_out['stdout'], 'error')}
         process_mock.configure_mock(**attrs)
-        po.return_value = process_mock 
-        out = hwd._udevadm('/dev/sda')
+        po.return_value = process_mock
+        out = hwd.HardwareDetections()._udevadm('/dev/sda')
         expected = output_helper._udevadm_out['expected_return']
         assert out == expected
 
 
 class TestHardwareDetections_2():
-    """ 
+    """
     This class contains a set of functions that test srv.salt._modules
     with a different set of patches that could not be tested in class1
     """
-    
+
     @pytest.fixture(scope='class')
     def hwd(self):
         """
         HardwareDetections calls a method that requires root
-        in order to return a correct path. Mocking only once 
+        in order to return a correct path. Mocking only once
         to be able to test the function in question later on.
         """
         self.hw_detection_method = patch('srv.salt._modules.cephdisks.HardwareDetections._which')

@@ -15,7 +15,7 @@ import logging
 import salt.client
 import yaml
 # pylint: disable=import-error
-import deepsea_minions
+from deepsea_minions import DeepseaMinions
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
-TARGET = deepsea_minions.DeepseaMinions()
+TARGET = DeepseaMinions()
 
 STD_ARGS = {
     'leftovers': False,

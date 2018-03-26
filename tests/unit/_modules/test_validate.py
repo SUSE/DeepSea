@@ -2,6 +2,8 @@ import pytest
 import salt.client
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
+sys.path.insert(0, 'srv/modules/runners')
+sys.path.insert(0, 'srv/modules/runners/utils')
 
 from mock import patch, MagicMock
 from srv.modules.runners import validate

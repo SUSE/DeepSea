@@ -240,19 +240,11 @@ def help_():
              '        salt-run filequeue.queues\n'
              '\n\n'
              'filequeue.enqueue:\n'
-             'filequeue.add:\n'
-             'filequeue.push:\n\n'
              '    Add an item on to a queue\n\n'
              '    CLI Example:\n\n'
              '        salt-run filequeue.enqueue abc\n'
              '        salt-run filequeue.enqueue abc queue=prep\n'
              '        salt-run filequeue.enqueue item=abc queue=prep\n'
-             '        salt-run filequeue.add abc\n'
-             '        salt-run filequeue.add abc queue=prep\n'
-             '        salt-run filequeue.add item=abc queue=prep\n'
-             '        salt-run filequeue.push abc\n'
-             '        salt-run filequeue.push abc queue=prep\n'
-             '        salt-run filequeue.push item=abc queue=prep\n'
              '\n\n'
              'filequeue.dequeue:\n\n'
              '    Remove and return oldest item from a queue\n\n'
@@ -333,8 +325,6 @@ def enqueue(queue=None, **kwargs):
 
 
 # pylint: disable=invalid-name
-add = salt.utils.alias_function(enqueue, 'add')
-push = salt.utils.alias_function(enqueue, 'push')
 
 
 def dequeue(**kwargs):

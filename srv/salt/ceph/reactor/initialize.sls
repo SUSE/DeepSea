@@ -3,7 +3,7 @@
 # automation, the last stage will remove the lock.  Overlapping restarts
 # will trigger only one run.
 
-{% if salt['saltutil.runner']('filequeue.add', item='lock', queue='master', duplicate_fail=True) == True %}
+{% if salt['saltutil.runner']('filequeue.enqueue', item='lock', queue='master', duplicate_fail=True) == True %}
 
 master:
   runner.state.orchestrate:

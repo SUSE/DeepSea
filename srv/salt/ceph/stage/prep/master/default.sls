@@ -48,7 +48,7 @@ restart master:
 
 complete marker:
   salt.runner:
-    - name: filequeue.add
+    - name: filequeue.enqueue
     - queue: 'master'
     - item: 'complete'
 
