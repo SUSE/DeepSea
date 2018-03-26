@@ -1,5 +1,4 @@
 
-
 include:
-  - .{{ salt['pillar.get']('redeploy_osds', 'default') }}
+  - .{{ salt['pillar.get']('redeploy_nodes', 'default') }}
 
