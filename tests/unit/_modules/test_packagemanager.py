@@ -3,7 +3,6 @@ from srv.salt._modules.packagemanager import PackageManager, Zypper, Apt
 from srv.salt._modules import packagemanager as pm
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
-from srv.salt._modules.helper import _run
 from mock import MagicMock, patch, mock
 
 

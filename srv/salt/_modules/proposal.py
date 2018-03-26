@@ -280,7 +280,7 @@ def generate(**kwargs):
          'ssd-spinner': <proposal>,
          'standalone': <proposal>}
     '''
-    disks = cephdisks.list_(**kwargs)
+    disks = __salt__['cephdisks.list_'](**kwargs)
     proposal = Proposal(disks, **kwargs)
     return proposal.create()
 

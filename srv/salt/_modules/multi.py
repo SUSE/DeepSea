@@ -12,7 +12,7 @@ import re
 import socket
 from subprocess import Popen
 # pylint: disable=import-error
-from helper import _run
+
 log = logging.getLogger(__name__)
 
 try:
@@ -168,7 +168,7 @@ def iperf_client_cmd(server, cpu=0, port=5200):
     iperf_cmd = ["/usr/bin/iperf3", "-fm", "-A"+str(cpu),
                  "-t10", "-c"+server, "-p"+str(port)]
     log.debug('iperf_client_cmd: cmd {}'.format(iperf_cmd))
-    retcode, stdout, stderr = _run(iperf_cmd)
+    retcode, stdout, stderr = __salt__['helper.run'](iperf_cmd)
     return server, retcode, stdout, stderr
 
 
@@ -223,7 +223,7 @@ def ping_cmd(host):
         sudo salt 'node' multi.ping_cmd <hostname>|<ip>
     '''
     cmd = ["/usr/bin/ping", "-c1", "-q", "-W1", host]
-    retcode, stdout, stderr = _run(cmd)
+    retcode, stdout, stderr = __salt__['helper.run'](cmd)
     return host, retcode, stdout, stderr
 
 
@@ -251,7 +251,7 @@ def jumbo_ping_cmd(host):
     '''
     cmd = ["/usr/bin/ping", "-Mdo", "-s8972", "-c1", "-q", "-W1", host]
     log.debug('ping_cmd hostname={}'.format(host))
-    retcode, stdout, stderr = _run(cmd)
+    retcode, stdout, stderr = __salt__['helper.run'](cmd)
     return host, retcode, stdout, stderr
 
 

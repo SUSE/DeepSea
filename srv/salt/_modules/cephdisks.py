@@ -14,7 +14,7 @@ from glob import glob
 from subprocess import Popen, PIPE
 import logging
 # pylint: disable=import-error
-from helper import _convert_out
+
 
 log = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ class HardwareDetections(object):
         cmd = lsscsi_path
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
-            line = _convert_out(line)
+            line = __salt__['helper.convert_out'](line)
             if device in line:
                 match = re.match(r'\[(.*?)\]', line)
                 if len(match.group(1).split(":")) >= 2:
@@ -136,7 +136,7 @@ class HardwareDetections(object):
                 log.info("{}\nrc: {} - {}".format(cmd, proc.returncode, proc.stderr.read()))
                 raise RuntimeError("Smartctl failure")
             for line in proc.stdout:
-                line = _convert_out(line)
+                line = __salt__['helper.convert_out'](line)
                 # ADD PARSING HERE TO DETECT FAILURE
                 if "A mandatory SMART command failed" in line:
                     log.warning("Something went wrong during smartctl query")
@@ -196,7 +196,7 @@ class HardwareDetections(object):
         # TODO: See if other places are also infected
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
-            line = _convert_out(line)
+            line = __salt__['helper.convert_out'](line)
             # match one of the available raid ctrls
             # areca, megaraid, 3ware, hprr
             if 'megaraid' in line.lower():
@@ -309,7 +309,7 @@ class HardwareDetections(object):
         cmd = "{} --disk --only /dev/{}".format(hwinfo_path, device)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
-            line = _convert_out(line)
+            line = __salt__['helper.convert_out'](line)
             match = re.match("  ([^:]+): (.*)", line)
             if match:
                 if match.group(1) == "Capacity":
@@ -340,7 +340,7 @@ class HardwareDetections(object):
         stdout, stderr = proc.communicate()
         if stdout:
             for line in stdout:
-                line = _convert_out(line)
+                line = __salt__['helper.convert_out'](line)
                 if 'by-id' in line:
                     return "/dev/" + line.split()[1]
         elif stderr:
@@ -369,7 +369,7 @@ class HardwareDetections(object):
             cmd = "{} -i {} {}".format(sgdisk_path, partition_id, device)
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             for line in proc.stdout:
-                line = _convert_out(line)
+                line = __salt__['helper.convert_out'](line)
                 if line.startswith("Partition GUID code:"):
                     for guuid_code in guuid_table.values():
                         if guuid_code in line:
@@ -394,7 +394,7 @@ class HardwareDetections(object):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = proc.communicate()
         if stdout:
-            stdout = _convert_out(stdout)
+            stdout = __salt__['helper.convert_out'](stdout)
             data = et.fromstring(stdout)
         elif stderr:
             err_msg = "Something went wrong during 'lshw' execution"

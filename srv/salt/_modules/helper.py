@@ -11,8 +11,7 @@ from subprocess import Popen, PIPE
 
 log = logging.getLogger(__name__)
 
-
-def _convert_out(out):
+def convert_out(out):
     """
     Since python3 most system calls return type(byte)
     instead of type(str). We mostly use the output of
@@ -32,7 +31,7 @@ def _convert_out(out):
                         format(output=out, type_out=type(out)))
 
 
-def _run(cmd, shell=False):
+def run(cmd, shell=False):
     """
     Generic function for running shell commands
 
@@ -49,10 +48,10 @@ def _run(cmd, shell=False):
 
     log.info("executing: {cmd}".format(cmd=cmd))
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=shell)
-    _stdout = _convert_out(proc.stdout.read())
+    _stdout = convert_out(proc.stdout.read())
     _stdout = _stdout.rstrip()
 
-    _stderr = _convert_out(proc.stdout.read())
+    _stderr = convert_out(proc.stdout.read())
     _stderr = _stderr.rstrip()
 
     _retcode = proc.wait()

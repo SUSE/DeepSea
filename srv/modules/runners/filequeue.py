@@ -333,8 +333,6 @@ def enqueue(queue=None, **kwargs):
 
 
 # pylint: disable=invalid-name
-add = salt.utils.alias_function(enqueue, 'add')
-push = salt.utils.alias_function(enqueue, 'push')
 
 
 def dequeue(**kwargs):
@@ -443,4 +441,6 @@ def vacate(queue=None, **kwargs):
 
 __func_alias__ = {
                  'help_': 'help',
+                 'enqueue': 'add',
+                 'enqueue': 'push'
                  }
