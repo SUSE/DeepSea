@@ -74,7 +74,7 @@ class Checks(object):
         Scan minions for apparmor settings.
         """
         contents = self.local.cmd(self.search, 'cmd.shell',
-                                  [('/usr/sbin/apparmor_status --enabled '
+                                  [('/usr/sbin/aa-status --enabled '
                                     '2>/dev/null; echo $?')],
                                   tgt_type="compound")
         for minion in contents:
