@@ -348,11 +348,21 @@ class OSDWeight(object):
         ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
         #log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
         for entry in json.loads(output)['nodes']:
-            if entry['id'] == self.id:
+            if entry['id'] == int(self.osd_id):
                 log.debug(pprint.pformat(entry))
                 return entry
         log.warn("ID {} not found".format(self.id))
         return {}
+
+    # pylint: disable=invalid-name
+    def osd_safe_to_destroy(self):
+        """
+        Returns safe-to-destroy output, does not return JSON
+        """
+        cmd = json.dumps({"prefix": "osd safe-to-destroy",
+                          "ids": ["{}".format(self.osd_id)]})
+        rc, _, output = self.cluster.mon_command(cmd, b'', timeout=6)
+        return rc, output
 
     def is_empty(self):
         """
@@ -368,11 +378,15 @@ class OSDWeight(object):
         i = 0
         last_pgs = 0
         while i < self.settings['timeout']/self.settings['delay']:
+            rc, msg = self.osd_safe_to_destroy()
+            if rc == 0:
+                log.info("osd.{} is safe to destroy".format(self.osd_id))
+                return ""
             entry = self.osd_df()
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
-                    log.info("osd.{} has no PGs".format(self.id))
-                    return ""
+                    log.warning("osd.{} has {} PGs remaining but {}".
+                                format(self.osd_id, entry['pgs'], msg))
                 else:
                     log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
                     if last_pgs != entry['pgs']:
@@ -380,17 +394,14 @@ class OSDWeight(object):
                         i = 0
                         last_pgs = entry['pgs']
             else:
-                msg = "osd.{} does not exist".format(self.id)
-                log.warn(msg)
-                return msg
+                msg = "osd.{} does not exist {}".format(self.osd_id, msg)
+                log.warning(msg)
             i += 1
             time.sleep(self.settings['delay'])
 
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
 
-<<<<<<< HEAD
-=======
 
 class CephPGs(object):
     """
@@ -467,7 +478,6 @@ class CephPGs(object):
         return json.loads(output)['num_pg_by_state']
 
 
->>>>>>> dd688e193... Add active+clean wait for migrations
 def _settings(**kwargs):
     """
     Initialize settings to use the client.storage name and keyring
@@ -487,9 +497,6 @@ def _settings(**kwargs):
     return settings
 
 
-<<<<<<< HEAD
-def zero_weight(id, wait=True, **kwargs):
-=======
 def ceph_quiescent(**kwargs):
     """
     Check that PGs are active+clean
@@ -501,7 +508,6 @@ def ceph_quiescent(**kwargs):
 
 
 def zero_weight(osd_id, wait=True, **kwargs):
->>>>>>> dd688e193... Add active+clean wait for migrations
     """
     Set weight to zero and wait until PGs are moved
     """
@@ -1871,7 +1877,7 @@ def redeploy(simultaneous=False, **kwargs):
         if not os.path.exists(partition) or is_incorrect(disk):
             pgs = CephPGs(**settings)
             pgs.quiescent()
-            remove(_id)
+            remove(_id, **settings)
             config = OSDConfig(disk)
             osdp = OSDPartitions(config)
             osdp.partition()
