@@ -124,13 +124,61 @@ class TestOSDInstanceMethods():
 class TetstOSDState():
     pass
 
-@pytest.mark.skip(reason="Low priority: skipped")
 class TestOSDWeight():
-    pass
+    """
+    Initial checks for the wait method.  Override the __init__ funciton to
+    avoid the rados logic.  Set osd_id and settings directly.
+    """
+
+    @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
+    def test_wait(self, ostd):
+        """
+        Check that wait returns successfully
+        """
+        ostd.return_value = (0, "safe to destroy")
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'timeout': 1, 'delay': 1}
+            ret = osdw.wait()
+            assert ret == ""
+
+    @pytest.mark.skip(reason='skip')
+    @patch('srv.salt._modules.osd.OSDWeight.osd_df')
+    @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
+    def test_wait_timeout(self, od, ostd):
+        """
+        Check that wait can timeout
+        """
+        od = {}
+        ostd.return_value = (-16, "Ceph is busy")
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'timeout': 1, 'delay': 1, 'osd_id': 0}
+            with pytest.raises(RuntimeError) as excinfo:
+                ret = osdw.wait()
+                assert 'Timeout expired' in str(excinfo.value)
+
+    @pytest.mark.skip(reason='skip')
+    @patch('srv.salt._modules.osd.OSDWeight.osd_df')
+    @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
+    def test_wait_loops(self, od, ostd):
+        """
+        Check that wait does loop
+        """
+        od = {}
+        ostd.return_value = (-16, "Ceph is busy")
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'timeout': 1, 'delay': 1, 'osd_id': 0}
+            with pytest.raises(RuntimeError) as excinfo:
+                ret = osdw.wait()
+                assert ostd.call_count == 2
 
 
 class TestOSDConfig():
-
 
     @pytest.fixture(scope='class')
     def osd_o(self):
