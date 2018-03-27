@@ -769,7 +769,7 @@ install: pyc install-deps copy-files
 	chown -R $(USER) /srv/pillar/ceph
 	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls
 	systemctl restart salt-master
-	$(PKG_INSTALL) salt-api
+	rpm -q salt-api || $(PKG_INSTALL) salt-api
 	systemctl restart salt-api
 	# deepsea-cli
 	python3 setup.py install --root=$(DESTDIR)/
