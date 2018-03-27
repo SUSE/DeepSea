@@ -1,5 +1,4 @@
 import pytest
-import StringIO
 from srv.salt._modules import kernel
 
 from mock import patch, MagicMock

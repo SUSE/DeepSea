@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import osd
 from srv.salt._modules import helper
-from mock import MagicMock, patch, mock
+from mock import MagicMock, patch, mock, create_autospec
 
 class TestOSDInstanceMethods():
     '''
@@ -191,6 +191,12 @@ class TestOSDConfig():
             yield cnf
             # everything after the yield is a teardown code
             print("Teardown OSDConfig object")
+
+    @pytest.fixture(scope='class')
+    def osd_glob(self):
+        mock_func = create_autospec(lambda x: x, return_value=(0, 'stdout', 'stderr'))
+        osd.__salt__ = {'helper.run': mock_func}
+        yield osd
 
     @pytest.mark.skip(reason='skip')
     def test__set_tli(self):
@@ -593,6 +599,12 @@ class TestOSDPartitions():
         # custom OSDConfig feeding.
         cnf = osd.OSDPartitions
         yield cnf
+
+    @pytest.fixture(scope='class')
+    def osd_glob(self):
+        mock_func = create_autospec(lambda x: x, return_value=(0, 'stdout', 'stderr'))
+        osd.__salt__ = {'helper.run': mock_func}
+        yield osd
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._xfs_partitions')
     def test_partition_filestore(self, xfs_part_mock, osdp_o):
@@ -1002,7 +1014,6 @@ class TestOSDPartitions():
     @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
-    @mock.patch('srv.salt._modules.osd._run')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
     def test_create(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
         """
@@ -1011,7 +1022,6 @@ class TestOSDPartitions():
         And the RC is 0
         And the os.path.exists is True
         Expect to execute:
-        _run 2x
         sgdisk
         dd
         _part_probe 1x
@@ -1035,7 +1045,6 @@ class TestOSDPartitions():
     @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
-    @mock.patch('srv.salt._modules.osd._run')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
     def test_create_1(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
         """
@@ -1044,7 +1053,6 @@ class TestOSDPartitions():
         And the RC is 0
         And the os.path.exists is False
         Expect to execute:
-        _run 1x
         sgdisk
         _part_probe 1x
         """
@@ -1064,15 +1072,13 @@ class TestOSDPartitions():
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
-    @mock.patch('srv.salt._modules.osd._run')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create_2(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+    def test_create_2(self, ex_mock, pp_mock, lp_mock, osdp_o):
         """
         Given the device is a NVME
         And has a size
         And the RC is 1
         Expect to execute:
-        _run 1x
         sgdisk
         """
         kwargs = {'device': '/dev/nvme0n1'}
@@ -1080,19 +1086,16 @@ class TestOSDPartitions():
         obj = osdp_o(osd_config)
 
         lp_mock.return_value = 1
-        run_mock.return_value = (99, 'stdout', 'stderr')
         ex_mock.return_value = False
 
         with pytest.raises(BaseException) as excinfo:
             obj.create(osd_config.device,[('wal', 1000)])
             lp_mock.assert_called_with(osd_config.device)
-            run_mock.assert_any_call('/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1')
             assert '/usr/sbin/sgdisk -n 2:0:+1000 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/nvme0n1 failed' in str(excinfo.value)
 
     @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
-    @mock.patch('srv.salt._modules.osd._run')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
     def test_create_3(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
         """
@@ -1120,10 +1123,9 @@ class TestOSDPartitions():
         run_mock.assert_any_call('/usr/sbin/sgdisk -N 2 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
-    @mock.patch('srv.salt._modules.osd._run')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create_4_last_part(self, ex_mock, pp_mock, run_mock, lp_mock, osdp_o):
+    def test_create_4_last_part(self, ex_mock, pp_mock, lp_mock, osdp_o):
         """
         Given the device is not a NVME
         And has a no size
@@ -1140,13 +1142,13 @@ class TestOSDPartitions():
 
         lp_mock.return_value = 4
         ex_mock.return_value = False
-        run_mock.return_value = (0, 'stdout', 'stderr')
-
+        mock_func = create_autospec(lambda x: x, return_value=(0, 'stdout', 'stderr'))
+        osd.__salt__ = {'helper.run': mock_func}
         obj.create(osd_config.device,[('wal', 1000)])
 
         pp_mock.assert_called
         lp_mock.assert_called_with(osd_config.device)
-        run_mock.assert_any_call('/usr/sbin/sgdisk -n 5:0:+1000 -t 5:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
+        mock_func.assert_any_call('/usr/sbin/sgdisk -n 5:0:+1000 -t 5:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
 
     @mock.patch('srv.salt._modules.osd.glob')
     def test__last_partition(self, glob_mock, osdp_o):
@@ -1181,6 +1183,12 @@ class TestOSDCommands():
         # custom OSDConfig feeding.
         cnf = osd.OSDCommands
         yield cnf
+
+    @pytest.fixture(scope='class')
+    def osd_glob(self):
+        mock_func = create_autospec(lambda x: x, return_value=(0, 'stdout', 'stderr'))
+        osd.__salt__ = {'helper.run': mock_func}
+        yield osd
 
     def test_osd_partition_1(self, osdc_o):
         """
@@ -1236,8 +1244,7 @@ class TestOSDCommands():
         hp_mock.assert_called_with('/dev/sdx', 'osd')
 
 
-    @pytest.mark.skip(reason="FIXME: refactor to _run()")
-    def test_is_partition(self, osdc_o):
+    def test_is_partition(self, osdc_o, osd_glob):
         osd_config = OSDConfig()
         obj = osdc_o(osd_config)
         ret = obj.is_partition('osd', osd_config.device, 1)
@@ -2032,7 +2039,6 @@ class Test_is_incorrect():
     Create the six possible OSDs in a FakeFilesystem.  Overwrite the
     /proc/mounts file in each test to use one of the six OSDs.
 
-    Mock the _run and readlink which is part of _check_device since
     these tests are focused on is_incorrect.
     '''
 
@@ -2073,12 +2079,21 @@ class Test_is_incorrect():
         cnf = osd.OSDCommands
         yield cnf
 
+    @pytest.fixture(scope='class')
+    def osd_glob(self, return_value=(0, 'stdout', 'stderr')):
+        def specs(return_value):
+            mock_func = create_autospec(lambda x: x, return_value=return_value)
+            osd.__salt__ = {'helper.run': mock_func}
+            return osd
+        yield specs
+
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_is_incorrect_bluestore(self, osdc_o):
+    def test_is_incorrect_bluestore(self, osdc_o, osd_glob):
         """
         Check independent bluestore OSD
         """
+        osd_specced = osd_glob(return_value=(0, 'test', 'stderrtest'))
+
         kwargs = { 'device': '/dev/sdb',
                    'format': 'bluestore' }
 
@@ -2091,11 +2106,11 @@ class Test_is_incorrect():
         assert ret == False
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_is_incorrect_bluestore_mismatch_format(self, osdc_o):
+    def test_is_incorrect_bluestore_mismatch_format(self, osdc_o, osd_glob):
         """
         Check independent bluestore OSD with filestore format
         """
+        osd_specced = osd_glob(return_value=(1, 'test', 'stderrtest'))
         kwargs = { 'device': '/dev/sdb',
                    'format': 'filestore' }
 
@@ -2104,11 +2119,11 @@ class Test_is_incorrect():
 
         Test_is_incorrect.proc_mount.SetContents(
             '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
+        import pdb;pdb.set_trace()
         ret = obj.is_incorrect()
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
     def test_is_incorrect_bluestore_no_wal_config(self, osdc_o):
         """
         Check bluestore OSD with existing wal, but no wal config
@@ -2125,7 +2140,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
     def test_is_incorrect_bluestore_no_db_config(self, osdc_o):
         """
         Check bluestore OSD with existing db, but no db config
@@ -2142,10 +2156,8 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
-    def test_is_incorrect_bluestore_wal(self, readlink, run, osdc_o):
+    def test_is_incorrect_bluestore_wal(self, readlink, osdc_o, osd_glob):
         """
         Check bluestore OSD with a wal
         """
@@ -2165,8 +2177,6 @@ class Test_is_incorrect():
         assert ret == False
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_wal_no_device(self, readlink, run, osdc_o):
         """
@@ -2188,8 +2198,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_wal_wrong_device(self, readlink, run, osdc_o):
         """
@@ -2211,8 +2219,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_wal_wrong_size(self, readlink, run, osdc_o):
         """
@@ -2234,8 +2240,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_db(self, readlink, run, osdc_o):
         """
@@ -2257,8 +2261,6 @@ class Test_is_incorrect():
         assert ret == False
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_db_no_device(self, readlink, run, osdc_o):
         """
@@ -2280,8 +2282,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_db_wrong_device(self, readlink, run, osdc_o):
         """
@@ -2303,8 +2303,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_db_wrong_size(self, readlink, run, osdc_o):
         """
@@ -2326,8 +2324,6 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_bluestore_wal_db(self, readlink, run, osdc_o):
         """
@@ -2351,7 +2347,6 @@ class Test_is_incorrect():
         assert ret == False
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
     def test_is_incorrect_filestore(self, osdc_o):
         """
         Check independent filestore OSD
@@ -2368,7 +2363,7 @@ class Test_is_incorrect():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    def test_is_incorrect_filestore_mismatch_format(self, osdc_o):
+    def test_is_incorrect_filestore_mismatch_format(self, osdc_o, osd_glob):
         """
         Check independent filestore OSD with bluestore format
         """
@@ -2385,7 +2380,6 @@ class Test_is_incorrect():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal(self, readlink, run, osdc_o):
         """
@@ -2407,7 +2401,6 @@ class Test_is_incorrect():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal_no_device(self, readlink, run, osdc_o):
         """
@@ -2429,7 +2422,6 @@ class Test_is_incorrect():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal_wrong_device(self, readlink, run, osdc_o):
         """
@@ -2451,7 +2443,6 @@ class Test_is_incorrect():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal_wrong_size(self, readlink, run, osdc_o):
         """

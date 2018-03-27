@@ -16,7 +16,7 @@ from subprocess import Popen
 log = logging.getLogger(__name__)
 
 try:
-    from salt.utils import which
+    from salt.utils.path import which
 except ImportError:
     from distutils.spawn import which
 
