@@ -76,6 +76,8 @@ set -x
 
 $BASEDIR/suites/basic/health-stages.sh "$CLI" "$ENCRYPTION" "--rgw" "$SSL"
 
+$BASEDIR/common/sanity-basic.sh $BASEDIR
+
 if [ -z "$SSL" ] ; then
     rgw_curl_test
 else
