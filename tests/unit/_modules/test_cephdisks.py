@@ -31,19 +31,6 @@ class TestHardwareDetections():
         yield cephdisks
         self.hw_detection_method.stop()
 
-    """
-    Prototype for dynamic __salt__ population
-    """
-    @pytest.fixture(scope='class')
-    def helper_specs(self, module=None):
-        def specs(module):
-            def pass_through(*args, **kwargs):
-                return args[0]                
-            mock_func = create_autospec(lambda x: x, side_effect=pass_through)
-            module.__salt__ = {'helper.run': mock_func,
-                               'helper.convert_out': mock_func}
-            return module 
-        return specs
 
     @pytest.fixture(scope='module')
     def output_helper(self):

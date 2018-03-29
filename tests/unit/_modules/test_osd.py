@@ -205,10 +205,6 @@ class TestOSDConfig():
             # everything after the yield is a teardown code
             print("Teardown OSDConfig object")
 
-    """
-    Prototype for dynamic __salt__ population
-    """
-
     @pytest.mark.skip(reason='skip')
     def test__set_tli(self):
         pass
@@ -1130,7 +1126,7 @@ class TestOSDPartitions():
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create_4_last_part(self, ex_mock, pp_mock, lp_mock, osdp_o):
+    def test_create_4_last_part(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
         """
         Given the device is not a NVME
         And has a no size
@@ -1142,13 +1138,12 @@ class TestOSDPartitions():
         _part_probe 1x
         Partition Param to 4
         """
+        run_mock.return_value = (0, 'stdout', 'stderr')
         osd_config = OSDConfig()
         obj = osdp_o(osd_config)
 
         lp_mock.return_value = 4
         ex_mock.return_value = False
-        mock_func = create_autospec(lambda x: x, return_value=(0, 'stdout', 'stderr'))
-        osd.__salt__ = {'helper.run': mock_func}
         obj.create(osd_config.device,[('wal', 1000)])
 
         pp_mock.assert_called
@@ -2089,6 +2084,7 @@ class Test_is_incorrect():
         osd_config = OSDConfig(**kwargs)
         osdc_o = osd.OSDCommands
         obj = osdc_o(osd_config)
+        
 
         Test_is_incorrect.proc_mount.SetContents(
             '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
