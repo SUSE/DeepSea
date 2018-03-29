@@ -1989,3 +1989,414 @@ class TestOSDCommands():
     @pytest.mark.skip(reason="Low priority, postponed")
     def test_detect(self):
         pass
+
+class Test_is_incorrect():
+    '''
+    Create the six possible OSDs in a FakeFilesystem.  Overwrite the
+    /proc/mounts file in each test to use one of the six OSDs.
+
+    Mock the _run and readlink which is part of _check_device since
+    these tests are focused on is_incorrect.
+    '''
+
+    fs = fake_fs.FakeFilesystem()
+    proc_mount = fs.CreateFile('/proc/mounts')
+
+    fs.CreateFile('/var/lib/ceph/osd/ceph-1/type',
+                  contents='''bluestore\n''')
+
+    fs.CreateFile('/var/lib/ceph/osd/ceph-2/type',
+                  contents='''bluestore\n''')
+    fs.CreateFile('/var/lib/ceph/osd/ceph-2/block.wal')
+
+    fs.CreateFile('/var/lib/ceph/osd/ceph-3/type',
+                  contents='''bluestore\n''')
+    fs.CreateFile('/var/lib/ceph/osd/ceph-3/block.db')
+
+    fs.CreateFile('/var/lib/ceph/osd/ceph-4/type',
+                  contents='''bluestore\n''')
+    fs.CreateFile('/var/lib/ceph/osd/ceph-4/block.wal')
+    fs.CreateFile('/var/lib/ceph/osd/ceph-4/block.db')
+
+    fs.CreateFile('/var/lib/ceph/osd/ceph-5/type',
+                  contents='''filestore\n''')
+
+    fs.CreateFile('/var/lib/ceph/osd/ceph-6/type',
+                  contents='''filestore\n''')
+    fs.CreateFile('/var/lib/ceph/osd/ceph-6/journal')
+
+    f_glob = fake_glob.FakeGlobModule(fs)
+    f_os = fake_fs.FakeOsModule(fs)
+    f_open = fake_fs.FakeFileOpen(fs)
+    
+    @pytest.fixture(scope='class')
+    def osdc_o(self):
+        # Only return the non-instantiated class to allow
+        # custom OSDConfig feeding.
+        cnf = osd.OSDCommands
+        yield cnf
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    def test_is_incorrect_bluestore(self, osdc_o):
+        """
+        Check independent bluestore OSD
+        """
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == False
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    def test_is_incorrect_bluestore_mismatch_format(self, osdc_o):
+        """
+        Check independent bluestore OSD with filestore format
+        """
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'filestore' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_wal(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a wal
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'wal': '/dev/sdc',
+                   'wal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-2 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == False
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_wal_no_device(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a configured wal, but no separate wal device
+        """
+        readlink.return_value = ""
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'wal': '/dev/sdc',
+                   'wal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_wal_wrong_device(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a wal, but wal is a different device
+        """
+        readlink.return_value = "/dev/sdx"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'wal': '/dev/sdc',
+                   'wal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-2 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_wal_wrong_size(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a wal, but wal is the wrong size
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'wal': '/dev/sdc',
+                   'wal_size': '200M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-2 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_db(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a db
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'db': '/dev/sdc',
+                   'db_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-3 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == False
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_db_no_device(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a configured db, but no db device
+        """
+        readlink.return_value = ""
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'db': '/dev/sdc',
+                   'db_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_db_wrong_device(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a db, but with a different db device
+        """
+        readlink.return_value = "/dev/sdx"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'db': '/dev/sdc',
+                   'db_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-3 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_db_wrong_size(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a db, but with wrong size
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'db': '/dev/sdc',
+                   'db_size': '200M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-3 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_bluestore_wal_db(self, readlink, run, osdc_o):
+        """
+        Check bluestore OSD with a wal and db
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore',
+                   'db': '/dev/sdc',
+                   'db_size': '100M',
+                   'wal': '/dev/sdc',
+                   'wal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-4 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == False
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    def test_is_incorrect_filestore(self, osdc_o):
+        """
+        Check independent filestore OSD
+        """
+        kwargs = { 'device': '/dev/sdb'}
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-5 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == False
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    def test_is_incorrect_filestore_mismatch_format(self, osdc_o):
+        """
+        Check independent filestore OSD with bluestore format
+        """
+        kwargs = { 'device': '/dev/sdb',
+                   'format': 'bluestore' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-5 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_filestore_journal(self, readlink, run, osdc_o):
+        """
+        Check filestore OSD with a journal
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'journal': '/dev/sdc',
+                   'journal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-6 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == False
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_filestore_journal_no_device(self, readlink, run, osdc_o):
+        """
+        Check filestore OSD with a journal
+        """
+        readlink.return_value = ""
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'journal': '/dev/sdc',
+                   'journal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-5 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_filestore_journal_wrong_device(self, readlink, run, osdc_o):
+        """
+        Check filestore OSD with a journal
+        """
+        readlink.return_value = "/dev/sdx"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'journal': '/dev/sdc',
+                   'journal_size': '100M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-6 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd._run')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_is_incorrect_filestore_journal_wrong_size(self, readlink, run, osdc_o):
+        """
+        Check filestore OSD with a journal, but with wrong size
+        """
+        readlink.return_value = "/dev/sdc"
+        run.return_value = ( 0, '104857600', '')
+        kwargs = { 'device': '/dev/sdb',
+                   'journal': '/dev/sdc',
+                   'journal_size': '200M' }
+
+        osd_config = OSDConfig(**kwargs)
+        obj = osdc_o(osd_config)
+
+        Test_is_incorrect.proc_mount.SetContents(
+            '''/dev/sdb /var/lib/ceph/osd/ceph-6 rest\n''')
+        ret = obj.is_incorrect()
+        assert ret == True
+
