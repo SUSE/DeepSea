@@ -68,8 +68,8 @@
           "links": [],
           "nullPointMode": "connected",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [
             {
@@ -282,8 +282,8 @@
           "links": [],
           "nullPointMode": "connected",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -369,8 +369,8 @@
           "links": [],
           "nullPointMode": "connected",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -456,8 +456,8 @@
           "links": [],
           "nullPointMode": "connected",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 12,
@@ -551,8 +551,8 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "text": "1m",
-            "value": "1m"
+            "text": "auto",
+            "value": "$__auto_interval"
           },
           "datasource": null,
           "hide": 0,
@@ -562,12 +562,12 @@
           "name": "interval",
           "options": [
             {
-              "selected": false,
+              "selected": true,
               "text": "auto",
               "value": "$__auto_interval"
             },
             {
-              "selected": true,
+              "selected": false,
               "text": "1m",
               "value": "1m"
             },
@@ -622,27 +622,27 @@
           "type": "interval"
         },
         {
-          "allFormat": "glob",
-          "allValue": null,
-          "current": {},
-          "datasource": "$datasource",
-          "hide": 0,
-          "hideLabel": false,
-          "includeAll": false,
-          "label": "Cluster",
-          "multi": false,
-          "multiFormat": "glob",
-          "name": "cluster",
-          "options": [],
-          "query": "ceph_health_status{job='ceph-exporter'}",
-          "refresh": 1,
-          "regex": ".*cluster=\"(.*?)\".*",
-          "sort": 0,
-          "tagValuesQuery": "",
-          "tags": [],
-          "tagsQuery": "",
-          "type": "query",
-          "useTags": false
+        "allFormat": "glob",
+        "allValue": null,
+        "current": {},
+        "datasource": "$datasource",
+        "hide": 0,
+        "hideLabel": false,
+        "includeAll": true,
+        "label": "Exporter Instance",
+        "multi": false,
+        "multiFormat": "glob",
+        "name": "instance",
+        "options": [],
+        "query": "label_values(ceph_health_status, instance)",
+        "refresh": 1,
+        "regex": "",
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
         },
         {
           "allFormat": "glob",
@@ -657,7 +657,7 @@
           "multiFormat": "glob",
           "name": "instance",
           "options": [],
-          "query": "ceph_health_status{job='ceph-exporter'}",
+          "query": "ceph_health_status{cluster='$cluster',job='ceph-exporter'}",
           "refresh": 1,
           "regex": ".*instance=\"(.*?)\".*",
           "sort": 0,
@@ -677,7 +677,7 @@
           "multi": false,
           "name": "pool",
           "options": [],
-          "query": "label_values(ceph_pool_objects_total, pool)",
+          "query": "label_values(ceph_pool_objects_total{cluster='$cluster',instance='$instance',job='ceph-exporter'}, pool)",
           "refresh": 1,
           "regex": "",
           "sort": 0,
@@ -721,4 +721,5 @@
     "timezone": "browser",
     "title": "Ceph - Pools",
     "version": 3
+}
 }

@@ -68,8 +68,8 @@
           "links": [],
           "nullPointMode": "connected",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
@@ -148,8 +148,8 @@
           "links": [],
           "nullPointMode": "connected",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
@@ -459,9 +459,8 @@
           "auto_count": 10,
           "auto_min": "1m",
           "current": {
-            "selected": true,
-            "text": "1m",
-            "value": "1m"
+            "text": "auto",
+            "value": "$__auto_interval"
           },
           "hide": 0,
           "label": "Interval",

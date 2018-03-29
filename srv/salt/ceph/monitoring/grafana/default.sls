@@ -37,10 +37,10 @@ grafana:
     - template: jinja
     - source: salt://ceph/monitoring/grafana/files/ses_dashboards.yaml.j2
 
-dashboard file:
+dashboard files:
   file.recurse:
     - name: /var/lib/grafana/ses_dashboards/
-    - source: salt://ceph/monitoring/grafana/files/dashboards/
+    - source: salt://ceph/monitoring/grafana/files/dashboards
     - user: grafana
     - group: grafana
     - dir_mode: 755

@@ -46,7 +46,7 @@
           "datasource": "$datasource",
           "editable": true,
           "error": false,
-          "fill": 1,
+          "fill": 0,
           "grid": {},
           "id": 1,
           "legend": {
@@ -59,12 +59,12 @@
             "values": false
           },
           "lines": true,
-          "linewidth": 2,
+          "linewidth": 1,
           "links": [],
-          "nullPointMode": "connected",
+          "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "span": 6,
@@ -136,13 +136,13 @@
             "values": false
           },
           "lines": true,
-          "linewidth": 2,
+          "linewidth": 1,
           "links": [],
           "minSpan": null,
-          "nullPointMode": "connected",
+          "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "repeat": null,
           "seriesOverrides": [],
@@ -247,13 +247,13 @@
             "alignAsTable": true
           },
           "lines": true,
-          "linewidth": 2,
+          "linewidth": 1,
           "links": [],
           "minSpan": 2,
-          "nullPointMode": "connected",
+          "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "repeat": "node",
           "seriesOverrides": [
@@ -342,7 +342,7 @@
           "datasource": "$datasource",
           "editable": true,
           "error": false,
-          "fill": 1,
+          "fill": 0,
           "grid": {},
           "id": 3,
           "legend": {
@@ -355,15 +355,15 @@
             "values": false
           },
           "lines": true,
-          "linewidth": 2,
+          "linewidth": 1,
           "links": [],
-          "nullPointMode": "connected",
+          "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 4,
+          "span": 6,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -415,7 +415,7 @@
           "datasource": "$datasource",
           "editable": true,
           "error": false,
-          "fill": 1,
+          "fill": 0,
           "grid": {},
           "id": 4,
           "legend": {
@@ -428,15 +428,15 @@
             "values": false
           },
           "lines": true,
-          "linewidth": 2,
+          "linewidth": 1,
           "links": [],
-          "nullPointMode": "connected",
+          "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 4,
+          "span": 6,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -482,64 +482,6 @@
               "show": true
             }
           ]
-        },
-        {
-          "columns": [
-            {
-              "text": "Current",
-              "value": "current"
-            }
-          ],
-          "editable": true,
-          "error": false,
-          "filterNull": false,
-          "fontSize": "100%",
-          "hideTimeOverride": true,
-          "id": 5,
-          "links": [],
-          "pageSize": null,
-          "scroll": true,
-          "showHeader": true,
-          "sort": {
-            "col": 0,
-            "desc": true
-          },
-          "span": 4,
-          "styles": [
-            {
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "pattern": "Time",
-              "type": "date"
-            },
-            {
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-                            ],
-                            "decimals": 0,
-                            "pattern": "/.*/",
-                            "thresholds": [],
-                            "type": "number",
-                            "unit": "s"
-            }
-          ],
-          "targets": [
-            {
-              "expr": "(node_filesystem_size{job='node-exporter',instance='$instance'} - node_filesystem_free{job='node-exporter',instance='$instance'}) / deriv(node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run).*',mountpoint!=''}[3d]) > 0",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{mountpoint}}",
-              "refId": "A",
-              "step": 120
-            }
-          ],
-          "timeFrom": "1h",
-          "timeShift": null,
-          "title": "Filesystem Fill Up Time",
-          "transform": "timeseries_aggregations",
-          "type": "table"
         }
       ],
       "repeat": null,
@@ -557,7 +499,7 @@
           "aliasColors": {},
           "bars": false,
           "datasource": "$datasource",
-          "fill": 1,
+          "fill": 0,
           "id": 6,
           "legend": {
             "avg": true,
@@ -575,8 +517,8 @@
           "links": [],
           "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [
             {
@@ -642,217 +584,8 @@
       "repeat": null,
       "repeatIteration": null,
       "repeatRowId": null,
-      "showTitle": false,
-      "title": "I/O Stats",
-      "titleSize": "h6"
-    },
-    {
-      "collapse": false,
-      "height": 350,
-      "panels": [
-        {
-          "columns": [
-            {
-              "text": "Current",
-              "value": "current"
-            }
-          ],
-          "filterNull": false,
-          "fontSize": "100%",
-          "id": 9,
-          "links": [],
-          "pageSize": null,
-          "scroll": true,
-          "showHeader": true,
-          "sort": {
-            "col": 0,
-            "desc": false
-          },
-          "span": 3,
-          "styles": [
-            {
-              "colorMode": null,
-              "colors": [
-                "rgba(245, 54, 54, 0.9)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(50, 172, 45, 0.97)"
-                            ],
-                            "decimals": 2,
-                            "pattern": "Current",
-                            "thresholds": [],
-                            "type": "number",
-                            "unit": "h"
-            }
-          ],
-          "targets": [
-            {
-              "expr": "smartmon_power_on_hours_raw_value{instance='$instance',job='node-exporter'}",
-              "intervalFactor": 2,
-              "legendFormat": "{{disk}}",
-              "metric": "smartmon_power_on_hours_raw_value",
-              "refId": "A",
-              "step": 1800
-            }
-          ],
-          "title": "Power on hours",
-          "transform": "timeseries_aggregations",
-          "type": "table"
-        },
-        {
-          "columns": [
-            {
-              "text": "Current",
-              "value": "current"
-            },
-            {
-              "text": "Max",
-              "value": "max"
-            }
-          ],
-          "filterNull": false,
-          "fontSize": "100%",
-          "id": 10,
-          "links": [],
-          "pageSize": null,
-          "scroll": true,
-          "showHeader": true,
-          "sort": {
-            "col": 0,
-            "desc": false
-          },
-          "span": 3,
-          "styles": [],
-          "targets": [
-            {
-              "expr": "smartmon_reallocated_sector_ct_raw_value{instance='$instance',job='node-exporter'}",
-              "interval": "1h",
-              "intervalFactor": 2,
-              "legendFormat": "{{disk}}",
-              "metric": "smartmon_reallocated_sector_ct_raw_value",
-              "refId": "A",
-              "step": 7200
-            }
-          ],
-          "title": "Reallocated Sector Count",
-          "transform": "timeseries_aggregations",
-          "type": "table"
-        },
-        {
-          "columns": [
-            {
-              "text": "Current",
-              "value": "current"
-            }
-          ],
-          "filterNull": false,
-          "fontSize": "100%",
-          "id": 14,
-          "links": [],
-          "pageSize": null,
-          "scroll": true,
-          "showHeader": true,
-          "sort": {
-            "col": 0,
-            "desc": false
-          },
-          "span": 3,
-          "styles": [
-            {
-              "colorMode": "cell",
-              "colors": [
-                "rgba(50, 172, 45, 0.97)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(245, 54, 54, 0.9)"
-                            ],
-                            "decimals": 0,
-                            "pattern": "/.*/",
-                            "thresholds": [
-                              "2",
-                              "3"
-                            ],
-                            "type": "number",
-                            "unit": "short"
-            }
-          ],
-          "targets": [
-            {
-              "expr": "rate(smartmon_reallocated_sector_ct_raw_value{instance='$instance',job='node-exporter'}[6h])",
-              "intervalFactor": 2,
-              "legendFormat": "{{disk}}",
-              "refId": "A",
-              "step": 20
-            }
-          ],
-          "title": "Reallocated Sector Count ~6h",
-          "transform": "timeseries_aggregations",
-          "type": "table"
-        },
-        {
-          "columns": [
-            {
-              "text": "Current",
-              "value": "current"
-            },
-            {
-              "text": "Max",
-              "value": "max"
-            }
-          ],
-          "filterNull": false,
-          "fontSize": "100%",
-          "id": 11,
-          "links": [],
-          "pageSize": null,
-          "scroll": true,
-          "showHeader": true,
-          "sort": {
-            "col": 0,
-            "desc": false
-          },
-          "span": 3,
-          "styles": [
-            {
-              "dateFormat": "YYYY-MM-DD HH:mm:ss",
-              "pattern": "Time",
-              "type": "date"
-            },
-            {
-              "colorMode": "cell",
-              "colors": [
-                "rgba(50, 172, 45, 0.97)",
-                "rgba(237, 129, 40, 0.89)",
-                "rgba(245, 54, 54, 0.9)"
-                            ],
-                            "decimals": 0,
-                            "pattern": "/.*/",
-                            "thresholds": [
-                              "1",
-                              "2"
-                            ],
-                            "type": "number",
-                            "unit": "short"
-            }
-          ],
-          "targets": [
-            {
-              "expr": "smartmon_current_pending_sector_raw_value{instance='$instance',job='node-exporter'}",
-              "intervalFactor": 2,
-              "legendFormat": "{{disk}}",
-              "metric": "smartmon_current_pending_sector_raw_value",
-              "refId": "A",
-              "step": 1800
-            }
-          ],
-          "title": "Current Pending Sectors",
-          "transform": "timeseries_aggregations",
-          "type": "table"
-        }
-      ],
-      "repeat": null,
-      "repeatIteration": null,
-      "repeatRowId": null,
       "showTitle": true,
-      "title": "Smart Stats",
+      "title": "I/O Stats",
       "titleSize": "h6"
     },
     {
@@ -864,8 +597,8 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": null,
-          "fill": 1,
+          "datasource": "$datasource",
+          "fill": 0,
           "id": 12,
           "legend": {
             "avg": true,
@@ -882,8 +615,8 @@
           "links": [],
           "nullPointMode": "null",
           "percentage": false,
-          "pointradius": 5,
-          "points": false,
+          "pointradius": 1,
+          "points": true,
           "renderer": "flot",
           "seriesOverrides": [],
           "spaceLength": 10,
@@ -935,7 +668,220 @@
               "show": true
             }
           ]
+        },
+        {
+          "columns": [
+            {
+              "text": "Current",
+              "value": "current"
+            }
+          ],
+          "filterNull": false,
+          "fontSize": "100%",
+          "id": 9,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": false
+          },
+          "span": 3,
+          "styles": [
+            {
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+                ],
+                "decimals": 2,
+                "pattern": "Current",
+                "thresholds": [],
+                "type": "number",
+                "unit": "h"
+            }
+          ],
+          "targets": [
+            {
+              "expr": "smartmon_power_on_hours_raw_value{instance='$instance',job='node-exporter'}",
+              "intervalFactor": 2,
+              "legendFormat": "{{disk}}",
+              "metric": "smartmon_power_on_hours_raw_value",
+              "refId": "A",
+              "step": 1800
+            }
+          ],
+          "title": "Power on hours",
+          "transform": "timeseries_aggregations",
+          "datasource": "$datasource",
+          "type": "table"
+        },
+        {
+          "columns": [
+            {
+              "text": "Current",
+              "value": "current"
+            },
+            {
+              "text": "Max",
+              "value": "max"
+            }
+          ],
+          "filterNull": false,
+          "fontSize": "100%",
+          "id": 10,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": false
+          },
+          "span": 3,
+          "styles": [],
+          "targets": [
+            {
+              "expr": "smartmon_reallocated_sector_ct_raw_value{instance='$instance',job='node-exporter'}",
+              "interval": "1h",
+              "intervalFactor": 2,
+              "legendFormat": "{{disk}}",
+              "metric": "smartmon_reallocated_sector_ct_raw_value",
+              "refId": "A",
+              "step": 7200
+            }
+          ],
+          "title": "Reallocated Sector Count",
+          "transform": "timeseries_aggregations",
+          "datasource": "$datasource",
+          "type": "table"
+        },
+        {
+          "columns": [
+            {
+              "text": "Current",
+              "value": "current"
+            }
+          ],
+          "filterNull": false,
+          "fontSize": "100%",
+          "id": 14,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": false
+          },
+          "span": 3,
+          "styles": [
+            {
+              "colorMode": "cell",
+              "colors": [
+                "rgba(50, 172, 45, 0.97)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(245, 54, 54, 0.9)"
+                ],
+                "decimals": 0,
+                "pattern": "/.*/",
+                "thresholds": [
+                  "2",
+                  "3"
+                ],
+                "type": "number",
+                "unit": "short"
+            }
+          ],
+          "targets": [
+            {
+              "expr": "rate(smartmon_reallocated_sector_ct_raw_value{instance='$instance',job='node-exporter'}[6h])",
+              "intervalFactor": 2,
+              "legendFormat": "{{disk}}",
+              "refId": "A",
+              "step": 20
+            }
+          ],
+          "title": "Reallocated Sector Count ~6h",
+          "transform": "timeseries_aggregations",
+          "datasource": "$datasource",
+          "type": "table"
+        },
+        {
+          "columns": [
+            {
+              "text": "Current",
+              "value": "current"
+            },
+            {
+              "text": "Max",
+              "value": "max"
+            }
+          ],
+          "filterNull": false,
+          "fontSize": "100%",
+          "id": 11,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": false
+          },
+          "span": 3,
+          "styles": [
+            {
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "pattern": "Time",
+              "type": "date"
+            },
+            {
+              "colorMode": "cell",
+              "colors": [
+                "rgba(50, 172, 45, 0.97)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(245, 54, 54, 0.9)"
+                  ],
+                  "decimals": 0,
+                  "pattern": "/.*/",
+                  "thresholds": [
+                    "1",
+                    "2"
+                  ],
+                  "type": "number",
+                  "unit": "short"
+            }
+          ],
+          "targets": [
+            {
+              "expr": "smartmon_current_pending_sector_raw_value{instance='$instance',job='node-exporter'}",
+              "intervalFactor": 2,
+              "legendFormat": "{{disk}}",
+              "metric": "smartmon_current_pending_sector_raw_value",
+              "refId": "A",
+              "step": 1800
+            }
+          ],
+          "title": "Current Pending Sectors",
+          "transform": "timeseries_aggregations",
+          "datasource": "$datasource",
+          "type": "table"
         }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": true,
+      "title": "Smart Stats",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 350,
+      "panels": [
       ],
       "repeat": null,
       "repeatIteration": null,
@@ -962,6 +908,81 @@
         "refresh": 1,
         "regex": "",
         "type": "datasource"
+      },
+      {
+        "auto": true,
+        "auto_count": 10,
+        "auto_min": "1m",
+        "current": {
+          "text": "auto",
+          "value": "$__auto_interval"
+        },
+        "datasource": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Interval",
+        "multi": false,
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "auto",
+            "value": "$__auto_interval"
+          },
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "type": "interval"
       },
       {
         "allFormat": "glob",
@@ -1005,18 +1026,18 @@
       "1h",
       "2h",
       "1d"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
+      ],
+      "time_options": [
+        "5m",
+        "15m",
+        "1h",
+        "6h",
+        "12h",
+        "24h",
+        "2d",
+        "7d",
+        "30d"
+      ]
   },
   "timezone": "browser",
   "title": "Node Statistics",
