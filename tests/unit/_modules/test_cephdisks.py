@@ -2,7 +2,7 @@ import pytest
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import cephdisks, helper
-from mock import MagicMock, patch, mock_open, mock
+from mock import MagicMock, patch, mock_open, mock, create_autospec
 from tests.unit.helper.output import OutputHelper
 
 
@@ -21,13 +21,29 @@ class TestHardwareDetections():
         return: instance of 
                 <class srv.salt._modules.cephdisks.HardwareDetections>
         """
-        cephdisks.__salt__ = {'helper.run': MagicMock('run'),
-                              'helper.convert_out': MagicMock('convert_out')}
         self.hw_detection_method = patch('srv.salt._modules.cephdisks.HardwareDetections._find_detection_tool')
         self.hw_dtctr = self.hw_detection_method.start()
         self.hw_dtctr.return_value = '/a/valid/path'
+        def pass_through(*args, **kwargs):
+            return args[0]                
+        mock_func = create_autospec(lambda x: x, side_effect=pass_through)
+        cephdisks.__salt__ = {'helper.convert_out': mock_func}
         yield cephdisks
         self.hw_detection_method.stop()
+
+    """
+    Prototype for dynamic __salt__ population
+    """
+    @pytest.fixture(scope='class')
+    def helper_specs(self, module=None):
+        def specs(module):
+            def pass_through(*args, **kwargs):
+                return args[0]                
+            mock_func = create_autospec(lambda x: x, side_effect=pass_through)
+            module.__salt__ = {'helper.run': mock_func,
+                               'helper.convert_out': mock_func}
+            return module 
+        return specs
 
     @pytest.fixture(scope='module')
     def output_helper(self):
@@ -39,12 +55,11 @@ class TestHardwareDetections():
         """
         assert hwd.HardwareDetections()._which('cat') is not None
 
-    def test_which_failure(self, hwd, salt_internals):
+    def test_which_failure(self, hwd):
         """
         Given we do not have that tool installed or privileges.
         But tell which to not raise an error.
         """
-        import pdb;pdb.set_trace()
         assert hwd.HardwareDetections()._which('notthere', failhard=False) is None
 
     def test_which_failure_explicit_raise(self, hwd):
