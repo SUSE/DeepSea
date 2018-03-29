@@ -574,15 +574,20 @@ function salt_api_test {
 }
 
 function rados_write_test {
+    #
+    # NOTE: function assumes the pool "write_test" already exists. Pool can be
+    # created by calling e.g. "create_all_pools_at_once write_test" immediately
+    # before calling this function.
+    #
     local TESTSCRIPT=/tmp/test_rados_put.sh
     cat << 'EOF' > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
-ceph osd pool create write_test 128 128
+ceph osd pool application enable write_test deepsea_qa
 echo "dummy_content" > verify.txt
 rados -p write_test put test_object verify.txt
 rados -p write_test get test_object verify_returned.txt
-test `cat verify.txt` = `cat verify_returned.txt`
+test "x$(cat verify.txt)" = "x$(cat verify_returned.txt)"
 echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
