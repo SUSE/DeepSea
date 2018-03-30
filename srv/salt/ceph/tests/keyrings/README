@@ -1,0 +1,8 @@
+The general idea is that keyrings work.  Over time, keyrings will be restricted to only the permissions necessary.  All sls files are checking that a ceph query using the respective keyring returns successfully.  Some sls files check that a ceph query fails.
+
+These should never fail, but accidental modification would find an issue immediately.
+
+Extend these sls files if specific ceph commands must always work for a specific keyring and could be disabled by an incorrect capabilities setting.  Tests of Ceph are unnecessary here.
+
+The init.sls includes all other files.  The individual files allow checking specific keyrings.
+
