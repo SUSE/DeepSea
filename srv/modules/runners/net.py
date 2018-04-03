@@ -18,7 +18,7 @@ from netaddr import IPNetwork, IPAddress
 # pylint: disable=import-error,3rd-party-module-not-gated,blacklisted-external-import,blacklisted-module
 from six.moves import range
 # pylint: disable=incompatible-py3-code
-from . import deepsea_minions
+from deepsea_minions import DeepseaMinions
 
 log = logging.getLogger(__name__)
 
@@ -151,7 +151,7 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
             return result
     else:
         # pylint: disable=redefined-variable-type
-        search = deepsea_minions.DeepseaMinions().deepsea_minions
+        search = DeepseaMinions().deepsea_minions
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))
@@ -345,7 +345,7 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                                           networks[host]['public_network']))
     else:
         # pylint: disable=redefined-variable-type
-        search = deepsea_minions.DeepseaMinions().deepsea_minions
+        search = DeepseaMinions().deepsea_minions
 
         if exclude_string:
             search += " and not ( " + exclude_string + " )"

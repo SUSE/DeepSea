@@ -3,8 +3,7 @@ from srv.salt._modules.packagemanager import PackageManager, Zypper, Apt
 from srv.salt._modules import packagemanager as pm
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
-from srv.salt._modules.helper import _run
-from mock import MagicMock, patch, mock
+from mock import MagicMock, patch, mock, create_autospec
 
 
 class TestPackageManager():
@@ -254,6 +253,10 @@ class TestApt():
         """
         pm.__grains__ = {'os': 'ubuntu'}
         args = {'debug': False, 'kernel': False, 'reboot': False}
+        def pass_through(*args, **kwargs):
+            return args[0]                
+        mock_func = create_autospec(lambda x: x, side_effect=pass_through)
+        pm.__salt__ = {'helper.convert_out': mock_func}
         yield PackageManager(**args).pm
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')

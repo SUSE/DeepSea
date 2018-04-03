@@ -19,7 +19,7 @@ import uuid
 import time
 # pylint: disable=import-error,3rd-party-module-not-gated
 import psutil
-from helper import _run
+
 
 log = logging.getLogger(__name__)
 
@@ -38,9 +38,9 @@ def _systemctl_cmd_target(cmd, target):
     cmd = "systemctl {} {}".format(cmd, target)
 
     # Try a _few_ times, with a small sleep.
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
     while retries and _rc != 0:
-        _rc, _stdout, _stderr = _run(cmd)
+        _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
         retries -= 1
         time.sleep(delay)
 
@@ -185,7 +185,7 @@ def _mv_contents(path, new_path):
     """
     for entry in os.listdir(path):
         cmd = "mv {}/{} {}".format(path, entry, new_path)
-        _rc, _stdout, _stderr = _run(cmd)
+        _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
         if _rc != 0:
             return False
 
@@ -280,7 +280,7 @@ def btrfs_get_default_subvol(path='', **kwargs):
     Returns the default subvolume (in the form @/foo/bar) of a given path or None on error.
     """
     cmd = "btrfs subvolume get-default {}".format(path)
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
 
     if _rc == 0 and _stdout:
         # _stdout example: ID 259 gen 35248 top level 258 path @/.snapshots/1/snapshot
@@ -308,7 +308,7 @@ def btrfs_subvol_exists(subvol='', **kwargs):
     # If it isn't mounted, we have no idea the mountpoint to use in the below
     # list, so just default to /
     cmd = "btrfs subvolume list /"
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
 
     if _rc == 0 and _stdout:
         subvols = _stdout.split('\n')
@@ -371,7 +371,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
 
     # Mount tmpdir.
     cmd = "mount -t btrfs -o subvolid=0 '{}' '{}'".format(part_path, tmp_dir)
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
     if _rc != 0:
         log.error("Failed to mount '{}' with subvolid=0 on '{}'.".format(part_path, tmp_dir))
         ret = False
@@ -379,7 +379,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
     if ret:
         # Create the subvol.
         cmd = "btrfs subvolume create '{}/{}'".format(tmp_dir, subvol)
-        _rc, _stdout, _stderr = _run(cmd)
+        _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
         if _rc != 0:
             log.error("Failed to create subvolume '{}' on '{}'.".format(subvol, part_path))
             ret = False
@@ -387,7 +387,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
     # Cleanup tmp_dir.  Don't touch ret here, just log any errors.
     if os.path.exists(tmp_dir):
         cmd = "umount '{}'".format(tmp_dir)
-        _rc, _stdout, _stderr = _run(cmd)
+        _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
         if _rc != 0:
             log.error("Failed to unmount '{}'.".format(tmp_dir))
         try:
@@ -484,7 +484,7 @@ def btrfs_mount_subvol(subvol='', path='', **kwargs):
 
     # Finally mount!
     cmd = "mount '/dev/{}' '{}' -t btrfs -o subvol={}".format(dev_info['part_dev'], path, subvol)
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
     if _rc != 0:
         log.error(("Failed to mount subvolume '{}' onto '{}': stderr: "
                    "'{}'.".format(subvol, path, _stderr)))
@@ -536,7 +536,7 @@ def get_attrs(path='', **kwargs):
 
     cmd = ("lsattr -d {}".format(path) if os.path.isdir(path)
            else "lsattr {}".format(path))
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
 
     if _rc == 0 and _stdout:
         return _stdout.split()[0]
@@ -558,7 +558,7 @@ def _rchattr(op, path, attrs, rec, omit, rets):
     if not rec:
         if path not in omit:
             cmd = "chattr {} {}{} {}".format('-d' if os.path.isdir(path) else '', op, attrs, path)
-            _rc, _stdout, _stderr = _run(cmd)
+            _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
             rets[path] = _rc == 0
             return _rc == 0
         else:
@@ -575,7 +575,7 @@ def _rchattr(op, path, attrs, rec, omit, rets):
             if not path_contents and path not in omit:
                 dir_opt = '-d' if os.path.isdir(path) else ''
                 cmd = "chattr {} {}{} {}".format(dir_opt, op, attrs, path)
-                _rc, _stdout, _stderr = _run(cmd)
+                _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
                 rets[path] = _rc == 0
             # There are paths present in path_contents, process those.
             else:
@@ -590,14 +590,14 @@ def _rchattr(op, path, attrs, rec, omit, rets):
                     # Finally add the path
                     dir_opt = '-d' if os.path.isdir(path) else ''
                     cmd = "chattr {} {}{} {}".format(dir_opt, op, attrs, path)
-                    _rc, _stdout, _stderr = _run(cmd)
+                    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
                     rets[path] = _rc == 0
         # Path is a file.
         else:
             if path not in omit:
                 dir_opt = '-d' if os.path.isdir(path) else ''
                 cmd = "chattr {} {}{} {}".format(dir_opt, op, attrs, path)
-                _rc, _stdout, _stderr = _run(cmd)
+                _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
                 rets[path] = _rc == 0
 
 
@@ -775,7 +775,7 @@ def get_uuid(dev_path='', **kwargs):
     pathname = "/dev/disk/by-uuid"
 
     cmd = "find -L {} -samefile {}".format(pathname, dev_path)
-    _rc, _stdout, _stderr = _run(cmd)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
 
     if _rc == 0 and _stdout:
         return os.path.basename(_stdout)
@@ -925,7 +925,7 @@ def _unmount_osd(osd_mountpoint):
     _rc = 0
     if get_mountpoint(osd_mountpoint) == osd_mountpoint:
         cmd = "umount {}".format(osd_mountpoint)
-        _rc, _stdout, _stderr = _run(cmd)
+        _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
 
     return _rc == 0
 
@@ -937,7 +937,7 @@ def _mount_osd(osd_dev, osd_mountpoint):
     _rc = 0
     if get_mountpoint(osd_mountpoint) != osd_mountpoint:
         cmd = "mount {} {}".format(osd_dev, osd_mountpoint)
-        _rc, _stdout, _stderr = _run(cmd)
+        _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
 
     return _rc == 0
 

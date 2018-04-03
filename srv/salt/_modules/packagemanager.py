@@ -8,7 +8,7 @@ from subprocess import Popen, PIPE
 import logging
 import os
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
-from helper import _convert_out
+
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class Apt(PackageManager):
         # pylint: disable=unused-variable
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         _, stderr = proc.communicate()
-        stderr = _convert_out(stderr)
+        stderr = __salt__['helper.convert_out'](stderr)
         for cn_err in stderr.split(";"):
             if int(cn_err) > 0:
                 log.info('Update Needed')

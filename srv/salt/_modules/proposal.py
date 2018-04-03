@@ -9,7 +9,6 @@ from __future__ import absolute_import
 # pylint: disable=import-error, redefined-builtin,3rd-party-module-not-gated
 import logging
 from salt.ext.six.moves import range
-import cephdisks
 # pylint: disable=incompatible-py3-code
 log = logging.getLogger(__name__)
 
@@ -280,7 +279,7 @@ def generate(**kwargs):
          'ssd-spinner': <proposal>,
          'standalone': <proposal>}
     '''
-    disks = cephdisks.list_(**kwargs)
+    disks = __salt__['cephdisks.list'](**kwargs)
     proposal = Proposal(disks, **kwargs)
     return proposal.create()
 
