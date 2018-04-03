@@ -96,9 +96,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0700, salt, salt) /srv/salt/ceph/admin/cache
 %dir /srv/salt/ceph/admin/files
 %dir /srv/salt/ceph/admin/key
-%dir /srv/salt/ceph/apparmor
-%dir /srv/salt/ceph/apparmor/files
-%dir /srv/salt/ceph/apparmor/files/ceph.d
 %dir /srv/salt/ceph/benchmarks
 %dir /srv/salt/ceph/cephfs
 %dir /srv/salt/ceph/cephfs/benchmarks
@@ -382,9 +379,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
-%config /srv/salt/ceph/apparmor/*.sls
-%config /srv/salt/ceph/apparmor/files/*
-%config /srv/salt/ceph/apparmor/files/ceph.d/*
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/files/keyring.j2

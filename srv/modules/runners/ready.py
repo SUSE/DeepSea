@@ -75,11 +75,11 @@ class Checks(object):
         for minion in contents:
             if contents[minion] and int(contents[minion]) == 0:
                 msg = "enabled on minion {}".format(minion)
-                if 'apparmor' in self.passed:
-                    self.passed['apparmor'].append(msg)
+                if 'apparmor' in self.warnings:
+                    self.warnings['apparmor'].append(msg)
                 else:
-                    self.passed['apparmor'] = [ msg ]
-        if 'apparmor' not in self.passed:
+                    self.warnings['apparmor'] = [ msg ]
+        if 'apparmor' not in self.warnings:
             self.passed['apparmor'] = "disabled"
 
 

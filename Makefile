@@ -87,13 +87,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/admin/key/*.sls $(DESTDIR)/srv/salt/ceph/admin/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin/files
 	install -m 644 srv/salt/ceph/admin/files/*.j2 $(DESTDIR)/srv/salt/ceph/admin/files/
-	# state files apparmor
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files/ceph.d
-	install -m 644 srv/salt/ceph/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/apparmor/
-	install -m 644 srv/salt/ceph/apparmor/files/usr* $(DESTDIR)/srv/salt/ceph/apparmor/files/
-	install -m 644 srv/salt/ceph/apparmor/files/ceph.d/* $(DESTDIR)/srv/salt/ceph/apparmor/files/ceph.d/
 	# state files benchmarks
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/benchmarks
 	install -m 644 srv/salt/ceph/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/benchmarks/
