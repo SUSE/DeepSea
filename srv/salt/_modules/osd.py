@@ -955,6 +955,7 @@ class OSDPartitions(object):
                        "{}".format(number, number,
                                    self.osd.types[partition_type], device))
             _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
+            import pdb;pdb.set_trace()
             if _rc != 0:
                 raise RuntimeError("{} failed".format(cmd))
             log.info("partprobe disk")

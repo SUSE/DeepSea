@@ -4,11 +4,22 @@ import pytest
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import osd
-from srv.salt._modules import helper
 from mock import MagicMock, patch, mock, create_autospec
 
+# workaround to 'referenced before assignment'
+DEFAULT_MODULE = osd
+
 @pytest.fixture(scope='class')
-def helper_specs(module=None, ret_val=(0, 'stdout', 'stderr')):
+def helper_specs(module=DEFAULT_MODULE, ret_val=(0, 'stdout', 'stderr')):
+    """
+    TODO: 
+    * add docstring on how to use this.
+    * maybe add this to a separate module
+    * make it more flexible
+
+    Example overwrite of return_values, it works because it's a mock underneath
+    test_module.__salt__['helper.run'].return_value = (1, 'what', 'stath')
+    """
     def specs(module=module, ret_val=ret_val):
         def pass_through(*args):
             return args[0]                
@@ -136,62 +147,12 @@ class TestOSDInstanceMethods():
 class TetstOSDState():
     pass
 
+@pytest.mark.skip(reason="Low priority: skipped")
 class TestOSDWeight():
-    """
-    Initial checks for the wait method.  Override the __init__ funciton to
-    avoid the rados logic.  Set osd_id and settings directly.
-    """
-
-<<<<<<< HEAD
-    @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
-    def test_wait(self, ostd):
-        """
-        Check that wait returns successfully
-        """
-        ostd.return_value = (0, "safe to destroy")
-        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
-            osdw = osd.OSDWeight(0)
-            osdw.osd_id = 0
-            osdw.settings = {'timeout': 1, 'delay': 1}
-            ret = osdw.wait()
-            assert ret == ""
-
-    @pytest.mark.skip(reason='skip')
-    @patch('srv.salt._modules.osd.OSDWeight.osd_df')
-    @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
-    def test_wait_timeout(self, od, ostd):
-        """
-        Check that wait can timeout
-        """
-        od = {}
-        ostd.return_value = (-16, "Ceph is busy")
-        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
-            osdw = osd.OSDWeight(0)
-            osdw.osd_id = 0
-            osdw.settings = {'timeout': 1, 'delay': 1, 'osd_id': 0}
-            with pytest.raises(RuntimeError) as excinfo:
-                ret = osdw.wait()
-                assert 'Timeout expired' in str(excinfo.value)
-
-    @pytest.mark.skip(reason='skip')
-    @patch('srv.salt._modules.osd.OSDWeight.osd_df')
-    @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
-    def test_wait_loops(self, od, ostd):
-        """
-        Check that wait does loop
-        """
-        od = {}
-        ostd.return_value = (-16, "Ceph is busy")
-        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
-            osdw = osd.OSDWeight(0)
-            osdw.osd_id = 0
-            osdw.settings = {'timeout': 1, 'delay': 1, 'osd_id': 0}
-            with pytest.raises(RuntimeError) as excinfo:
-                ret = osdw.wait()
-                assert ostd.call_count == 2
-
+    pass
 
 class TestOSDConfig():
+
 
     @pytest.fixture(scope='class')
     def osd_o(self):
@@ -601,11 +562,13 @@ class OSDConfig(object):
 class TestOSDPartitions():
 
     @pytest.fixture(scope='class')
-    def osdp_o(self):
+    def setup_fixture(self):
         # Only return the non-instantiated class to allow
         # custom OSDConfig feeding.
+        helper_spec = helper_specs()
+        osd = helper_spec()
         cnf = osd.OSDPartitions
-        yield cnf
+        yield cnf, osd
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions._xfs_partitions')
     def test_partition_filestore(self, xfs_part_mock, osdp_o):
@@ -1012,11 +975,10 @@ class TestOSDPartitions():
         obj._bluestore_partitions()
         mock_log.warning.assert_called_with("DB size is unsupported for same device of /dev/sdx")
 
-    @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+    def test_create(self, ex_mock, pp_mock, lp_mock, setup_fixture):
         """
         Given the device is a NVME
         And has a size
@@ -1029,10 +991,10 @@ class TestOSDPartitions():
         """
         kwargs = {'device': '/dev/nvme0n1'}
         osd_config = OSDConfig(**kwargs)
-        obj = osdp_o(osd_config)
+        test_class, test_module = setup_fixture
+        obj = test_class(osd_config)
 
         lp_mock.return_value = 1
-        run_mock.return_value = (0, 'stdout', 'stderr')
         ex_mock.return_value = True
 
         obj.create(osd_config.device,[('wal', 1000)])
@@ -1043,11 +1005,10 @@ class TestOSDPartitions():
         run_mock.assert_any_call('dd if=/dev/zero of=/dev/nvme0n12 bs=4096 count=1 oflag=direct')
         #                                                       ^^ that's wrong imho
 
-    @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create_1(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+    def test_create_1(self, ex_mock, pp_mock, lp_mock, setup_fixture):
         """
         Given the device is a NVME
         And has a size
@@ -1059,10 +1020,10 @@ class TestOSDPartitions():
         """
         kwargs = {'device': '/dev/nvme0n1'}
         osd_config = OSDConfig(**kwargs)
-        obj = osdp_o(osd_config)
+        test_class, test_module = setup_fixture
+        obj = test_class(osd_config)
 
         lp_mock.return_value = 1
-        run_mock.return_value = (0, 'stdout', 'stderr')
         ex_mock.return_value = False
 
         obj.create(osd_config.device,[('wal', 1000)])
@@ -1098,7 +1059,7 @@ class TestOSDPartitions():
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create_3(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+    def test_create_3(self, ex_mock, pp_mock, lp_mock, osdp_o):
         """
         Given the device is not a NVME
         And has a no size
@@ -1123,10 +1084,11 @@ class TestOSDPartitions():
         pp_mock.assert_called_with('/dev/sdx2')
         run_mock.assert_any_call('/usr/sbin/sgdisk -N 2 -t 2:5CE17FCE-4087-4169-B7FF-056CC58473F9 /dev/sdx')
 
+    @pytest.mark.skip(reason='wait for partx implementation')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._last_partition')
     @mock.patch('srv.salt._modules.osd.OSDPartitions._part_probe')
     @mock.patch('srv.salt._modules.osd.os.path.exists')
-    def test_create_4_last_part(self, ex_mock, run_mock, pp_mock, lp_mock, osdp_o):
+    def test_create_4_last_part(self, ex_mock, pp_mock, lp_mock, osdp_o):
         """
         Given the device is not a NVME
         And has a no size
@@ -1138,11 +1100,12 @@ class TestOSDPartitions():
         _part_probe 1x
         Partition Param to 4
         """
-        run_mock.return_value = (0, 'stdout', 'stderr')
-        osd_config = OSDConfig()
+        kwargs = {}
+        osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
 
         lp_mock.return_value = 4
+        #run_mock.return_value = (0, 'stdout', 'stderr')
         ex_mock.return_value = False
         obj.create(osd_config.device,[('wal', 1000)])
 
@@ -2464,61 +2427,3 @@ class Test_is_incorrect():
         ret = obj.is_incorrect()
         assert ret == True
 
-class TestCephPGS:
-
-    def test_pg_value(self):
-        """
-        """
-        states = [{'name': 'active+clean', 'num': 11}]
-        with patch.object(osd.CephPGs, "__init__", lambda self: None):
-            ceph_pgs = osd.CephPGs()
-            ret = ceph_pgs._pg_value(states)
-            assert ret == 11
-
-    def test_pg_value_missing(self):
-        """
-        """
-        states = []
-        with patch.object(osd.CephPGs, "__init__", lambda self: None):
-            ceph_pgs = osd.CephPGs()
-            ret = ceph_pgs._pg_value(states)
-            assert ret == 0
-
-    @patch('srv.salt._modules.osd.CephPGs.pg_states')
-    def test_quiescent(self, pg_states):
-        """
-        """
-        pg_states.return_value = [{'name': 'active+clean', 'num': 11}]
-        with patch.object(osd.CephPGs, "__init__", lambda self: None):
-            ceph_pgs = osd.CephPGs()
-            ceph_pgs.settings = {'timeout': 1, 'delay': 1}
-            ret = ceph_pgs.quiescent()
-            assert ret == None
-
-    @patch('time.sleep')
-    @patch('srv.salt._modules.osd.CephPGs.pg_states')
-    def test_quiescent_timeout(self, pg_states, sleep):
-        """
-        """
-        pg_states.return_value = [{}, {}]
-        with patch.object(osd.CephPGs, "__init__", lambda self: None):
-            ceph_pgs = osd.CephPGs()
-            ceph_pgs.settings = {'timeout': 1, 'delay': 1}
-
-            with pytest.raises(RuntimeError) as excinfo:
-                ret = ceph_pgs.quiescent()
-                assert 'Timeout expired' in str(excinfo.value)
-
-    @patch('time.sleep')
-    @patch('srv.salt._modules.osd.CephPGs.pg_states')
-    def test_quiescent_delay_is_zero(self, pg_states, sleep):
-        """
-        """
-        pg_states.return_value = [{}, {}]
-        with patch.object(osd.CephPGs, "__init__", lambda self: None):
-            ceph_pgs = osd.CephPGs()
-            ceph_pgs.settings = {'timeout': 1, 'delay': 0}
-
-            with pytest.raises(ValueError) as excinfo:
-                ret = ceph_pgs.quiescent()
-                assert 'The delay cannot be 0' in str(excinfo.value)
