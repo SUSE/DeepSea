@@ -1,4 +1,4 @@
-{% set master = salt['master.minion']() %}
+{% set master =  salt['pillar.get']('master_minion') %}
 
 reset systemctl initially for {{ service }}:
   salt.state:

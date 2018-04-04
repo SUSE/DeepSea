@@ -650,7 +650,24 @@ the README for more information.
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
 /srv/salt/ceph/smoketests/quiescent/*.sls
+%dir /srv/salt/ceph/smoketests/restart
+%dir /srv/salt/ceph/tests/quiescent
+%dir /srv/salt/ceph/tests/quiescent/timeout
+%dir /srv/salt/ceph/tests/restart
+%dir /srv/salt/ceph/tests/restart/mon
+%dir /srv/salt/ceph/tests/restart/mds
+%dir /srv/salt/ceph/tests/restart/mgr
+%dir /srv/salt/ceph/tests/restart/rgw
+/srv/salt/ceph/smoketests/keyrings/*.sls
+/srv/salt/ceph/smoketests/quiescent/*.sls
+/srv/salt/ceph/smoketests/restart/*.sls
+/srv/salt/ceph/tests/keyrings/*.sls
 /srv/salt/ceph/tests/quiescent/*.sls
 /srv/salt/ceph/tests/quiescent/timeout/*.sls
+/srv/salt/ceph/tests/restart/*.sls
+/srv/salt/ceph/tests/restart/mon/*.sls
+/srv/salt/ceph/tests/restart/mds/*.sls
+/srv/salt/ceph/tests/restart/mgr/*.sls
+/srv/salt/ceph/tests/restart/rgw/*.sls
 
 %changelog
