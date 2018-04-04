@@ -461,6 +461,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/configuration
+	install -m 644 srv/salt/ceph/rescind/configuration/*.sls $(DESTDIR)/srv/salt/ceph/rescind/configuration/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi
 	install -m 644 srv/salt/ceph/rescind/client-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/ganesha
