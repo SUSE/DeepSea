@@ -177,6 +177,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/monitoring/prometheus
 %dir /srv/salt/ceph/monitoring/prometheus/exporters
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter
+%dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/CentOS
+%dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/SLES-15
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
 %dir /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__
@@ -487,6 +489,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/monitoring/prometheus/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/*.sls
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/CentOS/*.sls
+%config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/SLES-15/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron/*.sls
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/*.py
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__/*.pyc
