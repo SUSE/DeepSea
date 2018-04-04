@@ -57,11 +57,15 @@ copy-files:
 	install -m 755 qa/suites/basic/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/basic/
 	install -m 755 qa/suites/ceph-test/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test/
 	# tests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
+	install -m 644 srv/salt/ceph/tests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -m 644 srv/salt/ceph/tests/quiescent/timeout/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	# smoketests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
+	install -m 644 srv/salt/ceph/smoketests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	# docs
