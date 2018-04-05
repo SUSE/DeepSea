@@ -27,9 +27,10 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli]"
+    echo "  ${0} [-h,--help] [--apparmor] [--cli] [--encryption]"
     echo
     echo "Options:"
+    echo "    --apparmor    Use AppArmor"
     echo "    --cli         Use DeepSea CLI"
     echo "    --encryption  Deploy OSDs with data-at-rest encryption"
     echo "    --mini        Only uses a bare minimum of tests"
@@ -37,7 +38,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,encrypted,encryption,help" \
+TEMP=$(getopt -o h --long "apparmor,cli,encrypted,encryption,help" \
      -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -46,11 +47,13 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 eval set -- "$TEMP"
 
 # process options
+APPARMOR=""
 CLI=""
 ENCRYPTION=""
 MINI=""
 while true ; do
     case "$1" in
+        --apparmor) APPARMOR="$1" ; shift ;;
         --cli) CLI="cli" ; shift ;;
         --encrypted|--encryption) ENCRYPTION="encryption" ; shift ;;
         --mini|--smoke) MINI="mini" ; shift ;;
@@ -63,6 +66,7 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
+test -n "$APPARMOR" && ceph_apparmor
 run_stage_0 "$CLI"
 salt_api_test
 run_stage_1 "$CLI"

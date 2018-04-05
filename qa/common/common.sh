@@ -427,6 +427,11 @@ role-ganesha/cluster/*.sls slice=[:1]
 EOF
 }
 
+function ceph_apparmor {
+    salt '*' state.apply ceph.apparmor
+    salt '*' cmd.run 'systemctl | grep -i apparmor'
+    salt '*' cmd.run '/usr/sbin/aa-status'
+}
 
 #
 # functions for creating pools

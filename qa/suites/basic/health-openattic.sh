@@ -28,15 +28,16 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli]"
+    echo "  ${0} [-h,--help] [--apparmor] [--cli]"
     echo
     echo "Options:"
+    echo "    --apparmor Use AppArmor"
     echo "    --cli      Use DeepSea CLI"
     echo "    --help     Display this usage message"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,help" \
+TEMP=$(getopt -o h --long "apparmor,cli,help" \
      -n 'health-openattic.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -45,9 +46,11 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 eval set -- "$TEMP"
 
 # process options
+APPARMOR=""
 CLI=""
 while true ; do
     case "$1" in
+        --apparmor) APPARMOR="$1" ; shift ;;
         --cli) CLI="cli" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;
@@ -58,6 +61,7 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
+test -n "$APPARMOR" && ceph_apparmor
 run_stage_0 "$CLI"
 salt_api_test
 run_stage_1 "$CLI"
