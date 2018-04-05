@@ -839,6 +839,25 @@ class Validate(Preparation):
 
         self._set_pass_status('ceph_version')
 
+    def salt_version(self):
+        """
+        Scan all minions for their salt versions.
+        """
+        grains_data = self.local.cmd(self.search, 'grains.get',
+                                     ['saltversion'], expr_form="compund")
+
+        for node in grains_data:
+            year, month, release = grains_data[node].split('.')
+            warning_str = '{node}: {year}.{month}.{release} not supported' \
+                          .format(node=node, year=year, month=month,
+                                  release=release)
+            if int(year) < 2017 or int(year) > 2018:
+                if 'salt_version' not in self.warnings:
+                    self.warnings['salt_version'] = [warning_str]
+                else:
+                    self.warnings['salt_version'].append(warning_str)
+        self._set_pass_status('salt_version')
+
     def _accumulate_files_from(self, filename):
         """
         Process policy file skipping comments, unmatched lines
@@ -1137,6 +1156,7 @@ def setup(**kwargs):
     valid.deepsea_minions(valid.target)
     valid.master_minion()
     valid.ceph_version()
+    valid.salt_version()
     valid.report()
 
     if valid.errors:
