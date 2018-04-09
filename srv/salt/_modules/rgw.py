@@ -22,7 +22,7 @@ import boto
 import boto.s3.connection
 # pylint: disable=import-error,3rd-party-module-not-gated
 import boto.exception
-from helper import _convert_out, _run
+
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def users(realm='default', contains=None):
     Return the list of users for a realm.
     """
     cmd = "radosgw-admin user list --rgw-realm={}".format(realm)
-    retcode, stdout, _ = _run(cmd)
+    retcode, stdout, _ = __salt__['helper.run'](cmd)
     if retcode != '0':
         if contains:
             return [item for item in json.loads(stdout) if contains in item]
@@ -116,20 +116,20 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
                 filename = "{}/user.{}.json".format(pathname, user['uid'])
                 with open(filename, "w") as _json:
                     for line in proc.stdout:
-                        line = _convert_out(line)
+                        line = __salt__['helper.convert_out'](line)
                         _json.write(line)
                 for line in proc.stderr:
-                    line = _convert_out(line)
+                    line = __salt__['helper.convert_out'](line)
                     log.info("stderr: {}".format(line))
                     proc = Popen(command.split(), stdout=PIPE, stderr=PIPE)
                     with open(filename, "w") as _json:
                         # pylint: disable=redefined-outer-name
                         for line in proc.stdout:
-                            line = _convert_out(line)
+                            line = __salt__['helper.convert_out'](line)
                             _json.write(line)
                     # pylint: disable=redefined-outer-name
                     for line in proc.stderr:
-                        line = _convert_out(line)
+                        line = __salt__['helper.convert_out'](line)
                         log.info("stderr: {}".format(line))
 
                 proc.wait()
@@ -145,10 +145,10 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
                     proc = Popen(args, stdout=PIPE, stderr=PIPE)
                     with open(filename, "w") as _json:
                         for line in proc.stdout:
-                            line = _convert_out(line)
+                            line = __salt__['helper.convert_out'](line)
                             _json.write(line)
                     for line in proc.stderr:
-                        line = _convert_out(line)
+                        line = __salt__['helper.convert_out'](line)
                         log.info("stderr: {}".format(line))
                     proc.wait()
 

@@ -1,7 +1,5 @@
 import pytest
-import StringIO
 from srv.salt._modules import kernel
-
 from mock import patch, MagicMock
 
 def test_boot_image():

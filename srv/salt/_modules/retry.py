@@ -14,7 +14,6 @@ import time
 import logging
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 from salt.ext.six.moves import range
-from helper import _convert_out
 
 
 log = logging.getLogger(__name__)
@@ -36,10 +35,10 @@ def cmd(**kwargs):
         proc = Popen(_cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
         for line in proc.stdout:
-            line = _convert_out(line)
+            line = __salt__['helper.convert_out'](line)
             print(line)
         for line in proc.stderr:
-            line = _convert_out(line)
+            line = __salt__['helper.convert_out'](line)
             sys.stderr.write(line)
         if proc.returncode != 0:
             if attempt < retry:

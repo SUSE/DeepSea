@@ -35,7 +35,6 @@ import re
 import pprint
 import string
 import random
-from subprocess import call, Popen, PIPE
 import yaml
 import json
 from os.path import dirname, basename, isdir
@@ -48,7 +47,7 @@ import uuid
 import ipaddress
 import logging
 # pylint: disable=relative-import
-import deepsea_minions
+from deepsea_minions import DeepseaMinions
 import operator
 
 import sys
@@ -495,7 +494,7 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        target = deepsea_minions.DeepseaMinions()
+        target = DeepseaMinions()
         self.search = target.deepsea_minions
 
         self.networks = self._networks(self.servers)
@@ -824,7 +823,7 @@ class CephCluster(object):
             self.names = ['ceph']
         self.writer = writer
 
-        target = deepsea_minions.DeepseaMinions()
+        target = DeepseaMinions()
         search = target.deepsea_minions
 
         local = salt.client.LocalClient()
@@ -1002,7 +1001,7 @@ def _get_existing_cluster_networks(addrs, public_networks=[]):
     returns a list of addresses consisting of network prefix followed by the
     cidr prefix (e.g. [ "10.0.0.0/24" ]).  It may return an empty list.
     """
-    target = deepsea_minions.DeepseaMinions()
+    target = DeepseaMinions()
     search = target.deepsea_minions
 
     local = salt.client.LocalClient()
@@ -1110,7 +1109,7 @@ def engulf_existing_cluster(**kwargs):
     salt_writer = SaltWriter(**kwargs)
 
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
-    minions = deepsea_minions.DeepseaMinions()
+    minions = DeepseaMinions()
     search = minions.deepsea_minions
     from . import validate
     validator = validate.Validate("ceph", local.cmd(search, 'pillar.items', [],

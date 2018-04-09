@@ -27,7 +27,7 @@ import logging
 import re
 import os
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
-from helper import _run
+
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def _kernel_pkg():
     query = _query_command(_boot_image(kernel))
     if query:
         log.debug("query: {}".format(query))
-        _, stdout, _ = _run(query)
+        _, stdout, _ = __salt__['helper.run'](query)
         package = stdout
 
         log.info("package: {}".format(package))
