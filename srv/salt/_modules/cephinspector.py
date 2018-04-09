@@ -84,7 +84,7 @@ def _get_disk_id(partition):
     # We should only ever have one entry that we return.
     if out:
         out = _convert_out(out)
-        return out.rstrip()
+        return out.split()[-1]
     return partition
 
 
