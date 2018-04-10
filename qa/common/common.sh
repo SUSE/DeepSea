@@ -14,9 +14,6 @@ source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
 function global_test_setup {
-    export DEV_ENV="true"         # FIXME set only when TOTALNODES < 4
-    export INTEGRATION_ENV="true" # since we can't rely on DEV_ENV always being set
-    
     MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
     if test -s $MASTER_MINION_SLS ; then
         SALT_MASTER=$(cat $MASTER_MINION_SLS | \

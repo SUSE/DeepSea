@@ -127,6 +127,10 @@ echo "WWWW"
 echo "This script will use DeepSea to deploy a cluster of $TOTAL_NODES nodes total (including Salt Master)."
 echo "Of these, $CLIENT_NODES will be clients (nodes without any DeepSea roles except \"admin\")."
 
+if [ $TOTAL_NODES -lt 4 ] ; then
+    export DEV_ENV="true"
+fi
+
 cat_salt_config
 if [ $START_STAGE -le 0 ] ; then
     test -n "$NO_REBOOT" && disable_restart_in_stage_0
