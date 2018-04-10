@@ -282,6 +282,7 @@ function policy_cfg_one_mon {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - 1 mon, 1 mgr
 role-mon/cluster/*.sls slice=[:1]
+role-mon/stack/default/ceph/minions/*.yml slice=[:1]
 role-mgr/cluster/*.sls slice=[:1]
 EOF
 }
@@ -290,6 +291,7 @@ function policy_cfg_three_mons {
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - 3 mons, 3 mgrs
 role-mon/cluster/*.sls slice=[:3]
+role-mon/stack/default/ceph/minions/*.yml slice=[:3]
 role-mgr/cluster/*.sls slice=[:3]
 EOF
 }
