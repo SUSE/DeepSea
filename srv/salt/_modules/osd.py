@@ -283,14 +283,14 @@ class OSDWeight(object):
     Manage the setting and restoring of OSD crush weights
     """
 
-    def __init__(self, id, **kwargs):
+    def __init__(self, _id, **kwargs):
         """
         Initialize settings, connect to Ceph cluster
         """
-        self.id = id
+        self.osd_id = _id
         self.settings = {
             'conf': "/etc/ceph/ceph.conf" ,
-            'filename': '/var/run/ceph/osd.{}-weight'.format(id),
+            'filename': '/var/run/ceph/osd.{}-weight'.format(self.osd_id),
             'timeout': 60,
             'keyring': '/etc/ceph/ceph.client.admin.keyring',
             'client': 'client.admin',
@@ -326,7 +326,7 @@ class OSDWeight(object):
         if os.path.isfile(self.settings['filename']):
             with open(self.settings['filename']) as weightfile:
                 saved_weight = weightfile.read().rstrip('\n')
-                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.id))
+                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.osd_id))
                 self.reweight(saved_weight)
 
 
@@ -337,7 +337,7 @@ class OSDWeight(object):
         """
         stdout = []
         stderr = []
-        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.id, weight)
+        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.osd_id, weight)
         return _run(cmd)
 
     def osd_df(self):
@@ -351,7 +351,7 @@ class OSDWeight(object):
             if entry['id'] == int(self.osd_id):
                 log.debug(pprint.pformat(entry))
                 return entry
-        log.warn("ID {} not found".format(self.id))
+        log.warn("ID {} not found".format(self.osd_id))
         return {}
 
     # pylint: disable=invalid-name
@@ -388,7 +388,7 @@ class OSDWeight(object):
                     log.warning("osd.{} has {} PGs remaining but {}".
                                 format(self.osd_id, entry['pgs'], msg))
                 else:
-                    log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
+                    log.warn("osd.{} has {} PGs remaining".format(self.osd_id, entry['pgs']))
                     if last_pgs != entry['pgs']:
                         # Making progress, reset countdown
                         i = 0
@@ -513,7 +513,7 @@ def zero_weight(osd_id, wait=True, **kwargs):
     """
     settings = _settings(**kwargs)
 
-    o = OSDWeight(id, **settings)
+    o = OSDWeight(osd_id, **settings)
     o.save()
     rc, _stdout, _stderr = o.reweight('0.0')
     if rc != 0:
