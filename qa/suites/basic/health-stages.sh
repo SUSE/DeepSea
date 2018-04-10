@@ -32,9 +32,10 @@ function usage {
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cephfs] [--cli] [--client-nodes=X]"
     echo "              [--dashboard] [--encrypted] [--min-nodes=X] [--nfs-ganesha]"
-    echo "              [--rgw] [--ssl]"
+    echo "              [--no-reboot] [--rgw] [--ssl]"
     echo
     echo "Options:"
+    echo "    --help           Display this usage message"
     echo "    --cephfs         Deploy CephFS"
     echo "    --cli            Use DeepSea CLI"
     echo "    --client-nodes=X Number of client nodes (default: 0)"
@@ -42,7 +43,7 @@ function usage {
     echo "    --encrypted      Deploy OSDs with data-at-rest encryption"
     echo "    --min-nodes=X    Minimum number of nodes (default: 1)"
     echo "    --nfs-ganesha    Deploy NFS-Ganesha"
-    echo "    --help           Display this usage message"
+    echo "    --no-reboot      Disable Stage 0 reboot"
     echo "    --rgw            Deploy RGW"
     echo "    --ssl            Use SSL (https, port 443) with RGW"
     exit 1
@@ -51,7 +52,7 @@ function usage {
 set +x
 
 TEMP=$(getopt -o h \
-     --long "cephfs,cli,client-nodes:,dashboard,encrypted,encryption,help,min-nodes:,nfs-ganesha,rgw,ssl" \
+     --long "cephfs,cli,client-nodes:,dashboard,encrypted,encryption,help,min-nodes:,nfs-ganesha,no-reboot,rgw,ssl" \
      -n 'health-stages.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -68,6 +69,7 @@ ENCRYPTION=""
 PROPOSED_MIN_NODES=""
 NFS_GANESHA=""
 RGW=""
+NO_REBOOT=""
 SSL=""
 while true ; do
     case "$1" in
@@ -78,6 +80,7 @@ while true ; do
         --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
         --min-nodes) PROPOSED_MIN_NODES="$2" shift ; shift ;;
         --nfs-ganesha) NFS_GANESHA="$1" ; shift ;;
+        --no-reboot) NO_REBOOT="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
@@ -111,6 +114,7 @@ echo "This script will use DeepSea to deploy a cluster of $TOTAL_NODES nodes tot
 echo "Of these, $CLIENT_NODES will be clients (nodes without any DeepSea roles except \"admin\")."
 
 cat_salt_config
+test -n "$NO_REBOOT" && disable_restart_in_stage_0
 run_stage_0 "$CLI"
 test -n "$RGW" -a -n "$SSL" && rgw_ssl_init || true
 salt_api_test
