@@ -16,10 +16,6 @@ log = logging.getLogger(__name__)
 
 
 class HealthCheck(object):
-    """
-    Check the Ceph health status.  Wait to return until the number of
-    successive checks matches the desired state.
-    """
 
     def __init__(self, **kwargs):
         """
@@ -47,28 +43,19 @@ class HealthCheck(object):
         self.cluster = rados.Rados(conffile=self.settings['conf'])
         self.cluster.connect()
 
-    def wait(self):
+    def _wait(self, cmd, success):
         """
         Poll until the status "matches" the specificed number of checks.
         """
-        cmd = json.dumps({"prefix": "health", "format": "json"})
         i = 0
         check = 0
 
+        log.debug('wait on condition of command {}'.format(cmd))
         while i < (self.settings['timeout']/self.settings['delay']):
-            # pylint: disable=unused-variable
-            ret, output, err = self.cluster.mon_command(cmd, b'', timeout=6)
-            health = json.loads(output)
-            if 'overall_status' in health:
-                current_status = json.loads(output)['overall_status']
-            if 'status' in health:
-                current_status = json.loads(output)['status']
-            if current_status:
-                log.debug("status: {}".format(current_status))
-            else:
-                raise RuntimeError("Neither status nor overall_status defined in health check")
+            ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+            json_output = json.loads(output)
 
-            if self._check_status(current_status, self.settings):
+            if success(json_output):
                 check += 1
                 if check == self.settings['check']:
                     log.debug("{} checks succeeded".format(self.settings['check']))
@@ -83,16 +70,76 @@ class HealthCheck(object):
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
 
-    # pylint: disable=no-self-use
-    def _check_status(self, current, settings):
+    def _check_status(self, current):
         """
         Return the "correct" matching status
         """
-        if settings['negate']:
-            log.debug("status != {}".format(settings['status']))
-            return current != settings['status']
-        log.debug("status == {}".format(settings['status']))
-        return current == settings['status']
+        if self.settings['negate']:
+            log.debug("status != {}".format(self.settings['status']))
+            return (current != self.settings['status'])
+        else:
+            log.debug("status == {}".format(self.settings['status']))
+            return (current == self.settings['status'])
+
+
+class FsStatusCheck(HealthCheck):
+    """
+    Check the fsmap status of the cep status output. Wait till all active MDS's
+    daemons have reached up:active status
+    """
+
+    def __init__(self, **kwargs):
+        super(FsStatusCheck, self).__init__(**kwargs)
+
+    def wait_for_healthy_mds(self):
+        """
+        Poll until all active MDS' are up:active
+        """
+        cmd = json.dumps({"prefix":"status", "format":"json" })
+
+        def success(status):
+            if 'fsmap' in status:
+                fsmap = status['fsmap']
+            else:
+                raise RuntimeError('No fsmap found in status output')
+
+            for rank in fsmap['by_rank']:
+                if not self._check_status(rank['status']):
+                    return False
+            return True
+
+        self._wait(cmd, success)
+
+
+class HealthStatusCheck(HealthCheck):
+    """
+    Check the Ceph health status.  Wait to return until the number of
+    successive checks matches the desired state.
+    """
+
+    def __init__(self, **kwargs):
+        super(HealthStatusCheck, self).__init__(**kwargs)
+
+    def wait(self):
+        """
+        Poll until the status "matches" the specificed number of checks.
+        """
+        cmd = json.dumps({"prefix":"health", "format":"json" })
+
+        def success(health):
+            if 'overall_status' in health:
+                current_status = health['overall_status']
+            if 'status' in health:
+                current_status = health['status']
+            if current_status:
+                log.debug("status: {}".format(current_status))
+            else:
+                raise RuntimeError("Neither status nor overall_status defined in health check")
+
+            return self._check_status(current_status)
+
+
+        self._wait(cmd, success)
 
     def just(self):
         """
@@ -105,7 +152,7 @@ def just(**kwargs):
     """
     Wait for the delay
     """
-    healthcheck = HealthCheck(**kwargs)
+    healthcheck = HealthStatusCheck(**kwargs)
     healthcheck.just()
 
 
@@ -113,8 +160,16 @@ def until(**kwargs):
     """
     Wait around until the status matches.
     """
-    healthcheck = HealthCheck(**kwargs)
+    healthcheck = HealthStatusCheck(**kwargs)
     healthcheck.wait()
+
+
+def until_mds(**kwargs):
+    """
+    Wait around for fsmap changes.
+    """
+    fscheck = FsStatusCheck(**kwargs)
+    fscheck.wait_for_healthy_mds()
 
 
 def out(**kwargs):
@@ -122,7 +177,7 @@ def out(**kwargs):
     Negate the check.  That is, wait out the status such as HEALTH_ERR.
     """
     kwargs.update({'negate': True})
-    healthcheck = HealthCheck(**kwargs)
+    healthcheck = HealthStatusCheck(**kwargs)
     healthcheck.wait()
 
 
