@@ -32,7 +32,7 @@ function usage {
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cephfs] [--cli] [--client-nodes=X]"
     echo "              [--dashboard] [--encrypted] [--min-nodes=X] [--nfs-ganesha]"
-    echo "              [--no-reboot] [--rgw] [--ssl]"
+    echo "              [--no-reboot] [--rgw] [--ssl] [--start-stage=X]"
     echo
     echo "Options:"
     echo "    --help           Display this usage message"
@@ -46,13 +46,14 @@ function usage {
     echo "    --no-reboot      Disable Stage 0 reboot"
     echo "    --rgw            Deploy RGW"
     echo "    --ssl            Use SSL (https, port 443) with RGW"
+    echo "    --start-stage=X  Start from stage X (instead of 0)"
     exit 1
 }
 
 set +x
 
 TEMP=$(getopt -o h \
-     --long "cephfs,cli,client-nodes:,dashboard,encrypted,encryption,help,min-nodes:,nfs-ganesha,no-reboot,rgw,ssl" \
+     --long "cephfs,cli,client-nodes:,dashboard,encrypted,encryption,help,min-nodes:,nfs-ganesha,no-reboot,rgw,ssl,start-stage:" \
      -n 'health-stages.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -71,6 +72,7 @@ NFS_GANESHA=""
 RGW=""
 NO_REBOOT=""
 SSL=""
+START_STAGE="0"
 while true ; do
     case "$1" in
         --cephfs) CEPHFS="$1" ; shift ;;
@@ -84,6 +86,7 @@ while true ; do
         -h|--help) usage ;;    # does not return
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
+        --start-stage) START_STAGE="$2" ; shift ; shift ;;
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
@@ -96,6 +99,17 @@ if [ -n "$PROPOSED_MIN_NODES" ] ; then
     fi
     test "$PROPOSED_MIN_NODES" -gt "$MIN_NODES" && MIN_NODES="$PROPOSED_MIN_NODES"
 fi
+
+echo -n "Validating start stage $START_STAGE . . . "
+case $START_STAGE in
+    0) true ;;
+    1) true ;;
+    2) true ;;
+    3) true ;;
+    4) true ;;
+    *) echo ; usage ;;
+esac
+echo "OK"
 
 set -x
 
@@ -114,57 +128,66 @@ echo "This script will use DeepSea to deploy a cluster of $TOTAL_NODES nodes tot
 echo "Of these, $CLIENT_NODES will be clients (nodes without any DeepSea roles except \"admin\")."
 
 cat_salt_config
-test -n "$NO_REBOOT" && disable_restart_in_stage_0
-run_stage_0 "$CLI"
-test -n "$RGW" -a -n "$SSL" && rgw_ssl_init || true
-salt_api_test
-run_stage_1 "$CLI"
-test -n "$ENCRYPTION" && proposal_populate_dmcrypt
-policy_cfg_base
-policy_cfg_mon_flex "$CLUSTER_NODES"
-test -n "$CEPHFS" && policy_cfg_mds "$CLUSTER_NODES"
-test -n "$RGW" && policy_cfg_rgw "$CLUSTER_NODES" "$SSL"
-test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha "$CLUSTER_NODES"
-test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
-policy_cfg_storage "$CLIENT_NODES" "$ENCRYPTION"
-cat_policy_cfg
-rgw_demo_users
-run_stage_2 "$CLI"
-ceph_conf_adjustments "$DASHBOARD"
-run_stage_3 "$CLI"
-
-# pre-create pools with calculated number of PGs so we don't get health
-# warnings after Stage 4 due to "too few" or "too many" PGs per OSD
-# (the "write_test" pool is used in common/sanity-basic.sh)
-sleep 10
-if [ -n "$CEPHFS" ] ; then
-    create_all_pools_at_once write_test cephfs_data cephfs_metadata
-else
-    create_all_pools_at_once write_test
+if [ $START_STAGE -le 0 ] ; then
+    test -n "$NO_REBOOT" && disable_restart_in_stage_0
+    run_stage_0 "$CLI"
 fi
-ceph osd pool application enable write_test deepsea_qa
-sleep 10
-ceph_cluster_status
-ceph_health_test
-
-if [ -z "$CEPHFS" -a -z "$NFS_GANESHA" -a -z "$RGW" ] ; then
-    echo "WWWW"
-    echo "Stages 0-3 OK"
-    echo "No roles requiring Stage 4: stopping here"
-    exit 0
+if [ $START_STAGE -le 1 ] ; then
+    test -n "$RGW" -a -n "$SSL" && rgw_ssl_init || true
+    salt_api_test
+    run_stage_1 "$CLI"
 fi
+if [ $START_STAGE -le 2 ] ; then
+    test -n "$ENCRYPTION" && proposal_populate_dmcrypt
+    policy_cfg_base
+    policy_cfg_mon_flex "$CLUSTER_NODES"
+    test -n "$CEPHFS" && policy_cfg_mds "$CLUSTER_NODES"
+    test -n "$RGW" && policy_cfg_rgw "$CLUSTER_NODES" "$SSL"
+    test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha "$CLUSTER_NODES"
+    test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
+    policy_cfg_storage "$CLIENT_NODES" "$ENCRYPTION"
+    cat_policy_cfg
+    rgw_demo_users
+    run_stage_2 "$CLI"
+fi
+if [ $START_STAGE -le 3 ] ; then
+    ceph_conf_adjustments "$DASHBOARD"
+    run_stage_3 "$CLI"
+fi
+if [ $START_STAGE -le 4 ] ; then
+    # pre-create pools with calculated number of PGs so we don't get health
+    # warnings after Stage 4 due to "too few" or "too many" PGs per OSD
+    # (the "write_test" pool is used in common/sanity-basic.sh)
+    sleep 10
+    if [ -n "$CEPHFS" ] ; then
+        create_all_pools_at_once write_test cephfs_data cephfs_metadata
+    else
+        create_all_pools_at_once write_test
+    fi
+    ceph osd pool application enable write_test deepsea_qa
+    sleep 10
+    ceph_cluster_status
+    ceph_health_test
 
-test -n "$NFS_GANESHA" && nfs_ganesha_no_root_squash
-run_stage_4 "$CLI"
-ceph_cluster_status
-ceph_health_test
+    if [ -z "$CEPHFS" -a -z "$NFS_GANESHA" -a -z "$RGW" ] ; then
+        echo "WWWW"
+        echo "Stages 0-3 OK"
+        echo "No roles requiring Stage 4: stopping here"
+        exit 0
+    fi
 
-echo "WWWW"
-echo "Stage 4 OK"
+    test -n "$NFS_GANESHA" && nfs_ganesha_no_root_squash
+    run_stage_4 "$CLI"
+    ceph_cluster_status
+    ceph_health_test
 
-if [ -n "$NFS_GANESHA" ] ; then
-    nfs_ganesha_cat_config_file
-    nfs_ganesha_debug_log
     echo "WWWW"
-    echo "NFS-Ganesha set to debug logging"
+    echo "Stage 4 OK"
+
+    if [ -n "$NFS_GANESHA" ] ; then
+        nfs_ganesha_cat_config_file
+        nfs_ganesha_debug_log
+        echo "WWWW"
+        echo "NFS-Ganesha set to debug logging"
+    fi
 fi
