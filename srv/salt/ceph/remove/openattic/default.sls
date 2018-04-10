@@ -9,3 +9,12 @@ remove openattic auth:
     - name: "ceph auth del client.openattic"
 
 {% endif %}
+
+/var/cache/salt/master/jobs:
+  file.directory:
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - recurse:
+      - user
+      - group
+

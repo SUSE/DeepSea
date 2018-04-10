@@ -12,6 +12,11 @@ removing minion cache:
     - makedirs: True
     - fire_event: True
 
-
-
+/var/cache/salt/master/jobs:
+  file.directory:
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - recurse:
+      - user
+      - group
 

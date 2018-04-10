@@ -12,3 +12,12 @@ auth {{ keyring_file }}:
     - name: "ceph auth add {{ client }} -i {{ keyring_file }}"
 
 {% endfor %}
+
+/var/cache/salt/master/jobs:
+  file.directory:
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - recurse:
+      - user
+      - group
+

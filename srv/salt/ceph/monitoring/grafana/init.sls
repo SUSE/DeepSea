@@ -123,3 +123,4 @@ remove rgw-users dashboard:
           -XDELETE http://admin:admin@localhost:3000/api/dashboards/db/ceph-object-gateway-users
 
 {% endif %}
+
