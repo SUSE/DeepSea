@@ -63,6 +63,7 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
+disable_restart_in_stage_0
 run_stage_0 "$CLI"
 salt_api_test
 run_stage_1 "$CLI"
