@@ -11,6 +11,7 @@ base_dir = '/srv/salt/ceph/configuration/files/'
 conf_dir = '/srv/salt/ceph/configuration/files/ceph.conf.d/'
 checksum_dir = '/srv/salt/ceph/configuration/files/ceph.conf.checksum/'
 
+
 class TestChanged():
     """
     Testing 'changed' runner
@@ -21,25 +22,30 @@ class TestChanged():
         with patch('srv.modules.runners.changed.salt.client', new_callable=MagicMock):
             yield changed.Config
 
+    @pytest.fixture(scope='class')
+    def role(self):
+        with patch('srv.modules.runners.changed.salt.client', new_callable=MagicMock):
+            yield changed.Role
+
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
     @patch('srv.modules.runners.changed.hashlib')
-    def test_create_checksum(self, hashlib_mock, cfg):
+    def test_create_checksum(self, hashlib_mock, cfg, role):
         fs.CreateFile("{}/{}".format(conf_dir, 'rgw.conf'), contents="foo=bar") 
-        cfg = cfg('rgw')
+        cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.create_checksum()
         assert isinstance(ret, MagicMock) is True
 
     @patch('srv.modules.runners.changed.log')
-    def test_create_checksum_no_files(self, log_mock, cfg):
-        cfg = cfg('rgw')
+    def test_create_checksum_no_files(self, log_mock, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.create_checksum()
         assert ret is None
 
     @patch('srv.modules.runners.changed.log')
-    def test_write_checksum(self, log_mock, cfg):
+    def test_write_checksum(self, log_mock, cfg, role):
         fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar") 
-        cfg = cfg('rgw')
+        cfg = cfg(role=role(role_name='rgw'))
         m = mock_open()
         with patch('__builtin__.open', m, create=True):
             ret = cfg.write_checksum('0b0b0b0b0b0b0b0b0b0b0')
@@ -51,35 +57,30 @@ class TestChanged():
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('srv.modules.runners.changed.log')
     @patch('srv.modules.runners.changed.open')
-    def test_read_checksum(self, open_mock, log_mock, cfg):
+    def test_read_checksum(self, open_mock, log_mock, cfg, role):
         fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar") 
-        cfg = cfg('rgw')
+        cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.read_checksum()
         open_mock.assert_called_with('/srv/salt/ceph/configuration/files/ceph.conf.checksum/rgw.conf', 'r')
         log_mock.debug.assert_called()
 
-    @patch('salt.client.LocalClient', autospec=True)
-    def test_rgw_configurations(self, localclient):
-        cfg = changed.Config('rgw')
-        cfg.rgw_configurations()
-
     @patch('srv.modules.runners.changed.log')
-    def test_read_checksum_no_file(self, log_mock, cfg):
-        cfg = cfg('rgw')
+    def test_read_checksum_no_file(self, log_mock, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.read_checksum()
         log_mock.debug.assert_called()
         assert ret is None
 
-    def test_dependencies(self, cfg):
-        cfg = cfg('rgw')
-        ret = cfg.dependencies
-        assert type(ret) is dict
+    def test_dependencies(self, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
+        ret = cfg.role.dependencies
+        assert type(ret) is list
 
     @patch('srv.modules.runners.changed.Config.create_checksum')
     @patch('srv.modules.runners.changed.Config.read_checksum')
     @patch('srv.modules.runners.changed.log')
-    def test_has_changes_eq(self, log_mock, read_cs_mock, create_cs_mock, cfg):
-        cfg = cfg('rgw')
+    def test_has_changes_eq(self, log_mock, read_cs_mock, create_cs_mock, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
         read_cs_mock.return_value = "0b0b"
         create_cs_mock.return_value = "0b0b"
         ret = cfg.has_change()
@@ -90,8 +91,8 @@ class TestChanged():
     @patch('srv.modules.runners.changed.Config.read_checksum')
     @patch('srv.modules.runners.changed.Config.write_checksum')
     @patch('srv.modules.runners.changed.log')
-    def test_has_changes_not_eq(self, log_mock, write_cs_mock, read_cs_mock, create_cs_mock, cfg):
-        cfg = cfg('rgw')
+    def test_has_changes_not_eq(self, log_mock, write_cs_mock, read_cs_mock, create_cs_mock, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
         read_cs_mock.return_value = "1b1b"
         create_cs_mock.return_value = "0b0b"
         ret = cfg.has_change()
@@ -102,8 +103,8 @@ class TestChanged():
     @patch('srv.modules.runners.changed.Config.create_checksum')
     @patch('srv.modules.runners.changed.Config.read_checksum')
     @patch('srv.modules.runners.changed.log')
-    def test_has_changes_no_current_or_prev_cs(self, log_mock, read_cs_mock, create_cs_mock, cfg):
-        cfg = cfg('rgw')
+    def test_has_changes_no_current_or_prev_cs(self, log_mock, read_cs_mock, create_cs_mock, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
         read_cs_mock.return_value = None
         create_cs_mock.return_value = None
         ret = cfg.has_change()
@@ -114,8 +115,8 @@ class TestChanged():
     @patch('srv.modules.runners.changed.Config.read_checksum')
     @patch('srv.modules.runners.changed.log')
     @patch('srv.modules.runners.changed.Config.write_checksum')
-    def test_has_changes_no_current_cs(self, write_cs_mock, log_mock, read_cs_mock, create_cs_mock, cfg):
-        cfg = cfg('rgw')
+    def test_has_changes_no_current_cs(self, write_cs_mock, log_mock, read_cs_mock, create_cs_mock, cfg, role):
+        cfg = cfg(role=role(role_name='rgw'))
         read_cs_mock.return_value = None
         create_cs_mock.return_value = 'NotNone'
         ret = cfg.has_change()
@@ -126,41 +127,45 @@ class TestChanged():
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_rgw(self, rcc_mock, salt_mock):
-        changed.rgw()
-        rcc_mock.assert_called_with('rgw') 
+        rcc_mock.assert_called
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_mds(self, rcc_mock, salt_mock):
-        changed.mds()
-        rcc_mock.assert_called_with('mds') 
+        rcc_mock.assert_called
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_mgr(self, rcc_mock, salt_mock):
         changed.mgr()
-        rcc_mock.assert_called_with('mgr') 
+        rcc_mock.assert_called
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_osd(self, rcc_mock, salt_mock):
         changed.osd()
-        rcc_mock.assert_called_with('osd') 
+        rcc_mock.assert_called
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_mon(self, rcc_mock, salt_mock):
         changed.mon()
-        rcc_mock.assert_called_with('mon') 
+        rcc_mock.assert_called
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_global_(self, rcc_mock, salt_mock):
         changed.global_()
-        rcc_mock.assert_called_with('global') 
+        rcc_mock.assert_called
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('srv.modules.runners.changed.requires_conf_change')
     def test_client(self, rcc_mock, salt_mock):
         changed.client()
-        rcc_mock.assert_called_with('client') 
+        rcc_mock.assert_called
+
+    @patch('salt.client.LocalClient', autospec=True)
+    @patch('srv.modules.runners.changed.requires_conf_change')
+    def test_igw(self, rcc_mock, salt_mock):
+        changed.igw()
+        rcc_mock.assert_called
