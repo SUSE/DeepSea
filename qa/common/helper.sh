@@ -10,6 +10,7 @@ function _report_stage_failure_and_die {
   #local number_of_failures=$3
 
   test -z $number_of_failures && number_of_failures="unknown number of"
+  echo "WWWW"
   echo "********** Stage $stage_num failed with $number_of_failures failures **********"
   echo "Here comes the systemd log:"
   #cat $stage_log_path
@@ -31,6 +32,7 @@ function _run_stage {
 
   set +x
   echo ""
+  echo "WWWW"
   echo "*********************************************"
   echo "********** Running DeepSea Stage $stage_num **********"
   echo "*********************************************"
@@ -52,8 +54,9 @@ function _run_stage {
       echo "deepsea exit status: $deepsea_exit_status"
       if [ "$deepsea_exit_status" = "0" ] ; then
           if grep -q -F "failed=0" $deepsea_cli_output_path ; then
-              echo "DeepSea stage OK"
+              echo "WWWW DeepSea stage OK"
           else
+              echo "WWWW"
               echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
               _report_stage_failure_and_die $stage_num
           fi
@@ -74,6 +77,7 @@ function _run_stage {
     if [[ "$FAILED" -gt "0" ]]; then
       _report_stage_failure_and_die $stage_num
     fi
+    echo "WWWW"
     echo "********** Stage $stage_num completed successefully **********"
   else
     _report_stage_failure_and_die $stage_num
@@ -109,6 +113,7 @@ function _run_test_script_on_node {
   local RESULT=$(grep -o -P '(?<=Result: )(OK)$' $LOGFILE) # since the script
                                 # is run by salt, the output appears indented
   test "x$RESULT" = "xOK" && return
+  echo "WWWW"
   echo "The test script that ran on $TESTNODE failed. The stderr output was as follows:"
   cat $STDERR_LOGFILE
   exit 1

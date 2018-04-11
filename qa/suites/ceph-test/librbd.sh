@@ -17,8 +17,13 @@
 #
 
 set -ex
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 
 install_deps
 cat_salt_config
@@ -29,8 +34,7 @@ policy_cfg_mon_flex
 policy_cfg_storage 1 # one node will be a "client" (no storage role)
 cat_policy_cfg
 run_stage_2
-ceph_conf_small_cluster
-ceph_conf_mon_allow_pool_delete
+ceph_conf_adjustments
 ceph_conf_upstream_rbd_default_features
 run_stage_3
 ceph_cluster_status

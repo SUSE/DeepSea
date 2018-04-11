@@ -19,26 +19,36 @@
 # forensic analysis.
 #
 
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
-source $BASEDIR/common/nfs-ganesha.sh
+set -ex
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 
 function usage {
     set +x
-    echo "${0} - script for testing NFS-Ganesha deployment"
+    echo "$SCRIPTNAME - script for testing NFS-Ganesha deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli] [--fsal={cephfs,rgw,both}]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--encryption]"
+    echo "              [--fsal={cephfs,rgw,both}] [--mini]"
     echo
     echo "Options:"
-    echo "    --cli      Use DeepSea CLI"
-    echo "    --fsal     Defaults to cephfs"
-    echo "    --help     Display this usage message"
+    echo "    --cli         Use DeepSea CLI"
+    echo "    --encryption  Deploy OSDs with data-at-rest encryption"
+    echo "    --fsal        Defaults to cephfs"
+    echo "    --help        Display this usage message"
+    echo "    --mini        Omit restart orchestration test"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,fsal:,help" \
+set +x
+
+TEMP=$(getopt -o h --long "cli,encrypted,encryption,fsal:,help,mini" \
      -n 'health-nfs-ganesha.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -48,59 +58,52 @@ eval set -- "$TEMP"
 
 # process options
 CLI=""
+ENCRYPTION=""
 FSAL=cephfs
+MINI=""
 while true ; do
     case "$1" in
-        --cli) CLI="cli" ; shift ;;
+        --cli) CLI="$1" ; shift ;;
+        --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
         --fsal) FSAL=$2 ; shift ; shift ;;
+        --mini|--smoke) MINI="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
+echo "WWWW"
+echo "Running health-nfs-ganesha.sh with options $CLI $ENCRYPTION --fsal=$FSAL $MINI"
 
+CEPHFS=""
+KEY_OPTS=""
+RGW=""
 case "$FSAL" in
-    cephfs) break ;;
-    rgw) break ;;
-    both) break ;;
-    *) usage ;; # does not return
+    cephfs) 
+        CEPHFS="--cephfs"
+        KEY_OPTS="--nfs-ganesha --cephfs"
+        ;;
+    rgw)
+        RGW="--rgw"
+        KEY_OPTS="--nfs-ganesha --rgw $SSL"
+        ;;
+    both)
+        CEPHFS="--cephfs"
+        RGW="--rgw"
+        KEY_OPTS="--nfs-ganesha --cephfs --rgw $SSL"
+        ;;
+    *)
+        usage # does not return
+        ;;
 esac
 
-echo "Testing deployment with FSAL ->$FSAL<-"
+set -x
 
-assert_enhanced_getopt
-install_deps
-cat_salt_config
-run_stage_0 "$CLI"
-salt_api_test
-run_stage_1 "$CLI"
-policy_cfg_base
-policy_cfg_mon_flex
-if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
-    policy_cfg_mds
-fi
-if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
-    policy_cfg_rgw
-    rgw_demo_users
-fi
-policy_cfg_nfs_ganesha
-policy_cfg_storage 1 # last node will be "client" (not storage)
-cat_policy_cfg
-run_stage_2 "$CLI"
-ceph_conf_small_cluster
-run_stage_3 "$CLI"
-ceph_cluster_status
-if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
-  create_all_pools_at_once cephfs_data cephfs_metadata
-fi
-nfs_ganesha_no_root_squash
-run_stage_4 "$CLI"
-ceph_cluster_status
-ceph_health_test
-nfs_ganesha_cat_config_file
-nfs_ganesha_debug_log
-# kludge to work around mount hang
-#nfs_ganesha_showmount_loop
+$BASEDIR/suites/basic/health-stages.sh "$CLI" "$ENCRYPTION" "$KEY_OPTS"
+
+$BASEDIR/common/sanity-basic.sh "$BASEDIR"
+test -n "$CEPHFS" && $BASEDIR/common/sanity-cephfs.sh "$BASEDIR"
+
 for v in "" "3" "4" ; do
     echo "Testing NFS-Ganesha with NFS version ->$v<-"
     if [ "$FSAL" = "rgw" -a "$v" = "3" ] ; then
@@ -125,6 +128,11 @@ for v in "" "3" "4" ; do
     nfs_ganesha_umount
     sleep 10
 done
-run_stage_0 "$CLI"
+echo "WWWW"
+echo "NFS-Ganesha sanity checks OK"
 
-echo "OK"
+if [ -z "$MINI" ] ; then
+    run_stage_0 "$CLI"
+    echo "WWWW"
+    echo "re-run of Stage 0 OK"
+fi

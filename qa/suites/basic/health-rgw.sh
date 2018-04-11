@@ -18,25 +18,34 @@
 #
 
 set -ex
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 
 function usage {
     set +x
-    echo "${0} - script for testing RADOS Gateway deployment"
+    echo "$SCRIPTNAME - script for testing RADOS Gateway deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli] [--ssl]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--encrypted] [--mini] [--ssl]"
     echo
     echo "Options:"
-    echo "    --cli      Use DeepSea CLI"
-    echo "    --help     Display this usage message"
-    echo "    --ssl      Use SSL (https, port 443) with RGW"
+    echo "    --cli        Use DeepSea CLI"
+    echo "    --encrypted  Deploy OSDs with data-at-rest encryption"
+    echo "    --help       Display this usage message"
+    echo "    --mini       Omit restart orchestration"
+    echo "    --ssl        Use SSL (https, port 443) with RGW"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,help,ssl" \
+set +x
+
+TEMP=$(getopt -o h --long "cli,encrypted,encryption,help,mini,ssl" \
      -n 'health-rgw.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -46,62 +55,52 @@ eval set -- "$TEMP"
 
 # process options
 CLI=""
+ENCRYPTION=""
+MINI=""
 SSL=""
 while true ; do
     case "$1" in
-        --cli) CLI="cli" ; shift ;;
+        --cli) CLI="$1" ; shift ;;
+        --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
-        --ssl) SSL="ssl" ; shift ;;
+        --mini) MINI="$1" ; shift ;;
+        --ssl) SSL="$1" ; shift ;;
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
+echo "WWWW"
+echo "Running health-rgw.sh with options $CLI $ENCRYPTION $MINI $SSL"
 
-assert_enhanced_getopt
-install_deps
-cat_salt_config
-run_stage_0 "$CLI"
-if [ -n "$SSL" ] ; then
-    echo "Testing RGW deployment with SSL"
-    rgw_ssl_init
+set -x
+
+$BASEDIR/suites/basic/health-stages.sh "$CLI" "$ENCRYPTION" "--rgw" "$SSL"
+
+$BASEDIR/common/sanity-basic.sh $BASEDIR
+
+if [ -z "$SSL" ] ; then
+    rgw_curl_test
 else
-    echo "Testing RGW deployment (no SSL)"
-fi
-salt_api_test
-run_stage_1 "$CLI"
-policy_cfg_base
-policy_cfg_mon_flex
-if [ -n "$SSL" ] ; then
-    policy_cfg_rgw_ssl
-else
-    policy_cfg_rgw
-fi
-policy_cfg_storage 0 # "0" means all nodes will have storage role
-cat_policy_cfg
-rgw_demo_users
-run_stage_2 "$CLI"
-ceph_conf_small_cluster
-run_stage_3 "$CLI"
-ceph_cluster_status
-run_stage_4 "$CLI"
-ceph_cluster_status
-rgw_curl_test
-if [ -n "$SSL" ] ; then
     rgw_curl_test_ssl
     validate_rgw_cert_perm
 fi
 rgw_user_and_bucket_list
 rgw_validate_system_user
 rgw_validate_demo_users
-ceph_health_test
-run_stage_0 "$CLI"
-restart_services
-rgw_restarted "1" # 1 means not restarted
-# apply config change
-change_rgw_conf
-# construct and spread config
-run_stage_3 "$CLI"
-restart_services
-rgw_restarted "0" # 0 means restarted
+echo "WWWW"
+echo "RGW sanity checks OK"
 
-echo "OK"
+if [ -z "$MINI" ] ; then
+    ceph_health_test
+    run_stage_0 "$CLI"
+    restart_services
+    rgw_restarted "1" # 1 means not restarted
+    # apply config change
+    change_rgw_conf
+    # construct and spread config
+    run_stage_3 "$CLI"
+    restart_services
+    rgw_restarted "0" # 0 means restarted
+    echo "WWWW"
+    echo "restart orchestration OK"
+fi

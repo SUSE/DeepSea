@@ -33,17 +33,23 @@ create_mon_fs:
         - file: /var/lib/ceph/tmp/keyring.mon
 
 
-# TODO: we can put this check in a nice exec. module
-start-mon:
-  cmd.run:
-    - name: "systemctl start ceph-mon@{{ grains['host'] }}"
+mon-start:
+  service.running:
+    - name: ceph-mon@{{ grains['host'] }}
     - require:
-        - cmd: create_mon_fs
+      - cmd: create_mon_fs
+    - enable: True
 
-enable-mon:
+
+verify_mon_running:
   cmd.run:
-    - name: "systemctl enable ceph-mon@{{ grains['host'] }}"
     - require:
-        - cmd: create_mon_fs
+      - service: mon-start
+    - name: |
+        sleep 5
+        systemctl status ceph-mon@{{ grains['host'] }}
+        mon_status=$?
+        test $mon_status -eq 0 || echo "The ceph-mon@{{ grains['host'] }} unit failed to start"
+        test $mon_status -eq 0
 
 

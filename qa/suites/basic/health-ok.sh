@@ -18,26 +18,35 @@
 #
 
 set -ex
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 
 function usage {
     set +x
-    echo "${0} - script for testing HEALTH_OK deployment"
+    echo "$SCRIPTNAME - script for testing HEALTH_OK deployment"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--dashboard] [--encrypted]"
+    echo "      [--mini]"
     echo
     echo "Options:"
     echo "    --cli         Use DeepSea CLI"
+    echo "    --dashboard   Deploy with dashboard MGR module"
     echo "    --encryption  Deploy OSDs with data-at-rest encryption"
-    echo "    --mini        Only uses a bare minimum of tests"
     echo "    --help        Display this usage message"
+    echo "    --mini        Only uses a bare minimum of tests"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,encrypted,encryption,help" \
+set +x
+
+TEMP=$(getopt -o h --long "cli,dashboard,encrypted,encryption,help,mini" \
      -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -47,42 +56,31 @@ eval set -- "$TEMP"
 
 # process options
 CLI=""
+DASHBOARD=""
 ENCRYPTION=""
 MINI=""
 while true ; do
     case "$1" in
-        --cli) CLI="cli" ; shift ;;
-        --encrypted|--encryption) ENCRYPTION="encryption" ; shift ;;
-        --mini|--smoke) MINI="mini" ; shift ;;
+        --cli) CLI="$1" ; shift ;;
+        --dashboard) DASHBOARD="$1" ; shift ;;
+        --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
+        --mini|--smoke) MINI="$1" ; shift ;;
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
+echo "WWWW"
+echo "Running health-ok.sh with options $CLI $DASHBOARD $ENCRYPTION $MINI"
 
-assert_enhanced_getopt
-install_deps
-cat_salt_config
-run_stage_0 "$CLI"
-salt_api_test
-run_stage_1 "$CLI"
-if [ -n "$ENCRYPTION" ] ; then
-    proposal_populate_dmcrypt
-fi
-policy_cfg_base
-policy_cfg_mon_flex
-policy_cfg_storage 0 $ENCRYPTION # "0" means all nodes will have storage role
-cat_policy_cfg
-run_stage_2 "$CLI"
-ceph_conf_small_cluster
-run_stage_3 "$CLI"
-ceph_cluster_status
-ceph_health_test
-ceph_log_grep_enoent_eaccess
-test_systemd_ceph_osd_target_wants
-create_all_pools_at_once write_test
-rados_write_test
-ceph_version_test
+set -x
+
+$BASEDIR/suites/basic/health-stages.sh "$CLI" "$DASHBOARD" "$ENCRYPTION"
+
+$BASEDIR/common/sanity-basic.sh $BASEDIR
+
+test -n "$DASHBOARD" && $BASEDIR/common/sanity-dashboard.sh $BASEDIR
+
 if [ -z "$MINI" ] ; then
     run_stage_0 "$CLI"
     restart_services
@@ -99,6 +97,6 @@ if [ -z "$MINI" ] ; then
     # make sure still in HEALTH_OK
     ceph_cluster_status
     ceph_health_test
+    echo "WWWW"
+    echo "restart orchestration OK"
 fi
-
-echo "OK"
