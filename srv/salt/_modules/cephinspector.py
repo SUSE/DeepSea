@@ -67,9 +67,9 @@ def _get_disk_id(partition):
 
     # We should only ever have one entry that we return.
     if out:
-        return out.rstrip()
-    else:
-        return partition
+        return out.split()[-1]
+    return partition
+
 
 def _get_osd_type(part_dict):
     """
