@@ -1242,6 +1242,10 @@ class OSDCommands(object):
                     else:
                         # Missing WAL
                         return True
+                else:
+                    if os.path.exists("{}/block.wal".format(pathname)):
+                        # WAL present but not configured
+                        return True
                 if self.osd.db:
                     if os.path.exists("{}/block.db".format(pathname)):
                         result = self._check_device(pathname, 'block.db', self.osd.db, self.osd.db_size)
@@ -1250,7 +1254,10 @@ class OSDCommands(object):
                     else:
                         # Missing DB
                         return True
-
+                else:
+                    if os.path.exists("{}/block.db".format(pathname)):
+                        # DB present but not configured
+                        return True
         return False
 
     def _check_device(self, pathname, attr, device, size):

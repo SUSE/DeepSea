@@ -72,6 +72,7 @@ configuration:
 {% set ret_client = salt['saltutil.runner']('changed.client') %}
 {% set ret_global = salt['saltutil.runner']('changed.global') %}
 {% set ret_mds = salt['saltutil.runner']('changed.mds') %}
+{% set ret_igw = salt['saltutil.runner']('changed.igw') %}
 
 admin:
   salt.state:
