@@ -232,7 +232,7 @@ def requires_conf_change(**kwargs):
         if Config(role=deps).has_change():
             search = 'I@cluster:{} and I@roles:{}'.format(cluster, role.name)
             local.cmd(search, 'grains.setval',
-                      ["restart_{}".format(service), True],
+                      ["restart_{}".format(role.name), True],
                       expr_form="compound")
             return True
     return False
