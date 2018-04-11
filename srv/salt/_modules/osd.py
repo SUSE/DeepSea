@@ -283,14 +283,14 @@ class OSDWeight(object):
     Manage the setting and restoring of OSD crush weights
     """
 
-    def __init__(self, id, **kwargs):
+    def __init__(self, _id, **kwargs):
         """
         Initialize settings, connect to Ceph cluster
         """
-        self.id = id
+        self.osd_id = _id
         self.settings = {
             'conf': "/etc/ceph/ceph.conf" ,
-            'filename': '/var/run/ceph/osd.{}-weight'.format(id),
+            'filename': '/var/run/ceph/osd.{}-weight'.format(self.osd_id),
             'timeout': 60,
             'keyring': '/etc/ceph/ceph.client.admin.keyring',
             'client': 'client.admin',
@@ -326,7 +326,7 @@ class OSDWeight(object):
         if os.path.isfile(self.settings['filename']):
             with open(self.settings['filename']) as weightfile:
                 saved_weight = weightfile.read().rstrip('\n')
-                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.id))
+                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.osd_id))
                 self.reweight(saved_weight)
 
 
@@ -337,7 +337,7 @@ class OSDWeight(object):
         """
         stdout = []
         stderr = []
-        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.id, weight)
+        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.osd_id, weight)
         return _run(cmd)
 
     def osd_df(self):
@@ -348,11 +348,21 @@ class OSDWeight(object):
         ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
         #log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
         for entry in json.loads(output)['nodes']:
-            if entry['id'] == self.id:
+            if entry['id'] == int(self.osd_id):
                 log.debug(pprint.pformat(entry))
                 return entry
-        log.warn("ID {} not found".format(self.id))
+        log.warn("ID {} not found".format(self.osd_id))
         return {}
+
+    # pylint: disable=invalid-name
+    def osd_safe_to_destroy(self):
+        """
+        Returns safe-to-destroy output, does not return JSON
+        """
+        cmd = json.dumps({"prefix": "osd safe-to-destroy",
+                          "ids": ["{}".format(self.osd_id)]})
+        rc, _, output = self.cluster.mon_command(cmd, b'', timeout=6)
+        return rc, output
 
     def is_empty(self):
         """
@@ -368,26 +378,105 @@ class OSDWeight(object):
         i = 0
         last_pgs = 0
         while i < self.settings['timeout']/self.settings['delay']:
+            rc, msg = self.osd_safe_to_destroy()
+            if rc == 0:
+                log.info("osd.{} is safe to destroy".format(self.osd_id))
+                return ""
             entry = self.osd_df()
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
-                    log.info("osd.{} has no PGs".format(self.id))
-                    return ""
+                    log.warning("osd.{} has {} PGs remaining but {}".
+                                format(self.osd_id, entry['pgs'], msg))
                 else:
-                    log.warn("osd.{} has {} PGs remaining".format(self.id, entry['pgs']))
+                    log.warn("osd.{} has {} PGs remaining".format(self.osd_id, entry['pgs']))
                     if last_pgs != entry['pgs']:
                         # Making progress, reset countdown
                         i = 0
                         last_pgs = entry['pgs']
             else:
-                msg = "osd.{} does not exist".format(self.id)
-                log.warn(msg)
-                return msg
+                msg = "osd.{} does not exist {}".format(self.osd_id, msg)
+                log.warning(msg)
             i += 1
             time.sleep(self.settings['delay'])
 
         log.debug("Timeout expired")
         raise RuntimeError("Timeout expired")
+
+
+class CephPGs(object):
+    """
+    Query PG states and pause until all are active+clean
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Initialize settings, connect to Ceph cluster
+        """
+        self.settings = {
+            'conf': "/etc/ceph/ceph.conf",
+            'timeout': 120,
+            'keyring': '/etc/ceph/ceph.client.admin.keyring',
+            'client': 'client.admin',
+            'delay': 12
+        }
+        self.settings.update(kwargs)
+        log.debug("settings: {}".format(pprint.pformat(self.settings)))
+        self.cluster = rados.Rados(conffile=self.settings['conf'],
+                                   conf=dict(keyring=self.settings['keyring']),
+                                   name=self.settings['client'])
+        try:
+            self.cluster.connect()
+        except Exception as error:
+            raise RuntimeError("connection error: {}".format(error))
+
+    def quiescent(self):
+        """
+        Wait until PGs are active+clean or timeout is reached.  Default is a
+        2 minute sliding window.
+        """
+        i = 0
+        last = []
+        if self.settings['delay'] == 0:
+            raise ValueError("The delay cannot be 0")
+        while i < self.settings['timeout']/self.settings['delay']:
+            current = self.pg_states()
+            if len(current) == 1 and current[0]['name'] == 'active+clean':
+                log.warning("PGs are active+clean")
+                return
+            log.warning("Waiting on active+clean {}".format(pprint.pformat(current)))
+            if self._pg_value(last) != self._pg_value(current):
+                # Making progress - reset counter
+                log.debug("Resetting active+clean counter")
+                i = 0
+                last = current
+
+            i += 1
+            log.debug("iteration: {} last: {} current: {}".
+                      format(i, self._pg_value(last), self._pg_value(current)))
+            time.sleep(self.settings['delay'])
+
+        log.error("Timeout expired waiting on active+clean")
+        raise RuntimeError("Timeout expired waiting on active+clean")
+
+    # pylint: disable=no-self-use
+    def _pg_value(self, entries):
+        """
+        Return the value for the active+clean entry
+        """
+        for entry in entries:
+            if 'name' in entry and entry['name'] == 'active+clean':
+                return entry['num']
+        return 0
+
+    def pg_states(self):
+        """
+        Retrieve pg status from Ceph
+        """
+        cmd = json.dumps({"prefix": "pg stat", "format": "json"})
+        _, output, _ = self.cluster.mon_command(cmd, b'', timeout=6)
+        # log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
+        return json.loads(output)['num_pg_by_state']
+
 
 def _settings(**kwargs):
     """
@@ -408,13 +497,23 @@ def _settings(**kwargs):
     return settings
 
 
-def zero_weight(id, wait=True, **kwargs):
+def ceph_quiescent(**kwargs):
+    """
+    Check that PGs are active+clean
+    """
+    settings = _settings(**kwargs)
+
+    ceph_pgs = CephPGs(**settings)
+    ceph_pgs.quiescent()
+
+
+def zero_weight(osd_id, wait=True, **kwargs):
     """
     Set weight to zero and wait until PGs are moved
     """
     settings = _settings(**kwargs)
 
-    o = OSDWeight(id, **settings)
+    o = OSDWeight(osd_id, **settings)
     o.save()
     rc, _stdout, _stderr = o.reweight('0.0')
     if rc != 0:
@@ -1750,7 +1849,8 @@ def deploy():
             _run(osdc.prepare())
             _run(osdc.activate())
 
-def redeploy(simultaneous=False):
+
+def redeploy(simultaneous=False, **kwargs):
     """
     """
     if simultaneous:
@@ -1763,6 +1863,7 @@ def redeploy(simultaneous=False):
             if is_incorrect(disk):
                 zero_weight(_id, wait=False)
 
+    settings = _settings(**kwargs)
     for _id in __grains__['ceph']:
         partition = _partition(_id)
         #if 'lockbox' in __grains__['ceph'][_id]['partitions']:
@@ -1774,7 +1875,9 @@ def redeploy(simultaneous=False):
         log.info("ID: {}".format(_id))
         log.info("Disk: {}".format(disk))
         if not os.path.exists(partition) or is_incorrect(disk):
-            remove(_id)
+            pgs = CephPGs(**settings)
+            pgs.quiescent()
+            remove(_id, **settings)
             config = OSDConfig(disk)
             osdp = OSDPartitions(config)
             osdp.partition()
