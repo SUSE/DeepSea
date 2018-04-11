@@ -1728,7 +1728,7 @@ class OSDDevices(object):
 
     def _uuid_device(self, device, pathname="/dev/disk/by-id"):
         """
-        Return the uuid device, last one if multiple are matched
+        Return the uuid device, prefer the most descriptive
         """
         if os.path.exists(device):
             if os.path.exists(pathname):
@@ -1736,11 +1736,29 @@ class OSDDevices(object):
                        r"-o -name nvme* \)".format(pathname, device))
                 _, _stdout, _stderr = _run(cmd)
                 if _stdout:
-                    return _stdout.split()[-1]
-                else:
-                    return readlink(device)
-            else:
+                    _devices = _stdout.split()
+                    index = self._prefer_underscores(_devices)
+                    return _devices[index]
                 return readlink(device)
+            return readlink(device)
+
+    def _prefer_underscores(self, devicenames):
+        """
+        Many symlinks in /dev/disk/by-id refer to the same device.  The
+        most descriptive names have the most underscores.  These are likely
+        the most useful to the admin.
+
+        In the worst case, return the last device
+        """
+        index = -1
+        count = 0
+        for _idx, device in enumerate(devicenames):
+            underscores = device.count('_')
+            if underscores > count:
+                count = underscores
+                index = _idx
+        return index
+
 
 class OSDGrains(object):
     """
