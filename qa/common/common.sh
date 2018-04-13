@@ -190,6 +190,7 @@ function proposal_populate_dmcrypt {
 #
 
 function restart_services {
+  rm -rf /srv/modules/runners/__pycache__
   salt-run state.orch ceph.restart
 }
 
