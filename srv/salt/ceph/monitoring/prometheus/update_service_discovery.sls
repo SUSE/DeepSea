@@ -26,4 +26,3 @@
        - file: /etc/prometheus/ses_nodes/{{ minion }}.yml
 {% endfor %}
 
-
