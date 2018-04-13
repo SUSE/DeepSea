@@ -37,7 +37,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,encrypted,encryption,help" \
+TEMP=$(getopt -o h --long "cli,encrypted,encryption,help,mini" \
      -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
