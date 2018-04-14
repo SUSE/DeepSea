@@ -67,6 +67,7 @@ done
 
 assert_enhanced_getopt
 install_deps
+global_test_init
 cat_salt_config
 disable_restart_in_stage_0
 # install the latest Salt

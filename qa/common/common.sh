@@ -12,43 +12,46 @@ source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
-export DEV_ENV="true"         # FIXME set only when TOTALNODES < 4
-export INTEGRATION_ENV="true" # since we can't rely on DEV_ENV always being set
 
-# determine hostname of Salt Master
-MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
-if test -s $MASTER_MINION_SLS ; then
-    SALT_MASTER=$(cat $MASTER_MINION_SLS | \
-                 sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
-                 grep -v '^$')
-else
-    echo "Could not determine the Salt Master from DeepSea pillar data. Is DeepSea installed?"
-    exit 1
-fi
+function global_test_init {
+    export DEV_ENV="true"         # FIXME set only when TOTALNODES < 4
+    export INTEGRATION_ENV="true" # since we can't rely on DEV_ENV always being set
 
-# show which repos are active/enabled
-zypper lr -upEP
+    # determine hostname of Salt Master
+    MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
+    if test -s $MASTER_MINION_SLS ; then
+        SALT_MASTER=$(cat $MASTER_MINION_SLS | \
+                     sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
+                     grep -v '^$')
+    else
+        echo "Could not determine the Salt Master from DeepSea pillar data. Is DeepSea installed?"
+        exit 1
+    fi
 
-# show salt RPM version in log and fail if salt is not installed
-rpm -q salt-master
-rpm -q salt-minion
-rpm -q salt-api
+    # show which repos are active/enabled
+    zypper lr -upEP
 
-# show deepsea RPM version in case deepsea was installed from RPM
-rpm -q deepsea || true
+    # show salt RPM version in log and fail if salt is not installed
+    rpm -q salt-master
+    rpm -q salt-minion
+    rpm -q salt-api
 
-# set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
-# (otherwise we would have to set deepsea grain on all minions)
-echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-cat /srv/pillar/ceph/deepsea_minions.sls
+    # show deepsea RPM version in case deepsea was installed from RPM
+    rpm -q deepsea || true
 
-# get list of minions
-if type salt-key > /dev/null 2>&1; then
-    MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
-else
-    echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
-    exit 1
-fi
+    # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
+    # (otherwise we would have to set deepsea grain on all minions)
+    echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
+    cat /srv/pillar/ceph/deepsea_minions.sls
+
+    # get list of minions
+    if type salt-key > /dev/null 2>&1; then
+        MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+    else
+        echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
+        exit 1
+    fi
+}
 
 
 #
