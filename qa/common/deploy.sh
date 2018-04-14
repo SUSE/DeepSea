@@ -30,7 +30,7 @@ function _report_config {
     fi
 }
 
-function _vet_nodes {
+function vet_nodes {
     MIN_NODES=$(($CLIENT_NODES + 1))
     if [ "$PROPOSED_MIN_NODES" -lt "$MIN_NODES" ] ; then
         echo "Proposed MIN_NODES value is too low. Need at least 1 + CLIENT_NODES"
@@ -50,23 +50,20 @@ function _vet_nodes {
 }
 
 function deploy_ceph {
-    echo "Entering function deploy_ceph"
     _report_config
     install_deps
     global_test_init
     update_salt
     cat_salt_config
-    _vet_nodes
+    vet_nodes
     disable_restart_in_stage_0
     run_stage_0 "$CLI"
     salt_api_test
     run_stage_1 "$CLI"
-    if [ -n "$ENCRYPTION" ] ; then
-        proposal_populate_dmcrypt
-    fi
+    test -n "$ENCRYPTION" && proposal_populate_dmcrypt
     policy_cfg_base
     policy_cfg_mon_flex
-    policy_cfg_storage 0 $ENCRYPTION # "0" means all nodes will have storage role
+    policy_cfg_storage "$ENCRYPTION"
     cat_policy_cfg
     run_stage_2 "$CLI"
     ceph_conf_small_cluster

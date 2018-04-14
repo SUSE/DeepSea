@@ -300,31 +300,29 @@ EOF
 }
 
 function policy_cfg_storage {
-  # first argument is number of non-storage ("client") nodes; defaults to 0
-  # second argument controls whether OSDs are encrypted; default not encrypted
-  local CLIENTS=$1
-  test -z "$CLIENTS" && CLIENTS=0
-  local ENCRYPTION=$2
+  test -n "$CLIENT_NODES"
+  local ENCRYPTION=$1
 
   local PROFILE="default"
   if [ -n "$ENCRYPTION" ] ; then
      PROFILE="dmcrypt"
   fi
 
-  if [ "$CLIENTS" -eq 0 ] ; then
+  if [ "$CLIENT_NODES" -eq 0 ] ; then
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-$PROFILE/cluster/*.sls
 profile-$PROFILE/stack/default/ceph/minions/*yml
 EOF
-  elif [ "$CLIENTS" -ge 1 ] ; then
+  elif [ "$CLIENT_NODES" -ge 1 ] ; then
     cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-default/cluster/*.sls slice=[:-$CLIENTS]
 profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENTS]
 EOF
   else
-    echo "Unexpected number of clients ->$CLIENTS<-; bailing out!"
+    echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
+    exit 1
   fi
 }
 
