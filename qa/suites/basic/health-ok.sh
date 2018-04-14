@@ -42,7 +42,7 @@ function usage {
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,encrypted,encryption,help,mini" \
+TEMP=$(getopt -o h --long "cli,encrypted,encryption,help,mini,smoke" \
      -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -56,35 +56,19 @@ ENCRYPTION=""
 MINI=""
 while true ; do
     case "$1" in
-        --cli) CLI="cli" ; shift ;;
-        --encrypted|--encryption) ENCRYPTION="encryption" ; shift ;;
-        --mini|--smoke) MINI="mini" ; shift ;;
+        --cli) CLI="$1" ; shift ;;
+        --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
+        --mini|--smoke) MINI="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
 
-assert_enhanced_getopt
-install_deps
-global_test_init
-update_salt
-cat_salt_config
-disable_restart_in_stage_0
-run_stage_0 "$CLI"
-salt_api_test
-run_stage_1 "$CLI"
-if [ -n "$ENCRYPTION" ] ; then
-    proposal_populate_dmcrypt
-fi
-policy_cfg_base
-policy_cfg_mon_flex
-policy_cfg_storage 0 $ENCRYPTION # "0" means all nodes will have storage role
-cat_policy_cfg
-run_stage_2 "$CLI"
-ceph_conf_small_cluster
-run_stage_3 "$CLI"
-ceph_cluster_status
+# deploy phase
+deploy_ceph "$CLI" "$ENCRYPTION"
+
+# test phase
 ceph_health_test
 ceph_log_grep_enoent_eaccess
 test_systemd_ceph_osd_target_wants
@@ -109,4 +93,4 @@ if [ -z "$MINI" ] ; then
     ceph_health_test
 fi
 
-echo "OK"
+echo "health-ok test result: PASS"

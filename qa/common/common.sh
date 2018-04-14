@@ -7,6 +7,7 @@
 #
 
 BASEDIR=${1}
+source $BASEDIR/common/deploy.sh
 source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
 source $BASEDIR/common/rbd.sh
