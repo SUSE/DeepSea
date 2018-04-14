@@ -4,7 +4,7 @@
 # separate file to house the deploy_ceph function
 #
 
-function _report_config {
+function report_config {
     if [ -n "$CLI" ] ; then
         echo "CLI will be used"
     else
@@ -50,7 +50,7 @@ function vet_nodes {
 }
 
 function deploy_ceph {
-    _report_config
+    report_config
     install_deps
     global_test_init
     update_salt
@@ -59,14 +59,28 @@ function deploy_ceph {
     disable_restart_in_stage_0
     run_stage_0 "$CLI"
     salt_api_test
+    test -n "$RGW" -a -n "$SSL" && rgw_ssl_init
     run_stage_1 "$CLI"
     test -n "$ENCRYPTION" && proposal_populate_dmcrypt
     policy_cfg_base
     policy_cfg_mon_flex
+    test -n "$CEPHFS" && policy_cfg_mds
+    test -n "$RGW" && policy_cfg_rgw
+    test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha
+    test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
     policy_cfg_storage "$ENCRYPTION"
     cat_policy_cfg
     run_stage_2 "$CLI"
     ceph_conf_small_cluster
+    ceph_conf_mon_allow_pool_delete
     run_stage_3 "$CLI"
+    pre_create_pools
+    ceph_cluster_status
+    if [ -z "$CEPHFS" -a -z "$NFS_GANESHA" -a -z "$RGW" ] ; then
+        echo "WWWW"
+        echo "Stages 0-3 OK, no roles requiring Stage 4: deploy phase complete!"
+        return
+    fi
+    run_stage_4 "$CLI"
     ceph_cluster_status
 }

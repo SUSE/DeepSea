@@ -12,6 +12,7 @@ source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
 source $BASEDIR/common/nfs-ganesha.sh
 source $BASEDIR/common/policy.sh
+source $BASEDIR/common/pool.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
@@ -54,16 +55,28 @@ function global_test_init {
     fi
 }
 
+function ping_minions_until_all_respond {
+    local NUM_MINIONS="$1"
+    local RESPONDING=""
+    for i in 1 2 3 4 5 6 7 8 9 10 ; do
+        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
+        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
+        test "$NUM_MINIONS" -eq "$RESPONDING" && break
+        sleep 10
+    done
+}
+
 function update_salt {
     # make sure we are running the latest Salt before Stage 0 starts,
     # otherwise Stage 0 will update Salt and then fail with cryptic
     # error messages
+    TOTAL_NODES=$(json_total_nodes)
     salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
     systemctl restart salt-api.service
     systemctl restart salt-master.service
     salt '*' cmd.run 'systemctl restart salt-minion'
     sleep 10
-    salt '*' test.ping
+    ping_minions_until_all_respond "$TOTAL_NODES"
     salt '*' saltutil.sync_all
 }
 
@@ -167,27 +180,27 @@ EOF
 }
 
 function ceph_conf_small_cluster {
-  local STORAGENODES=$(json_storage_nodes)
-  test ! -z "$STORAGENODES"
-  if [ "x$STORAGENODES" = "x1" ] ; then
-    # 1 node, 2 OSDs
-    echo "Adjusting ceph.conf for operation with 1 storage node"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    local STORAGENODES=$(json_storage_nodes)
+    test -n "$STORAGENODES"
+    if [ "$STORAGENODES" -eq 1 ] ; then
+        # 1 node, 2 OSDs
+        echo "Adjusting ceph.conf for operation with 1 storage node"
+        cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 16
 osd pool default size = 2
 osd crush chooseleaf type = 0 # failure domain == osd
 EOF
-  elif [ "x$STORAGENODES" = "x2" ] ; then
-    # 2 nodes, 4 OSDs
-    echo "Adjusting ceph.conf for operation with 2 storage nodes"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    elif [ "$STORAGENODES" -eq 2 ] ; then
+        # 2 nodes, 4 OSDs
+        echo "Adjusting ceph.conf for operation with 2 storage nodes"
+        cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 8
 osd pool default size = 2
 EOF
-  else
-    echo "Three or more storage nodes; not adjusting ceph.conf"
-    # TODO: look up default value of "mon pg warn min per osd"
-  fi
+    else
+        echo "Three or more storage nodes; not adjusting ceph.conf"
+        # TODO: look up default value of "mon pg warn min per osd"
+    fi
 }
 
 function ceph_conf_mon_allow_pool_delete {
@@ -266,37 +279,6 @@ function pgs_per_pool {
   let "TOTALPGS = $TOTALOSDS * 100"
   let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
   echo $PGSPEROSD
-}
-
-function create_pool {
-  # Special-purpose function for creating pools incrementally. For example,
-  # if your test case needs 2 pools "foo" and "bar", but you cannot create
-  # them all at once for some reason. Otherwise, use create_all_pools_at_once.
-  #
-  # sample usage:
-  #
-  # create_pool foo 2
-  # ... do something ...
-  # create_pool bar 2
-  # ... do something else ...
-  #
-  local POOLNAME=$1
-  test -n "$POOLNAME"
-  local TOTALPOOLS=$2
-  test -n "$TOTALPOOLS"
-  local PGSPERPOOL=$(pgs_per_pool $TOTALPOOLS)
-  ceph osd pool create $POOLNAME $PGSPERPOOL $PGSPERPOOL replicated
-}
-
-function create_all_pools_at_once {
-  # sample usage: create_all_pools_at_once foo bar
-  local TOTALPOOLS="${#@}"
-  local PGSPERPOOL=$(pgs_per_pool $TOTALPOOLS)
-  for POOLNAME in "$@"
-  do
-      ceph osd pool create $POOLNAME $PGSPERPOOL $PGSPERPOOL replicated
-  done
-  ceph osd pool ls detail
 }
 
 

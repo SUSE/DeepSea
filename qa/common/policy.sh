@@ -52,65 +52,59 @@ EOF
 }
 
 function policy_cfg_storage {
-  test -n "$CLIENT_NODES"
-  local ENCRYPTION=$1
+    test -n "$CLIENT_NODES"
+    test -n "$ENCRYPTION" && PROFILE="dmcrypt" || PROFILE="default"
 
-  local PROFILE="default"
-  if [ -n "$ENCRYPTION" ] ; then
-     PROFILE="dmcrypt"
-  fi
-
-  if [ "$CLIENT_NODES" -eq 0 ] ; then
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    if [ "$CLIENT_NODES" -eq 0 ] ; then
+        cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-$PROFILE/cluster/*.sls
 profile-$PROFILE/stack/default/ceph/minions/*yml
 EOF
-  elif [ "$CLIENT_NODES" -ge 1 ] ; then
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    elif [ "$CLIENT_NODES" -ge 1 ] ; then
+        cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
 profile-default/cluster/*.sls slice=[:-$CLIENTS]
 profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENTS]
 EOF
-  else
-    echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
-    exit 1
+    else
+        echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
+        exit 1
   fi
 }
 
 function policy_cfg_mds {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - mds (all but last node)
 role-mds/cluster/*.sls slice=[:-1]
 EOF
 }
 
 function policy_cfg_rgw {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    if [ -z "$SSL" ] ; then
+        cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - rgw (first node)
 role-rgw/cluster/*.sls slice=[:1]
 EOF
-}
-
-function policy_cfg_rgw_ssl {
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    else
+        cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - rgw (first node)
 role-rgw/cluster/*.sls slice=[:1]
 role-rgw-ssl/cluster/*.sls slice=[:1]
 EOF
+    fi
 }
 
 function policy_cfg_igw {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - igw (first node)
 role-igw/cluster/*.sls slice=[:1]
 EOF
 }
 
 function policy_cfg_nfs_ganesha {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - NFS-Ganesha (first node)
 role-ganesha/cluster/*.sls slice=[:1]
 EOF
 }
-

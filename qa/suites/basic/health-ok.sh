@@ -32,12 +32,12 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  $SCRIPTNAME [-h,--help] [--cli]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--mini]"
     echo
     echo "Options:"
     echo "    --cli         Use DeepSea CLI"
     echo "    --encryption  Deploy OSDs with data-at-rest encryption"
-    echo "    --mini        Only uses a bare minimum of tests"
+    echo "    --mini        Omit long-running tests"
     echo "    --help        Display this usage message"
     exit 1
 }
@@ -52,7 +52,7 @@ if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
 # Note the quotes around TEMP': they are essential!
 eval set -- "$TEMP"
 
-# process options
+# process command-line options
 CLI=""
 ENCRYPTION=""
 MINI=""
@@ -76,7 +76,6 @@ deploy_ceph
 ceph_health_test
 ceph_log_grep_enoent_eaccess
 test_systemd_ceph_osd_target_wants
-create_all_pools_at_once write_test
 rados_write_test
 ceph_version_test
 if [ -z "$MINI" ] ; then
