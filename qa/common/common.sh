@@ -53,6 +53,18 @@ function global_test_init {
     fi
 }
 
+function update_salt {
+    # make sure we are running the latest Salt before Stage 0 starts,
+    # otherwise Stage 0 will update Salt and then fail with cryptic
+    # error messages
+    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
+    systemctl restart salt-api.service
+    systemctl restart salt-master.service
+    salt '*' cmd.run 'systemctl restart salt-minion'
+    sleep 10
+    salt '*' test.ping
+    salt '*' saltutil.sync_all
+}
 
 #
 # functions for processing command-line arguments

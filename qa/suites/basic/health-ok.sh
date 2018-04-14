@@ -68,16 +68,9 @@ done
 assert_enhanced_getopt
 install_deps
 global_test_init
+update_salt
 cat_salt_config
 disable_restart_in_stage_0
-# install the latest Salt
-salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
-systemctl restart salt-api.service
-systemctl restart salt-master.service
-salt '*' cmd.run 'systemctl restart salt-minion'
-sleep 10
-salt '*' test.ping
-salt '*' saltutil.sync_all
 run_stage_0 "$CLI"
 salt_api_test
 run_stage_1 "$CLI"
