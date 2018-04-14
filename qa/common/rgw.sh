@@ -59,54 +59,38 @@ EOF
 }
 
 function rgw_curl_test {
-  local TESTSCRIPT=/tmp/rgw_test.sh
-  cat << 'EOF' > $TESTSCRIPT
-set -ex
-trap 'echo "Result: NOT_OK"' ERR
-echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
-RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-set +x
-for delay in 60 60 60 60 ; do
-    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
-    sleep $delay
-done
-set -x
-zypper --non-interactive install --no-recommends curl libxml2-tools
-RGWXMLOUT=/tmp/rgw_test.xml
-curl $RGWNODE > $RGWXMLOUT
-test -f $RGWXMLOUT
-xmllint $RGWXMLOUT
-grep anonymous $RGWXMLOUT
-rm -f $RGWXMLOUT
-echo "Result: OK"
-EOF
-  _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
+    set +x
+    for delay in 60 60 60 60 ; do
+        sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+        sleep $delay
+    done
+    set -x
+    zypper --non-interactive install --no-recommends curl libxml2-tools
+    RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
+    RGWXMLOUT=/tmp/rgw_test.xml
+    curl $RGWNODE > $RGWXMLOUT
+    test -f $RGWXMLOUT
+    xmllint $RGWXMLOUT
+    grep anonymous $RGWXMLOUT
+    rm -f $RGWXMLOUT
 }
 
 
 function rgw_curl_test_ssl {
-    local TESTSCRIPT=/tmp/rgw_test.sh
-    cat << 'EOF' > $TESTSCRIPT
-set -ex
-trap 'echo "Result: NOT_OK"' ERR
-echo "rgw curl test running as $(whoami) on $(hostname --fqdn)"
-RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
-set +x
-for delay in 60 60 60 60 ; do
-    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
-    sleep $delay
-done
-set -x
-zypper --non-interactive install --no-recommends curl libxml2-tools
-RGWXMLOUT=/tmp/rgw_test.xml
-curl -k https://$RGWNODE > $RGWXMLOUT
-test -f $RGWXMLOUT
-xmllint $RGWXMLOUT
-grep anonymous $RGWXMLOUT
-rm -f $RGWXMLOUT
-echo "Result: OK"
-EOF
-    _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
+    set +x
+    for delay in 60 60 60 60 ; do
+        sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+        sleep $delay
+    done
+    set -x
+    zypper --non-interactive install --no-recommends curl libxml2-tools
+    RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
+    RGWXMLOUT=/tmp/rgw_test.xml
+    curl -k https://$RGWNODE > $RGWXMLOUT
+    test -f $RGWXMLOUT
+    xmllint $RGWXMLOUT
+    grep anonymous $RGWXMLOUT
+    rm -f $RGWXMLOUT
 }
 
 function rgw_add_ssl_global {
