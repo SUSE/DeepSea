@@ -15,9 +15,7 @@ source $BASEDIR/common/rgw.sh
 
 
 function global_test_init {
-    export DEV_ENV="true"         # FIXME set only when TOTALNODES < 4
-    export INTEGRATION_ENV="true" # since we can't rely on DEV_ENV always being set
-
+    #
     # determine hostname of Salt Master
     MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
     if test -s $MASTER_MINION_SLS ; then
@@ -28,23 +26,23 @@ function global_test_init {
         echo "Could not determine the Salt Master from DeepSea pillar data. Is DeepSea installed?"
         exit 1
     fi
-
+    #
     # show which repos are active/enabled
     zypper lr -upEP
-
+    #
     # show salt RPM version in log and fail if salt is not installed
     rpm -q salt-master
     rpm -q salt-minion
     rpm -q salt-api
-
+    #
     # show deepsea RPM version in case deepsea was installed from RPM
     rpm -q deepsea || true
-
+    #
     # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
     # (otherwise we would have to set deepsea grain on all minions)
     echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
     cat /srv/pillar/ceph/deepsea_minions.sls
-
+    #
     # get list of minions
     if type salt-key > /dev/null 2>&1; then
         MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')

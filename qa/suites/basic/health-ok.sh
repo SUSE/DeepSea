@@ -42,6 +42,8 @@ function usage {
     exit 1
 }
 
+assert_enhanced_getopt
+
 TEMP=$(getopt -o h --long "cli,encrypted,encryption,help,mini,smoke" \
      -n 'health-ok.sh' -- "$@")
 
@@ -66,7 +68,9 @@ while true ; do
 done
 
 # deploy phase
-deploy_ceph "$CLI" "$ENCRYPTION"
+MIN_NODES=1
+CLIENT_NODES=0
+deploy_ceph
 
 # test phase
 ceph_health_test
