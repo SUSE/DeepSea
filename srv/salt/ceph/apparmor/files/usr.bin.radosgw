@@ -11,7 +11,5 @@
   /usr/bin/radosgw mr,
 
   /etc/mime.types r,
-
-  /proc/*/net/psched r,
 }
 

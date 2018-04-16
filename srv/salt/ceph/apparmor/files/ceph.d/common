@@ -27,6 +27,7 @@
   /proc/*/cmdline r,
   /proc/*/auxv r,
   /proc/*/net/dev r,
+  /proc/*/net/psched r,
   /proc/loadavg r,
   /proc/cpuinfo r,
   /proc/meminfo r,
