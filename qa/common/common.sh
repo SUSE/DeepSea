@@ -162,19 +162,19 @@ function run_stage_5 {
 #
 
 function change_rgw_conf {
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/rgw.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/rgw.conf
 foo = bar
 EOF
 }
 
 function change_osd_conf {
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/osd.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/osd.conf
 foo = bar
 EOF
 }
 
 function change_mon_conf {
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
 foo = bar
 EOF
 }
@@ -185,7 +185,7 @@ function ceph_conf_small_cluster {
     if [ "$STORAGENODES" -eq 1 ] ; then
         # 1 node, 2 OSDs
         echo "Adjusting ceph.conf for operation with 1 storage node"
-        cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+        cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 16
 osd pool default size = 2
 osd crush chooseleaf type = 0 # failure domain == osd
@@ -193,7 +193,7 @@ EOF
     elif [ "$STORAGENODES" -eq 2 ] ; then
         # 2 nodes, 4 OSDs
         echo "Adjusting ceph.conf for operation with 2 storage nodes"
-        cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+        cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 8
 osd pool default size = 2
 EOF
@@ -205,8 +205,15 @@ EOF
 
 function ceph_conf_mon_allow_pool_delete {
     echo "Adjusting ceph.conf to allow pool deletes"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon allow pool delete = true
+EOF
+}
+
+function ceph_conf_dashboard {
+    echo "Adjusting ceph.conf for deployment of dashboard MGR module"
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
+mgr initial modules = dashboard
 EOF
 }
 

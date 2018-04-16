@@ -73,6 +73,7 @@ function deploy_ceph {
     run_stage_2 "$CLI"
     ceph_conf_small_cluster
     ceph_conf_mon_allow_pool_delete
+    test -n "$DASHBOARD" && ceph_conf_dashboard
     run_stage_3 "$CLI"
     pre_create_pools
     ceph_cluster_status
