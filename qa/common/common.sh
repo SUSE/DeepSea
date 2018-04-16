@@ -317,9 +317,11 @@ EOF
 }
 
 function policy_cfg_rgw {
+  # takes as argument number of RGW nodes to deploy
+  if [[ $# == 0 ]]; then rgw_nodes_num=1;else rgw_nodes_num=$1;fi
   cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Role assignment - rgw (first node)
-role-rgw/cluster/*.sls slice=[:1]
+role-rgw/cluster/*.sls slice=[:$rgw_nodes_num]
 EOF
 }
 
