@@ -604,43 +604,6 @@ class CephRoles(object):
             contents['roles'] = [role]
             self.writer.write(filename, contents)
 
-    def monitor_members(self):
-        """
-        Create a file for mon_host and mon_initial_members
-        """
-        minion_dir = "{}/role-mon/stack/default/{}/minions".format(self.root_dir, self.cluster)
-        self._add_pub_interface(minion_dir)
-
-    def igw_members(self):
-        """
-        Create a file for igw hosts.
-
-        Note: identical to above
-        """
-        minion_dir = "{}/role-igw/stack/default/{}/minions".format(self.root_dir, self.cluster)
-        self._add_pub_interface(minion_dir)
-
-    def _add_pub_interface(self, minion_dir):
-        if not os.path.isdir(minion_dir):
-            _create_dirs(minion_dir, self.root_dir)
-        for server in self.servers:
-            filename = minion_dir + "/" +  server + ".yml"
-            contents = {}
-            contents['public_address'] = self._public_interface(server)
-            self.writer.write(filename, contents)
-
-    def _public_interface(self, server):
-        """
-        Find the public interface for a server
-        """
-        for public_network in self.public_networks:
-            public_net = ipaddress.ip_network(u'{}'.format(public_network))
-            for entry in self.networks[public_net]:
-                if entry[0] == server:
-                    log.debug("Public interface for {}: {}".format(server, entry[2]))
-                    return entry[2]
-        return ""
-
     def cluster_config(self):
         """
         Provide the default configuration for a cluster
@@ -951,8 +914,6 @@ def proposals(**kwargs):
         ceph_roles = CephRoles(settings, name, ceph_cluster.minions, salt_writer)
         ceph_roles.generate()
         ceph_roles.cluster_config()
-        ceph_roles.monitor_members()
-        ceph_roles.igw_members()
     return [True]
 
 
