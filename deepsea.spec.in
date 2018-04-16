@@ -724,8 +724,10 @@ the README for more information.
 
 %files qa
 %{_libexecdir}/deepsea/qa
+%dir /srv/salt/ceph/smoketests
 %dir /srv/salt/ceph/smoketests/keyrings
 %dir /srv/salt/ceph/smoketests/quiescent
+%dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/keyrings
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
