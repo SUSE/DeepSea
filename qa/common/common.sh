@@ -58,7 +58,7 @@ function global_test_init {
 function ping_minions_until_all_respond {
     local NUM_MINIONS="$1"
     local RESPONDING=""
-    for i in 1 2 3 4 5 6 7 8 9 10 ; do
+    for i in {1..20} ; do
         RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
         echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
         test "$NUM_MINIONS" -eq "$RESPONDING" && break
