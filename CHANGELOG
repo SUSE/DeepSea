@@ -1,4 +1,27 @@
 -------------------------------------------------------------------
+Mon Apr 16 16:13:19 EDT 2018 - ejackson@suse.com
+
+- Version 0.9.4
+- Require Ceph Luminous or newer
+- Allow custom format for select.minions
+- Remove filestore_xattr_use_omap
+- Support kwargs for proposal.populate
+- Fix validate conditionals, redeploy nodes init.sls, apparmor command
+- Cleanup remove unused OSDState, remove obsolete public address method
+- Correct Jinja conditional for lrbd.conf.j2
+- Add active+clean, safe-to-destroy checks 
+- Add keyring smoketests
+- Add rescind ceph configuration
+- Prefer detailed device names for OSDs
+- Refactor changed.py, fix arg name, support igw restart
+- Fix engulf to return single device
+- Support python3, rework imports
+- Support Salt 2018
+- Change default PG  ratio for Cephfs pools to 4:1
+- Workaround for job cache permissions
+- QA: Add --mini for health-ok
+
+-------------------------------------------------------------------
 Sun Mar 18 12:40:56 UTC 2018 - ejackson@suse.com
 
 - Version 0.9.3
