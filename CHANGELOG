@@ -1,4 +1,32 @@
 -------------------------------------------------------------------
+Thu Apr 17 16:50:50 UTC 2018 - jschmid@suse.de
+
+- Version 0.8.4 a58d1c5 
+- qa: health-ok: fix --mini option 
+- Prefer underscore device names 
+- Add active+clean wait for migrations 
+- Support kwargs in orchestrations 
+- fix: Stage 4 fails when using the example NFS Ganesha deployment (bsc#1077168)
+- fix: DeepSea Bug during Removal of an OSD Node (Stage 5) (bsc#1078508)
+- fix: deepsea engulf: three devices listed for "journal" in profile-import yaml files (bsc#1080102)
+- Fix arg name passed to changed.config 
+- Add config change detction support for igw 
+- Revert apparmor 
+- Check for WAL/DB present but not configured 
+- Add a --mini switch to the health-ok 
+- Include /dev/disk/by-id/scsi* 
+- Handle missing wal/db, add unit tests 
+- Add restart mechanism to stage.4 related services 
+- Avoid random _client_node name  
+- QA Sync modules before deploying salt-api 
+- Sync modules before deploying salt-api 
+- qa: pre-create pools before running Stage 4 
+- qa: use correct path to rbd.conf custom configuration file  QA
+- qa: test script fixes needed to revive pynfs.sh 
+- Refactor Prometheus RGW exporter #847 
+- stage 3: don't update ceph packages, only install 
+
+-------------------------------------------------------------------
 Fri Mar 23 14:34:50 UTC 2018 - ejackson@suse.com
 
 - Version 0.8.3
