@@ -1,7 +1,9 @@
 
+{% set master = salt['master.minion']() %}
+
 prep master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls:
       - ceph.cephfs.benchmarks.prepare_master
 
@@ -45,5 +47,5 @@ cleanup fio:
 
 remove auth key:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.cephfs.benchmarks.cleanup_key_auth

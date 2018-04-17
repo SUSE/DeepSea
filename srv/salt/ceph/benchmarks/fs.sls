@@ -1,7 +1,9 @@
 
+{% set master = salt['master.minion']() %}
+
 prep master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls:
       - ceph.benchmarks.fs.prepare_master
 

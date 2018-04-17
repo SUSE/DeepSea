@@ -60,10 +60,6 @@ make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files VERSION=%{version}
 python3 setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %post
-if [ $1 -eq 1 ] ; then
-  # Initialize to most likely value
-  sed -i '/^master_minion:/s!_REPLACE_ME_!'`hostname -f`'!' /srv/pillar/ceph/master_minion.sls
-fi
 # Initialize the shared secret key
 sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' /etc/salt/master.d/sharedsecret.conf
 chown salt:salt /etc/salt/master.d/sharedsecret.conf
@@ -89,6 +85,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/_modules/__pycache__
 %dir /srv/modules
 %dir /srv/modules/__pycache__
+%dir /srv/modules/modules
 %dir /srv/modules/runners
 %dir /srv/modules/runners/__pycache__
 %dir /srv/modules/pillar
@@ -394,6 +391,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
+/srv/modules/modules/*.py*
 /srv/modules/runners/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
@@ -402,7 +400,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/collections/*.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/fio/*.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/templates/*.j2
-%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/master_minion.sls
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/deepsea_minions.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 %config /srv/modules/__pycache__/*.pyc

@@ -4,7 +4,7 @@
 validate failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}

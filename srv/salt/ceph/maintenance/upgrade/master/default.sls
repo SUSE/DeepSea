@@ -1,3 +1,6 @@
+
+{% set master = salt['master.minion']() %}
+
 {% set timeout=salt['pillar.get']('minions_ready_timeout', 30) %}
 {% if salt.saltutil.runner('minions.ready', timeout=timeout) and salt['saltutil.runner']('upgrade.check') and salt['saltutil.runner']('validate.setup') %}
 
@@ -12,25 +15,25 @@ sync all:
 set sortbitwise flag: 
   salt.state:
     - sls: ceph.setosdflags.sortbitwise
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 # May generate an unpack error which is safe to ignore
 update deepsea and master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.updates.master
 
 upgrading:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.upgrade
     - failhard: True
 
 reboot master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.updates.restart
 
 {% else %}
@@ -38,7 +41,7 @@ reboot master:
 validate failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}

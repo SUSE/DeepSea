@@ -1,3 +1,6 @@
+
+{% set master = salt['master.minion']() %}
+
 repo:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
@@ -40,7 +43,7 @@ starting {{ host }}:
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.wait
     - failhard: True
 
@@ -54,7 +57,7 @@ check if all processes are still running after processing {{ host }}:
 unset noout {{ host }}:
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: '{{ salt['pillar.get']('master_minion') }}'
+    - tgt: '{{ master }}'
     - failhard: True
 
 updating {{ host }}:
@@ -67,7 +70,7 @@ updating {{ host }}:
 set noout {{ host }}:
   salt.state:
     - sls: ceph.noout.set
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% if grains.get('os_family', '') == 'Suse' %}
@@ -89,7 +92,7 @@ finished {{ host }}:
 unset noout after final iteration:
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 starting remaining minions:

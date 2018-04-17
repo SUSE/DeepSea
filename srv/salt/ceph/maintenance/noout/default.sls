@@ -1,5 +1,8 @@
+
+{% set master = salt['master.minion']() %}
+
 setting noout:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.noout.set
     - failhard: True

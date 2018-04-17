@@ -13,7 +13,7 @@ scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: 'ceph-exporter'
     static_configs:
-      - targets: ['{{ salt['pillar.get']('master_minion') }}:9128']
+      - targets: ['{{ salt['master.minion']() }}:9128']
 
   - job_name: 'node-exporter'
     file_sd_configs:
