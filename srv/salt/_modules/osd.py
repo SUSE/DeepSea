@@ -1884,15 +1884,35 @@ def deploy():
     The last idea is converting all of this into a state module that returns
     all the commands in the comment.
     """
+    ret_data = {}
+    failed_run = False
     for device in configured():
         if not is_prepared(device):
+            ret_data[device] = {}
             config = OSDConfig(device)
             osdp = OSDPartitions(config)
             osdp.clean()
             osdp.partition()
             osdc = OSDCommands(config)
-            __salt__['helper.run'](osdc.prepare())
-            __salt__['helper.run'](osdc.activate())
+            ret_data[device]['prepare'] = __salt__['helper.run'](osdc.prepare())
+            ret_data[device]['activate'] = __salt__['helper.run'](osdc.activate())
+    for device, return_map in ret_data.items():
+        for func_name, run_data in return_map.items():
+            if run_data[0] != 0:
+                failed_run = True
+                msg = ("""
+                       Error encountered in {} function for device {}.
+                       Return_code: {}
+                       Stdout: {}
+                       Stderr: {}
+                       """.format(func_name,
+                                  device,
+                                  run_data[0],
+                                  run_data[1],
+                                  run_data[2]))
+                log.error(msg)
+    if failed_run:
+        return False
 
 
 def redeploy(simultaneous=False, **kwargs):
