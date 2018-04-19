@@ -22,6 +22,12 @@ show networks:
   salt.runner:
     - name: advise.networks
 
+bootstrap key:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.osd.key.bootstrap
+
 {% for role in [ 'admin', 'mon', 'mgr', 'osd', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
 {{ role }} key:
   salt.state:
