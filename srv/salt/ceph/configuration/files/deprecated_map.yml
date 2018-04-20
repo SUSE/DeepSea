@@ -1,0 +1,23 @@
+general:
+  key: value
+  super: old
+  long: time
+  depre: cated
+
+luminous:
+  lum_key: value
+  newly: deprecated 
+  foo: bar
+
+mimic:
+  deprecated: in_mimic
+  a_list:
+      - of
+      - values
+      - that
+      - are
+      - not
+      - allowd
+      - anymore
+  
+

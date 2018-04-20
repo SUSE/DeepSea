@@ -1,11 +1,11 @@
 import pytest
 import salt.client
 import sys
-sys.path.insert(0, 'srv/salt/_modules')
+import types
 sys.path.insert(0, 'srv/modules/runners')
 sys.path.insert(0, 'srv/modules/runners/utils')
 
-from mock import patch, mock, MagicMock
+from mock import patch, MagicMock, mock_open
 from srv.modules.runners import validate
 
 
@@ -385,7 +385,6 @@ class TestValidation():
             self.data = {'admin.ceph': {'roles': 'admin'},
                          'igw1.ceph': {'roles': 'igw'}}
 
-
     @patch('salt.client.LocalClient')
     def test_kernel(self, mock_localclient):
         fake_data = {'admin.ceph': True,
@@ -414,3 +413,92 @@ class TestValidation():
         assert len(validator.passed) == 0
         validator.kernel()
         assert 'igw1.ceph:' in validator.errors['kernel_module'][0]
+
+    class MockedValidate(validate.Validate):
+        """ This Class just exists to use a defined pillar """
+        def set_pillar(self):
+            self.data = {'admin.ceph': {'roles': 'admin'},
+                         'igw1.ceph': {'roles': 'igw'}}
+
+
+class TestConfigCheck():
+
+    @pytest.fixture(scope='class')
+    def fxtr(self):
+        """
+        Fixture to prepopulate the 'map' attr.
+        Avoid loading that from a file
+        """
+        with patch.object(validate.ConfigCheck, "__init__", lambda slf: None):
+            cc = validate.ConfigCheck()
+            cc.map = {'release1':
+                        {'k1': 'v1'},
+                      'release2':
+                        {'k2': ['v2', 'v2.1']}}
+            cc.files = ['file1', 'file2']
+            cc.issues = []
+            yield cc
+
+    @pytest.mark.parametrize("inp, outp", [['k = v', ('k', 'v')], 
+                                           ['k=v', ('k', 'v')],
+                                           ['  k= v  ', ('k', 'v')]])
+    def test_extract_k_v(self, fxtr, inp, outp):
+        """
+        Parameterized test to verify stripping and splitting
+        """
+        out = fxtr.extract_k_v(inp)
+        assert out == (outp)
+
+    @patch('srv.modules.runners.validate.open', new_callable=mock_open, read_data='k = v')
+    def test_read_lines(self, open_mock, fxtr):
+        """
+        Does read_lines return a generator?
+        """
+        assert isinstance(fxtr.read_lines(fxtr.files[0]), types.GeneratorType)
+
+    @patch('srv.modules.runners.validate.ConfigCheck.compare_k_v_to_map')
+    @patch('srv.modules.runners.validate.ConfigCheck.extract_k_v')
+    def test_check_line(self, extract_mock, compare_mock):
+        """
+        Simple test to verify if methods get called in check_line
+        """
+        arg = 'k = v'
+        extract_mock.return_value = ('k','v')
+        compare_mock.return_value  = ['test']
+        validate.ConfigCheck().check_line(arg)
+        assert extract_mock.called
+        assert compare_mock.called
+
+    def test_compare_k_v_to_map_str(self, fxtr):
+        """
+        Matching k1,v1 in isinstance(map, str)
+        """
+        ret = fxtr.compare_k_v_to_map('k1', 'v1')
+        assert ret.key == 'k1'
+        assert ret.values == ['v1']
+        assert ret.release == 'release1'
+
+    def test_compare_k_v_to_map_list(self, fxtr):
+        """
+        Matching k2,v2 in isinstance(map, list)
+        """
+        ret = fxtr.compare_k_v_to_map('k2', 'v2')
+        assert ret.key == 'k2'
+        assert ret.values == ['v2']
+        assert ret.release == 'release2'
+
+    def test_compare_k_v_to_map_list_missmatch(self, fxtr):
+        """
+        Not Matching v2 in isinstance(map, list)
+        """
+        ret = fxtr.compare_k_v_to_map('k2', 'v3')
+        assert ret.key == 'k2'
+        assert ret.values == []
+        assert ret.release == 'release2'
+
+    def test_compare_k_v_to_map_list_missmatch_key(self, fxtr):
+        """
+        Not Matching k2 in 'not in kv_map'
+        """
+        ret = fxtr.compare_k_v_to_map('k3', 'v2')
+        assert ret is None
