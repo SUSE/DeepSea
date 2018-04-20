@@ -833,7 +833,7 @@ class Validate(Preparation):
         Scan all minions for their salt versions.
         """
         grains_data = self.local.cmd(self.search, 'grains.get',
-                                     ['saltversion'], expr_form="compund")
+                                     ['saltversion'], tgt_type="compound")
 
         for node in grains_data:
             year, month, release = grains_data[node].split('.')
