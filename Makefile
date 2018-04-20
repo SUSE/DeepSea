@@ -63,11 +63,23 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -m 644 srv/salt/ceph/tests/quiescent/timeout/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mds
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw
+	install -m 644 srv/salt/ceph/tests/restart/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart
+	install -m 644 srv/salt/ceph/tests/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon
+	install -m 644 srv/salt/ceph/tests/restart/mds/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mds
+	install -m 644 srv/salt/ceph/tests/restart/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mgr
+	install -m 644 srv/salt/ceph/tests/restart/rgw/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw
 	# smoketests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -m 644 srv/salt/ceph/smoketests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
+	install -m 644 srv/salt/ceph/smoketests/restart/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/restart
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
