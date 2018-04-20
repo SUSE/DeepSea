@@ -1,13 +1,16 @@
+
+{% set master = salt['master.minion']() %}
+
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') %}
 
 cephfs pools:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.mds.pools
 
 mds auth:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.mds.auth
 
 mds:

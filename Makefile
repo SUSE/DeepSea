@@ -85,6 +85,9 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/modules/pillar/__pycache__
 	install -m 644 srv/modules/pillar/__pycache__/*.pyc $(DESTDIR)/srv/modules/pillar/__pycache__
 	install -m 644 srv/modules/pillar/stack.py $(DESTDIR)/srv/modules/pillar/
+	# modules
+	install -d -m 755 $(DESTDIR)/srv/modules/modules
+	install -m 644 srv/modules/modules/*.py* $(DESTDIR)/srv/modules/modules/
 	# runners
 	install -d -m 755 $(DESTDIR)/srv/modules/runners
 	install -d -m 755 $(DESTDIR)/srv/modules/runners/__pycache__
@@ -103,7 +106,6 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates
 	install -m 644 srv/pillar/ceph/benchmarks/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
-	install -m 644 srv/pillar/ceph/master_minion.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/deepsea_minions.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
@@ -777,7 +779,6 @@ install: pyc install-deps copy-files
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 	chown -R $(USER) /srv/pillar/ceph
-	sed -i '/^master_minion:/s!_REPLACE_ME_!'`cat /etc/salt/minion_id`'!' /srv/pillar/ceph/master_minion.sls
 	systemctl restart salt-master
 	$(PKG_INSTALL) salt-api
 	systemctl restart salt-api

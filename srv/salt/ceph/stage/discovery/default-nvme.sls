@@ -1,9 +1,12 @@
+
+{% set master = salt['master.minion']() %}
+
 {% if salt['saltutil.runner']('validate.saltapi') == False %}
 
 salt-api failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}
@@ -13,7 +16,7 @@ salt-api failed:
 validate failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}
@@ -25,7 +28,7 @@ ready:
 
 refresh_pillar0:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.refresh
 
 discover roles:

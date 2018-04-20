@@ -1,3 +1,6 @@
+
+{% set master = salt['master.minion']() %}
+
 {% set timeout=salt['pillar.get']('minions_ready_timeout', 30) %}
 {% if salt.saltutil.runner('minions.ready', timeout=timeout) %}
 
@@ -48,7 +51,7 @@ upgrading mon on {{ host }}:
 
 wait until the cluster has recovered before processing mon on {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.wait
     - failhard: True
 
@@ -97,12 +100,12 @@ upgrading {{ host }}:
 # wait until the OSDs/MONs are acutally marked as down ~30 seconds ~1m
 wait for ceph to mark services as out/down to process {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.wait.until.expired.30sec
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.wait
     - failhard: True
 
@@ -115,7 +118,7 @@ check if all processes are still running after processing {{ host }}:
 unset noout after processing {{ host }}:
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 updating {{ host }}:
@@ -128,7 +131,7 @@ updating {{ host }}:
 set noout {{ host }}: 
   salt.state:
     - sls: ceph.noout.set
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 restart {{ host }} if updates require:
@@ -148,13 +151,13 @@ upgraded {{ host }}:
 unset noout after final iteration: 
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 set luminous osds: 
   salt.state:
     - sls: ceph.setosdflags.requireosdrelease
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% else %}

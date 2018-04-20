@@ -1,14 +1,17 @@
+
+{% set master = salt['master.minion']() %}
+
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') or salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw_configurations') %}
 
 rgw auth:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.auth
 
 rgw users:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.users
 
@@ -24,13 +27,13 @@ rgw users:
 # requires the admin keyring.
 setup prometheus rgw exporter:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
 
 rgw demo buckets:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.buckets
 

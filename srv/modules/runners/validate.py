@@ -534,20 +534,12 @@ class Validate(object):
         At least one minion has a master role
         """
         found = False
-        matched = False
         for node in self.data.keys():
             if 'roles' in self.data[node] and 'master' in self.data[node]['roles']:
 
                 found = True
-                if 'master_minion' in self.data[node] and node == self.data[node]['master_minion']:
-                    matched = True
-
         if not found:
             msg = "No minion assigned master role"
-            self.errors['master_role'] = [msg]
-
-        if not matched:
-            msg = "The master_minion does not match any minion assigned the master role"
             self.errors['master_role'] = [msg]
 
         self._set_pass_status('master_role')
@@ -729,24 +721,21 @@ class Validate(object):
 
     def master_minion(self):
         """
-        Verify that the master minion setting is a minion
+        Verify that the master minion setting is not empty
         """
-        data = None
-        node = None
-        local = salt.client.LocalClient()
-        for node in self.data.keys():
-            data = local.cmd(self.data[node]['master_minion'],
-                             'pillar.get', ['master_minion'], tgt_type="glob")
-            break
-        if data:
-            self.passed['master_minion'] = "valid"
-        else:
-            if node:
-                msg = "Could not find minion {}.".format(self.data[node]['master_minion'])
-                msg += " Check /srv/pillar/ceph/master_minion.sls"
-            else:
-                msg = "Missing pillar data"
+        __opts__ = salt.config.client_config('/etc/salt/master')
+        __grains__ = salt.loader.grains(__opts__)
+        __opts__['grains'] = __grains__
+        __utils__ = salt.loader.utils(__opts__)
+        __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+        master_minion = __salt__['master.minion']()
+
+        if master_minion == "":
+            msg = "master_minion is empty - "
+            msg += "Check master_minion setting in pillar"
             self.errors['master_minion'] = [msg]
+        else:
+            self.passed['master_minion'] = "valid"
 
     def ceph_version(self):
         """

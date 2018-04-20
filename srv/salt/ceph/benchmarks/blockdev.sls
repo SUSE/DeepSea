@@ -3,10 +3,11 @@
 # benchmarks, assuming the iSCSI login or rbd map is performed manually
 # beforehand.
 # TODO Support per-client block devices
+{% set master = salt['master.minion']() %}
 
 prep master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.benchmarks.blockdev.prepare_master
 
 prep clients:

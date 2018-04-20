@@ -1,4 +1,6 @@
 
+{% set master = salt['master.minion']() %}
+
 openattic nop:
     test.nop
 
@@ -6,7 +8,7 @@ openattic nop:
 
 openattic auth:
     salt.state:
-        - tgt: {{ salt['pillar.get']('master_minion') }}
+        - tgt: {{ master }}
         - sls: ceph.openattic.auth
 
 openattic:

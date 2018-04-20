@@ -1,4 +1,6 @@
 
+{% set master = salt['master.minion']() %}
+
 update mines:
   salt.function:
     - name: mine.update
@@ -8,19 +10,19 @@ update mines:
 
 remove mon:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.mon
 
 remove mgr:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.mgr
 
 drain osds:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.storage.drain
 
@@ -32,13 +34,13 @@ terminate ceph osds:
 
 cleanup osds:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.storage
 
 remove ganesha:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.ganesha
 
@@ -50,19 +52,19 @@ rescind roles:
 
 remove cephfs:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.mds
 
 remove rgw:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.rgw
 
 remove openattic:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.remove.openattic
 
@@ -72,7 +74,7 @@ remove openattic:
 # Remove the Prometheus RGW exporter if no 'rgw' node is configured.
 remove prometheus rgw exporter:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rescind.rgw.monitoring
 

@@ -28,11 +28,11 @@ import salt.key
 import salt.config
 import salt.utils
 import salt.utils.minions
+import salt.loader
 # pylint: disable=relative-import
 import ready
 
 import re
-import pprint
 import string
 import random
 import yaml
@@ -49,6 +49,7 @@ import logging
 # pylint: disable=relative-import
 from deepsea_minions import DeepseaMinions
 import operator
+import pprint
 
 import sys
 import six
@@ -697,17 +698,10 @@ class CephRoles(object):
 
         # second step, find cluster network by checking which network salt-master does not belong
         master_addrs = []
-        master_minion = None
-        cmd_result = local.cmd(self.search, 'pillar.get', ['master_minion'], tgt_type="compound")
-        for _, value in cmd_result.items():
-            master_minion = value
-            break
-        if not master_minion:
-            raise Exception("No master_minion found in pillar")
-        cmd_result = local.cmd(master_minion, 'grains.get', ['ipv4'], tgt_type="compound")
-        for _, addr_list in cmd_result.items():
-            master_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
-                                for addr in addr_list if not addr.startswith('127.')])
+        __opts__ = salt.config.minion_config('/etc/salt/minion')
+        __grains__ = salt.loader.grains(__opts__)
+        master_addrs.extend([ipaddress.ip_address(u'{}'.format(addr))
+                            for addr in __grains__['ipv4'] if not addr.startswith('127.')])
         for _, network in priorities:
             if network not in networks:
                 continue
@@ -828,8 +822,14 @@ class CephCluster(object):
         if not os.path.isdir(stack_dir):
             _create_dirs(stack_dir, self.root_dir)
         filename = "{}/global.yml".format(stack_dir)
+
+        __opts__ = salt.config.client_config('/etc/salt/master')
+        __grains__ = salt.loader.grains(__opts__)
+        __opts__['grains'] = __grains__
+        __utils__ = salt.loader.utils(__opts__)
+        __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
         contents = {}
-        contents['time_server'] = '{{pillar.get("master_minion")}}'
+        contents['time_server'] = '{}'.format(__salt__['master.minion']())
 
         self.writer.write(filename, contents)
 

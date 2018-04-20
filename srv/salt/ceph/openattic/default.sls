@@ -1,4 +1,5 @@
 
+{% set master = salt['master.minion']() %}
 
 install openattic:
   pkg.installed:
@@ -10,7 +11,7 @@ configure salt-api:
   module.run:
     - name: openattic.configure_salt_api
     - kwargs:
-      hostname: "{{ salt['pillar.get']('master_minion') }}"
+      hostname: "{{ master }}"
       port: 8000
       username: "admin"
       sharedsecret: "{{ salt['pillar.get']('salt_api_shared_secret') }}"
@@ -19,7 +20,7 @@ configure grafana:
   module.run:
     - name: openattic.configure_grafana
     - kwargs:
-      hostname: "{{ salt['pillar.get']('master_minion') }}"
+      hostname: "{{ master }}"
 
 enable openattic-systemd:
   service.running:

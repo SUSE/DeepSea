@@ -1,9 +1,12 @@
+
+{% set master = salt['master.minion']() %}
+
 {% if salt['saltutil.runner']('validate.discovery', cluster='ceph') == False %}
 
 validate failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}
@@ -14,7 +17,7 @@ push proposals:
 
 refresh_pillar1:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: '{{ master }}'
     - tgt_type: compound
     - sls: ceph.refresh
 
@@ -25,7 +28,7 @@ show networks:
 {% for role in [ 'admin', 'mon', 'mgr', 'osd', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
 {{ role }} key:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.{{ role }}.key
     - failhard: True
@@ -34,7 +37,7 @@ show networks:
 
 setup monitoring:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring
 

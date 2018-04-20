@@ -1,6 +1,9 @@
+
+{% set master = salt['master.minion']() %}
+
 prep master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.rbd.benchmarks.prepare_master
 
 prep clients:
@@ -29,6 +32,6 @@ cleanup clients:
 
 cleanup master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.rbd.benchmarks.cleanup_master
 

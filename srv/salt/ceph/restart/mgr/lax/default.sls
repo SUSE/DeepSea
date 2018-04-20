@@ -1,4 +1,4 @@
-{% set master = salt['pillar.get']('master_minion') %}
+{% set master = salt['master.minion']() %}
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mgr') %}
 
     wait until {{ host }} with role mgr can be restarted:

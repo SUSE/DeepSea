@@ -1,11 +1,13 @@
 
+{% set master = salt['master.minion']() %}
+
 {% set FAIL_ON_WARNING = salt['pillar.get']('FAIL_ON_WARNING', 'True') %}
 
 {% if salt['saltutil.runner']('ready.check', cluster='ceph', fail_on_warning=FAIL_ON_WARNING)  == False %}
 ready check failed:
   salt.state:
     - name: "Fail on Warning is True"
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}
@@ -22,7 +24,7 @@ ready check failed:
 validate failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - failhard: True
 
 {% endif %}
@@ -45,14 +47,14 @@ packages:
 
 configuration check:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.configuration.check
     - failhard: True
 
 create ceph.conf:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.configuration.create
     - failhard: True
 
@@ -97,7 +99,7 @@ monitors:
 
 mgr auth:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.mgr.auth
 
 mgrs:
@@ -109,19 +111,19 @@ mgrs:
 
 setup ceph exporter:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_exporter
 
 setup rbd exporter:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.rbd_exporter
 
 osd auth:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.osd.auth
     - failhard: True
@@ -149,5 +151,5 @@ grains:
 
 pools:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - sls: ceph.pool

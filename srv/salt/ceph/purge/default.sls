@@ -1,8 +1,10 @@
 
+{% set master = salt['master.minion']() %}
+
 {% if salt['saltutil.runner']('disengage.check', cluster='ceph') == False %}
 safety is engaged:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - name: "Run 'salt-run disengage.safety' to disable"
     - failhard: True
 
@@ -10,7 +12,7 @@ safety is engaged:
 
 reset master configuration:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.reset
 

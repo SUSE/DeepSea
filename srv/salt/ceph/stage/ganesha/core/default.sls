@@ -1,14 +1,17 @@
+
+{% set master = salt['master.minion']() %}
+
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') or salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha_configurations') %}
 
 ganesha auth:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.ganesha.auth
 
 ganesha config:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.ganesha.config
     - failhard: True
