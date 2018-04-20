@@ -235,6 +235,10 @@ class Validate(Preparation):
             self.search = search
         # self._minion_check()
 
+        # Ceph version
+        self.package = 'ceph-common'
+        self.uninstalled = []
+
     def __get_items(self, enabled, target):
         """
         Look up [pillar|grains].items
@@ -768,65 +772,67 @@ class Validate(Preparation):
         """
         Scan all minions for ceph versions in their repos.
         """
+        self._check_installed()
+        self._check_available()
+        self._set_pass_status('ceph_version')
+
+    def _check_installed(self):
+        """
+        Check for installed Ceph packages.  The query is faster and a fresh
+        install only happens once.
+        """
         target = DeepseaMinions()
         search = target.deepsea_minions
-        local = salt.client.LocalClient()
-        contents = local.cmd(search, 'pkg.latest_version', ['ceph-common'], tgt_type="compound")
-        for minion, version in contents.items():
-            # sometimes, version contains a string value
-            # other times, it contains an empty dict
-            log.debug("VALIDATE ceph_version: minion ->{}<- latest_version version ->{}<-"
-                      .format(minion, version))
-            if not version:
-                info = local.cmd(minion, 'pkg.info_installed', ['ceph-common'])
-                if info and info[minion] and 'version' in info[minion]['ceph-common']:
-                    version = info[minion]['ceph-common']['version']
-                    log.debug("VALIDATE ceph_version: minion ->{}<- info_installed version ->{}<-"
-                              .format(minion, version))
+        # When search matches no minions, salt prints to stdout.  Suppress stdout.
+        _stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        results = self.local.cmd(search, 'pkg.info_installed', [self.package],
+                                 tgt_type="compound")
+        sys.stdout = _stdout
+
+        for minion in results:
+            if isinstance(results[minion], dict) and self.package in results[minion]:
+                if 'version' in results[minion][self.package]:
+                    version = results[minion][self.package]['version']
+                    if LooseVersion(version) < LooseVersion(LUMINOUS_VERSION):
+                        prefix = 'Ceph version is older than Luminous on'
+                        self.errors.setdefault('ceph_version', [prefix]).append(minion)
                 else:
-                    failmsg = ("No Ceph version is available for installation on minion {}"
-                               .format(minion))
-                    if self.in_dev_env:
-                        log.warning('VALIDATE ceph_version: ' + failmsg)
-                    else:
-                        self.errors.setdefault('ceph_version', []).append(failmsg)
-                        continue
+                    # Something is really wrong
+                    prefix = 'Version missing from'
+                    self.errors.setdefault('ceph_version', [prefix]).append(minion)
+            else:
+                self.uninstalled.append(minion)
 
-            colon_idx = version.find(':')
-            if colon_idx != -1:
-                version = version[colon_idx+1:]
-            dash_idx = version.rfind('-')
-            if dash_idx != -1:
-                version = version[:dash_idx]
-            log.debug("VALIDATE ceph_version: minion ->{}<- final munged version ->{}<-"
-                      .format(minion, version))
-            assert isinstance(version, str), "version value is not a string"
+    def _check_available(self):
+        """
+        Check for available Ceph packages.  If all minions have Ceph installed,
+        then the query has no results.
+        """
+        if not self.uninstalled:
+            return
 
-            # "11.10" < "11.2" in Python terms, but not in terms of
-            # version numbering semantics, so we have to break the version number
-            # down into its integer components and compare those separately.
-            #
-            # We can assume that Ceph version numbers will always begin with X.Y.Z
-            # where X, Y, and Z are integers. Here, we are only interested in X and Y.
-            #
-            # In other words, there must be at least two version components and
-            # both must be convertible into integers.
-
-            if not all(s.isdigit() for s in version.split(".")[0:2]):
-                failmsg = ("Minion {} reports unparseable Ceph version {}"
-                           .format(minion, version))
-                if self.in_dev_env:
-                    log.warning('VALIDATE ceph_version: ' + failmsg)
+        search = "L@{}".format(",".join(self.uninstalled))
+        # When search matches no minions, salt prints to stdout.  Suppress stdout.
+        _stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        results = self.local.cmd(search, 'pkg.info_available', [self.package],
+                                 tgt_type="compound")
+        sys.stdout = _stdout
+        for minion in results:
+            if isinstance(results[minion], dict) and self.package in results[minion]:
+                if 'version' in results[minion][self.package]:
+                    version = results[minion][self.package]['version']
+                    if LooseVersion(version) < LooseVersion(LUMINOUS_VERSION):
+                        prefix = 'Ceph repository version is older than Luminous on'
+                        self.errors.setdefault('ceph_version', [prefix]).append(minion)
                 else:
-                    self.errors.setdefault('ceph_version', []).append(failmsg)
-                    continue
-
-            if LooseVersion(version) < LooseVersion(LUMINOUS_VERSION):
-                self.errors.setdefault('ceph_version', []).append(
-                    "The Ceph version available on minion {} ({}) is older than 'luminous' ({})"
-                    .format(minion, version, LUMINOUS_VERSION))
-
-        self._set_pass_status('ceph_version')
+                    # Something is really wrong
+                    prefix = 'Repo version missing from'
+                    self.errors.setdefault('ceph_version', [prefix]).append(minion)
+            else:
+                prefix = 'Ceph repository is missing from'
+                self.errors.setdefault('ceph_version', [prefix]).append(minion)
 
     def salt_version(self):
         """
