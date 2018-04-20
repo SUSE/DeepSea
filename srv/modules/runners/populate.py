@@ -1065,18 +1065,17 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
+    target = DeepseaMinions()
+    search = target.deepsea_minions
     local = salt.client.LocalClient()
     settings = Settings()
     salt_writer = SaltWriter(**kwargs)
 
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
-    minions = DeepseaMinions()
-    search = minions.deepsea_minions
     from . import validate
-    validator = validate.Validate("ceph", local.cmd(search, 'pillar.items', [],
-                                                    tgt_type="compound"),
-                                  [], validate.get_printer())
-    validator.deepsea_minions(minions)
+    validator = validate.Validate("ceph", search_pillar=True,
+                                  printer=validate.get_printer())
+    validator.deepsea_minions(validator.target)
     if validator.errors:
         validator.report()
         return False

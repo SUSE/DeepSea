@@ -25,7 +25,7 @@ import sys
 import glob
 from subprocess import Popen, PIPE
 from collections import OrderedDict
-from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error,blacklisted-module
+from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error,blacklisted-module,3rd-party-module-not-gated
 import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
@@ -132,6 +132,18 @@ def get_printer(__pub_output=None, **kwargs):
         return PrettyPrinter()
 
 
+class Preparation(object):
+    """
+    Provide commonly used preparations for ClusterAssignment and
+    Validate
+    """
+
+    def __init__(self):
+        self.target = DeepseaMinions()
+        self.search = self.target.deepsea_minions
+        self.local = salt.client.LocalClient()
+
+
 class SaltOptions(object):
     """
     Keep the querying of salt options separate
@@ -147,18 +159,18 @@ class SaltOptions(object):
                 self.stack_dir = dirname(ext['stack'])
 
 
-class ClusterAssignment(object):
+class ClusterAssignment(Preparation):
     """
     Discover the cluster assignment and ignore unassigned
     """
 
-    def __init__(self, local):
+    def __init__(self):
         """
         Query the cluster assignment and remove unassigned
         """
-        target = DeepseaMinions()
-        search = target.deepsea_minions
-        self.minions = local.cmd(search, 'pillar.get', ['cluster'])
+        # Python2 syntax is only used because the test is running in python2
+        super(ClusterAssignment, self).__init__()
+        self.minions = self.local.cmd(self.search, 'pillar.get', ['cluster'])
 
         self.names = dict(self._clusters())
         if 'unassigned' in self.names:
@@ -199,24 +211,39 @@ LUMINOUS_VERSION = "11.2"
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
-class Validate(object):
+class Validate(Preparation):
     """
     Perform checks on pillar and grain data
     """
 
-    def __init__(self, name, data=None, grains=None, printer=None):
+    def __init__(self, name, search_pillar=False, search_grains=False,
+                 printer=None, search=None):
         """
         Query the cluster assignment and remove unassigned
         """
+        # Python2 syntax is only used because the test is running in python2
+        super(Validate, self).__init__()
         self.name = name
-        self.data = data
-        self.grains = grains
+        self.data = self.__get_items(search_pillar, 'pillar')
+        self.grains = self.__get_items(search_grains, 'grains')
         self.printer = printer
         self.in_dev_env = self.__dev_env()
         self.passed = OrderedDict()
         self.errors = OrderedDict()
         self.warnings = OrderedDict()
+        if search:
+            self.search = search
         # self._minion_check()
+
+    def __get_items(self, enabled, target):
+        """
+        Look up [pillar|grains].items
+        """
+        if enabled:
+            items = self.local.cmd(self.search, target + '.items',
+                                   [], tgt_type="compound")
+            return items
+        return None
 
     def __dev_env(self):
         """
@@ -801,6 +828,25 @@ class Validate(object):
 
         self._set_pass_status('ceph_version')
 
+    def salt_version(self):
+        """
+        Scan all minions for their salt versions.
+        """
+        grains_data = self.local.cmd(self.search, 'grains.get',
+                                     ['saltversion'], expr_form="compund")
+
+        for node in grains_data:
+            year, month, release = grains_data[node].split('.')
+            warning_str = '{node}: {year}.{month}.{release} not supported' \
+                          .format(node=node, year=year, month=month,
+                                  release=release)
+            if int(year) < 2017 or int(year) > 2018:
+                if 'salt_version' not in self.warnings:
+                    self.warnings['salt_version'] = [warning_str]
+                else:
+                    self.warnings['salt_version'].append(warning_str)
+        self._set_pass_status('salt_version')
+
     def _accumulate_files_from(self, filename):
         """
         Process policy file skipping comments, unmatched lines
@@ -967,8 +1013,7 @@ def pillars(**kwargs):
     """
     Check all clusters (Only one is supported currently)
     """
-    local = salt.client.LocalClient()
-    cluster = ClusterAssignment(local)
+    cluster = ClusterAssignment()
 
     printer = get_printer(**kwargs)
 
@@ -988,23 +1033,19 @@ def discovery(cluster=None, printer=None, **kwargs):
         usage(func='discovery')
         exit(1)
 
-    local = salt.client.LocalClient()
-
     # Restrict search to this cluster
-    target = DeepseaMinions()
-    search = target.deepsea_minions
     if 'cluster' in __pillar__:
         if __pillar__['cluster']:
             # pylint: disable=redefined-variable-type
             # Salt accepts either list or string as target
             search = "I@cluster:{}".format(cluster)
-
-    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
+    else:
+        search = None
 
     printer = get_printer(**kwargs)
-    valid = Validate(cluster, data=pillar_data, printer=printer)
-
-    valid.deepsea_minions(target)
+    valid = Validate(cluster, search_pillar=True, printer=printer,
+                     search=search)
+    valid.deepsea_minions(valid.target)
     valid.lint_yaml_files()
     if not valid.in_dev_env:
         valid.profiles_populated()
@@ -1026,16 +1067,12 @@ def pillar(cluster=None, printer=None, **kwargs):
         usage(func='pillar')
         exit(1)
 
-    local = salt.client.LocalClient()
-
     # Restrict search to this cluster
     search = "I@cluster:{}".format(cluster)
 
-    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
-    grains_data = local.cmd(search, 'grains.items', [], tgt_type="compound")
-
     printer = get_printer(**kwargs)
-    valid = Validate(cluster, pillar_data, grains_data, printer)
+    valid = Validate(cluster, search_pillar=True, search_grains=True,
+                     printer=printer, search=search)
     valid.dev_env()
     valid.fsid()
     valid.public_network()
@@ -1063,14 +1100,10 @@ def deploy(**kwargs):
     """
     Verify that Stage 4, Services can succeed.
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
-    local = salt.client.LocalClient()
-    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
-    grains_data = local.cmd(search, 'grains.items', [], tgt_type="compound")
     printer = get_printer(**kwargs)
 
-    valid = Validate("deploy", pillar_data, grains_data, printer)
+    valid = Validate("deploy", search_pillar=True, search_grains=True,
+                     printer=printer)
     valid.openattic()
     valid.report()
 
@@ -1084,14 +1117,8 @@ def saltapi(**kwargs):
     """
     Verify that the Salt API is working
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
-    local = salt.client.LocalClient()
-
-    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
     printer = get_printer(**kwargs)
-
-    valid = Validate("salt-api", pillar_data, [], printer)
+    valid = Validate("salt-api", search_pillar=True, printer=printer)
     valid.saltapi()
     valid.report()
 
@@ -1113,17 +1140,12 @@ def setup(**kwargs):
     """
     Check that initial files prior to any stage are correct
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
-    local = salt.client.LocalClient()
-
-    pillar_data = local.cmd(search, 'pillar.items', [], tgt_type="compound")
     printer = get_printer(**kwargs)
-
-    valid = Validate("setup", pillar_data, [], printer)
-    valid.deepsea_minions(target)
+    valid = Validate("setup", search_pillar=True, printer=printer)
+    valid.deepsea_minions(valid.target)
     valid.master_minion()
     valid.ceph_version()
+    valid.salt_version()
     valid.report()
 
     if valid.errors:
