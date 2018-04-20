@@ -36,6 +36,7 @@ processes = {'mon': ['ceph-mon'],
              'client-iscsi': [],
              'client-nfs': [],
              'client-radosgw': [],
+             'benchmark-rbd': [],
              'master': []}
 
 # Processes like lrbd have an inverted logic
