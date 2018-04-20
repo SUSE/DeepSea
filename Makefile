@@ -259,6 +259,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/files/rgw.conf $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/rgw-ssl.conf $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.import $(DESTDIR)/srv/salt/ceph/configuration/files/
+	install -m 644 srv/salt/ceph/configuration/files/deprecated_map.yml $(DESTDIR)/srv/salt/ceph/configuration/files/
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.d/README $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
