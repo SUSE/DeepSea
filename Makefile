@@ -374,6 +374,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/osd/*.sls $(DESTDIR)/srv/salt/ceph/osd/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/key
 	install -m 644 srv/salt/ceph/osd/key/*.sls $(DESTDIR)/srv/salt/ceph/osd/key/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/key/bootstrap
+	install -m 644 srv/salt/ceph/osd/key/bootstrap/*.sls $(DESTDIR)/srv/salt/ceph/osd/key/bootstrap/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/auth
 	install -m 644 srv/salt/ceph/osd/auth/*.sls $(DESTDIR)/srv/salt/ceph/osd/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/grains
