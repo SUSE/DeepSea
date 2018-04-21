@@ -20,15 +20,7 @@ source $BASEDIR/common/rgw.sh
 function global_test_init {
     #
     # determine hostname of Salt Master
-    MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
-    if test -s $MASTER_MINION_SLS ; then
-        SALT_MASTER=$(cat $MASTER_MINION_SLS | \
-                     sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
-                     grep -v '^$')
-    else
-        echo "Could not determine the Salt Master from DeepSea pillar data. Is DeepSea installed?"
-        exit 1
-    fi
+    SALT_MASTER=$(hostname)
     #
     # show which repos are active/enabled
     zypper lr -upEP
