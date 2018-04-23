@@ -750,14 +750,18 @@ class Validate(Preparation):
         """
         Verify that the master minion setting is not empty
         """
-        __opts__ = salt.config.client_config('/etc/salt/master')
-        __grains__ = salt.loader.grains(__opts__)
-        __opts__['grains'] = __grains__
-        __utils__ = salt.loader.utils(__opts__)
-        __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
-        master_minion = __salt__['master.minion']()
+        # Checking the master module 'master.minion' causes the states of
+        # ceph.stage.0.minion to fail.  Leaving this example here, since we
+        # have no effective way of using master modules in python.
+        #
+        # __opts__ = salt.config.client_config('/etc/salt/master')
+        # __grains__ = salt.loader.grains(__opts__)
+        # __opts__['grains'] = __grains__
+        # __utils__ = salt.loader.utils(__opts__)
+        # __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+        # master_minion = __salt__['master.minion']()
 
-        if master_minion == "":
+        if 'master_minion' in __pillar__ and __pillar__['master_minion'] is None:
             msg = "master_minion is empty - "
             msg += "Check master_minion setting in pillar"
             self.errors['master_minion'] = [msg]
