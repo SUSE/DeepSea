@@ -1911,7 +1911,7 @@ def redeploy(simultaneous=False, **kwargs):
                 zero_weight(_id, wait=False)
 
     settings = _settings(**kwargs)
-    for _id in __grains__['ceph']:
+    for _id in __grains__['ceph']:  
         _part = _partition(_id)
         # if 'lockbox' in __grains__['ceph'][_id]['partitions']:
         #     partition = __grains__['ceph'][_id]['partitions']['lockbox']

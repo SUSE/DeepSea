@@ -969,6 +969,10 @@ class Validate(Preparation):
                    "See `/srv/pillar/ceph/deepsea_minions.sls` for details")
             self.errors['deepsea_minions'] = [msg]
 
+    def custom_files(self):
+        
+
+
     def report(self):
         """
         Print the validation report
