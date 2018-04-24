@@ -42,3 +42,16 @@
     - user: root
     - group: root
 
+/etc/apparmor.d/usr.sbin.httpd-prefork:
+  file.managed:
+    - source: salt://ceph/apparmor/files/usr.sbin.httpd-prefork
+    - perms: 600
+    - user: root
+    - group: root
+
+/etc/apparmor.d/usr.sbin.oaconfig:
+  file.managed:
+    - source: salt://ceph/apparmor/files/usr.sbin.oaconfig
+    - perms: 600
+    - user: root
+    - group: root
