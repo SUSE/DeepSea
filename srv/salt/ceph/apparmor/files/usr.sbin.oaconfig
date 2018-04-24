@@ -1,0 +1,80 @@
+#include <tunables/global>
+
+# vim:syntax=apparmor
+# Author: Laura Paduano <lpaduano@suse.com>
+
+/usr/sbin/oaconfig {
+  #include <abstractions/apache2-common>
+  #include <abstractions/authentication>
+  #include <abstractions/base>
+  #include <abstractions/bash>
+  #include <abstractions/dbus-session>
+  #include <abstractions/nameservice>
+  #include <abstractions/wutmp>
+
+
+  capability  audit_write,
+  capability  dac_override,
+  capability  setgid,
+  capability  sys_ptrace,
+  capability  net_admin,
+  capability  setuid,
+  capability  sys_resource,
+
+
+
+  /bin/bash rix,
+  /dev/tty rw,
+  /etc/** r,
+  /etc/SuSE-release r,
+  /etc/default/su r,
+  /etc/environment r,
+  /etc/libnl/classid r,
+  /etc/manpath.config r,
+  /etc/openattic/database.ini r,
+  /etc/ r,
+  /etc/opt/ r,
+  /etc/ssl/openssl.cnf r,
+  /etc/sysconfig/console r,
+  /etc/sysconfig/openattic r,
+  /opt/ r,
+  /proc/*/cgroup r,
+  /proc/*/cmdline r,
+  /proc/*/comm r,
+  /proc/*/fd/ r,
+  /proc/*/loginuid r,
+  /proc/*/mounts r,
+  /proc/*/net/psched r,
+  /proc/*/stat r,
+  /proc/filesystems r,
+  /proc/meminfo r,
+  /proc/sys/crypto/fips_enabled r,
+  /proc/sys/kernel/ngroups_max r,
+  /proc/sys/kernel/random/boot_id r,
+  /proc/*/mounts r,
+  /run/log/journal/** r,
+  /run/systemd/ask-password-block/* r,
+  /run/systemd/ask-password/ r,
+  /sbin/ldconfig rix,
+  /sys/fs/cgroup/systemd/system.slice/postgresql.service/ r,
+  /sys/fs/cgroup/systemd/system.slice/postgresql.service/cgroup.procs r,
+  /tmp/openattic-upgrade-backup-data w,
+  /usr/bin/gawk rix,
+  /usr/bin/grep rix,
+  /usr/bin/manpath rix,
+  /usr/bin/python2.7 rix,
+  /usr/bin/readlink rix,
+  /usr/bin/sed rix,
+  /usr/bin/su rix,
+  /usr/bin/systemctl rix,
+  /usr/bin/systemd-tty-ask-password-agent rix,
+  /usr/bin/tty rix,
+  /usr/bin/uname rix,
+  /usr/lib/postgresql*/bin/psql rix,
+  /usr/lib{,32,64}/** mr,
+  /usr/sbin/oaconfig rix,
+  /usr/sbin/service rix,
+  /usr/share/openattic/** rw,
+  /var/log/openattic/openattic.log w,
+
+}
