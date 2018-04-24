@@ -40,7 +40,7 @@ function pre_create_pools {
     # warnings after Stage 4 due to "too few" or "too many" PGs per OSD
     # (the "write_test" pool is used in common/sanity-basic.sh)
     sleep 10
-    if [ -n "$CEPHFS" ] ; then
+    if [ -n "$MDS" ] ; then
         create_all_pools_at_once write_test cephfs_data cephfs_metadata
     else
         create_all_pools_at_once write_test
