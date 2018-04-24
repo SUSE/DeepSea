@@ -64,7 +64,7 @@ function deploy_ceph {
     test -n "$ENCRYPTION" && proposal_populate_dmcrypt
     policy_cfg_base
     policy_cfg_mon_flex
-    test -n "$CEPHFS" && policy_cfg_mds
+    test -n "$MDS" && policy_cfg_mds
     test -n "$RGW" && policy_cfg_rgw
     test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha
     test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
@@ -77,7 +77,7 @@ function deploy_ceph {
     run_stage_3 "$CLI"
     pre_create_pools
     ceph_cluster_status
-    if [ -z "$CEPHFS" -a -z "$NFS_GANESHA" -a -z "$RGW" ] ; then
+    if [ -z "$MDS" -a -z "$NFS_GANESHA" -a -z "$RGW" ] ; then
         echo "WWWW"
         echo "Stages 0-3 OK, no roles requiring Stage 4: deploy phase complete!"
         return

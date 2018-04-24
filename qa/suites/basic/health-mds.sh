@@ -30,15 +30,16 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  $SCRIPTNAME [-h,--help] [--cli]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--mini]"
     echo
     echo "Options:"
     echo "    --cli      Use DeepSea CLI"
     echo "    --help     Display this usage message"
+    echo "    --mini     Omit long-running tests"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,help" \
+TEMP=$(getopt -o h --long "cli,help,mini,smoke" \
      -n 'health-mds.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -48,35 +49,28 @@ eval set -- "$TEMP"
 
 # process options
 CLI=""
+MINI=""
 while true ; do
     case "$1" in
-        --cli) CLI="cli" ; shift ;;
+        --cli) CLI="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
+        --mini|--smoke) MINI="$1" ; shift ;;
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
 
-assert_enhanced_getopt
-install_deps
-cat_salt_config
-run_stage_0 "$CLI"
-salt_api_test
-run_stage_1 "$CLI"
-policy_cfg_base
-policy_cfg_mon_flex
-policy_cfg_mds
-policy_cfg_storage 1 # last node will be "client" (not storage)
-cat_policy_cfg
-run_stage_2 "$CLI"
-ceph_conf_small_cluster
-run_stage_3 "$CLI"
-ceph_cluster_status
-create_all_pools_at_once cephfs_data cephfs_metadata
-run_stage_4 "$CLI"
-ceph_cluster_status
+# deploy phase
+MIN_NODES=2
+CLIENT_NODES=1
+MDS="--mds"
+deploy_ceph
+
+# test phase
 ceph_health_test
 cephfs_mount_and_sanity_test
-run_stage_0 "$CLI"
+if [ -z "$MINI" ] ; then
+    run_stage_0 "$CLI"
+fi
 
 echo "OK"
