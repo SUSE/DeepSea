@@ -14,6 +14,7 @@ import logging
 import salt.client
 import salt.utils
 import salt.utils.master
+import six
 
 log = logging.getLogger(__name__)
 
@@ -77,9 +78,9 @@ def mon(cluster='ceph'):
     return False
 
 
-def restart_required(role=None, cluster='ceph'):
+def need_restart_lsof(role=None, cluster='ceph'):
     """
-    Complement Runner call to cephprocesses.restart_required_lsof
+    Complement Runner call to cephprocesses.need_restart_lsof
     """
     assert role
     _stdout = sys.stdout
@@ -89,12 +90,61 @@ def restart_required(role=None, cluster='ceph'):
 
     role_search = "I@cluster:{} and I@roles:{}".format(cluster, role)
     restart = local.cmd(role_search,
-                        'cephprocesses.restart_required_lsof',
+                        'cephprocesses.need_restart_lsof',
                         ["role={}".format(role)],
                         expr_form="compound")
 
     sys.stdout = _stdout
-    return restart
+    for minion, need_rs in six.iteritems(restart):
+        if need_rs:
+            return True
+    return False
+
+
+def need_restart_config_change(role=None, cluster='ceph'):
+    """
+    Complement Runner call to cephprocesses.need_restart_config_change
+    """
+    assert role
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    local = salt.client.LocalClient()
+
+    role_search = "I@cluster:{} and I@roles:{}".format(cluster, role)
+    restart = local.cmd(role_search,
+                        'cephprocesses.need_restart_config_change',
+                        ["role={}".format(role)],
+                        tgt_type="compound")
+
+    sys.stdout = _stdout
+    for minion, need_rs in six.iteritems(restart):
+        if need_rs:
+            return True
+    return False
+
+
+def need_restart(role=None, cluster='ceph'):
+    """
+    Complement Runner call to cephprocesses.need_restart
+    """
+    assert role
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    local = salt.client.LocalClient()
+
+    role_search = "I@cluster:{} and I@roles:{}".format(cluster, role)
+    restart = local.cmd(role_search,
+                        'cephprocesses.need_restart',
+                        ["role={}".format(role)],
+                        tgt_type="compound")
+
+    sys.stdout = _stdout
+    for minion, need_rs in six.iteritems(restart):
+        if need_rs:
+            return True
+    return False
 
 
 def _status(search, roles, quiet):

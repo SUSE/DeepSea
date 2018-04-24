@@ -268,7 +268,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/restart/igw
 %dir /srv/salt/ceph/restart/igw/lax
 %dir /srv/salt/ceph/restart/mds
-%dir /srv/salt/ceph/restart/mds/lax
 %dir /srv/salt/ceph/restart/ganesha
 %dir /srv/salt/ceph/restart/ganesha/lax
 %dir /srv/salt/ceph/restart/openattic
@@ -537,7 +536,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/restart/mgr/*.sls
 %config /srv/salt/ceph/restart/mgr/lax/*.sls
 %config /srv/salt/ceph/restart/mds/*.sls
-%config /srv/salt/ceph/restart/mds/lax/*.sls
 %config /srv/salt/ceph/restart/rgw/*.sls
 %config /srv/salt/ceph/restart/rgw/lax/*.sls
 %config /srv/salt/ceph/restart/igw/*.sls
