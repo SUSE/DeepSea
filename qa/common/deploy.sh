@@ -82,6 +82,13 @@ function deploy_ceph {
         echo "Stages 0-3 OK, no roles requiring Stage 4: deploy phase complete!"
         return
     fi
+    test -n "$NFS_GANESHA" && nfs_ganesha_no_root_squash
     run_stage_4 "$CLI"
+    if [ -n "$NFS_GANESHA" ] ; then
+        nfs_ganesha_cat_config_file
+        nfs_ganesha_debug_log
+        echo "WWWW"
+        echo "NFS-Ganesha set to debug logging"
+    fi
     ceph_cluster_status
 }
