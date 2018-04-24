@@ -607,8 +607,6 @@ copy-files:
 	# state files - restart - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mds
 	install -m 644 srv/salt/ceph/restart/mds/*.sls $(DESTDIR)/srv/salt/ceph/restart/mds
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mds/lax
-	install -m 644 srv/salt/ceph/restart/mds/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/mds/lax
 	# state files - restart - ganesha
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/ganesha
 	install -m 644 srv/salt/ceph/restart/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/restart/ganesha

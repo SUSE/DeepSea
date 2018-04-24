@@ -84,7 +84,7 @@ class HealthCheck(object):
 
 class FsStatusCheck(HealthCheck):
     """
-    Check the fsmap status of the cep status output. Wait till all active MDS's
+    Check the fsmap status of the ceph status output. Wait till all active MDS's
     daemons have reached up:active status
     """
 
