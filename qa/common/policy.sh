@@ -64,8 +64,8 @@ EOF
     elif [ "$CLIENT_NODES" -ge 1 ] ; then
         cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-default/cluster/*.sls slice=[:-$CLIENTS]
-profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENTS]
+profile-default/cluster/*.sls slice=[:-$CLIENT_NODES]
+profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENT_NODES]
 EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
