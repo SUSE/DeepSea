@@ -19,6 +19,7 @@ import logging
 import ipaddress
 import json
 import os
+import fnmatch
 from os.path import dirname
 import re
 import sys
@@ -969,16 +970,72 @@ class Validate(Preparation):
                    "See `/srv/pillar/ceph/deepsea_minions.sls` for details")
             self.errors['deepsea_minions'] = [msg]
 
-    def custom_files(self):
+
         
-
-
+        
     def report(self):
         """
         Print the validation report
         """
         self.printer.add(self.name, self.passed, self.errors, self.warnings)
         self.printer.print_result()
+
+
+
+class FindOverwrites(object):
+    def __init__(self):
+        self.matches = []
+        self.pillar_files = []
+        self.changed_files = []
+
+    def diff(self, first, second):
+        second = set(second)
+        return [item for item in first if item not in second]
+
+    def read_changed_files(self)
+        with open('changed.txt', 'r') as _fd:
+            changed_files = _fd.readlines()
+            self.changed_files = [x.strip() for x in changed_files]
+
+    def not_allows_overwrites(self):
+        for fn in self.changed_files:
+            #if fn.endswith('.sls')
+            pass
+
+    def walk_dirs(self, base_dir, search_pattern):
+        for root, dirnames, filenames in os.walk(base_dir):
+            for filename in fnmatch.filter(filenames, search_pattern):
+                full_filename = os.path.join(root, filename)
+                yield full_filename
+
+    def open_ctx(self, fn):
+        with open(fn, 'r') as _fd:
+            for line in _fd:
+                yield line.strip()
+
+    def find_inits(self):
+        for fn in self.walk_dirs('/srv/salt/ceph', 'init.sls'):
+            for line in self.open_ctx(fn):
+                ret = re.search( r"\((.*?)\)", line)
+                if ret:
+                    ret = ret.group(1).replace("'", "")
+                    init_string = ret.split(', ')[0]
+                    self.matches.append(init_string)
+    
+    def find_overwrites(self):
+        for fn in self.walk_dirs('/srv/pillar/ceph', '*.yml'):
+            for line in self.open_ctx(fn):
+                try:
+                    k, v = line.split(':')
+                except:
+                    #print("Unable to split {}".format(line))
+                    k, v = None, None
+                if k in self.matches:
+                    print("{} with value seems to be overwritten with {}. not supporting that".format(k, v))
+
+    def wrap(self):
+        self.find_inits()
+        self.find_overwrites()
 
 
 def help_():
