@@ -179,6 +179,7 @@ def wait(cluster='ceph', **kwargs):
     return True
 
 
+# pylint: disable=no-else-return
 def _timeout(cluster='ceph'):
     """
     Assume 15 minutes for physical hardware since some hardware has long

@@ -59,8 +59,8 @@ import sys
 import yaml
 sys.path.append('/srv/modules/pillar')
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin,wrong-import-position
-from stack import _merge_dict
 import salt.ext.six as six
+from stack import _merge_dict
 
 
 log = logging.getLogger(__name__)
@@ -242,12 +242,12 @@ class PillarData(object):
                     yml.write("# Overwrites configuration in {}\n".format(custom_for))
                     _examples(custom, yml)
 
-    def organize(self, filename):
+    def organize(self, policy_filename):
         """
         Associate all filenames with their common subdirectory.
         """
         common = {}
-        with open(filename, "r") as policy:
+        with open(policy_filename, "r") as policy:
             for line in policy:
                 log.debug(line)
                 # strip comments from the end of the line
@@ -257,27 +257,28 @@ class PillarData(object):
                     log.debug("Ignoring '{}'".format(line))
                     continue
                 try:
-                    files = _parse(self.proposals_dir + "/" + line)
+                    proposal_files = _parse(self.proposals_dir + "/" + line)
                 except ValueError:
                     log.exception('''
                     ERROR: Mailformed {}: {}
-                    '''.format(filename, line))
-                    files = []
-                if not files:
+                    '''.format(policy_filename, line))
+                    proposal_files = []
+                if not proposal_files:
                     log.warning("{} matched no files".format(line))
                 log.debug(line)
-                log.debug(files)
-                for filename in files:
-                    if os.stat(filename).st_size == 0:
-                        log.warning("Skipping empty file {}".format(filename))
+                log.debug(proposal_files)
+                for proposal_file in proposal_files:
+                    if os.stat(proposal_file).st_size == 0:
+                        log.warning("Skipping empty file {}".format(proposal_file))
                         continue
-                    if os.path.isfile(filename):
-                        pathname = _shift_dir(filename.replace(self.proposals_dir, ""))
+                    if os.path.isfile(proposal_file):
+                        pathname = _shift_dir(proposal_file.replace(
+                                              self.proposals_dir, ""))
                         if pathname not in common:
                             common[pathname] = []
-                        common[pathname].append(filename)
+                        common[pathname].append(proposal_file)
                     else:
-                        log.warning("{} does not exist".format(filename))
+                        log.warning("{} does not exist".format(proposal_file))
 
         # This should be in a conditional, but
         # getEffectiveLevel returns 1 no matter setting

@@ -39,6 +39,7 @@ def help_():
     return ""
 
 
+# pylint: disable=no-else-return
 def report(cluster_name='ceph', stdout=True, return_data=False):
     """
     Creates a report that tries to find the most common versions from:

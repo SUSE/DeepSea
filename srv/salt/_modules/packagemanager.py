@@ -34,7 +34,6 @@ class PackageManager(object):
             self.pm = Zypper(**kwargs)
         elif "ubuntu" in self.platform or "debian" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
-            # pylint: disable=redefined-variable-type
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
@@ -47,11 +46,12 @@ class PackageManager(object):
         log.info("The PackageManager asked for a system reboot. Rebooting in 1 Minute")
         if self.debug or not self.reboot:
             log.debug("Faking Reboot")
-            return None
-        log.debug("Initializing Reboot.")
-        __salt__['event.fire_master'](None, 'salt/ceph/set/noout')
-        cmd = "shutdown -r"
-        Popen(cmd, stdout=PIPE, shell=True)
+        else:
+            log.debug("Initializing Reboot.")
+            __salt__['event.fire_master'](None, 'salt/ceph/set/noout')
+            cmd = "shutdown -r"
+            Popen(cmd, stdout=PIPE, shell=True)
+        return None
 
 
 class Apt(PackageManager):
@@ -191,6 +191,7 @@ class Zypper(PackageManager):
             log.error('Refreshing failed. Check the repos')
             log.debug('Executing {}'.format(cmd))
             return False
+        return None
 
     # pylint: disable=no-self-use
     def _upgrades_needed(self):

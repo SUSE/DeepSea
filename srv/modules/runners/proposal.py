@@ -207,6 +207,7 @@ def _choose_proposal(node, proposal, args):
                 return _propose(node, proposal[conf], args)
         else:
             log.error("Verify that targeted minions have proposal.generate")
+    return None
 
 
 def help_():
@@ -299,7 +300,7 @@ def _record_filter(args, base_dir):
     pprint.pprint(current_filter)
 
     # filter a bunch of salt content and the target key before writing
-    rec_args = {k: v for k, v in args.items() if k is not 'target' and not
+    rec_args = {k: v for k, v in args.items() if k != 'target' and not
                 k.startswith('__')}
     current_filter[args['target']] = rec_args
 

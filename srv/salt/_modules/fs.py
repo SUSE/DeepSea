@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=fixme
+# pylint: disable=fixme,no-else-return
 
 """
 ------------------------------------------------------------------------------
@@ -122,8 +122,8 @@ def _ceph_is_down():
             if not waiting_for:
                 down = True
             else:
-                log.warn(("Waiting for the following Ceph processes to stop: "
-                          "{}.".format(waiting_for)))
+                log.warning(("Waiting for the following Ceph processes to stop: "
+                             "{}.".format(waiting_for)))
                 retries -= 1
                 time.sleep(delay)
                 delay *= 2
@@ -141,7 +141,7 @@ def _ceph_is_up():
     delay = 2
 
     while retries and not __salt__['cephprocesses.check']():
-        log.warn("Waiting for Ceph processes to start.")
+        log.warning("Waiting for Ceph processes to start.")
         retries -= 1
         time.sleep(delay)
         delay *= 2
@@ -217,7 +217,7 @@ def _add_fstab_entry(_uuid, path, fstype, subvol):
 
     # Process entries.
     if entry in fstab_entries:
-        log.warn("'{}' already exists in /etc/fstab".format(entry))
+        log.warning("'{}' already exists in /etc/fstab".format(entry))
         return True
     if path in fstab_entries:
         log.error("Refusing to modify /etc/fstab: existing path entry for '{}' found.".format(path))
@@ -236,7 +236,7 @@ def _add_fstab_entry(_uuid, path, fstype, subvol):
         log.error("Failed to append '{}' to /etc/fstab.".format(entry))
         return False
 
-    log.warn("Successfully appended '{}' to /etc/fstab.".format(entry))
+    log.warning("Successfully appended '{}' to /etc/fstab.".format(entry))
     return True
 
 # ------------------------------------------------------------------------------
@@ -312,8 +312,8 @@ def btrfs_subvol_exists(subvol='', **kwargs):
 
     if _rc == 0 and _stdout:
         subvols = _stdout.split('\n')
-        for subvol in subvols:
-            if subvol.endswith("path {}".format(subvol)):
+        for volume in subvols:
+            if volume.endswith("path {}".format(volume)):
                 return True
 
     # Haven't found it.
@@ -337,7 +337,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
 
     # Check if subvol already exists.
     if btrfs_subvol_exists(subvol):
-        log.warn("Subvolume '{}' already exists.".format(subvol))
+        log.warning("Subvolume '{}' already exists.".format(subvol))
         return True
 
     # If we didn't get dev_info (because we're being called directly from the command
@@ -403,7 +403,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
         # so no more cleanup can be dont at this point.
         log.error("Failed to create subvolume '{}'.".format(subvol))
     else:
-        log.warn("Successfully created subvolume '{}'.".format(subvol))
+        log.warning("Successfully created subvolume '{}'.".format(subvol))
 
     return ret
 
@@ -461,8 +461,8 @@ def btrfs_mount_subvol(subvol='', path='', **kwargs):
     if path == mount_info['mountpoint']:
         # our path is a mountpoint, run some basic checks
         if path in btrfs_get_mountpoints_of_subvol(subvol):
-            log.warn(("Subvolume '{}' is already mounted onto "
-                      "'{}'.".format(subvol, path)))
+            log.warning(("Subvolume '{}' is already mounted onto "
+                         "'{}'.".format(subvol, path)))
             return True
         else:
             # Another subvolume is mounted on path, output which
@@ -490,8 +490,8 @@ def btrfs_mount_subvol(subvol='', path='', **kwargs):
                    "'{}'.".format(subvol, path, _stderr)))
         return False
 
-    log.warn(("Successfully mounted subvolume '{}' onto "
-              "'{}'.".format(subvol, path)))
+    log.warning(("Successfully mounted subvolume '{}' onto "
+                 "'{}'.".format(subvol, path)))
     return True
 
 # ------------------------------------------------------------------------------
@@ -546,6 +546,19 @@ def get_attrs(path='', **kwargs):
 
 
 # pylint: disable=invalid-name
+def _call_chattr(op, path, attrs):
+    """
+    Call chattr and check the return code.
+
+    Returns True on if the return code is 0, otherwise False.
+    """
+    cmd = "chattr {} {}{} {}".format('-d' if os.path.isdir(path) else '',
+                                     op, attrs, path)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
+    return _rc == 0
+
+
+# pylint: disable=invalid-name
 def _rchattr(op, path, attrs, rec, omit, rets):
     """
     Yet another helper for the whole chattr story.  Recursively applies op and
@@ -557,15 +570,12 @@ def _rchattr(op, path, attrs, rec, omit, rets):
     # Basic non recursive case.  Set attrs for a given path, if it's not in the omit list.
     if not rec:
         if path not in omit:
-            cmd = "chattr {} {}{} {}".format('-d' if os.path.isdir(path) else '', op, attrs, path)
-            _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
-            rets[path] = _rc == 0
-            return _rc == 0
+            rets[path] = _call_chattr(op, path, attrs)
         else:
-            log.warn(("Refusing to apply '{}' attrs to '{}' which is also in"
-                      "the omit list {}.".format(attrs, path, omit)))
+            log.warning(("Refusing to apply '{}' attrs to '{}' which is also in"
+                         "the omit list {}.".format(attrs, path, omit)))
             rets[path] = False
-            return False
+        return rets[path]
     # The fun case.
     else:
         # If our path is a directory, compute it's contents in an absolute form.
@@ -573,10 +583,7 @@ def _rchattr(op, path, attrs, rec, omit, rets):
             path_contents = ["{}/{}".format(path, e) for e in os.listdir(path)]
             # Leaf directory with no contents, and not to be omitted.
             if not path_contents and path not in omit:
-                dir_opt = '-d' if os.path.isdir(path) else ''
-                cmd = "chattr {} {}{} {}".format(dir_opt, op, attrs, path)
-                _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
-                rets[path] = _rc == 0
+                rets[path] = _call_chattr(op, path, attrs)
             # There are paths present in path_contents, process those.
             else:
                 # For each path that is not in the omit list, recurse.
@@ -588,17 +595,16 @@ def _rchattr(op, path, attrs, rec, omit, rets):
                 # and not process it or it's children.
                 if path not in omit:
                     # Finally add the path
-                    dir_opt = '-d' if os.path.isdir(path) else ''
-                    cmd = "chattr {} {}{} {}".format(dir_opt, op, attrs, path)
-                    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
-                    rets[path] = _rc == 0
+                    rets[path] = _call_chattr(op, path, attrs)
+                # Why no return rets[path] ?
+            return rets[path]
         # Path is a file.
         else:
             if path not in omit:
-                dir_opt = '-d' if os.path.isdir(path) else ''
-                cmd = "chattr {} {}{} {}".format(dir_opt, op, attrs, path)
-                _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
-                rets[path] = _rc == 0
+                rets[path] = _call_chattr(op, path, attrs)
+                # Why no return rets[path] ?
+                return rets[path]
+            return None
 
 
 # pylint: disable=invalid-name
@@ -985,8 +991,8 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
         # Remember to strip off the leading '/' when getting the subvol opt.
         subvol_opt = _get_mount_opt('subvol', path_info['mount_info']['opts'])[1:]
         if subvol == subvol_opt:
-            log.warn(("No need to migrate '{}': '{}' is already a mountpoint "
-                      "for subvolume '{}'.".format(path, path, subvol)))
+            log.warning(("No need to migrate '{}': '{}' is already a mountpoint "
+                         "for subvolume '{}'.".format(path, path, subvol)))
             return True
         else:
             log.error("Unable to migrate '{}' to subvolume '{}': a different subvolume ({}) "
@@ -998,8 +1004,8 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # need to do a full migration.
     # TODO: possible race if a rogue issues zypper install ceph...
     if not os.listdir(path):
-        log.warn(("No need to migrate empty '{}'. Creating '{}' to be mounted "
-                  "onto '{}'.".format(path, subvol, path)))
+        log.warning(("No need to migrate empty '{}'. Creating '{}' to be mounted "
+                     "onto '{}'.".format(path, subvol, path)))
         return instantiate_btrfs_subvolume(subvol, path)
 
     # path is not empty, thus begin with migration...
@@ -1130,7 +1136,7 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     if not ret:
         log.error("Failed to successfully migrate '{}' to subvolume '{}'.".format(path, subvol))
     else:
-        log.warn("Succesfully migrated '{}' to subvolume '{}'.".format(path, subvol))
+        log.warning("Succesfully migrated '{}' to subvolume '{}'.".format(path, subvol))
 
     return ret
 

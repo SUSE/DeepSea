@@ -583,6 +583,7 @@ class OSDConfig(object):
             for disk in disks[__grains__['id']]:
                 if disk['Device File'] == self.device:
                     return int(disk['Bytes'])
+            return None
         else:
             error = "Mine on {} for cephdisks.list".format(__grains__['id'])
             log.error(error)
@@ -597,6 +598,7 @@ class OSDConfig(object):
             for disk in disks[__grains__['id']]:
                 if disk['Device File'] == self.device:
                     return disk['Capacity']
+            return None
         else:
             error = "Mine on {} for cephdisks.list".format(__grains__['id'])
             log.error(error)
@@ -612,10 +614,12 @@ class OSDConfig(object):
         """
         Return version based on structure
         """
+        version = None
         if 'storage' in __pillar__ and 'osds' in __pillar__['storage']:
-            return OSDConfig.V1
-        if 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
-            return OSDConfig.V2
+            version = OSDConfig.V1
+        elif 'ceph' in __pillar__ and 'storage' in __pillar__['ceph']:
+            version = OSDConfig.V2
+        return version
 
     def set_format(self):
         """
@@ -676,7 +680,7 @@ class OSDConfig(object):
             return ident[device][key]
         return default
 
-    # pylint: disable=no-self-use
+    # pylint: disable=no-self-use,no-else-return
     def set_journal_size(self, default=None):
         """
         Return journal size if defined.  Otherwise, return a size that is
@@ -685,9 +689,11 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V1:
             return self._journal_default()
-        if self._config_version() == OSDConfig.V2:
+        elif self._config_version() == OSDConfig.V2:
             return self._check_existence('journal_size', self.tli, self.device,
                                          default=self._journal_default())
+        else:
+            return None
 
     def _journal_default(self):
         """
@@ -703,12 +709,14 @@ class OSDConfig(object):
                             return "{}K".format(int(int(disk['Bytes']) * 0.0001))
                         return "5242880K"
                 log.error("Journal {} not found in cephdisks.list mine".format(self.journal))
+            return None
         else:
             # Journal is same as OSD
             if self.small:
                 if self.size:
                     return "{}K".format(int(int(self.size) * 0.0001))
                 log.error("Size for {} not found in cephdisks.list mine".format(self.device))
+                return None
             else:
                 return "5242880K"
 
@@ -718,6 +726,7 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V2:
             return self._check_existence('wal_size', self.tli, self.device, default=default)
+        return None
 
     def set_wal(self):
         """
@@ -725,6 +734,7 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V2:
             return self._check_existence('wal', self.tli, self.device)
+        return None
 
     def set_db_size(self, default=None):
         """
@@ -732,6 +742,7 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V2:
             return self._check_existence('db_size', self.tli, self.device, default=default)
+        return None
 
     def set_db(self):
         """
@@ -739,6 +750,7 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V2:
             return self._check_existence('db', self.tli, self.device)
+        return None
 
     def set_encryption(self, default=False):
         """
@@ -746,6 +758,7 @@ class OSDConfig(object):
         """
         if self._config_version() == OSDConfig.V2:
             return self._check_existence('encryption', self.tli, self.device, default=default)
+        return None
 
     def set_types(self):
         """
@@ -1356,6 +1369,7 @@ class OSDCommands(object):
             if _bytes != bsize:
                 log.info("OSD {} size {} does not match {} ({})".format(attr, bsize, size, _bytes))
                 return True
+        return None
 
     def _convert(self, size):
         """
@@ -1376,6 +1390,7 @@ def _detect(osd_id, pathname="/var/lib/ceph/osd"):
     if os.path.exists(filename):
         with open(filename, 'r') as osd_type:
             return osd_type.read().rstrip()
+    return None
 
 
 def split_partition(_partition):
@@ -1606,6 +1621,7 @@ class OSDRemove(object):
                    "oflag=direct".format(self.osd_disk, seek_position))
             __salt__['helper.run'](cmd)
             return ""
+        return None
 
     def _delete_osd(self):
         """
@@ -1748,6 +1764,7 @@ class OSDDevices(object):
                 return fsid.read().rstrip()
         else:
             log.error("file {} is missing".format(filename))
+            return None
 
     # pylint: disable=no-self-use
     def _uuid_device(self, device, pathname="/dev/disk/by-id"):
@@ -1765,6 +1782,7 @@ class OSDDevices(object):
                     return _devices[index]
                 return readlink(device)
             return readlink(device)
+        return None
 
     def _prefer_underscores(self, devicenames):
         """

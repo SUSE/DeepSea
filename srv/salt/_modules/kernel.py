@@ -69,7 +69,7 @@ def replace(**kwargs):
 
     else:
         log.debug("No matching OS")
-    return
+    return None
 
 
 def _kernel_pkg():
@@ -87,7 +87,7 @@ def _kernel_pkg():
 
         log.info("package: {}".format(package))
         return package
-    return
+    return None
 
 
 def _boot_image(contents):
@@ -115,7 +115,7 @@ def _query_command(filename):
         if os.path.isfile('/usr/bin/dpkg'):
             return ['/usr/bin/dpkg', '--search', filename]
     log.error("Neither rpm nor dpkg found")
-    return
+    return None
 
 
 def installed_kernel_version():

@@ -56,6 +56,7 @@ class Iscsi(object):
 
         return self.data
 
+    # pylint: disable=no-else-return
     def interfaces(self, wrapped=True):
         """
         Parse grains for all network interfaces on igw roles.  Possibly
@@ -104,15 +105,15 @@ class Iscsi(object):
         """
         Read the existing lrbd.conf
         """
+        lrbd_conf = {
+            'auth': [],
+            'targets': [],
+            'portals': [],
+            'pools': []
+        }
         if os.path.exists(filename):
-            return json.loads(open(filename).read())
-        else:
-            return {
-                'auth': [],
-                'targets': [],
-                'portals': [],
-                'pools': []
-            }
+            lrbd_conf = json.loads(open(filename).read())
+        return lrbd_conf
 
     def save(self, filename="/srv/salt/ceph/igw/cache/lrbd.conf", **kwargs):
         """
@@ -178,6 +179,7 @@ class Iscsi(object):
 
         return self.data
 
+    # pylint: disable=no-else-return
     def canned_images(self, canned, wrapped=True):
         """
         Return canned example for pools and images
