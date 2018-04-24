@@ -25,7 +25,7 @@ show networks:
   salt.runner:
     - name: advise.networks
 
-{% for role in [ 'admin', 'mon', 'mgr', 'osd', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
+{% for role in [ 'admin', 'osd', 'mon', 'mgr', 'igw', 'mds', 'rgw', 'ganesha', 'openattic'] %}
 {{ role }} key:
   salt.state:
     - tgt: {{ master }}

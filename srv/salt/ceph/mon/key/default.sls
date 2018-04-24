@@ -16,3 +16,11 @@
   file.append:
     - name: {{ keyring_file }}
     - source: salt://ceph/admin/cache/ceph.client.admin.keyring
+
+{# Use this key over the generated keyring in Mimic #}
+{# Consider incorporating the keyring when keys are #}
+{# generated in Stage 3.                            #}
+{{ keyring_file }} append osd bootstrap keyring:
+  file.append:
+    - name: {{ keyring_file }}
+    - source: salt://ceph/osd/cache/bootstrap.keyring
