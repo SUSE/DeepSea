@@ -60,6 +60,7 @@ EOF
 
 function rgw_curl_test {
     test -n "$SSL" && PROTOCOL="https" || PROTOCOL="http"
+    test -n "$SSL" && CURL_OPTS="--insecure"
     set +x
     for delay in 60 60 60 60 ; do
         sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
@@ -69,7 +70,7 @@ function rgw_curl_test {
     zypper --non-interactive install --no-recommends curl libxml2-tools
     RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
     RGWXMLOUT=/tmp/rgw_test.xml
-    curl "${PROTOCOL}://$RGWNODE" > $RGWXMLOUT
+    curl $CURL_OPTS "${PROTOCOL}://$RGWNODE" > $RGWXMLOUT
     test -f $RGWXMLOUT
     xmllint $RGWXMLOUT
     grep anonymous $RGWXMLOUT
