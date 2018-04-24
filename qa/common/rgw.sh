@@ -59,7 +59,6 @@ EOF
 }
 
 function rgw_curl_test {
-    local SSL="$1"
     test -n "$SSL" && PROTOCOL="https" || PROTOCOL="http"
     set +x
     for delay in 60 60 60 60 ; do
