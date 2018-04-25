@@ -82,6 +82,7 @@ esac
 echo "Deploying NFS-Ganesha with FSAL ->$FSAL<-"
 MIN_NODES=2
 CLIENT_NODES=1
+STORAGE_PROFILE="default"
 NFS_GANESHA="--nfs-ganesha"
 deploy_ceph
 

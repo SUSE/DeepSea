@@ -55,12 +55,12 @@ eval set -- "$TEMP"
 
 # process command-line options
 CLI=""
-ENCRYPTION=""
+STORAGE_PROFILE="default"
 MINI=""
 while true ; do
     case "$1" in
         --cli) CLI="$1" ; shift ;;
-        --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
+        --encrypted|--encryption) STORAGE_PROFILE="dmcrypt" ; shift ;;
         --mini|--smoke) MINI="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
         --) shift ; break ;;

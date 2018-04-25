@@ -68,6 +68,7 @@ done
 # deploy phase
 MIN_NODES=1
 CLIENT_NODES=0
+STORAGE_PROFILE="default"
 RGW="--rgw"
 deploy_ceph
 

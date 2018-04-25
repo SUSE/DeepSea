@@ -10,11 +10,12 @@ function report_config {
     else
         echo "CLI will **NOT** be used"
     fi
-    if [ -n "$ENCRYPTION" ] ; then
-        echo "ENCRYPTION will be used"
-    else
-        echo "ENCRYPTION will **NOT** be used"
-    fi
+    case "$STORAGE_PROFILE" in
+        default)   echo "Storage profile: bluestore OSDs (default)" ; break ;;
+        dmcrypt)   echo "Storage profile: encrypted bluestore OSDs" ; break ;;
+        filestore) echo "Storage profile: filestore OSDs"           ; break ;;
+        *) echo "No storage profile was set. Bailing out!" ; exit 1 ;;
+    esac
     if [ -n "$MIN_NODES" ] ; then
         echo "MIN_NODES is set to $MIN_NODES"
         PROPOSED_MIN_NODES="$MIN_NODES"
@@ -61,14 +62,14 @@ function deploy_ceph {
     salt_api_test
     test -n "$RGW" -a -n "$SSL" && rgw_ssl_init
     run_stage_1 "$CLI"
-    test -n "$ENCRYPTION" && proposal_populate_dmcrypt
+    test "$STORAGE_PROFILE" = "dmcrypt" && proposal_populate_dmcrypt
     policy_cfg_base
     policy_cfg_mon_flex
     test -n "$MDS" && policy_cfg_mds
     test -n "$RGW" && policy_cfg_rgw
     test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha
     test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
-    policy_cfg_storage "$ENCRYPTION"
+    policy_cfg_storage
     cat_policy_cfg
     run_stage_2 "$CLI"
     ceph_conf_small_cluster

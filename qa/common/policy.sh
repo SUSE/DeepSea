@@ -1,6 +1,19 @@
 # This file is part of the DeepSea integration test suite
 
 #
+# functions for generating storage proposals
+#
+
+function proposal_populate_dmcrypt {
+    salt-run proposal.populate encryption='dmcrypt' name='dmcrypt'
+}
+
+function proposal_populate_filestore {
+    salt-run proposal.populate format='filestore' name='filestore'
+}
+
+
+#
 # functions for generating policy.cfg
 #
 
@@ -53,19 +66,19 @@ EOF
 
 function policy_cfg_storage {
     test -n "$CLIENT_NODES"
-    test -n "$ENCRYPTION" && PROFILE="dmcrypt" || PROFILE="default"
+    test -n "$STORAGE_PROFILE"
 
     if [ "$CLIENT_NODES" -eq 0 ] ; then
         cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-$PROFILE/cluster/*.sls
-profile-$PROFILE/stack/default/ceph/minions/*yml
+profile-$STORAGE_PROFILE/cluster/*.sls
+profile-$STORAGE_PROFILE/stack/default/ceph/minions/*yml
 EOF
     elif [ "$CLIENT_NODES" -ge 1 ] ; then
         cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
 # Hardware Profile
-profile-default/cluster/*.sls slice=[:-$CLIENT_NODES]
-profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENT_NODES]
+profile-$STORAGE_PROFILE/cluster/*.sls slice=[:-$CLIENT_NODES]
+profile-$STORAGE_PROFILE/stack/default/ceph/minions/*yml slice=[:-$CLIENT_NODES]
 EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"

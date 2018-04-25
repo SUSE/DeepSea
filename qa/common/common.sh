@@ -206,14 +206,6 @@ EOF
 }
 
 #
-# functions for generating osd profiles
-#
-
-function proposal_populate_dmcrypt {
-  salt-run proposal.populate encryption='dmcrypt' name='dmcrypt'
-}
-
-#
 # functions for testing ceph.restart orchestration
 #
 

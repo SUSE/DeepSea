@@ -63,6 +63,7 @@ done
 # deploy phase
 MIN_NODES=2
 CLIENT_NODES=1
+STORAGE_PROFILE="default"
 MDS="--mds"
 deploy_ceph
 
