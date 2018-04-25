@@ -50,6 +50,10 @@ function vet_nodes {
     fi
 }
 
+function ceph_cluster_running {
+    ceph status 2>&1 >/dev/null
+}
+
 function deploy_ceph {
     report_config
     install_deps
@@ -57,6 +61,10 @@ function deploy_ceph {
     update_salt
     cat_salt_config
     vet_nodes
+    if ceph_cluster_running ; then
+        echo "Running ceph cluster detected: skipping deploy phase"
+        return 0
+    fi
     disable_restart_in_stage_0
     run_stage_0 "$CLI"
     salt_api_test
@@ -92,4 +100,5 @@ function deploy_ceph {
         echo "NFS-Ganesha set to debug logging"
     fi
     ceph_cluster_status
+    return 0
 }
