@@ -30,8 +30,6 @@ import salt.utils
 import salt.utils.minions
 import salt.loader
 # pylint: disable=relative-import
-import ready
-
 import re
 import string
 import random
@@ -781,9 +779,9 @@ class CephCluster(object):
         self.search = __utils__['deepsea_minions.show']()
 
         local = salt.client.LocalClient()
-        self.minions = local.cmd(search, 'grains.get', ['id'], tgt_type="compound")
+        self.minions = local.cmd(self.search, 'grains.get', ['id'], tgt_type="compound")
 
-        _rgws = local.cmd(search, 'pillar.get', ['rgw_configurations'], tgt_type="compound")
+        _rgws = local.cmd(self.search, 'pillar.get', ['rgw_configurations'], tgt_type="compound")
         for node in _rgws:
             self.rgw_configurations = _rgws[node]
             # Just need first
@@ -1061,7 +1059,7 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
-    self.search = __utils__['deepsea_minions.show']()
+    search = __utils__['deepsea_minions.show']()
     local = salt.client.LocalClient()
     settings = Settings()
     salt_writer = SaltWriter(**kwargs)
@@ -1070,7 +1068,7 @@ def engulf_existing_cluster(**kwargs):
     from . import validate
     validator = validate.Validate("ceph", search_pillar=True,
                                   printer=validate.get_printer())
-    validator.deepsea_minions(validator.target)
+    validator.deepsea_minions()
     if validator.errors:
         validator.report()
         return False
@@ -1078,7 +1076,7 @@ def engulf_existing_cluster(**kwargs):
     policy_cfg = []
 
     # Check for firewall/apparmor.
-    if not ready.check("ceph", True, search):
+    if not __utils__['ready.check']("ceph", True, search):
         return False
 
     # First, hand apply select Stage 0 functions

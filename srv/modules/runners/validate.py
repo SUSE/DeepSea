@@ -771,9 +771,11 @@ class Validate(Preparation):
         """
         Scan all minions for ceph versions in their repos.
         """
-
         local = salt.client.LocalClient()
-        contents = local.cmd(search, 'pkg.latest_version', ['ceph-common'], tgt_type="compound")
+        contents = local.cmd(self.search,
+                             'pkg.latest_version',
+                             ['ceph-common'],
+                             tgt_type="compound")
         for minion, version in contents.items():
             # sometimes, version contains a string value
             # other times, it contains an empty dict
@@ -1144,7 +1146,7 @@ def setup(**kwargs):
     """
     printer = get_printer(**kwargs)
     valid = Validate("setup", search_pillar=True, printer=printer)
-    valid.deepsea_minions(valid.target)
+    valid.deepsea_minions()
     valid.master_minion()
     valid.ceph_version()
     valid.salt_version()

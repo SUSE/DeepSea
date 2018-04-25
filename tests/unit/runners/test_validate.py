@@ -16,12 +16,13 @@ def test_get_printer():
     assert(isinstance(validate.get_printer('quiet'), validate.JsonPrinter))
 
 
-# DeepseaMinions() and LocalClient() are instanziated by
+# LocalClient() is instanziated by
 # ClusterAssignment(). They require Mocking for the test environment
 class TestClusterAssignment():
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient')
-    def test_single_cluster(self, mock_localclient, mock_deepsea):
+    def test_single_cluster(self, mock_localclient):
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
         cluster_dict = {"minionA":"ceph", "minionB": "ceph", "minionC": "ceph"}
 
         local = mock_localclient.return_value
@@ -31,9 +32,8 @@ class TestClusterAssignment():
         assert len(cluster.names) == 1
         assert set(cluster.names['ceph']) == set(["minionA","minionB","minionC"])
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_single_cluster_unassigned(self, mock_localclient, mock_deepsea):
+    def test_single_cluster_unassigned(self, mock_localclient):
         cluster_dict = {"minionA":"ceph", "minionB": "ceph",
                 "minionC": "unassigned", "minionD": "ceph",
                 "minionE": "unassigned"}
@@ -45,9 +45,8 @@ class TestClusterAssignment():
         assert len(cluster.names) == 1
         assert set(cluster.names['ceph']) == set(["minionA","minionB","minionD"])
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_multi_cluster_unassigned(self, mock_localclient, mock_deepsea):
+    def test_multi_cluster_unassigned(self, mock_localclient):
         cluster_dict = {"minionA":"ceph", "minionB": "kraken",
                 "minionC": "unassigned", "minionD": "ceph",
                 "minionE": "kraken"}
@@ -73,12 +72,13 @@ class TestUtilMethods():
         assert validate.Util.parse_list_from_string(list_str, ",") == ['1', '4', '5', '7']
 
 
-# DeepseaMinions() and LocalClient() are instanziated by
+# LocalClient() is instanziated by
 # ClusterAssignment(). They require Mocking for the test environment
 class TestValidation():
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_dev_env(self, mock_localclient, mock_deepsea, monkeypatch):
+    def test_dev_env(self, mock_localclient, monkeypatch):
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
         monkeypatch.setenv('DEV_ENV', 'true')
         validator = validate.Validate("setup")
 
@@ -86,9 +86,8 @@ class TestValidation():
         validator.dev_env()
         assert validator.passed['DEV_ENV'] == 'True'
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_fsid(self, mock_localclient, mock_deepsea):
+    def test_fsid(self, mock_localclient):
         fsid = 'ba0ae5e1-4282-3282-a745-2bf12888a393'
         fake_data = {'admin.ceph':
                 {'fsid': fsid}}
@@ -101,9 +100,8 @@ class TestValidation():
         validator.fsid()
         assert validator.passed['fsid'] == 'valid'
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_fsid_invalid(self, mock_localclient, mock_deepsea):
+    def test_fsid_invalid(self, mock_localclient):
         fsid = 'not a valid-uuid  but still 36 chars'
         fake_data = {'admin.ceph':
                 {'fsid': fsid}}
@@ -116,9 +114,8 @@ class TestValidation():
         validator.fsid()
         assert "does not appear to be a UUID" in validator.errors['fsid'][0]
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_fsid_too_short(self, mock_localclient, mock_deepsea):
+    def test_fsid_too_short(self, mock_localclient):
         fsid = 'too short'
         fake_data = {'admin.ceph': {'fsid': fsid}}
 
@@ -130,9 +127,8 @@ class TestValidation():
         validator.fsid()
         assert "characters, not 36" in validator.errors['fsid'][0]
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_monitors(self, mock_localclient, mock_deepsea):
+    def test_monitors(self, mock_localclient):
         fake_data = {'mon1': { 'roles': 'mon'},
                      'mon2': { 'roles': 'mon'},
                      'mon3': { 'roles': 'mon'}}
@@ -145,9 +141,8 @@ class TestValidation():
         validator.monitors()
         assert validator.passed['monitors'] == "valid"
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_monitors_too_few(self, mock_localclient, mock_deepsea):
+    def test_monitors_too_few(self, mock_localclient):
         fake_data = {'mon1': { 'roles': 'mon'},
                      'mon2': { 'roles': 'mon'}}
 
@@ -159,9 +154,8 @@ class TestValidation():
         validator.monitors()
         assert "Too few monitors" in validator.errors['monitors'][0]
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_mgrs(self, mock_localclient, mock_deepsea):
+    def test_mgrs(self, mock_localclient):
         fake_data = {'mgr1': { 'roles': 'mgr'},
                      'mgr2': { 'roles': 'mgr'},
                      'mgr3': { 'roles': 'mgr'}}
@@ -174,9 +168,8 @@ class TestValidation():
         validator.mgrs()
         assert validator.passed['mgrs'] == "valid"
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_mgrs_too_few(self, mock_localclient, mock_deepsea):
+    def test_mgrs_too_few(self, mock_localclient):
         fake_data = {'mgr1': { 'roles': 'mgr'},
                      'mgr2': { 'roles': 'mgr'}}
 
@@ -188,9 +181,8 @@ class TestValidation():
         validator.mgrs()
         assert "Too few mgrs" in validator.errors['mgrs'][0]
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_storage(self, mock_localclient, mock_deepsea):
+    def test_storage(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
                                 'ceph': {'storage': 'dummy_osds'}},
                      'node2': {'roles': 'storage',
@@ -208,9 +200,8 @@ class TestValidation():
         validator.storage()
         assert validator.passed['storage'] == 'valid'
         
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_storage_missing_attribute(self, mock_localclient, mock_deepsea):
+    def test_storage_missing_attribute(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
                                 'ceph': {'storage': 'dummy_osds'}},
                      'node2': {'roles': 'storage',
@@ -227,9 +218,8 @@ class TestValidation():
         validator.storage()
         assert "missing storage attribute" in validator.errors['storage'][0] 
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient', autospec=True)
-    def test_storage_too_few(self, mock_localclient, mock_deepsea):
+    def test_storage_too_few(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
                                 'ceph': {'storage': 'dummy_osds'}}}
 
@@ -242,9 +232,8 @@ class TestValidation():
         assert "Too few storage nodes" in validator.errors['storage'][0]
 
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient')
-    def test_salt_version(self, mock_localclient, mock_deepsea):
+    def test_salt_version(self, mock_localclient):
         fake_data = { 'admin.ceph': '2018.1.99',
                       'data.ceph': '2018.1.99'}
 
@@ -256,9 +245,8 @@ class TestValidation():
         validator.salt_version()
         assert validator.passed['salt_version'] == 'valid'
 
-    @patch('validate.DeepseaMinions')
     @patch('salt.client.LocalClient')
-    def test_salt_version_unsupported(self, mock_localclient, mock_deepsea):
+    def test_salt_version_unsupported(self, mock_localclient):
         fake_data = { 'admin.ceph': '2016.11.9',
                       'data.ceph': '2018.1.99'}
 

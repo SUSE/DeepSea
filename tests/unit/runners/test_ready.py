@@ -1,5 +1,5 @@
 from mock import patch, MagicMock
-from srv.modules.runners import ready
+from srv.modules.utils import ready
 
 
 class TestChecks():
