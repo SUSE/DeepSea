@@ -39,3 +39,15 @@ start mon:
     - require:
       - cmd: create_mon_fs
     - enable: True
+
+
+wait for mon:
+  module.run:
+    - name: cephprocesses.wait
+    - kwargs:
+        'timeout': 6
+        'delay': 2
+        'roles':
+          - mon
+    - fire_event: True
+    - failhard: True
