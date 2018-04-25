@@ -1,12 +1,8 @@
 #
 # This file is part of the DeepSea integration test suite
 #
-# It *must* be called like so:
-#
-#     source $BASEDIR/common/common.sh $BASEDIR
-#
 
-BASEDIR=${1}
+# BASEDIR is set by the calling script
 source $BASEDIR/common/deploy.sh
 source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh

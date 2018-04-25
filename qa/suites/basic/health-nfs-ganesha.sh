@@ -27,8 +27,7 @@ BASEDIR=$(readlink -f "$(dirname ${0})/../..")
 test -d $BASEDIR
 [[ $BASEDIR =~ \/qa$ ]]
 
-source $BASEDIR/common/common.sh $BASEDIR
-source $BASEDIR/common/nfs-ganesha.sh
+source $BASEDIR/common/common.sh
 
 function usage {
     set +x
