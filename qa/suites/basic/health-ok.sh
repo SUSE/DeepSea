@@ -32,11 +32,10 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  $SCRIPTNAME [-h,--help] [--cli] [--dashboard] [--mini]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--mini]"
     echo
     echo "Options:"
     echo "    --cli         Use DeepSea CLI"
-    echo "    --dashboard   Deploy with dashboard MGR module"
     echo "    --encryption  Deploy OSDs with data-at-rest encryption"
     echo "    --mini        Omit long-running tests"
     echo "    --help        Display this usage message"
@@ -46,7 +45,7 @@ function usage {
 assert_enhanced_getopt
 
 TEMP=$(getopt -o h \
---long "cli,dashboard,encrypted,encryption,help,mini,smoke" \
+--long "cli,encrypted,encryption,help,mini,smoke" \
 -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -56,13 +55,11 @@ eval set -- "$TEMP"
 
 # process command-line options
 CLI=""
-DASHBOARD=""
 ENCRYPTION=""
 MINI=""
 while true ; do
     case "$1" in
         --cli) CLI="$1" ; shift ;;
-        --dashboard) DASHBOARD="$1" ; shift ;;
         --encrypted|--encryption) ENCRYPTION="$1" ; shift ;;
         --mini|--smoke) MINI="$1" ; shift ;;
         -h|--help) usage ;;    # does not return
@@ -71,7 +68,7 @@ while true ; do
     esac
 done
 echo "WWWW"
-echo "Running health-ok.sh with options $CLI $DASHBOARD $ENCRYPTION $MINI"
+echo "Running health-ok.sh with options $CLI $ENCRYPTION $MINI"
 
 # deploy phase
 MIN_NODES=1
