@@ -47,10 +47,10 @@ function ping_minions_until_all_respond {
     local NUM_MINIONS="$1"
     local RESPONDING=""
     for i in {1..20} ; do
+        sleep 10
         RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
         echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
         test "$NUM_MINIONS" -eq "$RESPONDING" && break
-        sleep 10
     done
 }
 
@@ -62,8 +62,8 @@ function update_salt {
     salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
     systemctl restart salt-api.service
     systemctl restart salt-master.service
+    sleep 15
     salt '*' cmd.run 'systemctl restart salt-minion'
-    sleep 10
     ping_minions_until_all_respond "$TOTAL_NODES"
     salt '*' saltutil.sync_all
 }
