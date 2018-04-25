@@ -47,7 +47,6 @@ import uuid
 import ipaddress
 import logging
 # pylint: disable=relative-import
-from deepsea_minions import DeepseaMinions
 import operator
 import pprint
 
@@ -495,8 +494,7 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        target = DeepseaMinions()
-        self.search = target.deepsea_minions
+        self.search = __utils__['deepsea_minions.show']()
 
         self.networks = self._networks(self.servers)
         self.public_networks, self.cluster_networks = self.public_cluster(self.networks.copy())
@@ -780,8 +778,7 @@ class CephCluster(object):
             self.names = ['ceph']
         self.writer = writer
 
-        target = DeepseaMinions()
-        search = target.deepsea_minions
+        self.search = __utils__['deepsea_minions.show']()
 
         local = salt.client.LocalClient()
         self.minions = local.cmd(search, 'grains.get', ['id'], tgt_type="compound")
@@ -962,8 +959,7 @@ def _get_existing_cluster_networks(addrs, public_networks=[]):
     returns a list of addresses consisting of network prefix followed by the
     cidr prefix (e.g. [ "10.0.0.0/24" ]).  It may return an empty list.
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
+    self.search = __utils__['deepsea_minions.show']()
 
     local = salt.client.LocalClient()
     # Stores the derived network addresses (in CIDR notation) of all addresses contained in addrs.
@@ -1065,8 +1061,7 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
+    self.search = __utils__['deepsea_minions.show']()
     local = salt.client.LocalClient()
     settings = Settings()
     salt_writer = SaltWriter(**kwargs)

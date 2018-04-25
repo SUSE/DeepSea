@@ -106,6 +106,11 @@ copy-files:
 	install -m 644 srv/modules/runners/__pycache__/*.pyc $(DESTDIR)/srv/modules/runners/__pycache__
 	install -m 644 srv/modules/runners/*.py* $(DESTDIR)/srv/modules/runners/
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(DESTDIR)/srv/modules/runners/deepsea.py
+	# utils
+	install -d -m 755 $(DESTDIR)/srv/modules/utils
+	install -d -m 755 $(DESTDIR)/srv/modules/utils/__pycache__
+	install -m 644 srv/modules/utils/__pycache__/*.pyc $(DESTDIR)/srv/modules/utils/__pycache__
+	install -m 644 srv/modules/utils/*.py* $(DESTDIR)/srv/modules/utils
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/benchmarks

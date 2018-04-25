@@ -88,6 +88,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/modules/modules
 %dir /srv/modules/runners
 %dir /srv/modules/runners/__pycache__
+%dir /srv/modules/utils/
+%dir /srv/modules/__pycache__
 %dir /srv/modules/pillar
 %dir /srv/modules/pillar/__pycache__
 %dir %attr(0755, salt, salt) /srv/salt/ceph
@@ -393,6 +395,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 /srv/modules/modules/*.py*
 /srv/modules/runners/*.py*
+/srv/modules/utils/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/config.yml
@@ -404,6 +407,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 %config /srv/modules/__pycache__/*.pyc
 %config /srv/modules/runners/__pycache__/*.pyc
+%config /srv/modules/utils/__pycache__/*.pyc
 %config /srv/modules/pillar/__pycache__/*.pyc
 %config /srv/salt/_modules/__pycache__/*.pyc
 %config /srv/salt/__pycache__/*.pyc
