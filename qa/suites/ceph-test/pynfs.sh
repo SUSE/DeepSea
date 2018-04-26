@@ -18,17 +18,23 @@
 # forensic analysis.
 #
 
-BASEDIR=$(pwd)
-source $BASEDIR/common/common.sh
+set -ex
+
+SCRIPTNAME=$(basename ${0})
+BASEDIR=$(readlink -f "$(dirname ${0})/../..")
+test -d $BASEDIR
+[[ $BASEDIR =~ \/qa$ ]]
+
+source $BASEDIR/common/common.sh $BASEDIR
 source $BASEDIR/common/nfs-ganesha.sh
 
 function usage {
     set +x
-    echo "${0} - script for testing NFS Ganesha deployment by running PyNFS test suite"
+    echo "$SCRIPTNAME - script for testing NFS Ganesha deployment by running PyNFS test suite"
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  ${0} [-h,--help] [--cli] [--fsal={cephfs,rgw,both}]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--fsal={cephfs,rgw,both}]"
     echo
     echo "Options:"
     echo "    --cli      Use DeepSea CLI"

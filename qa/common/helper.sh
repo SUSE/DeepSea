@@ -13,7 +13,7 @@ function _report_stage_failure_and_die {
   echo "********** Stage $stage_num failed with $number_of_failures failures **********"
   echo "Here comes the systemd log:"
   #cat $stage_log_path
-  journalctl -r | head -n 500
+  journalctl -r | head -n 1000
   exit 1
 }
 
@@ -74,7 +74,7 @@ function _run_stage {
     if [[ "$FAILED" -gt "0" ]]; then
       _report_stage_failure_and_die $stage_num
     fi
-    echo "********** Stage $stage_num completed successefully **********"
+    echo "********** Stage $stage_num completed successfully **********"
   else
     _report_stage_failure_and_die $stage_num
   fi

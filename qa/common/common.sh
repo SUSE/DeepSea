@@ -2,50 +2,71 @@
 # This file is part of the DeepSea integration test suite
 #
 
-BASEDIR=$(pwd)
+# BASEDIR is set by the calling script
+source $BASEDIR/common/deploy.sh
 source $BASEDIR/common/helper.sh
 source $BASEDIR/common/json.sh
+source $BASEDIR/common/nfs-ganesha.sh
+source $BASEDIR/common/policy.sh
+source $BASEDIR/common/pool.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
-export DEV_ENV="true"         # FIXME set only when TOTALNODES < 4
-export INTEGRATION_ENV="true" # since we can't rely on DEV_ENV always being set
 
-# determine hostname of Salt Master
-MASTER_MINION_SLS=/srv/pillar/ceph/master_minion.sls
-if test -s $MASTER_MINION_SLS ; then
-    SALT_MASTER=$(cat $MASTER_MINION_SLS | \
-                 sed 's/.*master_minion:[[:blank:]]*\(\w\+\)[[:blank:]]*/\1/' | \
-                 grep -v '^$')
-else
-    echo "Could not determine the Salt Master from DeepSea pillar data. Is DeepSea installed?"
-    exit 1
-fi
+function global_test_init {
+    #
+    # determine hostname of Salt Master
+    SALT_MASTER=$(hostname)
+    #
+    # show which repos are active/enabled
+    zypper lr -upEP
+    #
+    # show salt RPM version in log and fail if salt is not installed
+    rpm -q salt-master
+    rpm -q salt-minion
+    rpm -q salt-api
+    #
+    # show deepsea RPM version in case deepsea was installed from RPM
+    rpm -q deepsea || true
+    #
+    # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
+    # (otherwise we would have to set deepsea grain on all minions)
+    echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
+    cat /srv/pillar/ceph/deepsea_minions.sls
+    #
+    # get list of minions
+    if type salt-key > /dev/null 2>&1; then
+        MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+    else
+        echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
+        exit 1
+    fi
+}
 
-# show which repos are active/enabled
-zypper lr -upEP
+function ping_minions_until_all_respond {
+    local NUM_MINIONS="$1"
+    local RESPONDING=""
+    for i in {1..20} ; do
+        sleep 10
+        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
+        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
+        test "$NUM_MINIONS" -eq "$RESPONDING" && break
+    done
+}
 
-# show salt RPM version in log and fail if salt is not installed
-rpm -q salt-master
-rpm -q salt-minion
-rpm -q salt-api
-
-# show deepsea RPM version in case deepsea was installed from RPM
-rpm -q deepsea || true
-
-# set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
-# (otherwise we would have to set deepsea grain on all minions)
-echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-cat /srv/pillar/ceph/deepsea_minions.sls
-
-# get list of minions
-if type salt-key > /dev/null 2>&1; then
-    MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
-else
-    echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
-    exit 1
-fi
-
+function update_salt {
+    # make sure we are running the latest Salt before Stage 0 starts,
+    # otherwise Stage 0 will update Salt and then fail with cryptic
+    # error messages
+    TOTAL_NODES=$(json_total_nodes)
+    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
+    systemctl restart salt-api.service
+    systemctl restart salt-master.service
+    sleep 15
+    salt '*' cmd.run 'systemctl restart salt-minion'
+    ping_minions_until_all_respond "$TOTAL_NODES"
+    salt '*' saltutil.sync_all
+}
 
 #
 # functions for processing command-line arguments
@@ -129,60 +150,59 @@ function run_stage_5 {
 #
 
 function change_rgw_conf {
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/rgw.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/rgw.conf
 foo = bar
 EOF
 }
 
 function change_osd_conf {
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/osd.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/osd.conf
 foo = bar
 EOF
 }
 
 function change_mon_conf {
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
 foo = bar
 EOF
 }
 
 function ceph_conf_small_cluster {
-  local STORAGENODES=$(json_storage_nodes)
-  test ! -z "$STORAGENODES"
-  if [ "x$STORAGENODES" = "x1" ] ; then
-    # 1 node, 2 OSDs
-    echo "Adjusting ceph.conf for operation with 1 storage node"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    local STORAGENODES=$(json_storage_nodes)
+    test -n "$STORAGENODES"
+    if [ "$STORAGENODES" -eq 1 ] ; then
+        # 1 node, 2 OSDs
+        echo "Adjusting ceph.conf for operation with 1 storage node"
+        cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 16
 osd pool default size = 2
 osd crush chooseleaf type = 0 # failure domain == osd
 EOF
-  elif [ "x$STORAGENODES" = "x2" ] ; then
-    # 2 nodes, 4 OSDs
-    echo "Adjusting ceph.conf for operation with 2 storage nodes"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    elif [ "$STORAGENODES" -eq 2 ] ; then
+        # 2 nodes, 4 OSDs
+        echo "Adjusting ceph.conf for operation with 2 storage nodes"
+        cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 8
 osd pool default size = 2
 EOF
-  else
-    echo "Three or more storage nodes; not adjusting ceph.conf"
-    # TODO: look up default value of "mon pg warn min per osd"
-  fi
+    else
+        echo "Three or more storage nodes; not adjusting ceph.conf"
+        # TODO: look up default value of "mon pg warn min per osd"
+    fi
 }
 
 function ceph_conf_mon_allow_pool_delete {
     echo "Adjusting ceph.conf to allow pool deletes"
-    cat <<EOF >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon allow pool delete = true
 EOF
 }
 
-#
-# functions for generating osd profiles
-#
-
-function proposal_populate_dmcrypt {
-  salt-run proposal.populate encryption='dmcrypt' name='dmcrypt'
+function ceph_conf_dashboard {
+    echo "Adjusting ceph.conf for deployment of dashboard MGR module"
+    cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/mon.conf
+mgr initial modules = dashboard
+EOF
 }
 
 #
@@ -190,6 +210,7 @@ function proposal_populate_dmcrypt {
 #
 
 function restart_services {
+  rm -rf /srv/modules/runners/__pycache__
   salt-run state.orch ceph.restart
 }
 
@@ -229,204 +250,6 @@ function rgw_restarted {
   set -e
 }
 
-#
-# functions for generating policy.cfg
-#
-
-function policy_cfg_base {
-  cat <<EOF > /srv/pillar/ceph/proposals/policy.cfg
-# Cluster assignment
-cluster-ceph/cluster/*.sls
-# Common configuration
-config/stack/default/global.yml
-config/stack/default/ceph/cluster.yml
-# Role assignment - master
-role-master/cluster/${SALT_MASTER}*.sls
-# Role assignment - admin
-role-admin/cluster/*.sls
-EOF
-}
-
-function policy_cfg_mon_flex {
-  local TOTALNODES=$(json_total_nodes)
-  test -n "$TOTALNODES"
-  if [ "$TOTALNODES" -eq 1 ] ; then
-    echo "Only one node in cluster; deploying 1 mon and 1 mgr"
-    policy_cfg_one_mon
-  elif [ "$TOTALNODES" -eq 2 ] ; then
-    echo "2-node cluster; deploying 1 mon and 1 mgr"
-    policy_cfg_one_mon
-  elif [ "$TOTALNODES" -ge 3 ] ; then
-    policy_cfg_three_mons
-  else
-    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
-    exit 1
-  fi
-}
-
-function policy_cfg_one_mon {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - 1 mon, 1 mgr
-role-mon/cluster/*.sls slice=[:1]
-role-mgr/cluster/*.sls slice=[:1]
-EOF
-}
-
-function policy_cfg_three_mons {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - 3 mons, 3 mgrs
-role-mon/cluster/*.sls slice=[:3]
-role-mgr/cluster/*.sls slice=[:3]
-EOF
-}
-
-function policy_cfg_storage {
-  # first argument is number of non-storage ("client") nodes; defaults to 0
-  # second argument controls whether OSDs are encrypted; default not encrypted
-  local CLIENTS=$1
-  test -z "$CLIENTS" && CLIENTS=0
-  local ENCRYPTION=$2
-
-  local PROFILE="default"
-  if [ -n "$ENCRYPTION" ] ; then
-     PROFILE="dmcrypt"
-  fi
-
-  if [ "$CLIENTS" -eq 0 ] ; then
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-$PROFILE/cluster/*.sls
-profile-$PROFILE/stack/default/ceph/minions/*yml
-EOF
-  elif [ "$CLIENTS" -ge 1 ] ; then
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Hardware Profile
-profile-default/cluster/*.sls slice=[:-$CLIENTS]
-profile-default/stack/default/ceph/minions/*yml slice=[:-$CLIENTS]
-EOF
-  else
-    echo "Unexpected number of clients ->$CLIENTS<-; bailing out!"
-  fi
-}
-
-function policy_cfg_mds {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - mds (all but last node)
-role-mds/cluster/*.sls slice=[:-1]
-EOF
-}
-
-function policy_cfg_rgw {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - rgw (first node)
-role-rgw/cluster/*.sls slice=[:1]
-EOF
-}
-
-function policy_cfg_rgw_ssl {
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - rgw (first node)
-role-rgw/cluster/*.sls slice=[:1]
-role-rgw-ssl/cluster/*.sls slice=[:1]
-EOF
-}
-
-function policy_cfg_openattic_with_rgw {
-  local TOTALNODES=$(json_total_nodes)
-  test -n "$TOTALNODES"
-  if [ "$TOTALNODES" -eq 1 ] ; then
-    echo "Only one node in cluster; colocating rgw and openattic roles"
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - openattic (first node)
-role-openattic/cluster/*.sls slice=[:1]
-# Role assignment - rgw (colocate with openattic on first node)
-role-rgw/cluster/*.sls slice=[:1]
-EOF
-  elif [ "$TOTALNODES" -ge 2 ] ; then
-    echo "Deploying rgw and openattic roles on separate nodes"
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - openattic (first node)
-role-openattic/cluster/*.sls slice=[:1]
-# Role assignment - rgw (second node)
-role-rgw/cluster/*.sls slice=[1:2]
-EOF
-  else
-    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
-    exit 1
-  fi
-}
-
-function policy_cfg_openattic_rgw_igw_nfs {
-  local TOTALNODES=$(json_total_nodes)
-  test -n "$TOTALNODES"
-  if [ "$TOTALNODES" -eq 1 ] ; then
-    echo "Only one node in cluster; colocating rgw, igw, ganesha with openattic"
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - openattic (first node)
-role-openattic/cluster/*.sls slice=[:1]
-# Role assignment - rgw (colocate with openattic on first node)
-role-rgw/cluster/*.sls slice=[:1]
-# Role assignment - igw (colocate with openattic on first node)
-role-igw/cluster/*.sls slice=[:1]
-# Role assignment - ganesha (colocate with openattic on first node)
-role-ganesha/cluster/*.sls slice=[:1]
-EOF
-  elif [ "$TOTALNODES" -eq 2 ] ; then
-    echo "Two nodes in cluster; deploying openattic one one node, rgw+igw+ganesha on the other"
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - openattic (first node)
-role-openattic/cluster/*.sls slice=[:1]
-# Role assignment - rgw (second node)
-role-rgw/cluster/*.sls slice=[1:2]
-# Role assignment - igw (second node)
-role-igw/cluster/*.sls slice=[1:2]
-# Role assignment - ganesha (second node)
-role-ganesha/cluster/*.sls slice=[1:2]
-EOF
-  elif [ "$TOTALNODES" -eq 3 ] ; then
-    echo "Three nodes in cluster; deploying openattic one one node, rgw on second, igw+ganesha on third"
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - openattic (first node)
-role-openattic/cluster/*.sls slice=[:1]
-# Role assignment - rgw (second node)
-role-rgw/cluster/*.sls slice=[1:2]
-# Role assignment - igw (third node)
-role-igw/cluster/*.sls slice=[2:3]
-# Role assignment - ganesha (third node)
-role-ganesha/cluster/*.sls slice=[2:3]
-EOF
-  elif [ "$TOTALNODES" -ge 4 ] ; then
-    echo "Deploying openattic, rgw, igw, and ganesha on separate nodes"
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - openattic (first node)
-role-openattic/cluster/*.sls slice=[:1]
-# Role assignment - rgw (second node)
-role-rgw/cluster/*.sls slice=[1:2]
-# Role assignment - igw (third node)
-role-igw/cluster/*.sls slice=[2:3]
-# Role assignment - ganesha (fourth node)
-role-ganesha/cluster/*.sls slice=[3:4]
-EOF
-  else
-    echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
-    exit 1
-  fi
-}
-
-function policy_cfg_igw {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - igw (first node)
-role-igw/cluster/*.sls slice=[:1]
-EOF
-}
-
-function policy_cfg_nfs_ganesha {
-  cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - NFS-Ganesha (first node)
-role-ganesha/cluster/*.sls slice=[:1]
-EOF
-}
-
 
 #
 # functions for creating pools
@@ -443,37 +266,6 @@ function pgs_per_pool {
   let "TOTALPGS = $TOTALOSDS * 100"
   let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
   echo $PGSPEROSD
-}
-
-function create_pool {
-  # Special-purpose function for creating pools incrementally. For example,
-  # if your test case needs 2 pools "foo" and "bar", but you cannot create
-  # them all at once for some reason. Otherwise, use create_all_pools_at_once.
-  #
-  # sample usage:
-  #
-  # create_pool foo 2
-  # ... do something ...
-  # create_pool bar 2
-  # ... do something else ...
-  #
-  local POOLNAME=$1
-  test -n "$POOLNAME"
-  local TOTALPOOLS=$2
-  test -n "$TOTALPOOLS"
-  local PGSPERPOOL=$(pgs_per_pool $TOTALPOOLS)
-  ceph osd pool create $POOLNAME $PGSPERPOOL $PGSPERPOOL replicated
-}
-
-function create_all_pools_at_once {
-  # sample usage: create_all_pools_at_once foo bar
-  local TOTALPOOLS="${#@}"
-  local PGSPERPOOL=$(pgs_per_pool $TOTALPOOLS)
-  for POOLNAME in "$@"
-  do
-      ceph osd pool create $POOLNAME $PGSPERPOOL $PGSPERPOOL replicated
-  done
-  ceph osd pool ls detail
 }
 
 
@@ -549,11 +341,11 @@ function ceph_version_test {
 # for a loose definition of "matches"
   rpm -q ceph
   local RPM_NAME=$(rpm -q ceph)
-  local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
+  local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)/; print "$1\n";')
   echo "According to RPM, the ceph upstream version is $RPM_CEPH_VERSION"
   ceph --version
   local BUFFER=$(ceph --version)
-  local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)(\-|\+)/; print "$1\n";')
+  local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)/; print "$1\n";')
   echo "According to \"ceph --version\", the ceph upstream version is $CEPH_CEPH_VERSION"
   test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
 }
