@@ -15,7 +15,6 @@ import logging
 import salt.client
 import yaml
 # pylint: disable=import-error
-from deepsea_minions import DeepseaMinions
 
 log = logging.getLogger(__name__)
 
@@ -89,28 +88,48 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
-TARGET = DeepseaMinions()
 
-STD_ARGS = {
-    'leftovers': False,
-    'standalone': False,
-    'nvme-ssd-spinner': False,
-    'nvme-ssd': False,
-    'nvme-spinner': False,
-    'ssd-spinner': False,
-    'ratio': 5,
-    'db-ratio': 5,
-    'target': TARGET.deepsea_minions,
-    'data': 0,
-    'journal': 0,
-    'wal': 0,
-    'name': 'default',
-    'format': 'bluestore',
-    'encryption': '',
-    'journal-size': '5g',
-    'db-size': '500m',
-    'wal-size': '500m',
-}
+# pylint: disable=too-few-public-methods
+class Target(object):
+    """
+    Wrapperclass around __utils__ to avoid early access to dunders
+    """
+    @staticmethod
+    def show():
+        """
+        Wraps deepsea_minions.show
+        """
+        return __utils__['deepsea_minions.show']()
+
+
+class StdArgs(object):
+    """
+    Wrapper around STD_ARGS to avoid early expanding of Target().show()
+    """
+    @staticmethod
+    def write_out():
+        """
+        Return STD_ARGS
+        """
+        return {
+         'leftovers': False,
+         'standalone': False,
+         'nvme-ssd-spinner': False,
+         'nvme-ssd': False,
+         'nvme-spinner': False,
+         'ssd-spinner': False,
+         'ratio': 5,
+         'db-ratio': 5,
+         'target': Target().show(),
+         'data': 0,
+         'journal': 0,
+         'wal': 0,
+         'name': 'default',
+         'format': 'bluestore',
+         'encryption': '',
+         'journal-size': '5g',
+         'db-size': '500m',
+         'wal-size': '500m'}
 
 BASE_DIR = '/srv/pillar/ceph/proposals'
 
@@ -119,7 +138,7 @@ def _parse_args(kwargs):
     """
     Parse command line arguments
     """
-    args = STD_ARGS.copy()
+    args = StdArgs().write_out().copy()
     args.update(kwargs)
     if 'kwargs' in kwargs:
         args.update(kwargs['kwargs'])

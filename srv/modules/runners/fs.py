@@ -18,7 +18,6 @@ import logging
 import salt.client
 import salt.utils.error
 # pylint: disable=relative-import
-from deepsea_minions import DeepseaMinions
 import six
 
 log = logging.getLogger(__name__)
@@ -325,8 +324,7 @@ def _inspect_ceph_statedir(path):
     Returns a dictionary of Path objects keyed on minion id.
 
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
+    search = __utils__['deepsea_minions.show']
     local = salt.client.LocalClient()
 
     # A container of Path's keyed on minion id.

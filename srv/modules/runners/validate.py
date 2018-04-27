@@ -31,7 +31,6 @@ import yaml
 import salt.client
 import salt.utils.error
 # pylint: disable=relative-import
-from deepsea_minions import DeepseaMinions
 
 
 log = logging.getLogger(__name__)
@@ -139,8 +138,8 @@ class Preparation(object):
     """
 
     def __init__(self):
-        self.target = DeepseaMinions()
-        self.search = self.target.deepsea_minions
+        self.search = __utils__['deepsea_minions.show']()
+        self.matches = __utils__['deepsea_minions.matches']()
         self.local = salt.client.LocalClient()
 
 
@@ -772,10 +771,11 @@ class Validate(Preparation):
         """
         Scan all minions for ceph versions in their repos.
         """
-        target = DeepseaMinions()
-        search = target.deepsea_minions
         local = salt.client.LocalClient()
-        contents = local.cmd(search, 'pkg.latest_version', ['ceph-common'], tgt_type="compound")
+        contents = local.cmd(self.search,
+                             'pkg.latest_version',
+                             ['ceph-common'],
+                             tgt_type="compound")
         for minion, version in contents.items():
             # sometimes, version contains a string value
             # other times, it contains an empty dict
@@ -953,16 +953,16 @@ class Validate(Preparation):
             files = glob.glob(line)
         return files
 
-    def deepsea_minions(self, target):
+    def deepsea_minions(self):
         """
         Verify deepsea_minions is set
         """
-        if target.deepsea_minions:
-            if target.matches:
+        if self.search:
+            if self.matches:
                 self.passed['deepsea_minions'] = "valid"
             else:
                 # pylint: disable=line-too-long
-                msg = ("No minions matched for {} - See `man deepsea-minions`".format(target.deepsea_minions))
+                msg = ("No minions matched for {} - See `man deepsea-minions`".format(self.search))
                 self.errors['deepsea_minions'] = [msg]
         else:
             msg = ("deepsea_minions not defined - " +
@@ -1049,7 +1049,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     printer = get_printer(**kwargs)
     valid = Validate(cluster, search_pillar=True, printer=printer,
                      search=search)
-    valid.deepsea_minions(valid.target)
+    valid.deepsea_minions()
     valid.lint_yaml_files()
     if not valid.in_dev_env:
         valid.profiles_populated()
@@ -1146,7 +1146,7 @@ def setup(**kwargs):
     """
     printer = get_printer(**kwargs)
     valid = Validate("setup", search_pillar=True, printer=printer)
-    valid.deepsea_minions(valid.target)
+    valid.deepsea_minions()
     valid.master_minion()
     valid.ceph_version()
     valid.salt_version()

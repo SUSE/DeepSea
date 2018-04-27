@@ -30,8 +30,6 @@ import salt.utils
 import salt.utils.minions
 import salt.loader
 # pylint: disable=relative-import
-import ready
-
 import re
 import string
 import random
@@ -47,7 +45,6 @@ import uuid
 import ipaddress
 import logging
 # pylint: disable=relative-import
-from deepsea_minions import DeepseaMinions
 import operator
 import pprint
 
@@ -495,8 +492,7 @@ class CephRoles(object):
         self.writer = writer
 
         self.root_dir = settings.root_dir
-        target = DeepseaMinions()
-        self.search = target.deepsea_minions
+        self.search = __utils__['deepsea_minions.show']()
 
         self.networks = self._networks(self.servers)
         self.public_networks, self.cluster_networks = self.public_cluster(self.networks.copy())
@@ -780,13 +776,12 @@ class CephCluster(object):
             self.names = ['ceph']
         self.writer = writer
 
-        target = DeepseaMinions()
-        search = target.deepsea_minions
+        self.search = __utils__['deepsea_minions.show']()
 
         local = salt.client.LocalClient()
-        self.minions = local.cmd(search, 'grains.get', ['id'], tgt_type="compound")
+        self.minions = local.cmd(self.search, 'grains.get', ['id'], tgt_type="compound")
 
-        _rgws = local.cmd(search, 'pillar.get', ['rgw_configurations'], tgt_type="compound")
+        _rgws = local.cmd(self.search, 'pillar.get', ['rgw_configurations'], tgt_type="compound")
         for node in _rgws:
             self.rgw_configurations = _rgws[node]
             # Just need first
@@ -962,8 +957,7 @@ def _get_existing_cluster_networks(addrs, public_networks=[]):
     returns a list of addresses consisting of network prefix followed by the
     cidr prefix (e.g. [ "10.0.0.0/24" ]).  It may return an empty list.
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
+    self.search = __utils__['deepsea_minions.show']()
 
     local = salt.client.LocalClient()
     # Stores the derived network addresses (in CIDR notation) of all addresses contained in addrs.
@@ -1065,8 +1059,7 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
-    target = DeepseaMinions()
-    search = target.deepsea_minions
+    search = __utils__['deepsea_minions.show']()
     local = salt.client.LocalClient()
     settings = Settings()
     salt_writer = SaltWriter(**kwargs)
@@ -1075,7 +1068,7 @@ def engulf_existing_cluster(**kwargs):
     from . import validate
     validator = validate.Validate("ceph", search_pillar=True,
                                   printer=validate.get_printer())
-    validator.deepsea_minions(validator.target)
+    validator.deepsea_minions()
     if validator.errors:
         validator.report()
         return False
@@ -1083,7 +1076,7 @@ def engulf_existing_cluster(**kwargs):
     policy_cfg = []
 
     # Check for firewall/apparmor.
-    if not ready.check("ceph", True, search):
+    if not __utils__['ready.check']("ceph", True, search):
         return False
 
     # First, hand apply select Stage 0 functions
