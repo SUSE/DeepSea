@@ -510,5 +510,3 @@ class TestCephDiskDevice():
 
         ret = cephdisks._prefer_underscores(devices)
         assert ret == -1
-
-

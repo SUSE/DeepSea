@@ -51,7 +51,7 @@ def _grain_host(client, minion):
     """
     Return the host grain for a given minion, for use a short hostname
     """
-    return list(client.cmd(minion, 'grains.item', ['host']).values())[0]['host']
+    return list(client.cmd(minion, 'grains.item', ['nodename']).values())[0]['nodename']
 
 
 def minions(host=False, format='{}', **kwargs):
@@ -94,6 +94,17 @@ def one_minion(**kwargs):
     ret = [None]
     ret = minions(**kwargs)
     return ret[0]
+
+
+def first(**kwargs):
+    """
+    Some steps only need to be run once, but on any minion in a specific
+    search.  Return the first matching key.
+    """
+    ret = sorted(minions(**kwargs))
+    if ret:
+        return ret[0]
+    return ""
 
 
 def public_addresses(tuples=False, host=False, **kwargs):
