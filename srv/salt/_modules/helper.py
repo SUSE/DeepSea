@@ -20,7 +20,7 @@ def convert_out(out):
     requires to manipulate and compare it.
     """
     if isinstance(out, bytes):
-        return out.decode('ascii')
+        return out.decode()
     elif isinstance(out, str):
         return out
     elif isinstance(out, int):
@@ -52,7 +52,7 @@ def run(cmd, shell=False):
     _stdout = convert_out(proc.stdout.read())
     _stdout = _stdout.rstrip()
 
-    _stderr = convert_out(proc.stdout.read())
+    _stderr = convert_out(proc.stderr.read())
     _stderr = _stderr.rstrip()
 
     _retcode = proc.wait()
