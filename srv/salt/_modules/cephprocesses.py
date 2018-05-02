@@ -40,6 +40,8 @@ processes = {'mon': ['ceph-mon'],
              'benchmark-blockdev': [],
              'benchmark-rbd': [],
              'benchmark-fs': [],
+             'prometheus': [],
+             'grafana': [],
              'master': []}
 
 # Processes like lrbd have an inverted logic
