@@ -106,3 +106,16 @@ class TestPush():
 
         organized = p_d.organize('policy.cfg_trailing_and_leading_whitespace_and_trailing_comment')
         assert len(organized.keys()) == len(nodes)
+
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    def test_organize_function_missing_file(self):
+        result = push.organize()
+        assert result == ""
+
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('__builtin__.open', new=f_open)
+    def test_organize_function(self):
+        result = push.organize('policy.cfg')
+        assert result == {}
+
+
