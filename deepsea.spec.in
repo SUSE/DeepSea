@@ -267,6 +267,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/benchmark-blockdev
 %dir /srv/salt/ceph/rescind/benchmark-fs
 %dir /srv/salt/ceph/rescind/ganesha
+%dir /srv/salt/ceph/rescind/grafana
 %dir /srv/salt/ceph/rescind/igw
 %dir /srv/salt/ceph/rescind/igw/keyring
 %dir /srv/salt/ceph/rescind/igw/lrbd
@@ -277,6 +278,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/mgr
 %dir /srv/salt/ceph/rescind/mgr/keyring
 %dir /srv/salt/ceph/rescind/mon
+%dir /srv/salt/ceph/rescind/prometheus
 %dir /srv/salt/ceph/rescind/rgw
 %dir /srv/salt/ceph/rescind/rgw/keyring
 %dir /srv/salt/ceph/rescind/rgw/monitoring
@@ -603,6 +605,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/benchmark-blockdev/*.sls
 %config /srv/salt/ceph/rescind/benchmark-fs/*.sls
 %config /srv/salt/ceph/rescind/ganesha/*.sls
+%config /srv/salt/ceph/rescind/grafana/*.sls
 %config /srv/salt/ceph/rescind/igw/*.sls
 %config /srv/salt/ceph/rescind/igw/keyring/*.sls
 %config /srv/salt/ceph/rescind/igw/lrbd/*.sls
@@ -613,6 +616,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/mgr/*.sls
 %config /srv/salt/ceph/rescind/mgr/keyring/*.sls
 %config /srv/salt/ceph/rescind/mon/*.sls
+%config /srv/salt/ceph/rescind/prometheus/*.sls
 %config /srv/salt/ceph/rescind/rgw/*.sls
 %config /srv/salt/ceph/rescind/rgw/keyring/*.sls
 %config /srv/salt/ceph/rescind/rgw/monitoring/*.sls

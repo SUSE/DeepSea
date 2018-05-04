@@ -557,6 +557,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/client-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/ganesha
 	install -m 644 srv/salt/ceph/rescind/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/rescind/ganesha/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/grafana
+	install -m 644 srv/salt/ceph/rescind/grafana/*.sls $(DESTDIR)/srv/salt/ceph/rescind/grafana/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw
 	install -m 644 srv/salt/ceph/rescind/igw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/keyring
@@ -591,6 +593,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/benchmark-blockdev/*.sls $(DESTDIR)/srv/salt/ceph/rescind/benchmark-blockdev/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/benchmark-fs
 	install -m 644 srv/salt/ceph/rescind/benchmark-fs/*.sls $(DESTDIR)/srv/salt/ceph/rescind/benchmark-fs/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/prometheus
+	install -m 644 srv/salt/ceph/rescind/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/rescind/prometheus/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw
 	install -m 644 srv/salt/ceph/rescind/rgw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/rgw/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/rgw/keyring
