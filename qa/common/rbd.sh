@@ -15,8 +15,14 @@ function ceph_test_librbd_can_be_run {
   local TESTSCRIPT=/tmp/rbd_api_test.sh
   local CLIENTNODE=$(_client_node)
   cat << 'EOF' > $TESTSCRIPT
-set -ex
+set -e
 trap 'echo "Result: NOT_OK"' ERR
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
+zypper --non-interactive install --no-recommends ceph-test
 rpm -V ceph-test
 type ceph_test_librbd
 echo "Result: OK"
