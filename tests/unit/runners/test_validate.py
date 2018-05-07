@@ -182,6 +182,65 @@ class TestValidation():
         assert "Too few mgrs" in validator.errors['mgrs'][0]
 
     @patch('salt.client.LocalClient', autospec=True)
+    def test_ceph_updates(self, mock_localclient):
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'node1': [{'name': 'ceph'}],
+                     'node2': [{'name': 'ceph'}]}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.ceph_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 1
+        assert "On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_no_ceph_updates(self, mock_localclient):
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'node1': [],
+                     'node2': []}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.ceph_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 0
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_salt_updates(self, mock_localclient):
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'node1': [{'salt-minion': 'ceph'}],
+                     'node2': [{'salt-master': 'ceph'}]}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.salt_updates()
+        assert len(validator.errors) == 1
+        assert len(validator.warnings) == 0
+        assert "You have a salt update pending" in validator.errors['salt_updates'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_no_salt_updates(self, mock_localclient):
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'node1': [],
+                     'node2': []}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.salt_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 0
+
+
+    @patch('salt.client.LocalClient', autospec=True)
     def test_storage(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
                                'ceph': {'storage': 'dummy_osds'}},

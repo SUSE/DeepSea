@@ -63,6 +63,10 @@ class TestZypper():
         """
         pm.__grains__ = {'os': 'suse'}
         args = {'debug': False, 'kernel': False, 'reboot': False}
+        def pass_through(*args, **kwargs):
+            return args[0]
+        mock_func = create_autospec(lambda x: x, side_effect=pass_through)
+        pm.__salt__ = {'helper.convert_out': mock_func}
         yield PackageManager(**args).pm
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -94,6 +98,59 @@ class TestZypper():
         ret = zypp._updates_needed()
         assert po.called is True
         assert ret is True
+
+    @mock.patch('srv.salt._modules.packagemanager.ET')
+    def test_parse_xml(self, et_mock, zypp):
+        """
+        I think it's only mildly neccessary to test the xml lib
+        """
+        ret = zypp._parse_xml('test')
+        et_mock.fromstring.assert_called_once_with('test')
+
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
+    @mock.patch('srv.salt._modules.packagemanager.log')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test_list_updates(self, po, parse_mock, log_mock, refresh_mock, zypp):
+        """
+        no filter
+        """
+        inp =  [{'name': 'ceph', 'arch': 'x86_64'}]
+        po.return_value.communicate.return_value = ("packages out", "error")
+        parse_mock.return_value = inp
+        ret = zypp.list_updates()
+        assert ret == inp
+
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
+    @mock.patch('srv.salt._modules.packagemanager.log')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test_list_updates_1(self, po, parse_mock, log_mock, refresh_mock, zypp):
+        """
+        with filter
+        empty result
+        """
+        inp =  [{'name': 'ceph', 'arch': 'x86_64'}]
+        po.return_value.communicate.return_value = ("packages out", "error")
+        parse_mock.return_value = inp
+        ret = zypp.list_updates(_filter=['no_match'])
+        assert ret == []
+
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
+    @mock.patch('srv.salt._modules.packagemanager.log')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test_list_updates_3(self, po, parse_mock, log_mock, refresh_mock, zypp):
+        """
+        with filter
+        diff returns
+        """
+        inp = [{'name': 'ceph', 'arch': 'x86_64'}, {'name': 'no-match', 'arch': 'x86_64'}]
+        po.return_value.communicate.return_value = ("packages out", "error")
+        parse_mock.return_value = inp
+        ret = zypp.list_updates(_filter=['ceph'])
+        assert ret == [{'name': 'ceph', 'arch': 'x86_64'}]
+
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     def test__patches_needed(self, po, zypp):

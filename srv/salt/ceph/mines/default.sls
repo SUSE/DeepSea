@@ -1,5 +1,4 @@
 
-
 configure_mine_functions_conf:
   file.managed:
     - name: /etc/salt/minion.d/mine_functions.conf
@@ -17,4 +16,3 @@ manage_salt_minion_for_mines:
     - watch:
       - file: configure_mine_functions_conf
     - fire_event: True
-

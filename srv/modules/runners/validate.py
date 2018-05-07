@@ -29,6 +29,8 @@ from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,
 import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
+import salt.utils
+import salt.utils.minions
 import salt.utils.error
 # pylint: disable=relative-import
 
@@ -970,6 +972,51 @@ class Validate(Preparation):
             self.passed['kernel_module'] = 'valid'
         self._set_pass_status('kernel_module')
 
+    def salt_updates(self):
+        """
+        Salt Updates available?
+        Adds ~3 seconds to the setup validation
+        indipendent of the cluster size
+        I tried using a mine(.get) here but it turns
+        out that I _very_ often get stale results..
+        Refreshing the mine everytime before running
+        this command seems to defeat the point of
+        using a mine in the first place.
+        """
+
+        updates = self.local.cmd(self.matches,
+                                 'packagemanager.list_salt_updates',
+                                 tgt_type='list')
+        updates = [item for sublist in list(updates.values()) for item in sublist]
+        if not updates:
+            self.passed['salt_updates'] = "valid"
+        else:
+            # pylint: disable=line-too-long
+            msg = ("You have a salt update pending. In order to provide a smooth experience, please update these packages manually before proceeding. salt -I 'roles:master' state.apply ceph.updates.master and salt -G 'deepsea:*' state.apply ceph.updates.salt in case you have deepsea_minions defined otherwise run: salt -I 'cluster:ceph' state.apply ceph.updates.salt")
+            self.errors['salt_updates'] = [msg]
+
+    def ceph_updates(self):
+        """
+        Updates available?
+        Adds ~3 seconds to the setup validation
+        indipendent of the cluster size
+        I tried using a mine(.get) here but it turns
+        out that I _very_ often get stale results..
+        Refreshing the mine everytime before running
+        this command seems to defeat the point of
+        using a mine in the first place.
+        """
+        updates = self.local.cmd(self.matches,
+                                 'packagemanager.list_ceph_updates',
+                                 tgt_type='list')
+        updates = [item for sublist in list(updates.values()) for item in sublist]
+        if not updates:
+            self.passed['ceph_updates'] = "valid"
+        else:
+            # pylint: disable=line-too-long
+            msg = ("On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size.")
+            self.warnings['ceph_updates'] = [msg]
+
     def report(self):
         """
         Print the validation report
@@ -1164,6 +1211,8 @@ def setup(**kwargs):
     valid.master_minion()
     valid.ceph_version()
     valid.salt_version()
+    valid.ceph_updates()
+    valid.salt_updates()
     valid.report()
 
     if valid.errors:

@@ -5,6 +5,7 @@ Intervention into special conditions during package management
 """
 from __future__ import absolute_import
 from subprocess import Popen, PIPE
+import xml.etree.ElementTree as ET
 import logging
 import os
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
@@ -217,6 +218,32 @@ class Zypper(PackageManager):
         log.info('No Update Needed')
         return False
 
+    def _parse_xml(self, xml, find_str='.//update'):
+        """
+        utils method to parse xml from a str
+        """
+        root = ET.fromstring(xml)
+        ret = list()
+        for child in root.findall(find_str):
+            ret.append(child.attrib)
+        return ret
+
+    # pylint: disable=dangerous-default-value
+    def list_updates(self, _filter=[]):
+        """
+        List all pending updates (transformed from XML)
+        """
+        self._refresh()
+        cmd = "zypper -x lu"
+        log.debug('Executing {}'.format(cmd))
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        stdout, _ = proc.communicate()
+        stdout = __salt__['helper.convert_out'](stdout)
+        update_list = self._parse_xml(stdout)
+        if _filter:
+            return [x for x in update_list if any(w in x['name'] for w in _filter)]
+        return update_list
+
     def _patches_needed(self):
         """
         Updates that are sourced from an official Update
@@ -361,3 +388,38 @@ def migrate(**kwargs):
     pm = Zypper(**kwargs)
     # pylint: disable=protected-access
     pm._migrate()
+
+
+def updates_needed(**kwargs):
+    """
+    Are updates needed?
+    """
+    obj = PackageManager(**kwargs)
+    # pylint: disable=protected-access
+    return obj.pm._updates_needed()
+
+
+def list_all_updates(**kwargs):
+    """
+    List updates
+    """
+    obj = PackageManager(**kwargs)
+    return obj.pm.list_updates()
+
+
+def list_ceph_updates(**kwargs):
+    """
+    Convenience public method
+    List updates (only ceph)
+    """
+    obj = PackageManager(**kwargs)
+    return obj.pm.list_updates(_filter=['ceph'])
+
+
+def list_salt_updates(**kwargs):
+    """
+    Convenience public method
+    List updates (only salt)
+    """
+    obj = PackageManager(**kwargs)
+    return obj.pm.list_updates(_filter=['salt-minion', 'salt-master'])
