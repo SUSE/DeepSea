@@ -17,7 +17,7 @@ push proposals:
 
 refresh_pillar1:
   salt.state:
-    - tgt: '{{ master }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.refresh
 
