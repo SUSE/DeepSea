@@ -6,9 +6,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import contextlib
+import logging
 import os
 import pprint
+import subprocess
 import sys
+
+
+logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
@@ -28,6 +33,15 @@ def redirect_stderr(target):
     """
     sys.stderr = target
     yield
+    sys.stderr = sys.__stderr__
+
+
+@contextlib.contextmanager
+def redirect_output(out, err):
+    sys.stdout = out
+    sys.stderr = err
+    yield
+    sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
 
 
@@ -59,9 +73,7 @@ def check_terminal_utf8_support():
     """
     symbol = u"\u23F3"
     try:
-        sys.stdout.write(symbol)
-        sys.stdout.write("\x1B[K\n")
-        sys.stdout.write("\x1B[A")
+        symbol.encode(sys.stdout.encoding)
         return True
     except UnicodeEncodeError:
         return False
@@ -96,40 +108,40 @@ class PrettyPrinter(object):
         LIGTH_PURPLE = '\x1B[38;5;225m'
         ENDC = '\x1B[0m'
 
-    @staticmethod
-    def _format(color, text):
+    @classmethod
+    def _format(cls, color, text):
         """
         Generic pretty print string formatter
         """
-        return u"{}{}{}".format(color, text, PrettyPrinter.Colors.ENDC)
+        return u"{}{}{}".format(color, text, cls.Colors.ENDC)
 
-    @staticmethod
-    def header(text):
+    @classmethod
+    def header(cls, text):
         """
         Formats text as header
         """
-        return PrettyPrinter._format(PrettyPrinter.Colors.HEADER, text)
+        return cls._format(cls.Colors.HEADER, text)
 
-    @staticmethod
-    def bold(text):
+    @classmethod
+    def bold(cls, text):
         """
         Formats text as bold
         """
-        return PrettyPrinter._format(PrettyPrinter.Colors.BOLD, text)
+        return cls._format(PrettyPrinter.Colors.BOLD, text)
 
-    @staticmethod
-    def blue(text):
+    @classmethod
+    def blue(cls, text):
         """
         Formats text as blue
         """
-        return PrettyPrinter._format(PrettyPrinter.Colors.BLUE, text)
+        return cls._format(cls.Colors.BLUE, text)
 
-    @staticmethod
-    def grey(text):
+    @classmethod
+    def grey(cls, text):
         """
         Formats text as grey
         """
-        return PrettyPrinter._format(PrettyPrinter.Colors.GREY, text)
+        return cls._format(PrettyPrinter.Colors.GREY, text)
 
     @staticmethod
     def light_purple(text):
@@ -229,15 +241,15 @@ class PrettyPrinter(object):
         """
         sys.stdout.write(u"{}\n".format(PrettyPrinter.bold(text)))
 
-    @staticmethod
-    def print(text):
+    @classmethod
+    def print(cls, text):
         """
         Prints text as is
         """
         sys.stdout.write(text)
 
-    @staticmethod
-    def println(text=None):
+    @classmethod
+    def println(cls, text=None):
         """
         Prints text as is with newline in the end
         """
@@ -246,19 +258,33 @@ class PrettyPrinter(object):
         else:
             sys.stdout.write(u"\n")
 
-    @staticmethod
-    def p_blue(text):
+    @classmethod
+    def p_blue(cls, text):
         """
         Prints text formatted as blue
         """
-        print(PrettyPrinter.blue(text))
+        cls.print(cls.blue(text))
 
-    @staticmethod
-    def p_green(text):
+    @classmethod
+    def pl_blue(cls, text):
+        """
+        Prints text formatted as blue
+        """
+        cls.println(cls.blue(text))
+
+    @classmethod
+    def p_green(cls, text):
         """
         Prints text formatted as green
         """
-        print(PrettyPrinter.green(text))
+        cls.print(cls.green(text))
+
+    @classmethod
+    def pl_green(cls, text):
+        """
+        Prints text formatted as green
+        """
+        cls.println(cls.green(text))
 
     @staticmethod
     def p_red(text):
@@ -272,6 +298,7 @@ class PrettyPrinter(object):
         """
         Flush stdout
         """
+        sys.stderr.flush()
         sys.stdout.flush()
 
     @staticmethod
@@ -280,6 +307,18 @@ class PrettyPrinter(object):
         Formats a dict structure using pprint formatter
         """
         return PrettyPrinter._PP.pformat(dict_obj)
+
+
+class PrettyFormat(object):
+
+    OK = PrettyPrinter.green(PrettyPrinter.bold(u"\u2713")) \
+        if check_terminal_utf8_support() else PrettyPrinter.green("OK")
+
+    FAIL = PrettyPrinter.red(u"\u274C") \
+        if check_terminal_utf8_support() else PrettyPrinter.red("Fail")
+
+    WAITING = PrettyPrinter.orange(u"\u23F3") \
+        if check_terminal_utf8_support() else PrettyPrinter.orange("Running")
 
 
 def print_progress_bar(progress_array, iteration, prefix='', suffix='', bar_length=100):
@@ -306,3 +345,11 @@ def print_progress_bar(progress_array, iteration, prefix='', suffix='', bar_leng
     sys.stdout.write(u'\x1b[2K\r{} |{}| {}{} {}\n'
                      .format(prefix, bar_symbol, percents, '%', suffix)),
     sys.stdout.flush()
+
+
+def clean_pyc_files():
+    logger.debug("removing pyc files...")
+    p1 = subprocess.Popen(["find", "/srv", "-name", "*.pyc"],
+                          stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["xargs", "rm", "-f"], stdin=p1.stdout)
+    p2.communicate()
