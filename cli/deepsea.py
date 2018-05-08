@@ -319,6 +319,7 @@ def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
 
         $ salt-run state.orch <stage_name>
     """
+    clean_pyc_files()
     _setup_logging()
     _validate_stage_file_exists(stage_name)
 

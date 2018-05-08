@@ -121,9 +121,15 @@ class SimplePrinter(MonitorListener):
                         PP.println("{} ({}):".format(step, step_file_path))
                     else:
                         PP.println("{}:".format(step))
-                    traceback = error.raw_event['data']['return']
-                    for line in traceback.split('\n'):
-                        PP.println("  {}".format(line))
+
+                    if error is not None:
+                        traceback = error.raw_event['data']['return']
+                        for line in traceback.split('\n'):
+                            PP.println("  {}".format(line))
+                        logger.debug("runner error:\n%s", error.raw_event)
+                    else:
+                        PP.println("  runner response was not received")
+                        logger.debug("runner error: response was not received")
 
     def step_runner_started(self, step):
         if step.order > 0:
@@ -427,13 +433,9 @@ class StepListPrinter(MonitorListener):
         def ftime(tr):
             if tr.seconds > 0:
                 return "{}s".format(int(round(tr.seconds+tr.microseconds/1000000.0)))
-            else:
-                return "{}s".format(round(tr.seconds+tr.microseconds/1000000.0, 1))
+            return "{}s".format(round(tr.seconds+tr.microseconds/1000000.0, 1))
 
     class Runner(Step):
-        def __init__(self, printer, step):
-            super(SP.Runner, self).__init__(printer, step)
-
         def clean(self, desc_width):
             for substep in self.substeps.values():
                 if substep.reprint:
@@ -465,8 +467,11 @@ class StepListPrinter(MonitorListener):
                     PP.println(PP.grey("skipped"))
                 else:
                     PP.print(SP.OK if self.step.success else SP.FAIL)
-                    ts = datetime.datetime.strptime(self.step.end_event.stamp,
-                                                    "%Y-%m-%dT%H:%M:%S.%f")
+                    if self.step.end_event:
+                        ts = datetime.datetime.strptime(
+                            self.step.end_event.stamp, "%Y-%m-%dT%H:%M:%S.%f")
+                    else:
+                        ts = datetime.datetime.now()
                     PP.println(" ({})".format(SP.Step.ftime(ts-self.start_ts)))
             else:
                 ts = datetime.datetime.utcnow()
@@ -489,9 +494,6 @@ class StepListPrinter(MonitorListener):
                 self.printer.print_step(substep, depth+1)
 
     class State(Step):
-        def __init__(self, printer, step):
-            super(SP.State, self).__init__(printer, step)
-
         def clean(self, desc_width):
             if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
                 PP.print("\x1B[A\x1B[K" * len(SP.format_desc(self.args, desc_width)))
@@ -639,16 +641,18 @@ class StepListPrinter(MonitorListener):
             if isinstance(exception, StateRenderingException):
                 PP.println(PP.bold("An error occurred when rendering one of the following "
                                    "states:"))
-                for state in exception.states:
-                    PP.print(PP.cyan("    - {}".format(state)))
-                    PP.println(" ({})".format("/srv/salt/{}".format(state.replace(".", "/"))))
+                PP.print(PP.cyan("    - {}".format(exception.state)))
+                PP.println(" ({})"
+                           .format("/srv/salt/{}"
+                                   .format(exception.state.replace(".", "/"))))
             else:
-                PP.println(PP.bold("An error occurred while rendering the stage file:"))
-                PP.println(PP.cyan("    {}".format(exception.stage_file)))
+                PP.println(PP.bold("An error occurred while rendering the stage:"))
+                PP.println(PP.cyan("    {}".format(exception.stage_name)))
             PP.println()
             PP.println(PP.bold("Error description:"))
             PP.println(PP.red(exception.pretty_error_desc_str()))
             return
+
         PP.println(SP.OK)
         PP.println()
         self.init_output = output.strip()
@@ -676,9 +680,19 @@ class StepListPrinter(MonitorListener):
             ret = stage.end_event.raw_event['data']['return']
             if isinstance(ret, dict):
                 for data in stage.end_event.raw_event['data']['return']['data'].values():
-                    for state in data.values():
-                        if not state['result']:
-                            PP.println(PP.red("  - {}".format(state['__id__'])))
+                    if isinstance(data, dict):
+                        data = data.values()
+                    for state in data:
+                        if isinstance(state, dict):
+                            if not state['result']:
+                                if '__id__' in state:
+                                    PP.println(PP.red("  - {}"
+                                                      .format(state['__id__'])))
+                                elif 'comment' in state:
+                                    PP.println(PP.red(
+                                        "  - {}".format(state['comment'])))
+                        elif isinstance(state, str):
+                            PP.println(PP.red("  {}".format(state)))
             elif isinstance(ret, str):
                 for line in ret.split('\n'):
                     PP.println(SP.FAILURE("  {}".format(line)))
@@ -755,11 +769,14 @@ class StepListPrinter(MonitorListener):
                         PP.println(PP.orange("{} ({}):".format(step, step_file_path)))
                     else:
                         PP.println(PP.orange("{}:".format(step)))
-                    traceback = error.raw_event['data']['return']
-                    for line in traceback.split('\n'):
-                        PP.println(PP.red("  {}".format(line)))
-
-                    logger.debug("runner error:\n%s", error.raw_event)
+                    if error is not None:
+                        traceback = error.raw_event['data']['return']
+                        for line in traceback.split('\n'):
+                            PP.println(PP.red("  {}".format(line)))
+                        logger.debug("runner error:\n%s", error.raw_event)
+                    else:
+                        PP.println(PP.red("  runner response was not received"))
+                        logger.debug("runner error: response was not received")
 
     def step_runner_started(self, step):
         with self.print_lock:
