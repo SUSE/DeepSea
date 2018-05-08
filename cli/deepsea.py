@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=too-many-branches,too-many-statements
 """
 DeepSea CLI
 """
@@ -11,17 +12,19 @@ import os
 import signal
 import sys
 import time
-import click
 
 import pkg_resources
+import click
 
 from .config import Config
-from .common import PrettyPrinter as PP
-from .common import requires_root_privileges
+from .common import PrettyPrinter as PP, PrettyFormat as PF
+from .common import requires_root_privileges, clean_pyc_files
 from .monitor import Monitor
 from .monitors.terminal_outputter import StepListPrinter, SimplePrinter
 from .stage_executor import run_stage
-from .stage_parser import SLSParser, SaltState, SaltRunner, SaltModule
+from .stage_parser import SLSParser, SaltRunner, SaltState, SaltStateFunction, \
+                          SaltExecutionFunction, StageRenderingException, \
+                          StateRenderingException
 
 
 def _setup_logging():
@@ -119,80 +122,124 @@ def _validate_stage_file_exists(stage_name):
         sys.exit(1)
 
 
-def _run_show_stage_steps(stage_name, hide_state_steps, only_visible_steps, use_cache):
+def _print_deps(step, indent, step_order_map):
+    if step.on_success_deps or step.on_fail_deps:
+        if step.on_success_deps:
+            PP.print("{}".format(" " * indent))
+            deps = [step_order_map[id(s)] for s in step.on_success_deps]
+            deps.sort()
+            PP.print(PP.dark_yellow("if_success=[{}] ".format(", ".join(deps))))
+        if step.on_fail_deps:
+            PP.print("{}".format(" " * indent))
+            deps = [step_order_map[id(s)] for s in step.on_fail_deps]
+            deps.sort()
+            PP.println(PP.dark_yellow("if_fail=[{}]".format(", ".join(deps))))
+        else:
+            PP.println()
+
+
+def _print_stage_step(step, indent, step_order_map):
+    if isinstance(step, SaltState):
+        PP.print(PP.orange(step.sls))
+        PP.print(PP.dark_green(" ({})".format(step.desc)))
+        PP.println(PP.orange(" on"))
+        _print_deps(step, indent, step_order_map)
+
+        for minion in step.target:
+            PP.print("{}".format(" " * indent))
+            PP.println(PP.cyan(minion))
+            step_count = 1
+            for s_step in step.steps[minion]:
+                PP.print("{}|_ ".format(" " * (indent + 2)))
+                if s_step.visible:
+                    PP.print(PP.green("+ "))
+                else:
+                    PP.print(PP.red("- "))
+                PP.print(PP.bold("{:3} ".format("{}.".format(step_count))))
+                step_order_map[id(s_step)] = str(step_count)
+                _print_stage_step(s_step, indent + 11, step_order_map)
+                step_count += 1
+
+    elif isinstance(step, SaltRunner):
+        PP.print(PP.blue(step.function))
+        PP.println(PP.dark_green(" ({})".format(step.desc)))
+        _print_deps(step, indent, step_order_map)
+
+    elif isinstance(step, (SaltStateFunction, SaltExecutionFunction)):
+        PP.print(PP.grey(step.function))
+        if step.args:
+            args_str = ", ".join(step.args)
+            if len(args_str) > 60:
+                args_str = args_str.replace("\n", "\\n")
+                args_str = args_str[:57] + "..."
+            PP.print(PP.grey("({})".format(args_str)))
+        if indent == 10:
+            PP.print(PP.dark_green(" ({})".format(step.desc)))
+            if step.target:
+                PP.print(PP.grey(" on "))
+                PP.print(PP.cyan(", ".join(step.target)))
+        PP.println()
+        _print_deps(step, indent, step_order_map)
+
+
+def _run_show_stage_steps(stage_name, hide_state_steps, only_visible_steps):
     """
     Runs stage parser and prints the list of steps
     """
     _validate_stage_file_exists(stage_name)
 
-    PP.p_header("Parsing stage: {}".format(stage_name))
-    steps, _ = SLSParser.parse_state_steps(stage_name, hide_state_steps, only_visible_steps,
-                                           use_cache)
-    print()
-    PP.p_bold("List of steps for stage {}:".format(stage_name))
-    print()
+    PP.print(PP.dark_yellow("Parsing {} steps... ".format(stage_name)))
+    PP.flush()
+    t0 = time.time()
+
+    try:
+        steps, _ = SLSParser.parse_stage(stage_name, hide_state_steps,
+                                         only_visible_steps)
+    except StageRenderingException as ex:
+        PP.println(PF.FAIL)
+        PP.println()
+        PP.println(PP.bold("An error occurred while rendering stage: {}"
+                           .format(ex.stage_name)))
+        for error in ex.error_list:
+            PP.println(PP.red("  - {}".format(error)))
+        PP.println()
+        return
+    except StateRenderingException as ex:
+        PP.println(PF.FAIL)
+        PP.println()
+        PP.println(PP.bold("An error occurred while rendering state: {}"
+                           .format(ex.state)))
+        for error in ex.error_list:
+            PP.println(PP.red("  - {}".format(error)))
+        PP.println()
+        return
+
+    t1 = time.time()
+    lat = t1 - t0
+    if lat > 0:
+        lat = "{}s".format(round(lat, 1))
+    else:
+        lat = "{}ms".format(round(lat * 1000, 0))
+    PP.print(PF.OK)
+    PP.println(" ({})".format(lat))
+    PP.println()
+
     state_count = 1
-    sub_state_count = 1
+    state_total = len(steps)
     step_order_map = {}
     for step in steps:
-        state_count_str = "{:<2}".format(state_count)
-        sub_state_count_str = "{:4}{:>2}.{:<2}".format('', state_count-1, sub_state_count)
-        if isinstance(step, SaltState):
-            target_str = "{:30}".format(step.target)
-            print("{}: [{}] {} on_success={} on_fail={}"
-                  .format(PP.bold(state_count_str),
-                          PP.magenta(target_str),
-                          PP.green("State({})".format(step.state)),
-                          [step_order_map[s.desc] for s in step.on_success_deps],
-                          [step_order_map[s.desc] for s in step.on_fail_deps]))
-            step_order_map[step.desc] = str(state_count)
-            state_count += 1
-            sub_state_count = 1
-        elif isinstance(step, SaltRunner):
-            target_str = "{:30}".format('master')
-            print("{}: [{}] {} on_success={} on_fail={}"
-                  .format(PP.bold(state_count_str),
-                          PP.magenta(target_str),
-                          PP.blue("Runner({})".format(step.fun)),
-                          [step_order_map[s.desc] for s in step.on_success_deps],
-                          [step_order_map[s.desc] for s in step.on_fail_deps]))
-            step_order_map[step.desc] = str(state_count)
-            state_count += 1
-        elif isinstance(step, SaltModule):
-            print("{}:{:26} {} on_success={} on_fail={}"
-                  .format(PP.bold(sub_state_count_str), '',
-                          PP.cyan("Module({})".format(step.fun)),
-                          [step_order_map[s.desc] for s in step.on_success_deps],
-                          [step_order_map[s.desc] for s in step.on_fail_deps]))
-            step_order_map[step.desc] = "{}.{}".format(state_count-1, sub_state_count)
-            sub_state_count += 1
-        else:  # SaltBuiltIn
-            step_str = "BuiltIn({})".format(step.fun)
-            if step.fun in ['file.managed', 'file']:
-                step_str = "BuiltIn({}, {})".format(step.fun, step.desc)
-            elif step.fun in ['service.running', 'cmd.run']:
-                arg = step.desc
-                if 'name' in step.args:
-                    arg = step.args['name']
-                step_str = "BuiltIn({}, {})".format(step.fun, arg)
-            elif step.fun in ['pkg.latest', 'pkg.installed']:
-                arg = step.desc
-                if 'name' in step.args:
-                    arg = step.args['name']
-                elif 'pkgs' in step.args:
-                    arg = step.args['pkgs']
-                step_str = "BuiltIn({}, {})".format(step.fun, arg)
+        step_order = "[{}/{}]".format(state_count, state_total)
+        step_order = "{:10}".format(step_order)
+        PP.print(PP.bold(step_order))
+        _print_stage_step(step, 10, step_order_map)
+        PP.println()
+        step_order_map[id(step)] = str(state_count)
+        state_count += 1
 
-            print("{}:{:26} {} on_success={} on_fail={}"
-                  .format(PP.bold(sub_state_count_str), '',
-                          PP.yellow(step_str),
-                          [step_order_map[s.desc] for s in step.on_success_deps],
-                          [step_order_map[s.desc] for s in step.on_fail_deps]))
-            step_order_map[step.desc] = "{}.{}".format(state_count-1, sub_state_count)
-            sub_state_count += 1
-    print()
-    PP.p_bold("Total steps: {}".format(len(steps)))
-    print()
+    PP.println(PP.bold("Additional information:"))
+    PP.println("({}): visible steps (fire_event=True)".format(PP.green("+")))
+    PP.println("({}): invisible steps (fire_event=False)".format(PP.red("-")))
+    PP.println()
 
 
 @click.group(name="deepsea")
@@ -246,16 +293,16 @@ def stage():
 @click.option('--only-visible-steps', is_flag=True,
               help="only show the steps that will generate events in the Salt Event Bus")
 @click.option('--clear-cache', is_flag=True, help="clear steps cache")
-@click.option('--no-cache', is_flag=True, help="don't store/use stage parsing results cache")
 @requires_root_privileges
-def stage_dryrun(stage_name, hide_state_steps, only_visible_steps, clear_cache, no_cache):
+def stage_dryrun(stage_name, hide_state_steps, only_visible_steps, clear_cache):
     """
     CLI 'stage dry-run' command
     """
+    clean_pyc_files()
     _setup_logging()
     if clear_cache:
         SLSParser.clean_cache(None)
-    _run_show_stage_steps(stage_name, hide_state_steps, only_visible_steps, not no_cache)
+    _run_show_stage_steps(stage_name, hide_state_steps, only_visible_steps)
 
 
 @click.command(name='run', short_help='runs DeepSea stage')
@@ -276,6 +323,7 @@ def stage_run(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     _validate_stage_file_exists(stage_name)
 
     ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
+    PP.flush()
     sys.exit(ret)
 
 
