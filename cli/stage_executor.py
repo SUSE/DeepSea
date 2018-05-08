@@ -19,6 +19,7 @@ import threading
 import time
 import sys
 
+from .common import clean_pyc_files
 from .monitor import Monitor
 from .monitors.terminal_outputter import SimplePrinter, StepListPrinter
 from .stage_parser import RenderingException
@@ -42,7 +43,7 @@ class StageExecutor(threading.Thread):
         """
         Runs the stage in a different process
         """
-        # pylint: disable=W8470
+        clean_pyc_files()
         with open(os.devnull, "w") as fnull:
             self.proc = subprocess.Popen(["salt-run", "state.orch", self.stage_name],
                                          stdout=fnull, stderr=fnull)

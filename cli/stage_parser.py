@@ -302,7 +302,7 @@ class SLSParser(object):
         steps = cls._process_states_requisites(stage_name, steps)
         steps = cls._reorder(stage_name, steps)
 
-        return steps
+        return steps, out
 
     @classmethod
     def _search_step(cls, steps, state, sid):
@@ -451,6 +451,9 @@ class SaltState(SaltStep):
         return "SaltState(desc: {}, sls: {}, target: {})" \
                 .format(self.desc, self.sls, self.target)
 
+    def pretty_string(self):
+        return self.sls
+
 
 class SaltRunner(SaltStep):
     """
@@ -463,6 +466,9 @@ class SaltRunner(SaltStep):
 
     def __str__(self):
         return "SaltRunner(desc: {}, fun: {})".format(self.desc, self.function)
+
+    def pretty_string(self):
+        return self.function
 
 
 class SaltTargettedStep(SaltStep):
