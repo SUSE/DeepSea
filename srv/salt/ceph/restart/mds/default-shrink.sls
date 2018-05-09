@@ -16,7 +16,6 @@ shrink mds cluster:
       - ceph.mds.restart.shrink-mds-cluster
     - pillar:
         'fs_name': {{ fs_name }}
-        'ranks_in': {{ ranks_in }}
 
 wait until all active mds but one have stopped:
   salt.state:
