@@ -112,6 +112,8 @@ class FsStatusCheck(HealthCheck):
             for rank in fsmap['by_rank']:
                 if not self._check_status(rank['status']):
                     return False
+            if 'mds_count' in self.settings:
+                return int(self.settings['mds_count']) == len(fsmap['by_rank'])
             return True
 
         self._wait(cmd, success)

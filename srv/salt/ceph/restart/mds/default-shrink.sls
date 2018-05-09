@@ -21,7 +21,7 @@ shrink mds cluster:
 wait until all active mds but one have stopped:
   salt.state:
     - tgt: {{ master }}
-    - sls: ceph.wait.mds
+    - sls: ceph.wait.mds.1-mds
 
 {% set standbys = salt['saltutil.runner']('cmd.run', cmd='ceph --format=json fs dump 2>/dev/null | jq -c [.standbys[].name]') | load_json %}
 {% for standby in standbys %}

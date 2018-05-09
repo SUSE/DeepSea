@@ -601,6 +601,8 @@ copy-files:
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/mds
+	install -m 644 srv/salt/ceph/wait/mds/*.sls $(DESTDIR)/srv/salt/ceph/wait/mds/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/1hour/until/OK
 	install -m 644 srv/salt/ceph/wait/1hour/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/1hour/until/OK
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/2hours/until/OK

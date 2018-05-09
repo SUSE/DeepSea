@@ -334,6 +334,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/updates/regular
 %dir /srv/salt/ceph/updates/kernel
 %dir /srv/salt/ceph/wait
+%dir /srv/salt/ceph/wait/mds
 %dir /srv/salt/ceph/wait/1hour
 %dir /srv/salt/ceph/wait/1hour/until
 %dir /srv/salt/ceph/wait/1hour/until/OK
@@ -608,6 +609,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/updates/kernel/*.sls
 %config /srv/salt/ceph/updates/regular/*.sls
 %config /srv/salt/ceph/wait/*.sls
+%config /srv/salt/ceph/wait/mds/*.sls
 %config /srv/salt/ceph/wait/1hour/until/OK/*.sls
 %config /srv/salt/ceph/wait/2hours/until/OK/*.sls
 %config /srv/salt/ceph/wait/4hours/until/OK/*.sls
