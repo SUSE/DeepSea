@@ -1,9 +1,7 @@
   
-{% set master = salt['master.minion']() %}
-
 remove packages:
   salt.state:
-    - tgt: '{{ master }}'
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - sls: ceph.packages.remove
     - failhard: True
 
