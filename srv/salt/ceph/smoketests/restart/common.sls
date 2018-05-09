@@ -13,16 +13,6 @@ unset {{ service }} restart grain:
     - val: False
 
 {#########################}
-{# Check forced restarts #}
-
-check {{ service }} forced restart:
-  salt.state:
-    - tgt: {{ test_node }}
-    - tgt_type: compound
-    - sls: ceph.tests.restart.{{ service }}.forced
-    - failhard: True
-
-{#########################}
 {# Check service does not restart #}
 
 check {{ service }} no restart:
@@ -30,6 +20,16 @@ check {{ service }} no restart:
     - tgt: {{ test_node }}
     - tgt_type: compound
     - sls: ceph.tests.restart.{{ service }}.nochange
+    - failhard: True
+
+{#########################}
+{# Check forced restarts #}
+
+check {{ service }} forced restart:
+  salt.state:
+    - tgt: {{ test_node }}
+    - tgt_type: compound
+    - sls: ceph.tests.restart.{{ service }}.forced
     - failhard: True
 
 {#########################}

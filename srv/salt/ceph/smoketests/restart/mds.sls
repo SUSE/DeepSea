@@ -22,22 +22,7 @@ shrink mds cluster:
 wait until all active mds but one have stopped:
   salt.state:
     - tgt: {{ master }}
-    - sls: ceph.wait.mds
-
-{% set after_shrink = salt['saltutil.runner']('cmd.run', cmd='ceph fs dump --format=json-pretty 2>/dev/null | jq ".filesystems[0].mdsmap.in | length"') %}
-{% if after_shrink|int ==  %}
-
-mds cluster shrunk:
-  test.succeed_without_changes:
-    - name: mds cluster shrunk to 1
-
-{% else %}
-
-mds cluster not shrunk:
-  test.fail_without_changes:
-    - name: mds cluster not shrunk, size {{ after_shrink }}
-
-{% endif %}
+    - sls: ceph.wait.mds.1-mds
 
 {# check resetting of mds cluster #}
 
@@ -56,17 +41,3 @@ wait until all mds are back:
     - tgt: {{ master }}
     - sls: ceph.wait.mds
 
-{% set after_reset = salt['saltutil.runner']('cmd.run', cmd='ceph fs dump --format=json-pretty 2>/dev/null | jq ".filesystems[0].mdsmap.in | length"') %}
-{% if after_reset == ranks_in %}
-
-mds cluster reset:
-  test.succeed_without_changes:
-    - name: mds cluster reset to {{ after_reset }}
-
-{% else %}
-
-mds cluster not reset:
-  test.fail_without_changes:
-    - name: mds cluster not reset
-
-{% endif %}
