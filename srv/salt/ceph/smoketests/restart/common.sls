@@ -1,5 +1,6 @@
+{% set master = salt['master.minion']() %}
 
-reset systemctl initially:
+reset systemctl initially for {{ service }}:
   salt.state:
     - tgt: {{ test_node }}
     - tgt_type: compound
@@ -39,19 +40,19 @@ change {{ service }}.conf:
     - tgt_type: compound
     - sls: ceph.tests.restart.{{ service }}.setup
 
-create ceph.conf:
+create ceph.conf {{ service }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.configuration.create
 
-distribute ceph.conf:
+distribute ceph.conf {{ service }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.configuration
 
-check changes:
+check changes {{ service }}:
   salt.runner:
     - name: changed.{{ service }}
 
@@ -70,25 +71,25 @@ remove {{ service }}.conf:
     - tgt_type: compound
     - sls: ceph.tests.restart.{{ service }}.teardown
 
-reset systemctl:
+reset systemctl {{ service }}:
   salt.state:
     - tgt: {{ test_node }}
     - tgt_type: compound
     - sls: ceph.tests.restart.{{ service }}.reset
 
-reset ceph.conf:
+reset ceph.conf {{ service }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.configuration.create
 
-redistribute ceph.conf:
+redistribute ceph.conf {{ service }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.configuration
 
-check changes again:
+check changes again {{ service }}:
   salt.runner:
     - name: changed.{{ service }}
 
