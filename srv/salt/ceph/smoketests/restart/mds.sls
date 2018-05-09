@@ -51,7 +51,7 @@ reset mds cluster:
         'fs_name': {{ fs_name }}
         'ranks_in': {{ ranks_in }}
 
-wait until all active mds but one have stopped:
+wait until all mds are back:
   salt.state:
     - tgt: {{ master }}
     - sls: ceph.wait.mds
