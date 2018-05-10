@@ -17,6 +17,10 @@ USER=root
 GROUP=root
 ifeq ($(OS), centos)
 PKG_INSTALL=yum install -y
+else
+ifeq ($(OS), fedora)
+PKG_INSTALL=yum install -y
+endif
 endif
 endif
 endif
@@ -792,7 +796,7 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install-deps:
-	$(PKG_INSTALL) python3-setuptools python3-click
+	$(PKG_INSTALL) python3-setuptools python3-click python3-tox
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
