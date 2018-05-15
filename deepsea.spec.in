@@ -655,12 +655,12 @@ the README for more information.
 %files qa
 %{_libexecdir}/deepsea/qa
 %dir /srv/salt/ceph/smoketests
+%dir /srv/salt/ceph/smoketests/apparmor
 %dir /srv/salt/ceph/smoketests/quiescent
+%dir /srv/salt/ceph/smoketests/restart
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
-/srv/salt/ceph/smoketests/quiescent/*.sls
-%dir /srv/salt/ceph/smoketests/restart
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
 %dir /srv/salt/ceph/tests/restart
@@ -680,6 +680,7 @@ the README for more information.
 %dir /srv/salt/ceph/tests/restart/rgw/change
 %dir /srv/salt/ceph/tests/restart/rgw/forced
 %dir /srv/salt/ceph/tests/restart/rgw/nochange
+/srv/salt/ceph/smoketests/apparmor/*.sls
 /srv/salt/ceph/smoketests/quiescent/*.sls
 /srv/salt/ceph/smoketests/restart/*.sls
 /srv/salt/ceph/tests/quiescent/*.sls
