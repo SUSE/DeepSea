@@ -42,6 +42,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -m 644 srv/salt/ceph/tests/quiescent/timeout/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	# smoketests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
+	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	# docs
