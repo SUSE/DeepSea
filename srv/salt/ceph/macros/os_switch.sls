@@ -1,23 +1,23 @@
 {% macro os_switch(custom) -%}
-  {% set abspath = "/srv/salt/" + slspath + "/" %}
+  {%- set source = "salt://" + slspath + "/" -%}
   {%- set osfinger = grains.get('osfinger') -%}
   {%- set os = grains.get('os') -%}
   {%- set osrelease = os + "-" + grains.get('osrelease') -%}
-  {%- if salt['file.directory_exists'](abspath + custom) -%}
+  {%- if salt['cp.cache_dir'](source + custom) -%}
     {{ custom }}
-  {%- elif salt['file.file_exists'](abspath + custom + ".sls") -%}
+  {%- elif salt['cp.cache_file'](source + custom + ".sls") -%}
     {{ custom }}
-  {%- elif salt['file.directory_exists'](abspath + osfinger) -%}
+  {%- elif salt['cp.cache_dir'](source + osfinger) -%}
     {{ osfinger }}
-  {%- elif salt['file.file_exists'](abspath + osfinger + ".sls") -%}
+  {%- elif salt['cp.cache_file'](source + osfinger + ".sls") -%}
     {{ osfinger }}
-  {%- elif salt['file.directory_exists'](abspath + osrelease) -%}
+  {%- elif salt['cp.cache_dir'](source + osrelease) -%}
     {{ osrelease }}
-  {%- elif salt['file.file_exists'](abspath + osrelease + ".sls") -%}
+  {%- elif salt['cp.cache_file'](source + osrelease + ".sls") -%}
     {{ osrelease }}
-  {%- elif salt['file.directory_exists'](abspath + os) -%}
+  {%- elif salt['cp.cache_dir'](source + os) -%}
     {{ os }}
-  {%- elif salt['file.file_exists'](abspath + os + ".sls") -%}
+  {%- elif salt['cp.cache_file'](source + os + ".sls") -%}
     {{ os }}
   {%- else -%}
     default
