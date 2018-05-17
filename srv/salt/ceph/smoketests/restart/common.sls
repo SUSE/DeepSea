@@ -36,19 +36,19 @@ check {{ service }} no restart:
 {# Check service restarts with change #}
 change {{ service }}.conf:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.tests.restart.{{ service }}.setup
 
 create ceph.conf {{ service }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.configuration.create
 
 distribute ceph.conf {{ service }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.configuration
 
@@ -67,7 +67,7 @@ check {{ service }}:
 {# Check service restarts with change removed #}
 remove {{ service }}.conf:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.tests.restart.{{ service }}.teardown
 
@@ -79,13 +79,13 @@ reset systemctl {{ service }}:
 
 reset ceph.conf {{ service }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.configuration.create
 
 redistribute ceph.conf {{ service }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.configuration
 
