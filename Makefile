@@ -2,6 +2,36 @@
 DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
+OS=$(shell source /etc/os-release ; echo $$ID)
+ifeq ($(OS), opensuse)
+USER=salt
+GROUP=salt
+PKG_INSTALL=zypper -n install
+else
+ifeq ($(OS), opensuse-tumbleweed)
+USER=salt
+GROUP=salt
+PKG_INSTALL=zypper -n install
+else
+ifeq ($(OS), sles)
+USER=salt
+GROUP=salt
+PKG_INSTALL=zypper -n install
+else
+USER=root
+GROUP=root
+ifeq ($(OS), centos)
+PKG_INSTALL=yum install -y
+else
+ifeq ($(OS), fedora)
+PKG_INSTALL=yum install -y
+endif
+endif
+endif
+endif
+endif
+
+
 usage:
 	@echo "Usage:"
 	@echo -e "\tmake install\tInstall DeepSea on this host"
