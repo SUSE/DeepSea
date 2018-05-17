@@ -8,6 +8,11 @@ USER=salt
 GROUP=salt
 PKG_INSTALL=zypper -n install
 else
+ifeq ($(OS), opensuse-tumbleweed)
+USER=salt
+GROUP=salt
+PKG_INSTALL=zypper -n install
+else
 ifeq ($(OS), sles)
 USER=salt
 GROUP=salt
@@ -20,6 +25,7 @@ PKG_INSTALL=yum install -y
 else
 ifeq ($(OS), fedora)
 PKG_INSTALL=yum install -y
+endif
 endif
 endif
 endif
