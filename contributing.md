@@ -48,8 +48,8 @@ Signed-off-by: Random J Developer <random@developer.example.org>
 ```
 
 using your real name (sorry, no pseudonyms or anonymous contributions.) in your
-commit message.
-
+commit message. This can be achieved by using the `-s` flag with `git commit`
+once you have configured `git` to use your real name.
 
 Sending Patches
 ---------------
@@ -94,6 +94,27 @@ going:
 -  Rebasing is also helpful when your change is based on an older parent commit
    which conflicts with the current master. In this case rebase will avoid the
    spurious merge commits.
+
+Running tests locally
+--------------------------------------
+
+All Pull Requests must pass our CI testsuite. We currently use
+[`pylint`](https://www.pylint.org/) and [`pytest`](
+https://docs.pytest.org/en/latest/) for linting and unit tests respectively.
+They are run in independent virtual environments, managed by [tox](
+https://tox.readthedocs.io/en/latest/index.html).
+
+To run these test locally, the following packages are required:
+
+```sh
+$ zypper in python-devel make
+```
+
+You can then run the test independently with:
+```
+$ make lint # for pylint or 
+$ make test # for pytest
+```
 
 Reporting Issues
 ----------------
