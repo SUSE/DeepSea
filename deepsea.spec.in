@@ -730,9 +730,12 @@ the README for more information.
 %{_libexecdir}/deepsea/qa
 %dir /srv/salt/ceph/smoketests
 %dir /srv/salt/ceph/smoketests/keyrings
+%dir /srv/salt/ceph/smoketests/macros
+%dir /srv/salt/ceph/smoketests/macros/os_switch
 %dir /srv/salt/ceph/smoketests/quiescent
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/keyrings
+%dir /srv/salt/ceph/tests/os_switch
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
 %dir /srv/salt/ceph/smoketests/restart
@@ -756,9 +759,11 @@ the README for more information.
 %dir /srv/salt/ceph/tests/restart/rgw/forced
 %dir /srv/salt/ceph/tests/restart/rgw/nochange
 /srv/salt/ceph/smoketests/keyrings/*.sls
+/srv/salt/ceph/smoketests/macros/os_switch/*.sls
 /srv/salt/ceph/smoketests/quiescent/*.sls
 /srv/salt/ceph/smoketests/restart/*.sls
 /srv/salt/ceph/tests/keyrings/*.sls
+/srv/salt/ceph/tests/os_switch/*.sls
 /srv/salt/ceph/tests/quiescent/*.sls
 /srv/salt/ceph/tests/quiescent/timeout/*.sls
 /srv/salt/ceph/tests/restart/*.sls
