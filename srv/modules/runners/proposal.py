@@ -253,6 +253,18 @@ def peek(**kwargs):
             pprint.pprint(_proposal)
 
 
+def _cluster_name():
+    """
+    Return the cluster name from the ceph namespace, original namespace
+    or default to 'ceph'
+    """
+    if 'ceph' in __pillar__ and 'cluster' in __pillar__['ceph']:
+        return __pillar__['ceph']['cluster']
+    if 'cluster' in __pillar__:
+        return __pillar__['cluster']
+    return 'ceph'
+
+
 def _write_proposal(prop, profile_dir):
     """
     Save the proposal for a specific minion
@@ -267,9 +279,7 @@ def _write_proposal(prop, profile_dir):
         # implement merge of existing data
         yaml.dump(content, outfile, default_flow_style=False)
 
-    # TODO do not hardcode cluster name ceph here
-    profile_file = '{}/stack/default/ceph/minions/{}.yml'.format(profile_dir,
-                                                                 node)
+    profile_file = '{}/stack/default/{}/minions/{}.yml'.format(profile_dir, _cluster_name(), node)
     if isfile(profile_file):
         log.warning('not overwriting existing proposal {}'.format(node))
         return
@@ -324,9 +334,9 @@ def populate(**kwargs):
     profile_dir = '{}/profile-{}'.format(BASE_DIR, args['name'])
     if not isdir(profile_dir):
         os.makedirs(profile_dir, 0o755)
-    # TODO do not hardcode cluster name ceph here
-    if not isdir('{}/stack/default/ceph/minions'.format(profile_dir)):
-        os.makedirs('{}/stack/default/ceph/minions'.format(profile_dir), 0o755)
+    if not isdir('{}/stack/default/{}/minions'.format(profile_dir, _cluster_name())):
+        os.makedirs(
+            '{}/stack/default/{}/minions'.format(profile_dir, _cluster_name()), 0o755)
     if not isdir('{}/cluster'.format(profile_dir)):
         os.makedirs('{}/cluster'.format(profile_dir), 0o755)
 
