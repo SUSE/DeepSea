@@ -1,6 +1,6 @@
 
 include:
   - ..save_pid
-  - .....mds.restart.force
+  - ceph.mds.restart.force
   - ..changed_pid
 

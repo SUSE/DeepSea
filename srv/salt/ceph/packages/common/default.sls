@@ -12,6 +12,7 @@ stage prep dependencies suse:
       - python3-rados
       - iperf
       - lsof
+      - jq
     - fire_event: True
     - refresh: True
 
@@ -26,6 +27,7 @@ stage prep dependencies ubuntu:
       - python3-boto
       - python3-rados
       - iperf
+      - jq
     - fire_event: True
     - refresh: True
 
@@ -52,6 +54,7 @@ stage prep dependencies CentOS:
       - lshw
       - hwinfo
       - python-netaddr
+      - jq
     - fire_event: True
     - refresh: True
 
