@@ -278,8 +278,6 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
     for success.  Failures take between 6 to 12 seconds.  Optimizations should
     focus there.
 
-    TODO: Convert commented out print statements to log.debug
-
     CLI Example: (Before DeepSea with a cluster configuration)
     .. code-block:: bash
         sudo salt-run net.ping
@@ -513,17 +511,17 @@ def _summarize_iperf(results):
             if not result[host]['server'] in server_results:
                 server_results.update({result[host]['server']: ""})
             if result[host]['succeeded']:
-                # print "filter:\n{}".format(result[host]['filter'])
+                log.debug("filter:\n{}".format(result[host]['filter']))
                 server_results[result[host]['server']] +=\
                         " " + result[host]['filter']
                 log.debug("Speed {}".
                           format(server_results[result[host]['server']]))
             elif result[host]['failed']:
-                # print "failed:\n{}".format(result[host]['failed'])
+                log.debug("failed:\n{}".format(result[host]['failed']))
                 server_results[result[host]['server']] +=\
                         " Failed to connect from {}".format(host)
             elif result[host]['errored']:
-                # print "errored :\n{}".format(result[host]['errored'])
+                log.debug("errored :\n{}".format(result[host]['errored']))
                 server_results[result[host]['server']] +=\
                         " {} iperf error check installation.".format(host)
 
