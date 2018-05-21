@@ -713,6 +713,11 @@ orchestration completes.
 %files cli
 %{_bindir}/deepsea
 %{python3_sitelib}/deepsea/
+%{python3_sitelib}/%{name}-%{version}-py3.4.egg-info/PKG-INFO
+%{python3_sitelib}/%{name}-%{version}-py3.4.egg-info/SOURCES.txt
+%{python3_sitelib}/%{name}-%{version}-py3.4.egg-info/dependency_links.txt
+%{python3_sitelib}/%{name}-%{version}-py3.4.egg-info/entry_points.txt
+%{python3_sitelib}/%{name}-%{version}-py3.4.egg-info/top_level.txt
 
 %package qa
 Summary:        DeepSea integration test scripts
