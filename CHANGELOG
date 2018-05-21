@@ -1,4 +1,19 @@
 -------------------------------------------------------------------
+Mon May 21 15:39:30 UTC 2018 - ejackson@suse.com
+
+- Version 0.9.5
+- Master minion setting is optional
+- Add restart smoketests
+- Add Mimic compatible OSD bootstrap
+- Add os_switch macro
+- Fix mds restart for multiple active mds
+- Add validation for Salt version
+- QA refactor, check ceph-test is installed
+- Fix cached runners
+- Fix makefile for Fedora
+- Contributing doc update
+
+-------------------------------------------------------------------
 Mon Apr 16 16:13:19 EDT 2018 - ejackson@suse.com
 
 - Version 0.9.4
