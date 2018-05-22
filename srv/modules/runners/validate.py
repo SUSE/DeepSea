@@ -630,8 +630,9 @@ class Validate(object):
                                        '-d', 'eauth=sharedsecret' ])
         try:
             result = json.loads(stdout[-1])
-        except ValueError as err:
-            msg = "Salt API is failing to authenticate - try 'systemctl restart salt-master'"
+        except IndexError as err:
+            msg = ("Salt API is failing to authenticate"
+                   " - try 'systemctl restart salt-master': {}".format(err))
             self.errors.setdefault('salt-api', []).append(msg)
             return
         if 'return' in result:
