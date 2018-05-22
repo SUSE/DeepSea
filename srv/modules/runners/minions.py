@@ -84,7 +84,7 @@ def ready(**kwargs):
             expected = set(key.list_keys()['minions'])
 
         if actual == expected:
-            log.warning("All minions are ready")
+            log.info("All minions are ready")
             break
         log.warning("Waiting on {}".format(",".join(list(expected - actual))))
         if end_time:
