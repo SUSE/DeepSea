@@ -73,8 +73,7 @@ def _summarize_iperf(result):
             msg['filter'] = re.match(
                 r'.*0.00-10.00.*sec\s(.*Bytes)\s+(.*Mbits/sec)',
                 out, re.DOTALL).group(2)
-        # pylint: disable=bare-except
-        except:
+        except AttributeError:
             msg['filter'] = '0 Mbits/sec'
         msg['failed'] = False
         msg['errored'] = False
