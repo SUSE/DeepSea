@@ -50,11 +50,11 @@ def check(cluster='ceph'):
     Check that time stamp of file is less than one minute
     """
     sff = SafetyFile(cluster)
+    stamp_recent = False
     if os.path.exists(sff.filename):
         stamp = os.stat(sff.filename).st_mtime
-        return stamp + 60 > time.time()
-    else:
-        return False
+        stamp_recent = stamp + 60 > time.time()
+    return stamp_recent
 
 __func_alias__ = {
                  'help_': 'help',

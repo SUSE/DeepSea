@@ -10,7 +10,7 @@ import logging
 import os
 import shutil
 import pwd
-import grp
+import grp  # pylint: disable=3rd-party-module-not-gated
 import yaml
 
 log = logging.getLogger(__name__)

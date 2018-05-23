@@ -91,11 +91,9 @@ def one_minion(**kwargs):
     Some steps only need to be run once, but on any minion in a specific
     search.  Return the first matching key.
     """
+    ret = [None]
     ret = minions(**kwargs)
-    if ret:
-        return ret[0]
-    else:
-        return
+    return ret[0]
 
 
 def public_addresses(tuples=False, host=False, **kwargs):

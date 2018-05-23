@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
-# pylint: disable=too-few-public-methods,modernize-parse-error
+# pylint: disable=too-few-public-methods,modernize-parse-error,no-else-return
 """
 The queue runner in salt uses sqlite.  While not a problem in general, when
 a few events arrive simultaneously, the last attempts fail.  The contention is
@@ -155,6 +155,7 @@ class FileQueue(object):
                 return False
         else:
             log.debug("filename {} does not exist".format(filename))
+            return None
 
     def check(self, item):
         """
@@ -328,7 +329,7 @@ def enqueue(queue=None, **kwargs):
             ret = filequeue.touch(kwargs['item'])
         else:
             help()
-            return
+            return None
     return ret
 
 
@@ -415,7 +416,7 @@ def check(queue=None, **kwargs):
             return filequeue.check(kwargs['item'])
         else:
             help()
-            return
+            return None
 
 
 def remove(queue=None, **kwargs):
@@ -432,7 +433,7 @@ def remove(queue=None, **kwargs):
             return filequeue.remove(kwargs['item'])
         else:
             help()
-            return
+            return None
 
 
 def vacate(queue=None, **kwargs):
@@ -449,7 +450,7 @@ def vacate(queue=None, **kwargs):
             return filequeue.vacate(kwargs['item'])
         else:
             help()
-            return
+            return None
 
 __func_alias__ = {
                  'help_': 'help',

@@ -178,6 +178,7 @@ class GaneshaConfParser(object):
         """
         Return the block body
         """
+        # pylint: disable=no-else-return
         def format_val(key, val):
             """
             Return a comma separated list, raw value or quoted value

@@ -29,8 +29,7 @@ load-plugins=saltpylint.pep8,
   saltpylint.thirdparty
 
 # Use multiple processes to speed up Pylint.
-# Don't bump this values on PyLint 1.4.0 - Know bug that ignores the passed --rcfile
-jobs=1
+jobs=5
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
@@ -81,37 +80,37 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=W0142,
+disable = 
+  E1101,
+  E1320,
+  E1323,
+  E8402,
+  E8731, 
+  W0141,
+  W1202,
+  W8470,
   C0330,
   I0011,
   I0012,
-  W1202,
-  E1320,
-  E8402,
-  E8731, 
-  W1202,
-  W0141 
-#  E8121,
-#  E8122,
-#  E8123,
-#  E8124,
-#  E8125,
-#  E8126,
-#  E8127,
-#  E8128
+  I1101
 
 # Disabled Checks
-#
+# Errors
+# E1101 (no-member)
+# E1320 (un-indexed-curly-braces-error)
+# E1323 (str-format-in-logging)
+# E8402 (module-level-import-not-at-top-of-file)
+# E8731 (do-not-assign-a-lambda-expression-use-a-def)
+# Warnings
 # W0142 (star-args)
-# W1202 (logging-format-interpolation) Use % formatting in logging functions but pass the % parameters as arguments
-# E812* All PEP8 E12*
-# E8402 module level import not at top of file
-# E8501 PEP8 line too long
-# E8731 do not assign a lambda expression, use a def
+# W1202 (logging-format-interpolation)
+# W8470 (resource-leakage)
+# Convention
 # C0330 (bad-continuation)
+# Other
 # I0011 (locally-disabling)
 # I0012 (locally-enabling)
-# W1202 (logging-format-interpolation)
+# I1101 (c-extension-no-member)
 
 
 [REPORTS]

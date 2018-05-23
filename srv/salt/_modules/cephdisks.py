@@ -66,6 +66,7 @@ class HardwareDetections(object):
             if int(removable) == 1:
                 log.debug("{} is a removable. Skipping..".format(base))
                 return True
+        return False
 
     # pylint: disable=no-self-use
     def _is_rotational(self, base):
@@ -80,9 +81,9 @@ class HardwareDetections(object):
         filename = base + "/queue/rotational"
         with open(filename, 'r') as _fd:
             rotational = _fd.readline().rstrip('\n')
-        if rotational == "1":
-            return rotational
-        return "0"
+        if rotational != "1":
+            rotational = "0"
+        return rotational
 
     def _return_device_bus_id(self, device):
         """
@@ -107,6 +108,7 @@ class HardwareDetections(object):
                     # check on other machines
                 log.warning("Could not retrieve bus_id for {}").format(device)
                 return None
+        return None
 
     def _query_disktype(self, device, raid_ctrl, base):
         """
@@ -189,6 +191,16 @@ class HardwareDetections(object):
         """
         info = {}
         info['controller_name'] = None
+        available_controllers = {
+            'megaraid': 'megaraid',
+            'areca': 'areca',
+            'arcmsr': 'areca',
+            '3ware': '3ware',
+            'hprr': 'hprr',
+            'hpt': 'hpt',
+            'cciss': 'cciss',
+            'aacraid': 'aacraid'
+        }
         lspci_path = self._which('lspci')
         cmd = "{} -vv | grep -i raid".format(lspci_path)
         # Verify that proc.stdout actually gives something
@@ -197,34 +209,17 @@ class HardwareDetections(object):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         for line in proc.stdout:
             line = __salt__['helper.convert_out'](line)
-            # match one of the available raid ctrls
-            # areca, megaraid, 3ware, hprr
-            if 'megaraid' in line.lower():
-                info['controller_name'] = 'megaraid'
-            elif 'areca' in line.lower() or 'arcmsr' in line.lower():
-                info['controller_name'] = 'areca'
-            elif '3ware' in line.lower():
-                info['controller_name'] = '3ware'
-            elif 'hprr' in line.lower():
-                info['controller_name'] = 'hprr'
-            elif 'hpt' in line.lower():
-                info['controller_name'] = 'hpt'
-            elif 'cciss' in line.lower():
-                info['controller_name'] = 'cciss'
-            elif 'aacraid' in line.lower():
-                info['controller_name'] = 'aacraid'
-            else:
-                info['controller_name'] = None
-
-            if info['controller_name']:
-                info['raidtype'] = 'hardware'
-                msg = 'Found raidctrl: {}'.format(info['controller_name'])
-                log.info(msg)
-                return info
-        if not info['controller_name']:
-            info['raidtype'] = None
-            log.info("No raidctrl found")
-            return info
+            for controller in available_controllers:
+                if controller in line.lower():
+                    info['controller_name'] = available_controllers[controller]
+                    info['raidtype'] = 'hardware'
+                    msg = 'Found raidctrl: {}'.format(info['controller_name'])
+                    log.info(msg)
+                    return info
+        # no controller was found
+        info['raidtype'] = None
+        log.info("No raidctrl found")
+        return info
 
     def _which(self, program, failhard=True):
         """

@@ -158,17 +158,18 @@ def iperf_client_cmd(server, cpu=0, port=5200):
     salt 'node' multi.iperf_client_cmd <server_name/ip>
             cpu=<which_cpu_core default 0> port=<default 5200>
     '''
-    if IPERF_PATH is None or not server:
-        if not server:
-            return [LOCALHOST_NAME, 2, "0", "Server name is empty"]
-        else:
-            return [LOCALHOST_NAME, 2, "0",
-                    "iperf3 not found in path, please install"]
-    iperf_cmd = ["/usr/bin/iperf3", "-fm", "-A"+str(cpu),
-                 "-t10", "-c"+server, "-p"+str(port)]
-    log.debug('iperf_client_cmd: cmd {}'.format(iperf_cmd))
-    retcode, stdout, stderr = __salt__['helper.run'](iperf_cmd)
-    return server, retcode, stdout, stderr
+    if IPERF_PATH is None:
+        ret = [LOCALHOST_NAME, 2, "0",
+               "iperf3 not found in path, please install"]
+    elif not server:
+        ret = [LOCALHOST_NAME, 2, "0", "Server name is empty"]
+    else:
+        iperf_cmd = ["/usr/bin/iperf3", "-fm", "-A"+str(cpu),
+                     "-t10", "-c"+server, "-p"+str(port)]
+        log.debug('iperf_client_cmd: cmd {}'.format(iperf_cmd))
+        retcode, stdout, stderr = __salt__['helper.run'](iperf_cmd)
+        ret = (server, retcode, stdout, stderr)
+    return ret
 
 
 def iperf_server_cmd(cpu=0, port=5200):

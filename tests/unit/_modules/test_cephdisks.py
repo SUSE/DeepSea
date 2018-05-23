@@ -89,7 +89,7 @@ class TestHardwareDetections():
     def test_is_removable_not(self, hwd):
         read_data = "0"
         with patch("srv.salt._modules.cephdisks.open", mock_open(read_data=read_data)) as mock_file:
-            expect = None
+            expect = False
             out = hwd.HardwareDetections()._is_removable('disk/in/question')
             assert expect == out
 

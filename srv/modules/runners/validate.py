@@ -68,7 +68,7 @@ class PrettyPrinter(object):
                                                   Bcolors.OKGREEN,
                                                   passed[attr],
                                                   Bcolors.ENDC)
-            log.info("VALIDATE PASSED  " + format_str)
+            log.info("VALIDATE PASSED  %s", format_str)
             print(format_str)
         for attr in errors.keys():
             format_str = "{:25}: {}{}{}{}".format(attr,
@@ -76,7 +76,7 @@ class PrettyPrinter(object):
                                                   Bcolors.FAIL,
                                                   errors[attr],
                                                   Bcolors.ENDC)
-            log.info("VALIDATE ERROR   " + format_str)
+            log.info("VALIDATE ERROR   %s", format_str)
             print(format_str)
         for attr in warnings.keys():
             format_str = "{:25}: {}{}{}{}".format(attr,
@@ -84,7 +84,7 @@ class PrettyPrinter(object):
                                                   Bcolors.WARNING,
                                                   warnings[attr],
                                                   Bcolors.ENDC)
-            log.info("VALIDATE WARNING " + format_str)
+            log.info("VALIDATE WARNING %s", format_str)
             print(format_str)
 
     def print_result(self):
@@ -123,12 +123,12 @@ def get_printer(__pub_output=None, **kwargs):
     Return the passed printer, JsonPrinter or PrettyPrinter function
     """
     if 'printer' in kwargs:
-        return kwargs['printer']
-
-    if __pub_output in ['json', 'quiet']:
-        return JsonPrinter()
+        printer = kwargs['printer']
+    elif __pub_output in ['json', 'quiet']:
+        printer = JsonPrinter()
     else:
-        return PrettyPrinter()
+        printer = PrettyPrinter()
+    return printer
 
 
 class Preparation(object):
@@ -791,7 +791,7 @@ class Validate(Preparation):
                     failmsg = ("No Ceph version is available for installation on minion {}"
                                .format(minion))
                     if self.in_dev_env:
-                        log.warning('VALIDATE ceph_version: ' + failmsg)
+                        log.warning('VALIDATE ceph_version: %s', failmsg)
                     else:
                         self.errors.setdefault('ceph_version', []).append(failmsg)
                         continue
@@ -820,7 +820,7 @@ class Validate(Preparation):
                 failmsg = ("Minion {} reports unparseable Ceph version {}"
                            .format(minion, version))
                 if self.in_dev_env:
-                    log.warning('VALIDATE ceph_version: ' + failmsg)
+                    log.warning('VALIDATE ceph_version: %s', failmsg)
                 else:
                     self.errors.setdefault('ceph_version', []).append(failmsg)
                     continue
@@ -851,14 +851,14 @@ class Validate(Preparation):
                     self.warnings['salt_version'].append(warning_str)
         self._set_pass_status('salt_version')
 
-    def _accumulate_files_from(self, filename):
+    def _accumulate_files_from(self, policy_file):
         """
         Process policy file skipping comments, unmatched lines
         """
         accumulated_files = []
         proposals_dir = "/srv/pillar/ceph/proposals"
 
-        with open(filename, "r") as policy:
+        with open(policy_file, "r") as policy:
             for line in policy:
                 # strip comments from the end of the line
                 line = re.sub(r'\s+#.*$', '', line)
@@ -866,16 +866,16 @@ class Validate(Preparation):
                 if line.startswith('#') or not line:
                     log.debug("Ignoring '{}'".format(line))
                     continue
-                files = self._parse(proposals_dir + "/" + line)
-                if not files:
+                proposal_files = self._parse(proposals_dir + "/" + line)
+                if not proposal_files:
                     log.warning("{} matched no files".format(line))
                 log.debug(line)
-                log.debug(files)
-                for filename in files:
-                    if os.stat(filename).st_size == 0:
-                        log.warning("Skipping empty file {}".format(filename))
+                log.debug(proposal_files)
+                for proposal_file in proposal_files:
+                    if os.stat(proposal_file).st_size == 0:
+                        log.warning("Skipping empty file {}".format(proposal_file))
                         continue
-                    accumulated_files.append(filename)
+                    accumulated_files.append(proposal_file)
         return accumulated_files
 
     def _stack_files(self, stack_dir, filetype='yml'):
@@ -1040,7 +1040,6 @@ def discovery(cluster=None, printer=None, **kwargs):
     # Restrict search to this cluster
     if 'cluster' in __pillar__:
         if __pillar__['cluster']:
-            # pylint: disable=redefined-variable-type
             # Salt accepts either list or string as target
             search = "I@cluster:{}".format(cluster)
     else:

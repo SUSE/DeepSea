@@ -191,6 +191,7 @@ class Config(object):
             log.info("Change in configuration detected for role {}".format(self.role.name))
             self.write_checksum(current_cs)
             return True
+        return False
 
 
 def help_():

@@ -71,7 +71,7 @@ def file_(component, name=None):
     elif component == "nova":
         return "/srv/salt/ceph/openstack/nova/cache/nova.keyring"
 
-    if component == "ganesha":
+    elif component == "ganesha":
         return "/srv/salt/ceph/ganesha/cache/" + name + ".keyring"
 
     elif component == "deepsea_cephfs_bench":
@@ -82,6 +82,8 @@ def file_(component, name=None):
 
     elif component == "deepsea_rbd_bench":
         return "/srv/salt/ceph/rbd/benchmarks/files/cache/deepsea_rbd_bench.keyring"
+
+    return None
 
 __func_alias__ = {
                  'file_': 'file',
