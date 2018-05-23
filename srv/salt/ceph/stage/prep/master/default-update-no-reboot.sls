@@ -25,6 +25,11 @@ repo master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.repo
 
+hotfix master:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.hotfix
+
 prepare master:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}

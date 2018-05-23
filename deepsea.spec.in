@@ -100,6 +100,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/cephfs
 %dir /srv/salt/ceph/cephfs/benchmarks
 %dir /srv/salt/ceph/cephfs/benchmarks/files
+%dir /srv/salt/ceph/hotfix
 %dir /srv/salt/ceph/salt-api
 %dir /srv/salt/ceph/salt-api/files
 %dir /srv/salt/ceph/configuration
@@ -382,6 +383,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/files/keyring.j2
+%config /srv/salt/ceph/hotfix/*.sls
 %config /srv/salt/ceph/salt-api/*.sls
 %config /srv/salt/ceph/salt-api/files/*.conf*
 %config /srv/salt/ceph/tools/benchmarks/*.sls
