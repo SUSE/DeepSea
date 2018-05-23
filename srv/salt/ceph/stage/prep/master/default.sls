@@ -27,6 +27,11 @@ repo master:
     - tgt: {{ master }}
     - sls: ceph.repo
 
+hotfix master:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.hotfix
+
 prepare master:
   salt.state:
     - tgt: {{ master }}

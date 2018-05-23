@@ -309,6 +309,10 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api/files
 	install -m 644 srv/salt/ceph/salt-api/files/*.conf* $(DESTDIR)/srv/salt/ceph/salt-api/files
 
+	# state files - hotfix
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/hotfix
+	install -m 644 srv/salt/ceph/hotfix/*.sls $(DESTDIR)/srv/salt/ceph/hotfix
+
 	# state files - migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/osds

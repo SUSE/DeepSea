@@ -28,6 +28,11 @@ repo master:
     - tgt: {{ master }}
     - sls: ceph.repo
 
+hotfix master:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.hotfix
+
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
 unlock:
