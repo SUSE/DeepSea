@@ -7,6 +7,11 @@ repo:
     - tgt_type: compound
     - sls: ceph.repo
 
+hotfix minions:
+  salt.state:
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - sls: ceph.hotfix
+
 common packages:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
