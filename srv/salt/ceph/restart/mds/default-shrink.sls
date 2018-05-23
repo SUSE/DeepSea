@@ -1,6 +1,6 @@
 {% set fs_name = salt['saltutil.runner']('cmd.run', cmd='ceph fs dump --format=json-pretty 2>/dev/null | jq --raw-output .filesystems[0].mdsmap.fs_name') %}
 {% set ranks_in = salt['saltutil.runner']('cmd.run', cmd='ceph fs dump --format=json-pretty 2>/dev/null | jq ".filesystems[0].mdsmap.in | length"') %}
-{% set master = salt['master.minion']() %}
+{% set master = salt['pillar.get']('master_minion') %}
 
 wait till ceph is healthy:
   salt.state:
