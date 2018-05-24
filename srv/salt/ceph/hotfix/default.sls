@@ -1,7 +1,18 @@
+{% set os = salt['grains.get']('os') %}
 
-{% if grains.get('osfullname', '') == 'SLES' %}
-hotfix for salt versioning:
-  pkg.installed:
-    - pkgs:
-      - ses-release
+{% if os == 'SUSE' %}
+
+lock down sles salt version:
+  module.run:
+    - name: pkg.add_lock
+    - packages: salt-master, salt-minion
+
+{% elif os == 'Ubuntu' %}
+
+lock down ubuntu salt version:
+  module.run:
+    - name: pkg.hold
+    - packages: salt-master, salt-minion
+
 {% endif %}
+
