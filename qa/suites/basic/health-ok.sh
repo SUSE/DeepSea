@@ -63,7 +63,7 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
-sleep 15
+python3 -c print testtest
 run_stage_0 "$CLI"
 salt_api_test
 run_stage_1 "$CLI"
