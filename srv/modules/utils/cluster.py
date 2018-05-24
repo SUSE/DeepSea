@@ -21,11 +21,12 @@ def name():
     Return the cluster name from the ceph namespace, original namespace
     or default to 'ceph'
     """
-    if 'ceph' in __pillar__ and 'cluster' in __pillar__['ceph']:
+    if ('ceph' in __pillar__ and 'cluster' in __pillar__['ceph']):
         return __pillar__['ceph']['cluster']
-    if 'cluster' in __pillar__:
+    elif 'cluster' in __pillar__:
         return __pillar__['cluster']
-    return 'ceph'
+    else:
+        return 'ceph'
 
 
 def help_():
