@@ -17,7 +17,7 @@ import logging
 import salt.client
 import salt.utils
 import salt.utils.master
-import six
+import salt.ext.six as six
 
 log = logging.getLogger(__name__)
 

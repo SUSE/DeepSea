@@ -250,6 +250,7 @@ def need_restart_config_change(role=None):
         return True
     return False
 
+
 def need_restart(role=None):
     """
     Condensed call for lsof and config change
