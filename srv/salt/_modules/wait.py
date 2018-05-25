@@ -15,7 +15,12 @@ import rados
 log = logging.getLogger(__name__)
 
 
+# pylint: disable=too-few-public-methods
 class HealthCheck(object):
+    """
+    This is the base class for health checks and offers the generics of running
+    a command and checking its output until a timeout is reached.
+    """
 
     def __init__(self, **kwargs):
         """
@@ -52,7 +57,7 @@ class HealthCheck(object):
 
         log.debug('wait on condition of command {}'.format(cmd))
         while i < (self.settings['timeout']/self.settings['delay']):
-            ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+            _ret, output, _err = self.cluster.mon_command(cmd, b'', timeout=6)
             json_output = json.loads(output)
 
             if success(json_output):
@@ -74,30 +79,32 @@ class HealthCheck(object):
         """
         Return the "correct" matching status
         """
+        # pylint: disable=no-else-return
         if self.settings['negate']:
             log.debug("status != {}".format(self.settings['status']))
-            return (current != self.settings['status'])
+            return current != self.settings['status']
         else:
             log.debug("status == {}".format(self.settings['status']))
-            return (current == self.settings['status'])
+            return current == self.settings['status']
 
 
+# pylint: disable=too-few-public-methods
 class FsStatusCheck(HealthCheck):
     """
     Check the fsmap status of the ceph status output. Wait till all active MDS's
     daemons have reached up:active status
     """
 
-    def __init__(self, **kwargs):
-        super(FsStatusCheck, self).__init__(**kwargs)
-
     def wait_for_healthy_mds(self):
         """
         Poll until all active MDS' are up:active
         """
-        cmd = json.dumps({"prefix":"status", "format":"json" })
+        cmd = json.dumps({"prefix": "status", "format": "json"})
 
         def success(status):
+            """
+            Success function to be passed to _check_status
+            """
             if 'fsmap' in status:
                 fsmap = status['fsmap']
             else:
@@ -119,16 +126,16 @@ class HealthStatusCheck(HealthCheck):
     successive checks matches the desired state.
     """
 
-    def __init__(self, **kwargs):
-        super(HealthStatusCheck, self).__init__(**kwargs)
-
     def wait(self):
         """
         Poll until the status "matches" the specificed number of checks.
         """
-        cmd = json.dumps({"prefix":"health", "format":"json" })
+        cmd = json.dumps({"prefix": "health", "format": "json"})
 
         def success(health):
+            """
+            Success function to be passed to _check_status
+            """
             if 'overall_status' in health:
                 current_status = health['overall_status']
             if 'status' in health:
@@ -139,7 +146,6 @@ class HealthStatusCheck(HealthCheck):
                 raise RuntimeError("Neither status nor overall_status defined in health check")
 
             return self._check_status(current_status)
-
 
         self._wait(cmd, success)
 
