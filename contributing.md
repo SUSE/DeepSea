@@ -112,7 +112,7 @@ $ zypper in python-devel make
 
 You can then run the test independently with:
 ```
-$ make lint # for pylint or 
+$ make lint # for pylint or
 $ make test # for pytest
 ```
 

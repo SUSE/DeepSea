@@ -17,7 +17,7 @@ import logging
 import salt.client
 import salt.utils
 import salt.utils.master
-import six
+import salt.ext.six as six
 
 log = logging.getLogger(__name__)
 
@@ -242,6 +242,7 @@ def _timeout(cluster='ceph'):
         return 900
     else:
         return 120
+
 
 __func_alias__ = {
                  'help_': 'help',

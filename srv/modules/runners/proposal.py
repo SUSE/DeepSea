@@ -326,7 +326,7 @@ def populate(**kwargs):
         os.makedirs(profile_dir, 0o755)
     if not isdir('{}/stack/default/{}/minions'.format(profile_dir, cluster_name)):
         os.makedirs(
-            '{}/stack/default/{}/minions'.format(profile_dir, cluster_name, 0o755))
+            '{}/stack/default/{}/minions'.format(profile_dir, cluster_name), 0o755)
     if not isdir('{}/cluster'.format(profile_dir)):
         os.makedirs('{}/cluster'.format(profile_dir), 0o755)
 

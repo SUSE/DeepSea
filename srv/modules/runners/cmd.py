@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import salt.client
 
-from subprocess import check_output
 
 def run(**kwargs):
     args = {'cmd': 'echo no command supplied'}

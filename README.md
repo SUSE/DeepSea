@@ -31,7 +31,7 @@ If you would like to contribute to DeepSea, refer to the [contribution guideline
 
 ## Developers and Admins
 For those interested in learning about some of the uses of Salt in DeepSea, see [here](https://github.com/suse/deepsea/blob/master/salt.md) for explanations and examples.
- 
+
 ## Usage
 You need at least a minimum of 4 nodes to be able to test and use DeepSea properly.
 
@@ -71,11 +71,11 @@ Install a minimum of four machines (or define `DEV_ENV=true` either as an enviro
 # zypper refresh
 ```
 
-Make sure that each node can resolve the host names of all other nodes. 
+Make sure that each node can resolve the host names of all other nodes.
 
-The Salt master needs to resolve all its Salt minions by their host names, as well as all Salt minions need to resolve the Salt master by its host name. 
+The Salt master needs to resolve all its Salt minions by their host names, as well as all Salt minions need to resolve the Salt master by its host name.
 
-If you don't have a DNS Server you could also add all hosts of your cluster to the ``/etc/hosts``` file. 
+If you don't have a DNS Server you could also add all hosts of your cluster to the ``/etc/hosts``` file.
 
 Configure, enable, and start the NTP time synchronization server on all nodes:
 
@@ -242,7 +242,7 @@ need to run Stage 0 again, otherwise minions will not be targeted.
 #### Stage 1
 The discovery stage collects all hardware in your cluster and also collects
 necessary information for the Ceph configuration. The configuration fragments
-are stored in the directory `/srv/pillar/ceph/proposals`. 
+are stored in the directory `/srv/pillar/ceph/proposals`.
 
 The data is stored in YAML format in `*.sls` or `*.yml` files.
 
@@ -343,14 +343,14 @@ Once a cluster is deployed one might want to verify functionality or run
 benchmarks to verify the cluster works as expected.
 
 In order to gain some confidence in your cluster after the inital deployment
-(stage 3) run: 
+(stage 3) run:
 
 ```
 # salt-run state.orch ceph.benchmarks.baseline
-``` 
+```
 
 This runs an osd benchmark on each OSD and aggregates the results. It reports
-your average OSD performance and points out OSDs that deviate from the average. 
+your average OSD performance and points out OSDs that deviate from the average.
 
 *Please note that for now the baseline benchmark assumes all uniform OSDs.*
 
@@ -360,7 +360,7 @@ To load test CephFS run:
 # salt-run state.orch ceph.benchmarks.cephfs
 ```
 
-This requires a running MDS (deploy in stage 4) and at least on minion with the
+This requires a running MDS (deploy in stage 4) and at least one minion with the
 `client-cephfs` role. The `cephfs_benchmark` stage will then mount the CephFS
 instance on the mds-client and run a bunch of `fio` tests. See the [benchmark
 readme](srv/pillar/ceph/benchmarks/README.md) for further details.
