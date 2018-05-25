@@ -210,9 +210,8 @@ def _add_fstab_entry(_uuid, path, fstype, subvol):
     try:
         with open('/etc/fstab', 'r') as _fstab:
             fstab_entries = [line.rstrip('\n') for line in _fstab]
-    # pylint: disable=bare-except
-    except:
-        log.error("Failed to read /etc/fstab.")
+    except (IOError, FileNotFoundError):
+        log.error("Failed to read /etc/fstab.", exc_info=True)
         return False
 
     # Process entries.
@@ -231,9 +230,8 @@ def _add_fstab_entry(_uuid, path, fstype, subvol):
     try:
         with open('/etc/fstab', 'a') as _fstab:
             _fstab.write("{}\n".format(entry))
-    # pylint: disable=bare-except
-    except:
-        log.error("Failed to append '{}' to /etc/fstab.".format(entry))
+    except (IOError, FileNotFoundError):
+        log.error("Failed to append '{}' to /etc/fstab.".format(entry), exc_info=True)
         return False
 
     log.warning("Successfully appended '{}' to /etc/fstab.".format(entry))
@@ -363,10 +361,9 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
     # Create a unique tmp directory.
     try:
         tmp_dir = tempfile.mkdtemp()
-    # pylint: disable=bare-except
-    except:
-        log.error(("Unable to create subvolume '{}': failed to create "
-                   "temporary directory.".format(subvol)))
+    except (PermissionError, FileExistsError, OSError):
+        log.error("Unable to create subvolume '{}': failed to create a temporary directory.".format(
+            subvol), exc_info=True)
         return False
 
     # Mount tmpdir.
@@ -392,9 +389,8 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
             log.error("Failed to unmount '{}'.".format(tmp_dir))
         try:
             shutil.rmtree(tmp_dir)
-        # pylint: disable=bare-except
-        except:
-            log.error("Failed to remove '{}'.".format(tmp_dir))
+        except (OSError, FileNotFoundError):
+            log.error("Failed to remove '{}'.".format(tmp_dir), exc_info=True)
 
     if not ret:
         # We failed somewhere, so take care of removing the subvolume, etc.
@@ -845,10 +841,12 @@ def get_device_info(mountpoint='', **kwargs):
                 dev_info['type'] = 'hd'
             else:
                 dev_info['type'] = 'unknown'
-    # pylint: disable=bare-except
-    except:
+    except (IOError, FileNotFoundError):
         # For some reason, the file doesn't exist or we can't open it.
-        log.error("Failed to determine if '{}' is a solid state device.".format(dev_path))
+        log.error(
+            "Failed to determine if '{}' is a solid state device.".format(dev_path),
+            exc_info=True
+        )
         return None
 
     _uuid = get_uuid(dev_path)
@@ -893,9 +891,9 @@ def instantiate_btrfs_subvolume(subvol='', path='', **kwargs):
         if not os.path.exists(path):
             try:
                 os.mkdir(path)
-            # pylint: disable=bare-except
-            except:
-                log.error("Failed to create '{}' for mounting of '{}'.".format(path, subvol))
+            except (OSError, FileNotFoundError):
+                log.error("Failed to create '{}' for mounting of '{}'.".format(
+                    path, subvol), exc_info=True)
                 return False
         else:
             uid_gid = _get_uid_gid(path)
@@ -907,12 +905,12 @@ def instantiate_btrfs_subvolume(subvol='', path='', **kwargs):
         # Make sure path has correct uid/gid.
         try:
             os.chown(path, uid_gid['uid'], uid_gid['gid'])
-        # pylint: disable=bare-except
-        except:
-            log.error(("Failed to set {}:{} ownership of existing '{}' after"
-                       "mounting subvolume '{}'.".format(uid_gid['uid'],
-                                                         uid_gid['gid'],
-                                                         path, subvol)))
+        except (OSError, FileNotFoundError):
+            log.error(
+                "Failed to set {}:{} ownership of existing '{}' after mounting subvolume '{}'."
+                .format(uid_gid['uid'], uid_gid['gid'], path, subvol),
+                exc_info=True
+            )
             # NOTE: I'd rather proceed with /etc/fstab in spite of this
             # failure, not setting ret to False.
 
@@ -1020,10 +1018,9 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # Try to create tmp_path.
     try:
         os.mkdir(tmp_path)
-    # pylint: disable=bare-except
-    except:
-        log.error(("Unable to migrate '{}' to subvolume '{}': failed to create "
-                   "'{}'.".format(path, subvol, tmp_path)))
+    except (OSError, FileNotFoundError):
+        log.error("Unable to migrate '{}' to subvolume '{}': failed to create '{}'.".format(
+            path, subvol, tmp_path), exc_info=True)
         return False
 
     # Grab uid/gid of path.
@@ -1088,10 +1085,12 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # Make sure path has correct uid/gid.
     try:
         os.chown(path, uid_gid['uid'], uid_gid['gid'])
-    # pylint: disable=bare-except
-    except:
-        log.error("Failed to set {}:{} ownership of '{}' after migration to subvolume '{}'.".format(
-            uid_gid['uid'], uid_gid['gid'], path, subvol))
+    except (OSError, FileNotFoundError):
+        log.error(
+            "Failed to set {}:{} ownership of '{}' after migration to subvolume '{}'."
+            .format(uid_gid['uid'], uid_gid['gid'], path, subvol),
+            exc_info=True
+        )
         # Not worth an abrupt failure at this point, but do log it and alert at the runner.
         ret = False
 
@@ -1108,12 +1107,14 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # At this point, it's safe to remove tmp_path.
     try:
         os.rmdir(tmp_path)
-    # pylint: disable=bare-except
-    except:
+    except (OSError, FileNotFoundError):
         # shutil.move() would have failed above if we failed to move
         # everything from tmp_path to path, treating this as a cleanup error.
-        log.error(("Failed to cleanup from migration of '{}' to subvolume "
-                   "'{}': failed to remove '{}'".format(path, subvol, tmp_path)))
+        log.error(
+            "Failed to cleanup from migration of '{}' to subvolume '{}': failed to remove '{}'"
+            .format(path, subvol, tmp_path),
+            exc_info=True
+        )
 
     # Try to remount as many OSDs as possible.  If we fail on any one, return
     # None at the end.
