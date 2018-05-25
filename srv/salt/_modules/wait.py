@@ -52,13 +52,14 @@ class HealthCheck(object):
 
         log.debug('wait on condition of command {}'.format(cmd))
         while i < (self.settings['timeout']/self.settings['delay']):
-            ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+            _ret, output, _err = self.cluster.mon_command(cmd, b'', timeout=6)
             json_output = json.loads(output)
 
             if success(json_output):
                 check += 1
                 if check == self.settings['check']:
-                    log.debug("{} checks succeeded".format(self.settings['check']))
+                    log.debug("{} checks succeeded".format(
+                        self.settings['check']))
                     return True
             else:
                 # Reset check counter
@@ -76,10 +77,10 @@ class HealthCheck(object):
         """
         if self.settings['negate']:
             log.debug("status != {}".format(self.settings['status']))
-            return (current != self.settings['status'])
+            return current != self.settings['status']
         else:
             log.debug("status == {}".format(self.settings['status']))
-            return (current == self.settings['status'])
+            return current == self.settings['status']
 
 
 class FsStatusCheck(HealthCheck):
@@ -95,7 +96,7 @@ class FsStatusCheck(HealthCheck):
         """
         Poll until all active MDS' are up:active
         """
-        cmd = json.dumps({"prefix":"status", "format":"json" })
+        cmd = json.dumps({"prefix": "status", "format": "json"})
 
         def success(status):
             if 'fsmap' in status:
@@ -126,7 +127,7 @@ class HealthStatusCheck(HealthCheck):
         """
         Poll until the status "matches" the specificed number of checks.
         """
-        cmd = json.dumps({"prefix":"health", "format":"json" })
+        cmd = json.dumps({"prefix": "health", "format": "json"})
 
         def success(health):
             if 'overall_status' in health:
@@ -136,10 +137,10 @@ class HealthStatusCheck(HealthCheck):
             if current_status:
                 log.debug("status: {}".format(current_status))
             else:
-                raise RuntimeError("Neither status nor overall_status defined in health check")
+                raise RuntimeError(
+                    "Neither status nor overall_status defined in health check")
 
             return self._check_status(current_status)
-
 
         self._wait(cmd, success)
 
