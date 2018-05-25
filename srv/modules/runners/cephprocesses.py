@@ -98,7 +98,7 @@ def need_restart_lsof(role=None, cluster='ceph'):
                         tgt_type="compound")
 
     sys.stdout = _stdout
-    for minion, need_rs in six.iteritems(restart):
+    for need_rs in six.itervalues(restart):
         if need_rs:
             return True
     return False
@@ -121,7 +121,7 @@ def need_restart_config_change(role=None, cluster='ceph'):
                         tgt_type="compound")
 
     sys.stdout = _stdout
-    for minion, need_rs in six.iteritems(restart):
+    for need_rs in six.itervalues(restart):
         if need_rs:
             return True
     return False
@@ -144,7 +144,7 @@ def need_restart(role=None, cluster='ceph'):
                         tgt_type="compound")
 
     sys.stdout = _stdout
-    for minion, need_rs in six.iteritems(restart):
+    for need_rs in six.itervalues(restart):
         if need_rs:
             return True
     return False
