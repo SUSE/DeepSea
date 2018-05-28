@@ -27,7 +27,7 @@ repo master:
 
 metapackage master:
   salt.state:
-    - tgt: {{ master }}
+    - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.metapackage
 
 prepare master:
