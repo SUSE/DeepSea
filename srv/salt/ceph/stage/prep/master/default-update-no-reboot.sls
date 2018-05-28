@@ -28,10 +28,10 @@ repo master:
     - tgt: {{ master }}
     - sls: ceph.repo
 
-hotfix master:
+metapackage master:
   salt.state:
     - tgt: {{ master }}
-    - sls: ceph.hotfix
+    - sls: ceph.metapackage
 
 prepare master:
   salt.state:
