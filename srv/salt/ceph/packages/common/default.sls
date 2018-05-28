@@ -1,5 +1,14 @@
 {% set os = salt['grains.get']('os') %}
 
+{% if grains.get('osfullname', '') == 'SLES' %}
+
+install ses-realease package:
+  pkg.installed:
+    - pkgs:
+      - ses-release
+
+{% endif %}
+
 {% if os == 'SUSE' %}
 
 stage prep dependencies suse:
