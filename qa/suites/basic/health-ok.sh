@@ -63,8 +63,12 @@ done
 assert_enhanced_getopt
 install_deps
 cat_salt_config
-python3 -c print testtest
+# Stupid workaround?
+run_stage_0 "$CLI" &
+sleep 5
+pkill salt-run
 run_stage_0 "$CLI"
+# Stupid workaround?
 salt_api_test
 run_stage_1 "$CLI"
 if [ -n "$ENCRYPTION" ] ; then
