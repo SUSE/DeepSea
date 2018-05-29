@@ -12,6 +12,7 @@ stage prep dependencies suse:
       - python-rados
       - iperf
       - lsof
+      - jq
     - fire_event: True
     - refresh: True
 
@@ -26,6 +27,7 @@ stage prep dependencies ubuntu:
       - python-boto
       - python-rados
       - iperf
+      - jq
     - fire_event: True
     - refresh: True
 
