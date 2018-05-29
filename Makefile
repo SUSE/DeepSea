@@ -76,6 +76,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	# smoketests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
+	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
@@ -131,6 +133,15 @@ copy-files:
 	install -m 644 srv/salt/ceph/admin/key/*.sls $(DESTDIR)/srv/salt/ceph/admin/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin/files
 	install -m 644 srv/salt/ceph/admin/files/*.j2 $(DESTDIR)/srv/salt/ceph/admin/files/
+	# state files apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files/ceph.d
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/install
+	install -m 644 srv/salt/ceph/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/apparmor/
+	install -m 644 srv/salt/ceph/apparmor/files/usr* $(DESTDIR)/srv/salt/ceph/apparmor/files/
+	install -m 644 srv/salt/ceph/apparmor/files/ceph.d/* $(DESTDIR)/srv/salt/ceph/apparmor/files/ceph.d/
+	install -m 644 srv/salt/ceph/apparmor/install/*.sls $(DESTDIR)/srv/salt/ceph/apparmor/install/
 	# state files benchmarks
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/benchmarks
 	install -m 644 srv/salt/ceph/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/benchmarks/
@@ -214,6 +225,9 @@ copy-files:
 	install -m 644 srv/salt/ceph/igw/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/reload
 	install -m 644 srv/salt/ceph/igw/restart/reload/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/reload
+	# state files - macros
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/macros
+	install -m 644 srv/salt/ceph/macros/*.sls $(DESTDIR)/srv/salt/ceph/macros/
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
