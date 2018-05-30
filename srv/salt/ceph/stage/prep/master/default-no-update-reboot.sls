@@ -25,6 +25,11 @@ repo master:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.repo
 
+metapackage master:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - sls: ceph.metapackage
+
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
 
 unlock:

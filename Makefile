@@ -258,6 +258,10 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api/files
 	install -m 644 srv/salt/ceph/salt-api/files/*.conf* $(DESTDIR)/srv/salt/ceph/salt-api/files
 
+	# state files - metapackage
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/metapackage
+	install -m 644 srv/salt/ceph/metapackage/*.sls $(DESTDIR)/srv/salt/ceph/metapackage
+
 	# state files - migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/osds
