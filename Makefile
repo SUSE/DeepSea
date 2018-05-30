@@ -41,9 +41,45 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -m 644 srv/salt/ceph/tests/quiescent/timeout/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon/change
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon/forced
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon/nochange
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mds
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mds/change
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mds/forced
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mds/nochange
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mgr/change
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mgr/forced
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mgr/nochange
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/change
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
+	install -m 644 srv/salt/ceph/tests/restart/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart
+	install -m 644 srv/salt/ceph/tests/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon
+	install -m 644 srv/salt/ceph/tests/restart/mon/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon/change
+	install -m 644 srv/salt/ceph/tests/restart/mon/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon/forced
+	install -m 644 srv/salt/ceph/tests/restart/mon/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon/nochange
+	install -m 644 srv/salt/ceph/tests/restart/mds/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mds
+	install -m 644 srv/salt/ceph/tests/restart/mds/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mds/change
+	install -m 644 srv/salt/ceph/tests/restart/mds/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mds/forced
+	install -m 644 srv/salt/ceph/tests/restart/mds/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mds/nochange
+	install -m 644 srv/salt/ceph/tests/restart/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mgr
+	install -m 644 srv/salt/ceph/tests/restart/mgr/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mgr/change
+	install -m 644 srv/salt/ceph/tests/restart/mgr/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mgr/forced
+	install -m 644 srv/salt/ceph/tests/restart/mgr/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mgr/nochange
+	install -m 644 srv/salt/ceph/tests/restart/rgw/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw
+	install -m 644 srv/salt/ceph/tests/restart/rgw/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/change
+	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
+	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	# smoketests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
+	install -m 644 srv/salt/ceph/smoketests/restart/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/restart
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
@@ -463,8 +499,6 @@ copy-files:
 	# state files - restart - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mds
 	install -m 644 srv/salt/ceph/restart/mds/*.sls $(DESTDIR)/srv/salt/ceph/restart/mds
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mds/lax
-	install -m 644 srv/salt/ceph/restart/mds/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/mds/lax
 	# state files - restart - ganesha
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/ganesha
 	install -m 644 srv/salt/ceph/restart/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/restart/ganesha
@@ -603,6 +637,8 @@ copy-files:
 	# state files - wait
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait
 	install -m 644 srv/salt/ceph/wait/*.sls $(DESTDIR)/srv/salt/ceph/wait/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/mds
+	install -m 644 srv/salt/ceph/wait/mds/*.sls $(DESTDIR)/srv/salt/ceph/wait/mds/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/1hour/until/OK
 	install -m 644 srv/salt/ceph/wait/1hour/until/OK/*.sls $(DESTDIR)/srv/salt/ceph/wait/1hour/until/OK
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/wait/2hours/until/OK

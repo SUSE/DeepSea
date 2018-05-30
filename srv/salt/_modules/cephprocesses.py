@@ -216,7 +216,7 @@ def zypper_ps(role, lsof_map):
     return lsof_map
 
 
-def restart_required_lsof(role=None):
+def need_restart_lsof(role=None):
     """
     Use the process map to determine if a service restart is required.
     """
@@ -232,6 +232,18 @@ def restart_required_lsof(role=None):
     return False
 
 
+def need_restart_config_change(role=None):
+    """
+    Check for a roles restart grain, i.e. is a restart required due to a config
+    change.
+    """
+    assert role
+    grain_name = "restart_{}".format(role)
+    if grain_name in __grains__ and __grains__[grain_name]:
+        log.debug("Found {}: True in the grains.".format(grain_name))
+        return True
+    return False
+
 def need_restart(role=None):
     """
     Condensed call for lsof and config change
@@ -239,11 +251,7 @@ def need_restart(role=None):
           OSDs. We currently do not support that.
     """
     assert role
-    grain_name = "restart_{}".format(role)
-    if grain_name not in __grains__:
-        log.debug("There is no {} in the grains.".format(grain_name))
-        __grains__[grain_name] = False
-    if __grains__[grain_name] or restart_required_lsof(role=role):
+    if need_restart_config_change(role=role) or need_restart_lsof(role=role):
         log.info("Restarting ceph service: {} -> Queuing a restart".format(role))
         return True
     return False
