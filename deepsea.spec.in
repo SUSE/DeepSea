@@ -96,6 +96,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0700, salt, salt) /srv/salt/ceph/admin/cache
 %dir /srv/salt/ceph/admin/files
 %dir /srv/salt/ceph/admin/key
+%dir /srv/salt/ceph/apparmor
+%dir /srv/salt/ceph/apparmor/files
+%dir /srv/salt/ceph/apparmor/files/ceph.d
+%dir /srv/salt/ceph/apparmor/install
 %dir /srv/salt/ceph/benchmarks
 %dir /srv/salt/ceph/cephfs
 %dir /srv/salt/ceph/cephfs/benchmarks
@@ -136,6 +140,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/restart/force
 %dir /srv/salt/ceph/igw/restart/reload
 %dir /srv/salt/ceph/igw/sysconfig
+%dir /srv/salt/ceph/macros
 %dir /srv/salt/ceph/mds
 %dir %attr(0700, salt, salt) /srv/salt/ceph/mds/cache
 %dir /srv/salt/ceph/mds/files
@@ -380,6 +385,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
+%config /srv/salt/ceph/apparmor/*.sls
+%config /srv/salt/ceph/apparmor/files/*
+%config /srv/salt/ceph/apparmor/files/ceph.d/*
+%config /srv/salt/ceph/apparmor/install/*
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/files/keyring.j2
@@ -421,6 +430,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/restart/force/*.sls
 %config /srv/salt/ceph/igw/restart/reload/*.sls
 %config /srv/salt/ceph/igw/sysconfig/*.sls
+%config /srv/salt/ceph/macros/*.sls
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
 %config /srv/salt/ceph/mds/key/*.sls
@@ -647,10 +657,13 @@ the README for more information.
 %files qa
 %{_libexecdir}/deepsea/qa
 %dir /srv/salt/ceph/smoketests
+%dir /srv/salt/ceph/smoketests/apparmor
 %dir /srv/salt/ceph/smoketests/quiescent
+%dir /srv/salt/ceph/smoketests/restart
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
+/srv/salt/ceph/smoketests/apparmor/*.sls
 /srv/salt/ceph/smoketests/quiescent/*.sls
 %dir /srv/salt/ceph/smoketests/restart
 %dir /srv/salt/ceph/tests/quiescent
