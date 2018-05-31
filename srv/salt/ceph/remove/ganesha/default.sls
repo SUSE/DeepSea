@@ -15,11 +15,7 @@ auth {{ keyring }}:
 {% endfor %}
 {% endif %}
 
-/var/cache/salt/master/jobs:
-  file.directory:
-    - user: {{ salt['deepsea.user']() }}
-    - group: {{ salt['deepsea.group']() }}
-    - recurse:
-      - user
-      - group
+fix salt job cache permissions:
+  cmd.run:
+  - name: "find /var/cache/salt/master/jobs -user root -exec chown {{ salt['deepsea.user']() }}:{{ salt['deepsea.group']() }} {} ';'"
 
