@@ -20,7 +20,7 @@ rules are as follows:
   directory is present in the including sls file's directory.
     - ```custom```
     - value of the ```osfinger``` grain, for example ```CentOS```
-    - concatenation of both the ```os``` and the ```osrelease``` grains, for example ```SUSE15```
+    - concatenation of both the ```os``` and the ```osrelease``` grains with a hyphen, for example ```SUSE-15```
     - the value of the ```os``` grain, for example ```SUSE```
 
 If non of the above is found, ```default``` is returned.
