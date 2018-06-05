@@ -27,6 +27,11 @@ repo master:
     - tgt: {{ master }}
     - sls: ceph.repo
 
+metapackage master:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.metapackage
+
 prepare master:
   salt.state:
     - tgt: {{ master }}
