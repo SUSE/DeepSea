@@ -150,7 +150,7 @@ class SLSRenderer(object):
                 state_name = [state_name]
 
             res = SaltClient.local().cmd(target, 'deepsea.show_low_sls',
-                                         state_name, tgt_type="compound")
+                                         state_name, expr_form="compound")
 
             logger.debug("Rendering result: %s", res)
             for minion, states in res.items():
@@ -166,7 +166,7 @@ class SLSRenderer(object):
                         logger.info("deepsea module not available: syncing "
                                     "modules")
                         SaltClient.local().cmd(target, 'saltutil.sync_modules',
-                                               [], tgt_type="compound")
+                                               [], expr_form="compound")
                         res, out2, err2 = cls._render_in_minion(state_name,
                                                                 target, False)
                 else:
