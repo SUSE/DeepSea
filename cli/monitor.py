@@ -355,6 +355,15 @@ class MonitorListener(object):
         """
         pass
 
+    def stage_parsing_state(self, states, minion=None):
+        """
+        This function is called when a stage parsing starts parsing a state
+        Args:
+            state (str): the state name
+            minion (str): the minion where the state file is being parsed
+        """
+        pass
+
     def stage_parsing_finished(self, stage, output, exception):
         """
         This function is called when a stage parsing finished
@@ -520,7 +529,8 @@ class Monitor(threading.Thread):
         self._fire_event('stage_parsing_started', stage_name)
         try:
             parsed_steps, out = SLSParser.parse_stage(
-                stage_name, not self._show_state_steps, True)
+                stage_name, not self._show_state_steps, True,
+                self._monitor_listeners)
         except RenderingException as ex:
             self._fire_event('stage_parsing_finished', None, None, ex)
             raise ex
