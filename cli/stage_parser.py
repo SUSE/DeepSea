@@ -260,10 +260,20 @@ class SLSParser(object):
             return SaltExecutionFunction(step_dict, target)
         return SaltStateFunction(step_dict, target)
 
+    @staticmethod
+    def notify_listener(listeners, states, minion=None):
+        for l in listeners:
+            l.stage_parsing_state(states, minion)
+
     @classmethod
-    def parse_stage(cls, stage_name, hide_state_steps, only_visible_steps):
+    def parse_stage(cls, stage_name, hide_state_steps, only_visible_steps,
+                    monitor_listeners=None):
+        if monitor_listeners is None:
+            monitor_listeners = []
+
         steps = []
         t0 = time.time()
+        SLSParser.notify_listener(monitor_listeners, [stage_name])
         stage, out, _ = SLSRenderer.render(stage_name)
         t1 = time.time()
         logger.info("parsing stage sls file took: %ss", t1-t0)
@@ -285,6 +295,7 @@ class SLSParser(object):
         states_rendering = defaultdict(lambda: defaultdict(
             lambda: defaultdict(dict)))
         for target, states in states_to_render.items():
+            SLSParser.notify_listener(monitor_listeners, states, target)
             res, _, _ = SLSRenderer.render(list(states), target)
             for minion, state_res in res.items():
                 if isinstance(state_res, list):

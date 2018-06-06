@@ -631,9 +631,21 @@ class StepListPrinter(MonitorListener):
     def stage_parsing_started(self, stage_name):
         PP.print(SP.INFO("Parsing {} steps... ".format(stage_name)))
         PP.println(SP.WAITING)
+        PP.println()
+
+    def stage_parsing_state(self, states, minion=None):
+        # PP.print("\x1B[A\x1B[K")
+
+        PP.print(PP.bold("[parsing] "))
+        PP.println(SP.MINION("on {}".format(minion if minion else "master")))
+        PP.print("            |_ ")
+        for state in states:
+            PP.println(PP.light_purple(state))
+            PP.print("               ")
+        PP.println()
 
     def stage_parsing_finished(self, stage, output, exception):
-        PP.print("\x1B[A\x1B[K")
+        # PP.print("\x1B[A\x1B[K")
         PP.print(SP.INFO("Parsing {} steps... ".format(self.stage_name)))
         if exception:
             PP.println(SP.FAIL)
