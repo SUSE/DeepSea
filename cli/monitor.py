@@ -1,21 +1,24 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=too-many-instance-attributes
 """
 DeepSea stage's progress monitor
 """
-# pylint: disable=W1699
 from __future__ import absolute_import
 from __future__ import print_function
 
 import logging
 import operator
 import threading
+from functools import reduce
+
+from six.moves import range
 
 from .common import PrettyPrinter as PP
 from .salt_event import SaltEventProcessor
 from .salt_event import EventListener
 from .salt_event import NewJobEvent, NewRunnerEvent, RetJobEvent, RetRunnerEvent
-from .stage_parser import SLSParser, SaltRunner, SaltState, SaltModule, SaltBuiltIn, \
-                          RenderingException
+from .stage_parser import SLSParser, SaltRunner, SaltState, SaltStateFunction, \
+                          SaltExecutionFunction, RenderingException
 
 
 # pylint: disable=C0111
@@ -107,16 +110,8 @@ class Stage(object):
 
         def state_result(self, event):
             for sstep in self.targets[event.minion]['states']:
-                if isinstance(sstep.step, SaltModule):
+                if isinstance(sstep.step, (SaltStateFunction, SaltExecutionFunction)):
                     if sstep.name == event.name or sstep.name == event.state_id:
-                        sstep.success = event.result
-                        sstep.finished = True
-                        sstep.end_event = event
-                elif isinstance(sstep.step, SaltBuiltIn):
-                    name = sstep.step.get_arg('name')
-                    if not name:
-                        name = sstep.step.desc
-                    if name == event.name or name == event.state_id:
                         sstep.success = event.result
                         sstep.finished = True
                         sstep.end_event = event
@@ -134,20 +129,18 @@ class Stage(object):
         self._dynamic_steps = {}
 
         self._steps = []
-        _curr_state = None
         for step in self._parsed_steps:
             wrapper = None
             if isinstance(step, SaltRunner):
-                wrapper = Stage.Step(step, step.fun, len(self._steps)+1)
-                _curr_state = None
+                wrapper = Stage.Step(step, step.function, len(self._steps)+1)
             elif isinstance(step, SaltState):
-                wrapper = Stage.TargetedStep(step, step.state, len(self._steps)+1)
-                _curr_state = wrapper
-            elif isinstance(step, SaltModule) or isinstance(step, SaltBuiltIn):
-                assert _curr_state
-                _curr_state.sub_steps.append(Stage.Step(step, step.fun,
-                                                        len(_curr_state.sub_steps)+1))
-                continue
+                wrapper = Stage.TargetedStep(step, step.sls, len(self._steps)+1)
+                for s_steps in step.steps.values():
+                    for s_step in s_steps:
+                        wrapper.sub_steps.append(
+                            Stage.Step(s_step, s_step.desc, len(wrapper.sub_steps)+1))
+            elif isinstance(step, (SaltExecutionFunction, SaltStateFunction)):
+                wrapper = Stage.TargetedStep(step, step.function, len(self._steps)+1)
 
             assert wrapper
             self._steps.append(wrapper)
@@ -194,19 +187,20 @@ class Stage(object):
                         self.current_step += i
                         if i == 0:
                             return curr_step, None, None
-                        else:
-                            return prev_step, curr_step, None
+                        return prev_step, curr_step, None
 
             elif isinstance(event, NewJobEvent):
                 if isinstance(curr_step, Stage.TargetedStep):
                     step_name = event.args[0] if event.fun == 'state.sls' else event.fun
                     if not curr_step.jid and curr_step.name == step_name:
+                        if curr_step.step.isTargetExpanded() and \
+                                set(curr_step.step.target) != set(event.targets):
+                            continue
                         curr_step.start(event)
                         self.current_step += i
                         if i == 0:
                             return curr_step, None, None
-                        else:
-                            return prev_step, curr_step, None
+                        return prev_step, curr_step, None
 
             else:
                 assert False
@@ -240,10 +234,12 @@ class Stage(object):
             if self.current_step == 0 and curr_step.start_event is None:
                 # check for duplicates before starting step 1
                 for ex_step in self._dynamic_steps.values():
-                    if (ex_step.name == step.name and ex_step.targets.keys() == event.targets and
+                    if (ex_step.name == step.name and
                             ex_step.args_str == step.args_str):
-                        # possible parsing generated duplicate
-                        return None, None, None
+                        if (hasattr(ex_step, 'targets') and
+                                list(ex_step.targets.keys()) == event.targets):
+                            # possible parsing generated duplicate
+                            return None, None, None
             self._dynamic_steps[event.jid] = step
             return None, None, step
 
@@ -356,6 +352,15 @@ class MonitorListener(object):
         This function is called when a stage parsing started
         Args:
             stage (str): the stage name
+        """
+        pass
+
+    def stage_parsing_state(self, states, minion=None):
+        """
+        This function is called when a stage parsing starts parsing a state
+        Args:
+            state (str): the state name
+            minion (str): the minion where the state file is being parsed
         """
         pass
 
@@ -523,8 +528,9 @@ class Monitor(threading.Thread):
         self._fire_event('stage_started', stage_name)
         self._fire_event('stage_parsing_started', stage_name)
         try:
-            parsed_steps, out = SLSParser.parse_state_steps(stage_name, not self._show_state_steps,
-                                                            True, False)
+            parsed_steps, out = SLSParser.parse_stage(
+                stage_name, not self._show_state_steps, True,
+                self._monitor_listeners)
         except RenderingException as ex:
             self._fire_event('stage_parsing_finished', None, None, ex)
             raise ex
@@ -604,9 +610,8 @@ class Monitor(threading.Thread):
             self._fire_event('stage_started', stage_name)
             self._fire_event('stage_parsing_started', stage_name)
             try:
-                parsed_steps, out = SLSParser.parse_state_steps(stage_name,
-                                                                not self._show_state_steps,
-                                                                True, False)
+                parsed_steps, out = SLSParser.parse_stage(
+                    stage_name, not self._show_state_steps, True)
             except RenderingException as ex:
                 self._fire_event('stage_parsing_finished', None, None, ex)
                 return
