@@ -1,0 +1,17 @@
+coverage:
+  precision: 2
+  round: down
+  range: 25..30
+
+  status:
+    project:
+      default:
+        target: null
+    patch:
+      default:
+        target: null
+    changes: no
+
+comment: 
+  layout: "diff"
+  behavior: once
