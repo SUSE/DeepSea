@@ -104,6 +104,10 @@ install:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart
 	install -m 644 srv/salt/ceph/mds/restart/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart
 
+	# state files - metapackage
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/metapackage
+	install -m 644 srv/salt/ceph/metapackage/*.sls $(DESTDIR)/srv/salt/ceph/metapackage
+
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
 	install -m 644 srv/salt/ceph/mines/*.sls $(DESTDIR)/srv/salt/ceph/mines/
