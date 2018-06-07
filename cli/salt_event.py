@@ -78,9 +78,6 @@ class NewRunnerEvent(SaltEvent):
     Salt New Runner Event
     This kind of events represent the execution of a Salt runner
     """
-    def __init__(self, raw_event):
-        super(NewRunnerEvent, self).__init__(raw_event)
-
     def __str__(self):
         parent_str = super(NewRunnerEvent, self).__str__()
         return "RunnerNew({})".format(parent_str)
@@ -175,6 +172,7 @@ class SaltEventProcessor(threading.Thread):
         self.running = False
         self.listeners = []
         self.io_loop = None
+        self.event = threading.Event()
 
     def add_listener(self, listener):
         """Adds an event listener to the listener list
@@ -192,12 +190,14 @@ class SaltEventProcessor(threading.Thread):
     def start(self):
         self.running = True
         super(SaltEventProcessor, self).start()
+        self.event.wait()
 
     def run(self):
         """
         Starts the IOLoop of Salt Event Processor
         """
         self.io_loop = IOLoop.current()
+        self.event.set()
 
         opts = salt.config.client_config('/etc/salt/master')
         stream = salt.utils.event.get_event('master', io_loop=self.io_loop,
