@@ -835,16 +835,16 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install-deps:
-	$(PKG_INSTALL) python3-setuptools python3-click python3-tox
+	$(PKG_INSTALL) python3-setuptools python3-click python3-tox salt-api
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 	chown -R $(USER) /srv/pillar/ceph
-	systemctl restart salt-master
-	$(PKG_INSTALL) salt-api
-	systemctl restart salt-api
+	# Use '|| true' to suppress some error output in corner cases
+	systemctl restart salt-master || true
+	systemctl restart salt-api || true
 	# deepsea-cli
 	python3 setup.py install --root=$(DESTDIR)/
 
