@@ -6,12 +6,15 @@ coverage:
   status:
     project:
       default:
-        target: null
+        target: 0
+        treshold: 0
     patch:
       default:
-        target: null
+        target: 0
+        treshold: 0
     changes: no
 
 comment: 
   layout: "diff"
   behavior: once
+  require_changes: no
