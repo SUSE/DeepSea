@@ -72,6 +72,8 @@ def check_terminal_utf8_support():
     Checks whether the terminal supports UTF-8 glyphs.
     """
     symbol = u"\u23F3"
+    if sys.stdout.encoding is None:
+        return False
     try:
         symbol.encode(sys.stdout.encoding)
         return True
