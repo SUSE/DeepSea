@@ -2,7 +2,11 @@
 DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
-OS=$(shell source /etc/os-release ; echo $$ID)
+PYTHON_DEPS=python3-setuptools python3-click python3-tox
+PYTHON=python3
+PIPCMD=""
+
+OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 ifeq ($(OS), opensuse)
 USER=salt
 GROUP=salt
@@ -22,9 +26,15 @@ USER=root
 GROUP=root
 ifeq ($(OS), centos)
 PKG_INSTALL=yum install -y
+PYTHON_DEPS=python-setuptools python-click python-tox
+PYTHON=python
 else
 ifeq ($(OS), fedora)
 PKG_INSTALL=yum install -y
+else
+debian := $(wildcard /etc/debian_version)
+ifneq ($(strip $(debian)),)
+PKG_INSTALL=apt-get install -y
 endif
 endif
 endif
@@ -46,8 +56,8 @@ setup.py:
 
 pyc: setup.py 
 	#make sure to create bytecode with the correct version
-	find srv/ -name '*.py' -exec python3 -m py_compile {} \;
-	find cli/ -name '*.py' -exec python3 -m py_compile {} \;
+	find srv/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
+	find cli/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
 
 copy-files:
 	# salt-master config files
@@ -130,25 +140,17 @@ copy-files:
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea/pillar
 	install -m 644 doc/pillar/* $(DESTDIR)$(DOCDIR)/deepsea/pillar/
 	# stacky.py (included in salt 2016.3)
-	install -d -m 755 $(DESTDIR)/srv/modules/__pycache__
-	install -m 644 srv/modules/__pycache__/*.pyc $(DESTDIR)/srv/modules/__pycache__
 	install -d -m 755 $(DESTDIR)/srv/modules/pillar
-	install -d -m 755 $(DESTDIR)/srv/modules/pillar/__pycache__
-	install -m 644 srv/modules/pillar/__pycache__/*.pyc $(DESTDIR)/srv/modules/pillar/__pycache__
 	install -m 644 srv/modules/pillar/stack.py $(DESTDIR)/srv/modules/pillar/
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/modules/modules
 	install -m 644 srv/modules/modules/*.py* $(DESTDIR)/srv/modules/modules/
 	# runners
 	install -d -m 755 $(DESTDIR)/srv/modules/runners
-	install -d -m 755 $(DESTDIR)/srv/modules/runners/__pycache__
-	install -m 644 srv/modules/runners/__pycache__/*.pyc $(DESTDIR)/srv/modules/runners/__pycache__
 	install -m 644 srv/modules/runners/*.py* $(DESTDIR)/srv/modules/runners/
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(DESTDIR)/srv/modules/runners/deepsea.py
 	# utils
 	install -d -m 755 $(DESTDIR)/srv/modules/utils
-	install -d -m 755 $(DESTDIR)/srv/modules/utils/__pycache__
-	install -m 644 srv/modules/utils/__pycache__/*.pyc $(DESTDIR)/srv/modules/utils/__pycache__
 	install -m 644 srv/modules/utils/*.py* $(DESTDIR)/srv/modules/utils
 	# pillar
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph
@@ -174,13 +176,7 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/usr/share/man/man1
 	install -m 644 man/deepsea*.1 $(DESTDIR)/usr/share/man/man1
 	# modules
-	install -d -m 755 $(DESTDIR)/srv/__pycache__
-	install -m 644 srv/__pycache__/*.pyc $(DESTDIR)/srv/__pycache__
-	install -d -m 755 $(DESTDIR)/srv/salt/__pycache__
-	install -m 644 srv/salt/__pycache__/*.pyc $(DESTDIR)/srv/salt/__pycache__
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
-	install -d -m 755 $(DESTDIR)/srv/salt/_modules/__pycache__
-	install -m 644 srv/salt/_modules/__pycache__/*.pyc $(DESTDIR)/srv/salt/_modules/__pycache__
 	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
@@ -315,10 +311,6 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api/files
 	install -m 644 srv/salt/ceph/salt-api/files/*.conf* $(DESTDIR)/srv/salt/ceph/salt-api/files
 
-	# state files - metapackage
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/metapackage
-	install -m 644 srv/salt/ceph/metapackage/*.sls $(DESTDIR)/srv/salt/ceph/metapackage
-
 	# state files - migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/osds
@@ -374,8 +366,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/cron
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
 	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/*.py $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__
-	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__/*.pyc $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/__pycache__
 	# state files - noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/set
@@ -835,7 +825,9 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install-deps:
-	$(PKG_INSTALL) python3-setuptools python3-click python3-tox salt-api
+	# Using '|| true' to suppress failure (packages already installed, etc)
+	$(PKG_INSTALL) $(PYTHON_DEPS) salt-api || true
+	$(PIPCMD) >/dev/null 2>&1 || true
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
@@ -846,7 +838,7 @@ install: pyc install-deps copy-files
 	systemctl restart salt-master || true
 	systemctl restart salt-api || true
 	# deepsea-cli
-	python3 setup.py install --root=$(DESTDIR)/
+	$(PYTHON) setup.py install --root=$(DESTDIR)/
 
 rpm: tarball test
 	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
