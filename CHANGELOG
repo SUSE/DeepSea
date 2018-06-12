@@ -1,4 +1,18 @@
 -------------------------------------------------------------------
+Thu Jun  7 12:31:08 UTC 2018 - jschmid@suse.com
+
+- Version 0.8.5 13a479a
+- qa: ensure ceph-test RPM is installed
+- fix: Add missing role to cephprocesses map (bsc#1089900)
+- cleanup: runners/populate: don't create public_address proposals for mon/igw 
+- fix: Fix salt-api validation
+- qa: add smoketests
+- improvement/fix: accomodate mds update/restart issues (bsc#1085385)
+- lock down version to salt2016.x.x (bsc#323819, bsc#1094311, bsc#1094314)
+- cli: fix bugs and add [parsing] feedback
+- feature: add initial apparmor support
+
+-------------------------------------------------------------------
 Thu Apr 17 16:50:50 UTC 2018 - jschmid@suse.de
 
 - Version 0.8.4 a58d1c5 
