@@ -83,6 +83,9 @@ test_systemd_ceph_osd_target_wants
 create_all_pools_at_once write_test
 rados_write_test
 ceph_version_test
+run_smoketest "apparmor"
+run_smoketest "quiescient"
+run_smoketest "restart"
 if [ -z "$MINI" ] ; then
     run_stage_0 "$CLI"
     restart_services

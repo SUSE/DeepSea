@@ -92,6 +92,14 @@ function install_deps {
 # functions for running the DeepSea stages
 #
 
+function run_smoketest {
+  salt-run state.orch ceph.smoketests.$1
+}
+
+function run_all_smoketests {
+  salt-run state.orch ceph.smoketests
+}
+
 function run_stage_0 {
   _run_stage 0 "$@"
 }
