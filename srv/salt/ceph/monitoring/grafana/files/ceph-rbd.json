@@ -1,12 +1,22 @@
 {
   "overwrite": true,
   "dashboard": {
+    "__inputs": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "description": "",
+        "type": "datasource",
+        "pluginId": "prometheus",
+        "pluginName": "Prometheus"
+      }
+    ],
     "__requires": [
       {
         "type": "grafana",
         "id": "grafana",
         "name": "Grafana",
-        "version": "3.1.1"
+        "version": "4.5.1"
       },
       {
         "type": "panel",
@@ -19,12 +29,6 @@
         "id": "prometheus",
         "name": "Prometheus",
         "version": "1.0.0"
-      },
-      {
-        "type": "panel",
-        "id": "singlestat",
-        "name": "Singlestat",
-        "version": ""
       }
     ],
     "annotations": {
@@ -32,8 +36,9 @@
     },
     "description": "Ceph RBD status.\r\n",
     "editable": false,
+    "gnetId": null,
     "graphTooltip": 0,
-    "hideControls": false,
+    "hideControls": true,
     "id": null,
     "links": [],
     "refresh": "30s",
@@ -45,8 +50,10 @@
           {
             "aliasColors": {},
             "bars": false,
-            "datasource": null,
-            "fill": 1,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 0,
             "id": 1,
             "legend": {
               "avg": false,
@@ -66,33 +73,29 @@
             "points": false,
             "renderer": "flot",
             "repeat": null,
-            "scopedVars": {
-              "image": {
-                "selected": true,
-                "text": "bar",
-                "value": "bar"
-              }
-            },
             "seriesOverrides": [],
+            "spaceLength": 10,
             "span": 12,
             "stack": false,
             "steppedLine": false,
             "targets": [
               {
                 "expr": "ceph_rbd_image_bytes_provisioned{image=~\"$image\",pool=~\"$pool\"}",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "Bytes provisioned",
                 "metric": "ceph_rbd_image_bytes_provisioned",
                 "refId": "A",
-                "step": 40
+                "step": 60
               },
               {
                 "expr": "ceph_rbd_image_bytes_used{image=~\"$image\",pool=~\"$pool\"}",
+                "format": "time_series",
                 "intervalFactor": 2,
                 "legendFormat": "Bytes used",
                 "metric": "ceph_rbd_image_bytes_used",
                 "refId": "B",
-                "step": 40
+                "step": 60
               }
             ],
             "thresholds": [],
@@ -106,6 +109,7 @@
             },
             "type": "graph",
             "xaxis": {
+              "buckets": null,
               "mode": "time",
               "name": null,
               "show": true,
