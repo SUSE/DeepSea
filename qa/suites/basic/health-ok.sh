@@ -85,21 +85,12 @@ rados_write_test
 ceph_version_test
 run_smoketest "apparmor"
 run_smoketest "quiescient"
-run_smoketest "restart"
 if [ -z "$MINI" ] ; then
+    # run stages that take a different path depending on the cluster state
     run_stage_0 "$CLI"
-    restart_services
-    mon_restarted "1" # 1 means not restarted
-    osd_restarted "1"
-    # apply config change
-    change_osd_conf
-    change_mon_conf
-    # construct and spread config
     run_stage_3 "$CLI"
-    restart_services
-    mon_restarted "0" # 0 means restarted
-    osd_restarted "0"
-    # make sure still in HEALTH_OK
+    # run smoketests
+    run_smoketest "restart"
     ceph_cluster_status
     ceph_health_test
 fi
