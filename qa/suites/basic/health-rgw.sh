@@ -98,13 +98,7 @@ rgw_user_and_bucket_list
 rgw_validate_demo_users
 ceph_health_test
 run_stage_0 "$CLI"
-restart_services
-rgw_restarted "1" # 1 means not restarted
-# apply config change
-change_rgw_conf
-# construct and spread config
 run_stage_3 "$CLI"
-restart_services
-rgw_restarted "0" # 0 means restarted
+run_restart_smoketest "rgw"
 
 echo "OK"

@@ -83,5 +83,7 @@ rgw_curl_test
 rgw_user_and_bucket_list
 ceph_version_test
 run_stage_0 "$CLI"
+run_restart_smoketest "rgw"
+run_restart_smoketest "mds"
 
 echo "OK"

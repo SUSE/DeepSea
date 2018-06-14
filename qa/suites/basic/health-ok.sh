@@ -83,16 +83,18 @@ test_systemd_ceph_osd_target_wants
 create_all_pools_at_once write_test
 rados_write_test
 ceph_version_test
-run_smoketest "apparmor"
-run_smoketest "quiescient"
 if [ -z "$MINI" ] ; then
     # run stages that take a different path depending on the cluster state
     run_stage_0 "$CLI"
     run_stage_3 "$CLI"
     # run smoketests
-    run_smoketest "restart"
+    run_smoketest "apparmor"
+    run_smoketest "quiescient"
+    run_restart_smoketest "mon"
+    run_restart_smoketest "mgr"
     ceph_cluster_status
     ceph_health_test
 fi
+
 
 echo "OK"

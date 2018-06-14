@@ -182,9 +182,8 @@ function install_deps {
   done
 }
 
-
 #
-# functions for running the DeepSea stages
+# functions for running the DeepSea smoketests
 #
 
 function run_smoketest {
@@ -192,10 +191,19 @@ function run_smoketest {
   salt-run state.orch ceph.smoketests.$1
 }
 
+function run_restart_smoketest {
+  echo "Running restart smoketest for $1"
+  salt-run state.orch ceph.smoketests.restart.$1
+}
+
 function run_all_smoketests {
   echo "Running all smoketests"
   salt-run state.orch ceph.smoketests
 }
+
+#
+# functions for running the DeepSea stages
+#
 
 function run_stage_0 {
   _run_stage 0 "$@"

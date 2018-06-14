@@ -73,5 +73,6 @@ ceph_cluster_status
 ceph_health_test
 cephfs_mount_and_sanity_test
 run_stage_0 "$CLI"
+run_restart_smoketest "mds"
 
 echo "OK"
