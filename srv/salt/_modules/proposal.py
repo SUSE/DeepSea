@@ -239,9 +239,7 @@ def _device(drive):
     if 'Device Files' in drive:
         devices = drive['Device Files'].split(', ')
         index = _prefer_underscores(devices)
-        # Prefer 'Device File' over last item
-        if index > -1:
-            return devices[index]
+        return devices[index]
     return drive['Device File']
 
 
