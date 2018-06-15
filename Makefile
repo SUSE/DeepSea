@@ -421,6 +421,16 @@ copy-files:
 	install -m 644 srv/salt/ceph/openstack/cinder/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/key
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/pool
 	install -m 644 srv/salt/ceph/openstack/cinder/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/pool
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/auth
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/files
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/key
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/pool
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/pool
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance
 	install -m 644 srv/salt/ceph/openstack/glance/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/auth
