@@ -54,9 +54,6 @@ def file(component, name=None):
     elif component == "glance":
         return "/srv/salt/ceph/openstack/glance/cache/glance.keyring"
 
-    elif component == "nova":
-        return "/srv/salt/ceph/openstack/nova/cache/nova.keyring"
-
     if component == "ganesha":
         return "/srv/salt/ceph/ganesha/cache/" + name + ".keyring"
 

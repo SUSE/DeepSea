@@ -377,12 +377,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/openstack/glance/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/pool
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova
 	install -m 644 srv/salt/ceph/openstack/nova/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/auth
-	install -m 644 srv/salt/ceph/openstack/nova/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/auth
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/files
-	install -m 644 srv/salt/ceph/openstack/nova/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/nova/files
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/key
-	install -m 644 srv/salt/ceph/openstack/nova/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/key
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/pool
 	install -m 644 srv/salt/ceph/openstack/nova/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/pool
 	# state files - osd
