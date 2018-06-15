@@ -51,6 +51,9 @@ def file(component, name=None):
     elif component == "cinder":
         return "/srv/salt/ceph/openstack/cache/cinder.keyring"
 
+    elif component == "cinder-backup":
+        return "/srv/salt/ceph/openstack/cache/cinder-backup.keyring"
+
     elif component == "glance":
         return "/srv/salt/ceph/openstack/cache/glance.keyring"
 
