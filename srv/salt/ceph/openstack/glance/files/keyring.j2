@@ -1,4 +1,4 @@
 [{{ client }}]
         key = {{ secret }}
-        caps mon = allow r
-        caps osd = allow class-read object_prefix rbd_children,  allow allow rwx pool=glance
+        caps mon = "profile rbd"
+        caps osd = "profile rbd pool={{ prefix }}images"
