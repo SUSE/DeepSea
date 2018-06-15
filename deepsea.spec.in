@@ -200,9 +200,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/openstack/glance/key
 %dir /srv/salt/ceph/openstack/glance/pool
 %dir /srv/salt/ceph/openstack/nova
-%dir /srv/salt/ceph/openstack/nova/auth
-%dir /srv/salt/ceph/openstack/nova/files
-%dir /srv/salt/ceph/openstack/nova/key
 %dir /srv/salt/ceph/openstack/nova/pool
 %dir %attr(0700, salt, salt) /srv/salt/ceph/openattic/cache
 %dir /srv/salt/ceph/openattic/files
@@ -520,9 +517,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/openstack/glance/key/*.sls
 %config /srv/salt/ceph/openstack/glance/pool/*.sls
 %config /srv/salt/ceph/openstack/nova/*.sls
-%config /srv/salt/ceph/openstack/nova/auth/*.sls
-%config /srv/salt/ceph/openstack/nova/files/*.j2
-%config /srv/salt/ceph/openstack/nova/key/*.sls
 %config /srv/salt/ceph/openstack/nova/pool/*.sls
 %config /srv/salt/ceph/osd/*.sls
 %config /srv/salt/ceph/osd/files/*.j2
