@@ -80,6 +80,8 @@ copy-files:
 	# tests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -m 644 srv/salt/ceph/tests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/tests/keyrings
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/openstack
+	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/os_switch
 	install -m 644 srv/salt/ceph/tests/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/tests/os_switch
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent
@@ -130,6 +132,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/macros
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/macros/os_switch
 	install -m 644 srv/salt/ceph/smoketests/macros/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/macros/os_switch
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/openstack
+	install -m 644 srv/salt/ceph/smoketests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
