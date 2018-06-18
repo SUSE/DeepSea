@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
-# pylint: disable=too-few-public-methods,modernize-parse-error,no-else-return
+# pylint: disable=too-few-public-methods,modernize-parse-error
 """
 The queue runner in salt uses sqlite.  While not a problem in general, when
 a few events arrive simultaneously, the last attempts fail.  The contention is

@@ -168,6 +168,7 @@ def iperf_client_cmd(server, cpu=0, port=5200):
                      "-t10", "-c"+server, "-p"+str(port)]
         log.debug('iperf_client_cmd: cmd {}'.format(iperf_cmd))
         retcode, stdout, stderr = __salt__['helper.run'](iperf_cmd)
+        # pylint: disable=redefined-variable-type
         ret = (server, retcode, stdout, stderr)
     return ret
 

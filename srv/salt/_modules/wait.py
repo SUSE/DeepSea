@@ -79,7 +79,6 @@ class HealthCheck(object):
         """
         Return the "correct" matching status
         """
-        # pylint: disable=no-else-return
         if self.settings['negate']:
             log.debug("status != {}".format(self.settings['status']))
             return current != self.settings['status']

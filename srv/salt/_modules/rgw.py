@@ -138,6 +138,7 @@ def add_users(pathname="/srv/salt/ceph/rgw/cache", jinja="/srv/salt/ceph/rgw/fil
                 # when the RGW user was manually created beforehand.
                 # pylint: disable=useless-else-on-loop
                 if not os.path.exists(filename):
+                    # pylint: disable=redefined-variable-type
                     args = ['radosgw-admin', 'user', 'info']
                     args.extend(['--uid', user['uid']])
                     args.extend(['--rgw-realm', realm])
@@ -244,6 +245,7 @@ def endpoints(cluster='ceph'):
                 if line:
                     match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
                     if match:
+                        # pylint: disable=redefined-variable-type
                         port = int(match.group(1))
                         ssl = match.group(2)
 
