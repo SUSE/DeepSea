@@ -123,12 +123,11 @@ def get_printer(__pub_output=None, **kwargs):
     Return the passed printer, JsonPrinter or PrettyPrinter function
     """
     if 'printer' in kwargs:
-        printer = kwargs['printer']
+        return kwargs['printer']
     elif __pub_output in ['json', 'quiet']:
-        printer = JsonPrinter()
+        return JsonPrinter()
     else:
-        printer = PrettyPrinter()
-    return printer
+        return PrettyPrinter()
 
 
 class Preparation(object):

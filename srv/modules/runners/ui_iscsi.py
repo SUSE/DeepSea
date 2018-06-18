@@ -56,7 +56,6 @@ class Iscsi(object):
 
         return self.data
 
-    # pylint: disable=no-else-return
     def interfaces(self, wrapped=True):
         """
         Parse grains for all network interfaces on igw roles.  Possibly
@@ -179,7 +178,6 @@ class Iscsi(object):
 
         return self.data
 
-    # pylint: disable=no-else-return
     def canned_images(self, canned, wrapped=True):
         """
         Return canned example for pools and images

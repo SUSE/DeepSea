@@ -680,7 +680,6 @@ class OSDConfig(object):
             return ident[device][key]
         return default
 
-    # pylint: disable=no-self-use,no-else-return
     def set_journal_size(self, default=None):
         """
         Return journal size if defined.  Otherwise, return a size that is

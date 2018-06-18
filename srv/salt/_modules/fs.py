@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=fixme,no-else-return
+# pylint: disable=fixme
 
 """
 ------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ def _add_fstab_entry(_uuid, path, fstype, subvol):
     try:
         with open('/etc/fstab', 'r') as _fstab:
             fstab_entries = [line.rstrip('\n') for line in _fstab]
-    except (IOError, FileNotFoundError):
+    except IOError:
         log.error("Failed to read /etc/fstab.", exc_info=True)
         return False
 
@@ -230,7 +230,7 @@ def _add_fstab_entry(_uuid, path, fstype, subvol):
     try:
         with open('/etc/fstab', 'a') as _fstab:
             _fstab.write("{}\n".format(entry))
-    except (IOError, FileNotFoundError):
+    except IOError:
         log.error("Failed to append '{}' to /etc/fstab.".format(entry), exc_info=True)
         return False
 
@@ -361,7 +361,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
     # Create a unique tmp directory.
     try:
         tmp_dir = tempfile.mkdtemp()
-    except (PermissionError, FileExistsError, OSError):
+    except OSError:
         log.error("Unable to create subvolume '{}': failed to create a temporary directory.".format(
             subvol), exc_info=True)
         return False
@@ -389,7 +389,7 @@ def btrfs_create_subvol(subvol='', dev_info=None, **kwargs):
             log.error("Failed to unmount '{}'.".format(tmp_dir))
         try:
             shutil.rmtree(tmp_dir)
-        except (OSError, FileNotFoundError):
+        except OSError:
             log.error("Failed to remove '{}'.".format(tmp_dir), exc_info=True)
 
     if not ret:
@@ -841,7 +841,7 @@ def get_device_info(mountpoint='', **kwargs):
                 dev_info['type'] = 'hd'
             else:
                 dev_info['type'] = 'unknown'
-    except (IOError, FileNotFoundError):
+    except IOError:
         # For some reason, the file doesn't exist or we can't open it.
         log.error(
             "Failed to determine if '{}' is a solid state device.".format(dev_path),
@@ -891,7 +891,7 @@ def instantiate_btrfs_subvolume(subvol='', path='', **kwargs):
         if not os.path.exists(path):
             try:
                 os.mkdir(path)
-            except (OSError, FileNotFoundError):
+            except OSError:
                 log.error("Failed to create '{}' for mounting of '{}'.".format(
                     path, subvol), exc_info=True)
                 return False
@@ -905,7 +905,7 @@ def instantiate_btrfs_subvolume(subvol='', path='', **kwargs):
         # Make sure path has correct uid/gid.
         try:
             os.chown(path, uid_gid['uid'], uid_gid['gid'])
-        except (OSError, FileNotFoundError):
+        except OSError:
             log.error(
                 "Failed to set {}:{} ownership of existing '{}' after mounting subvolume '{}'."
                 .format(uid_gid['uid'], uid_gid['gid'], path, subvol),
@@ -1018,7 +1018,7 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # Try to create tmp_path.
     try:
         os.mkdir(tmp_path)
-    except (OSError, FileNotFoundError):
+    except OSError:
         log.error("Unable to migrate '{}' to subvolume '{}': failed to create '{}'.".format(
             path, subvol, tmp_path), exc_info=True)
         return False
@@ -1085,7 +1085,7 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # Make sure path has correct uid/gid.
     try:
         os.chown(path, uid_gid['uid'], uid_gid['gid'])
-    except (OSError, FileNotFoundError):
+    except OSError:
         log.error(
             "Failed to set {}:{} ownership of '{}' after migration to subvolume '{}'."
             .format(uid_gid['uid'], uid_gid['gid'], path, subvol),
@@ -1107,7 +1107,7 @@ def migrate_path_to_btrfs_subvolume(path='', subvol='', **kwargs):
     # At this point, it's safe to remove tmp_path.
     try:
         os.rmdir(tmp_path)
-    except (OSError, FileNotFoundError):
+    except OSError:
         # shutil.move() would have failed above if we failed to move
         # everything from tmp_path to path, treating this as a cleanup error.
         log.error(

@@ -34,6 +34,7 @@ class PackageManager(object):
             self.pm = Zypper(**kwargs)
         elif "ubuntu" in self.platform or "debian" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
+            # pylint: disable=redefined-variable-type
             self.pm = Apt(**kwargs)
         else:
             raise ValueError("Failed to detect PackageManager for OS."
