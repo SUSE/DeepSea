@@ -814,8 +814,7 @@ class TestOSDPartitions():
         And I have a wal_size
         And I have a db_size
         And wal is not equivalent to the device
-        Expect to call create('/dev/sddb', [('db', db_size)])
-        Expect to call create('/dev/sdwal', [('wal', wal_size)])
+        Expect to call create('/dev/sddb', [('db', db_size)]) only
         """
         kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
@@ -826,8 +825,8 @@ class TestOSDPartitions():
         test_module = helper_specs(module=DEFAULT_MODULE)()
         obj = test_module.OSDPartitions(osd_config)
         obj._bluestore_partitions()
-        create_mock.assert_any_call('/dev/sdwal', [('wal', 'walsize')])
         create_mock.assert_any_call('/dev/sddb', [('db', 'dbsize')])
+        assert create_mock.call_count == 1
 
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
@@ -860,7 +859,8 @@ class TestOSDPartitions():
         And I have a wal_size
         And I do not have a db_size
         And wal is not equivalent to the device
-        Expect to call create('/dev/sdx', [('wal', wal_size)])
+
+        Expect WAL to reside on DB device
         """
         kwargs = {'format': 'bluestore',
                   'wal': '/dev/sdwal',
@@ -871,7 +871,7 @@ class TestOSDPartitions():
         test_module = helper_specs(module=DEFAULT_MODULE)()
         obj = test_module.OSDPartitions(osd_config)
         obj._bluestore_partitions()
-        create_mock.assert_any_call('/dev/sdwal', [('wal', 'walsize')])
+        create_mock.call_count == 0
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_wal_and_db_no_sizes_no_eq(self, mock_log):
@@ -913,16 +913,12 @@ class TestOSDPartitions():
         obj._bluestore_partitions()
         mock_log.warning.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._halve')
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
-    @mock.patch('srv.salt._modules.osd.log')
-    def test_bluestore_partitions_no_waldb_only_wal_and_size_no_eq(self, mock_log, create_mock, halve_mock):
+    def test_bluestore_partitions_no_waldb_only_wal_and_size_no_eq(self, create_mock):
         """
         Given I defined only wal
         And I have a wal_size
         And wal is not equivalent to the device
-        Expect to call log()
-        Expect to call _halve()
         Expect to call create()
         """
         kwargs = {'format': 'bluestore',
@@ -934,9 +930,7 @@ class TestOSDPartitions():
         test_module = helper_specs(module=DEFAULT_MODULE)()
         obj = test_module.OSDPartitions(osd_config)
         obj._bluestore_partitions()
-        mock_log.warning.assert_called_with('Setting db to same device /dev/sdwal as wal')
-        create_mock.assert_called_with('/dev/sdwal', [('wal', 100000), ('db', halve_mock('100000'))])
-        halve_mock.assert_called_with('100000')
+        create_mock.assert_called_with('/dev/sdwal', [('wal', 100000)])
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_only_wal_and_no_size(self, mock_log):
@@ -956,8 +950,9 @@ class TestOSDPartitions():
         obj._bluestore_partitions()
         mock_log.warning.assert_called_with('WAL size is unsupported for same device of /dev/sdx')
 
+    @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
-    def test_bluestore_partitions_no_waldb_only_db_and_size_eq_log(self, mock_log):
+    def test_bluestore_partitions_no_waldb_only_db_and_size_eq_log(self, mock_log, create_mock):
         """
         Given I haven't defined wal but a db
         And I have a db_size
@@ -968,17 +963,16 @@ class TestOSDPartitions():
                   'wal': '/dev/sdx', # temp fix until #340 is merged
                   'db': '/dev/sddb',
                   'wal_size': None,
-                  'db_size': 'dbsize'}
+                  'db_size': 100000}
         osd_config = OSDConfig(**kwargs)
         test_module = helper_specs(module=DEFAULT_MODULE)()
         obj = test_module.OSDPartitions(osd_config)
         obj._bluestore_partitions()
-        mock_log.warning.assert_called_with('DB size is unsupported for same device of /dev/sdx')
+        create_mock.assert_called_with('/dev/sddb', [('db', 100000)])
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._double')
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
-    def test_bluestore_partitions_no_waldb_only_db_and_size_no_eq_create(self, mock_log, create_mock, double_mock):
+    def test_bluestore_partitions_no_waldb_only_db_and_size_no_eq_create(self, mock_log, create_mock):
         """
         Given I haven't defined wal but a db
         And I have a db_size
@@ -996,8 +990,7 @@ class TestOSDPartitions():
         obj = test_module.OSDPartitions(osd_config)
         obj._bluestore_partitions()
         mock_log.warning.assert_called_with('Setting wal to same device /dev/sddb as db')
-        create_mock.assert_called_with('/dev/sddb', [('wal', double_mock(100000)), ('db', 100000)])
-        double_mock.assert_called_with(100000)
+        create_mock.assert_called_with('/dev/sddb', [('db', 100000)])
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_no_db_log(self, mock_log):
@@ -1591,8 +1584,9 @@ class TestOSDCommands():
         And and the device is a NVME
         Expect args to be:
 
-        --block.wal /dev/sdwal1 --block.db /dev/sddb1 /dev/nvme0n1p1
+        --block.db /dev/sddb1 /dev/nvme0n1p1
 
+        since the WAL will use the DB
         """
         kwargs = {'wal': '/dev/sdwal',
                   'wal_size': '2G',
@@ -1604,7 +1598,7 @@ class TestOSDCommands():
         ip_mock.side_effect = [True]
         hp_mock.side_effect = [1, 1]
         ret = obj._bluestore_args()
-        assert ret == "--block.wal /dev/sdwal1 --block.db /dev/sddb1 /dev/nvme0n1p1"
+        assert ret == "--block.db /dev/sddb1 /dev/nvme0n1p1"
 
     @mock.patch('srv.salt._modules.osd.OSDCommands.highest_partition')
     @mock.patch('srv.salt._modules.osd.OSDCommands.is_partitioned')
