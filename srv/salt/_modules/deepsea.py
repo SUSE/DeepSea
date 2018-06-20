@@ -11,7 +11,7 @@ def show_low_sls(*states):
         if isinstance(state, dict):
             for key, states2 in state.items():
                 res = {}
-                for state2 in states2:
+                for _ in states2:
                     res[state] = __salt__['state.show_low_sls'](state)
                 result[key] = res
         else:
