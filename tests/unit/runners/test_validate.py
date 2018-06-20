@@ -5,7 +5,7 @@ sys.path.insert(0, 'srv/salt/_modules')
 sys.path.insert(0, 'srv/modules/runners')
 sys.path.insert(0, 'srv/modules/runners/utils')
 
-from mock import patch, MagicMock
+from mock import patch, mock, MagicMock
 from srv.modules.runners import validate
 
 
@@ -231,6 +231,127 @@ class TestValidation():
         validator.storage()
         assert "Too few storage nodes" in validator.errors['storage'][0]
 
+    @patch('salt.client.LocalClient')
+    def test_check_installed_succeeds(self, mock_localclient):
+        fake_data = {'admin.ceph': {'ceph-common': {'version': '13.0.1'}},
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator._check_installed()
+        assert 'ceph_version' not in validator.errors
+
+    @patch('salt.client.LocalClient')
+    def test_check_installed_is_older(self, mock_localclient):
+        fake_data = {'admin.ceph': {'ceph-common': {'version': '10.1.1'}},
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator._check_installed()
+        assert 'admin.ceph' in validator.errors['ceph_version']
+
+    @patch('salt.client.LocalClient')
+    def test_check_installed_has_broken_version(self, mock_localclient):
+        fake_data = {'admin.ceph': {'ceph-common': {'nope': 'x.x.x'}},
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator._check_installed()
+        assert 'admin.ceph' in validator.errors['ceph_version']
+
+    @patch('salt.client.LocalClient')
+    def test_check_installed_is_not_installed(self, mock_localclient):
+        fake_data = {'admin.ceph': 'ERROR: package ceph-common is not installed',
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator._check_installed()
+        assert 'admin.ceph' in validator.uninstalled
+
+    @patch('salt.client.LocalClient')
+    def test_check_available_succeeds(self, mock_localclient):
+        fake_data = {'admin.ceph': {'ceph-common': {'version': '13.0.1'}},
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator.uninstalled = ['admin.ceph', 'data.ceph']
+        validator._check_available()
+        assert 'ceph_version' not in validator.errors
+
+    @patch('salt.client.LocalClient')
+    def test_check_available_succeeds_with_no_minions(self, mock_localclient):
+        validator = validate.Validate("setup")
+
+        validator.uninstalled = []
+        validator._check_available()
+        assert 'ceph_version' not in validator.errors
+
+    @patch('salt.client.LocalClient')
+    def test_check_available_is_older(self, mock_localclient):
+        fake_data = {'admin.ceph': {'ceph-common': {'version': '10.1.1'}},
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator.uninstalled = ['admin.ceph']
+        validator._check_available()
+        assert 'admin.ceph' in validator.errors['ceph_version']
+
+    @patch('salt.client.LocalClient')
+    def test_check_available_has_broken_version(self, mock_localclient):
+        fake_data = {'admin.ceph': {'ceph-common': {'nope': 'x.x.x'}},
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator.uninstalled = ['admin.ceph']
+        validator._check_available()
+        assert 'admin.ceph' in validator.errors['ceph_version']
+
+    @patch('salt.client.LocalClient')
+    def test_check_available_has_no_repo(self, mock_localclient):
+        fake_data = {'admin.ceph': '',
+                     'data.ceph': {'ceph-common': {'version': '13.0.1'}}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup")
+
+        validator.uninstalled = ['admin.ceph']
+        validator._check_available()
+        assert 'admin.ceph' in validator.errors['ceph_version']
+
+    @patch('validate.DeepseaMinions')
+    @patch('salt.client.LocalClient')
+    def test_salt_version(self, mock_localclient, mock_deepsea):
+        fake_data = { 'admin.ceph': '2018.1.99',
+                      'data.ceph': '2018.1.99'}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_grains=True)
+
+        assert len(validator.passed) == 0
+        validator.salt_version()
+        assert validator.passed['salt_version'] == 'valid'
 
     @patch('salt.client.LocalClient')
     def test_salt_version(self, mock_localclient):
@@ -257,3 +378,7 @@ class TestValidation():
         assert len(validator.warnings) == 0
         validator.salt_version()
         assert 'not supported' in validator.warnings['salt_version'][0]
+
+
+
+

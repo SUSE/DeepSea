@@ -5,7 +5,7 @@
 
 validate failed:
   salt.state:
-    - name: just.exit
+    - name: test.fail_without_changes
     - tgt: {{ master }}
     - failhard: True
 

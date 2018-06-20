@@ -1,25 +1,8 @@
 
 {% set master = salt['master.minion']() %}
 
-{% if salt['saltutil.runner']('validate.saltapi') == False %}
-
-salt-api failed:
-  salt.state:
-    - name: just.exit
-    - tgt: {{ master }}
-    - failhard: True
-
-{% endif %}
-
-{% if salt['saltutil.runner']('validate.prep') == False %}
-
-validate failed:
-  salt.state:
-    - name: just.exit
-    - tgt: {{ master }}
-    - failhard: True
-
-{% endif %}
+include:
+  - ..validate
 
 ready:
   salt.runner:

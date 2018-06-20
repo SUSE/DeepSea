@@ -741,6 +741,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/radosgw/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/radosgw/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/services
 	install -m 644 srv/salt/ceph/stage/services/*.sls $(DESTDIR)/srv/salt/ceph/stage/services/
+	# state files - orchestrate shared
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/validate
+	install -m 644 srv/salt/ceph/stage/validate/*.sls $(DESTDIR)/srv/salt/ceph/stage/validate/
+	# state files - sync
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sync
 	install -m 644 srv/salt/ceph/sync/*.sls $(DESTDIR)/srv/salt/ceph/sync/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags
