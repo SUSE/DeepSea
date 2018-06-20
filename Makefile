@@ -40,6 +40,7 @@ endif
 endif
 endif
 endif
+endif
 
 
 usage:
@@ -297,6 +298,9 @@ copy-files:
 	install -m 644 srv/salt/ceph/mds/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds/restart/controlled
 	install -m 644 srv/salt/ceph/mds/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/mds/restart/controlled
+	# state files - metapackage
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/metapackage
+	install -m 644 srv/salt/ceph/metapackage/*.sls $(DESTDIR)/srv/salt/ceph/metapackage/
 	# state files - mgr
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr
 	install -m 644 srv/salt/ceph/mgr/*.sls $(DESTDIR)/srv/salt/ceph/mgr/
