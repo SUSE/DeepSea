@@ -527,9 +527,6 @@ class Validate(Preparation):
                 same_hosts[",".join(self.data[node][name])] = ""
                 if self.data[node][name][0].strip() == "":
                     msg = "host {} is missing values for {}.  ".format(node, name)
-                    msg += ("Verify that "
-                            "role-mon/stack/default/ceph/minions/*.yml "
-                            "or similar is in your policy.cfg")
                     if name in self.errors:
                         continue
                     else:
