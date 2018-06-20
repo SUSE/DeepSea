@@ -1,0 +1,103 @@
+# vim:syntax=apparmor
+# Author: Laura Paduano <lpaduano@suse.com>
+# "Failed name lookup - disconnected path" AppArmor error see:
+# https://gitlab.com/apparmor/apparmor/wikis/FAQ
+
+#include <tunables/global>
+
+/usr/sbin/httpd-prefork {
+  #include <abstractions/apache2-common>
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/openssl>
+  #include <abstractions/ssl_keys>
+
+
+  capability       chown,
+  capability       net_admin,
+  capability       net_bind_service,
+  capability       setgid,
+  capability       setuid,
+  capability       net_admin,
+  capability       kill,
+
+
+  /etc/ r,
+  /etc/SuSE-release r,
+  /etc/apache2/conf.d/ r,
+  /etc/apache2/conf.d/openattic.conf r,
+  /etc/apache2/default-server.conf r,
+  /etc/apache2/errors.conf r,
+  /etc/apache2/httpd.conf r,
+  /etc/apache2/listen.conf r,
+  /etc/apache2/loadmodule.conf rw,
+  /etc/apache2/global.conf r,
+  /etc/apache2/mod_autoindex-defaults.conf r,
+  /etc/apache2/mod_cgid-timeout.conf r,
+  /etc/apache2/mod_info.conf r,
+  /etc/apache2/mod_log_config.conf r,
+  /etc/apache2/mod_mime-defaults.conf r,
+  /etc/apache2/mod_reqtimeout.conf r,
+  /etc/apache2/mod_status.conf r,
+  /etc/apache2/mod_userdir.conf r,
+  /etc/apache2/mod_usertrack.conf r,
+  /etc/apache2/server-tuning.conf r,
+  /etc/apache2/ssl-global.conf r,
+  /etc/apache2/sysconfig.d/global.conf r,
+  /etc/apache2/sysconfig.d/include.conf r,
+  /etc/apache2/sysconfig.d/loadmodule.conf r,
+  /etc/apache2/uid.conf r,
+  /etc/apache2/vhosts.d/ r,
+  /etc/ceph/ r,
+  /etc/ceph/ceph.client.openattic.keyring r,
+  /etc/ceph/ceph.conf r,
+  /etc/libnl/classid r,
+  /etc/mime.types r,
+  /etc/openattic/database.ini r,
+  /etc/sysconfig/openattic r,
+  /proc/*/mounts r,
+  /proc/*/net/psched r,
+  /proc/filesystems r,
+  /proc/sys/crypto/fips_enabled r,
+  /run/httpd.pid rw,
+  /run/wsgi.*.*.*.lock wk,
+  /run/wsgi.*.*.*.sock w,
+  /sbin/ldconfig mrCx,
+  /srv/www/htdocs/* r,
+  /tmp/ r,
+  /usr/bin/rbd mrCx,
+  /usr/lib{,32,64}/** mr,
+  /usr/sbin/httpd-prefork mr,
+  /usr/share/openattic-gui/** r,
+  /usr/share/openattic/** rw,
+  /var/log/apache2/access_log w,
+  /var/log/apache2/error_log w,
+  /var/log/openattic/openattic.log w,
+  /var/tmp/ r,
+
+
+  profile /sbin/ldconfig {
+    #include <abstractions/base>
+
+
+    /sbin/ldconfig mr,
+
+  }
+
+  profile /usr/bin/rbd {
+    #include <abstractions/base>
+
+    network inet stream,
+
+
+    /etc/ceph/ceph.client.openattic.keyring r,
+    /etc/ceph/ceph.conf r,
+    /etc/libnl/classid r,
+    /etc/passwd r,
+    /proc/*/net/psched r,
+    /tmp/ r,
+    /usr/bin/rbd mr,
+    /var/tmp/ r,
+
+  }
+}

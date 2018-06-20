@@ -110,6 +110,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	# smoketests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
+	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -m 644 srv/salt/ceph/smoketests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/macros
@@ -189,6 +191,15 @@ copy-files:
 	install -m 644 srv/salt/ceph/admin/key/*.sls $(DESTDIR)/srv/salt/ceph/admin/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin/files
 	install -m 644 srv/salt/ceph/admin/files/*.j2 $(DESTDIR)/srv/salt/ceph/admin/files/
+	# state files apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files/ceph.d
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/install
+	install -m 644 srv/salt/ceph/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/apparmor/
+	install -m 644 srv/salt/ceph/apparmor/files/usr* $(DESTDIR)/srv/salt/ceph/apparmor/files/
+	install -m 644 srv/salt/ceph/apparmor/files/ceph.d/* $(DESTDIR)/srv/salt/ceph/apparmor/files/ceph.d/
+	install -m 644 srv/salt/ceph/apparmor/install/*.sls $(DESTDIR)/srv/salt/ceph/apparmor/install/
 	# state files benchmarks
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/benchmarks
 	install -m 644 srv/salt/ceph/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/benchmarks/

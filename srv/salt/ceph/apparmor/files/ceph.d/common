@@ -1,0 +1,33 @@
+# vim:syntax=apparmor
+# Author: Jan Fajerski <jfajerski@suse.com>
+
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/python>
+  capability setgid,
+  capability setuid,
+  capability dac_override,
+  capability dac_read_search,
+
+  network inet stream,
+  network inet6 stream,
+
+  /etc/ceph/* r,
+  /etc/libnl/classid r,
+  /etc/os-release r,
+
+  /run/ceph** rw,
+  /tmp/ r,
+  /var/lib/ceph/** rwk,
+  /var/log/ceph/* rwk,
+  /var/run/ceph/* rwk,
+  /var/tmp/ r,
+
+  /proc/*/task/** rw,
+  /proc/*/cmdline r,
+  /proc/*/auxv r,
+  /proc/*/net/dev r,
+  /proc/*/net/psched r,
+  /proc/loadavg r,
+  /proc/cpuinfo r,
+  /proc/meminfo r,
