@@ -1,6 +1,6 @@
 /etc/tuned/ses-mgr/tuned.conf:
   file.managed:
-    - source: salt://ceph/tuned/ses-mgr/tuned.conf
+    - source: salt://ceph/tuned/files/ses-mgr/tuned.conf
     - makedirs: True
     - user: root
     - group: root
@@ -12,5 +12,5 @@ start tuned:
     - enable: True
 
 apply tuned ses mgr:
-  tuned.profile:
-    - name: "ses-mgr"
+  cmd.run:
+    - name: 'tuned-adm profile ses-mgr'

@@ -354,9 +354,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/tuned/mgr
 %dir /srv/salt/ceph/tuned/mon
 %dir /srv/salt/ceph/tuned/osd
-%dir /srv/salt/ceph/tuned/ses-mgr
-%dir /srv/salt/ceph/tuned/ses-mon
-%dir /srv/salt/ceph/tuned/ses-osd
+%dir /srv/salt/ceph/tuned/files/ses-mgr
+%dir /srv/salt/ceph/tuned/files/ses-mon
+%dir /srv/salt/ceph/tuned/files/ses-osd
 %dir /srv/salt/ceph/maintenance
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/maintenance/noout
@@ -669,9 +669,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/tuned/mgr/*.sls
 %config /srv/salt/ceph/tuned/mon/*.sls
 %config /srv/salt/ceph/tuned/osd/*.sls
-%config /srv/salt/ceph/tuned/ses-mgr/tuned.conf
-%config /srv/salt/ceph/tuned/ses-mon/tuned.conf
-%config /srv/salt/ceph/tuned/ses-osd/tuned.conf
+%config /srv/salt/ceph/tuned/files/ses-mgr/tuned.conf
+%config /srv/salt/ceph/tuned/files/ses-mon/tuned.conf
+%config /srv/salt/ceph/tuned/files/ses-osd/tuned.conf
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls
@@ -746,6 +746,8 @@ the README for more information.
 %dir /srv/salt/ceph/smoketests/macros/os_switch
 %dir /srv/salt/ceph/smoketests/quiescent
 %dir /srv/salt/ceph/smoketests/restart
+%dir /srv/salt/ceph/smoketests/tuned
+%dir /srv/salt/ceph/smoketests/tuned/off
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/keyrings
 %dir /srv/salt/ceph/tests/os_switch
@@ -771,10 +773,14 @@ the README for more information.
 %dir /srv/salt/ceph/tests/restart/rgw/forced
 %dir /srv/salt/ceph/tests/restart/rgw/nochange
 /srv/salt/ceph/smoketests/apparmor/*.sls
+%dir /srv/salt/ceph/tests/tuned
+%dir /srv/salt/ceph/tests/tuned/off
 /srv/salt/ceph/smoketests/keyrings/*.sls
 /srv/salt/ceph/smoketests/macros/os_switch/*.sls
 /srv/salt/ceph/smoketests/quiescent/*.sls
 /srv/salt/ceph/smoketests/restart/*.sls
+/srv/salt/ceph/smoketests/tuned/*.sls
+/srv/salt/ceph/smoketests/tuned/off/*.sls
 /srv/salt/ceph/tests/keyrings/*.sls
 /srv/salt/ceph/tests/os_switch/*.sls
 /srv/salt/ceph/tests/quiescent/*.sls
@@ -796,5 +802,6 @@ the README for more information.
 /srv/salt/ceph/tests/restart/rgw/change/*.sls
 /srv/salt/ceph/tests/restart/rgw/forced/*.sls
 /srv/salt/ceph/tests/restart/rgw/nochange/*.sls
-
+/srv/salt/ceph/tests/tuned/*.sls
+/srv/salt/ceph/tests/tuned/off/*.sls
 %changelog

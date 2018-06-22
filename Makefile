@@ -103,6 +103,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/change
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned/off
 	install -m 644 srv/salt/ceph/tests/restart/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart
 	install -m 644 srv/salt/ceph/tests/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon
 	install -m 644 srv/salt/ceph/tests/restart/mon/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon/change
@@ -120,6 +122,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/change
 	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
+	install -m 644 srv/salt/ceph/tests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned
+	install -m 644 srv/salt/ceph/tests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned/off
 	# smoketests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
 	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
@@ -132,6 +136,9 @@ copy-files:
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
 	install -m 644 srv/salt/ceph/smoketests/restart/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
+	install -m 644 srv/salt/ceph/smoketests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/tuned
+	install -m 644 srv/salt/ceph/smoketests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
@@ -683,13 +690,13 @@ copy-files:
 	install -m 644 srv/salt/ceph/tuned/mon/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mon
 	install -m 644 srv/salt/ceph/tuned/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mgr
 	# conf files - tuned
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/ses-osd
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/ses-mon
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/ses-mgr
-	install -m 644 srv/salt/ceph/tuned/ses-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/ses-osd
-	install -m 644 srv/salt/ceph/tuned/ses-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/ses-mon
-	install -m 644 srv/salt/ceph/tuned/ses-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/ses-mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ses-osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mgr
+	install -m 644 srv/salt/ceph/tuned/files/ses-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ses-osd
+	install -m 644 srv/salt/ceph/tuned/files/ses-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mon
+	install -m 644 srv/salt/ceph/tuned/files/ses-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mgr
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
