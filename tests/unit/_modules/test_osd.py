@@ -3588,6 +3588,17 @@ class TestCephPGS:
             ret = ceph_pgs.quiescent()
             assert ret == None
 
+    @patch('srv.salt._modules.osd.CephPGs.pg_states')
+    def test_quiescent_on_empty_cluster(self, pg_states):
+        """
+        """
+        pg_states.return_value = []
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            ceph_pgs = osd.CephPGs()
+            ceph_pgs.settings = {'timeout': 1, 'delay': 1}
+            ret = ceph_pgs.quiescent()
+            assert ret == None
+
     @patch('time.sleep')
     @patch('srv.salt._modules.osd.CephPGs.pg_states')
     def test_quiescent_timeout(self, pg_states, sleep):
