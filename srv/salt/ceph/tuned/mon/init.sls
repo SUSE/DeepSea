@@ -1,3 +1,3 @@
 
 include:
-  - .{{ salt['pillar.get']('tuned_init', 'default') }}
+  - .{{ salt['pillar.get']('tuned_mon_init', 'default') }}
