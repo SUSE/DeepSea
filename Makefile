@@ -841,7 +841,7 @@ copy-files:
 
 install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
-	$(PKG_INSTALL) $(PYTHON_DEPS) salt-api || true
+	$(PKG_INSTALL) $(PYTHON_DEPS) || true
 	$(PIPCMD) >/dev/null 2>&1 || true
 
 install: pyc install-deps copy-files
@@ -850,8 +850,8 @@ install: pyc install-deps copy-files
 	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
 	chown -R $(USER) /srv/pillar/ceph
 	# Use '|| true' to suppress some error output in corner cases
-	systemctl restart salt-master || true
-	systemctl restart salt-api || true
+	systemctl restart salt-master
+	systemctl restart salt-api
 	# deepsea-cli
 	$(PYTHON) setup.py install --root=$(DESTDIR)/
 
