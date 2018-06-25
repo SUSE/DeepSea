@@ -50,6 +50,9 @@ pyc: setup.py
 	find cli/ -name '*.py' -exec python3 -m py_compile {} \;
 
 copy-files:
+	# salt-minion config files
+	install -d -m 755 $(DESTDIR)/etc/salt/minion.d
+	install -m 644 etc/salt/minion.d/beacons.conf $(DESTDIR)/etc/salt/minion.d/
 	# salt-master config files
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
 	install -m 644 etc/salt/master.d/modules.conf $(DESTDIR)/etc/salt/master.d/
