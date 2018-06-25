@@ -760,6 +760,7 @@ the README for more information.
 %dir /srv/salt/ceph/tests/restart/rgw/change
 %dir /srv/salt/ceph/tests/restart/rgw/forced
 %dir /srv/salt/ceph/tests/restart/rgw/nochange
+/srv/salt/ceph/smoketests/*.sls
 /srv/salt/ceph/smoketests/keyrings/*.sls
 /srv/salt/ceph/smoketests/macros/os_switch/*.sls
 /srv/salt/ceph/smoketests/quiescent/*.sls

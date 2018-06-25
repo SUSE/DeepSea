@@ -110,6 +110,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	# smoketests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests
+	install -m 644 srv/salt/ceph/smoketests/*.sls $(DESTDIR)/srv/salt/ceph/smoketests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
+	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -m 644 srv/salt/ceph/smoketests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/macros
