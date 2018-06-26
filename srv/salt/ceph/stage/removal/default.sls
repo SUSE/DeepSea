@@ -59,7 +59,7 @@ remove openattic:
 
 remove tuned:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: 'I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.rescind.tuned
 
