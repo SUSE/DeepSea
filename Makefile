@@ -5,6 +5,7 @@ VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' 
 PYTHON_DEPS=python3-setuptools python3-click python3-tox
 PYTHON=python3
 PIPCMD=""
+HW_INFO=hwinfo
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 ifeq ($(OS), opensuse)
@@ -24,6 +25,7 @@ PKG_INSTALL=zypper -n install
 else
 USER=root
 GROUP=root
+HW_INFO=lshw
 ifeq ($(OS), centos)
 PKG_INSTALL=yum install -y
 PYTHON_DEPS=python-setuptools python-click python-tox
@@ -841,7 +843,7 @@ copy-files:
 
 install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
-	$(PKG_INSTALL) $(PYTHON_DEPS) || true
+	$(PKG_INSTALL) $(PYTHON_DEPS) $(HW_INFO) || true
 	$(PIPCMD) >/dev/null 2>&1 || true
 
 install: pyc install-deps copy-files
