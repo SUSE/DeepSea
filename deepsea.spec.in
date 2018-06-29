@@ -332,6 +332,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/radosgw/core
 %dir /srv/salt/ceph/stage/removal
 %dir /srv/salt/ceph/stage/services
+%dir /srv/salt/ceph/stage/validate
 %dir /srv/salt/ceph/tools
 %dir /srv/salt/ceph/tools/benchmarks
 %dir /srv/salt/ceph/tools/fio
@@ -643,6 +644,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/radosgw/core/*.sls
 %config /srv/salt/ceph/stage/removal/*.sls
 %config /srv/salt/ceph/stage/services/*.sls
+%config /srv/salt/ceph/stage/validate/*.sls
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/sysctl/*.sls
 %config /srv/salt/ceph/sysctl/files/*.conf

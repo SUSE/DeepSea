@@ -56,12 +56,20 @@ class PrettyPrinter(object):
     """
 
     # pylint: disable=unused-argument
-    def add(self, name, passed, errors, warnings):
+    def add(self, name, skipped, passed, errors, warnings):
         """
-        Print colored results.  Green is ok, yellow is warning and
-        red is error.
+        Print colored results.  Green is ok, yellow is warning,
+        red is error and blue is skipped.
         """
         # Need to make colors optional, but looks better currently
+        for attr in skipped.keys():
+            format_str = "{:25}: {}{}{}{}".format(attr,
+                                                  Bcolors.BOLD,
+                                                  Bcolors.OKBLUE,
+                                                  skipped[attr],
+                                                  Bcolors.ENDC)
+            log.info("VALIDATE SKIPPED  %s", format_str)
+            print(format_str)
         for attr in passed.keys():
             format_str = "{:25}: {}{}{}{}".format(attr,
                                                   Bcolors.BOLD,
@@ -216,23 +224,29 @@ class Validate(Preparation):
     """
 
     def __init__(self, name, search_pillar=False, search_grains=False,
-                 printer=None, search=None):
+                 printer=None, search=None, skip_init=False):
         """
         Query the cluster assignment and remove unassigned
         """
         # Python2 syntax is only used because the test is running in python2
-        super(Validate, self).__init__()
+        if not skip_init:
+            super(Validate, self).__init__()
         self.name = name
         self.data = self.__get_items(search_pillar, 'pillar')
         self.grains = self.__get_items(search_grains, 'grains')
         self.printer = printer
         self.in_dev_env = self.__dev_env()
+        self.skipped = OrderedDict()
         self.passed = OrderedDict()
         self.errors = OrderedDict()
         self.warnings = OrderedDict()
         if search:
             self.search = search
         # self._minion_check()
+
+        # Ceph version
+        self.package = 'ceph-common'
+        self.uninstalled = []
 
     def __get_items(self, enabled, target):
         """
@@ -272,6 +286,12 @@ class Validate(Preparation):
         """
         if key not in self.errors and key not in self.warnings:
             self.passed[key] = "valid"
+
+    def skip(self, key):
+        """
+        Assign skipped steps
+        """
+        self.skipped[key] = "skipping"
 
     def dev_env(self):
         """
@@ -771,66 +791,79 @@ class Validate(Preparation):
         """
         Scan all minions for ceph versions in their repos.
         """
-        local = salt.client.LocalClient()
-        contents = local.cmd(self.search,
-                             'pkg.latest_version',
-                             ['ceph-common'],
-                             tgt_type="compound")
-        for minion, version in contents.items():
-            # sometimes, version contains a string value
-            # other times, it contains an empty dict
-            log.debug("VALIDATE ceph_version: minion ->{}<- latest_version version ->{}<-"
-                      .format(minion, version))
-            if not version:
-                info = local.cmd(minion, 'pkg.info_installed', ['ceph-common'])
-                if info and info[minion] and 'version' in info[minion]['ceph-common']:
-                    version = info[minion]['ceph-common']['version']
-                    log.debug("VALIDATE ceph_version: minion ->{}<- info_installed version ->{}<-"
-                              .format(minion, version))
-                else:
-                    failmsg = ("No Ceph version is available for installation on minion {}"
-                               .format(minion))
-                    if self.in_dev_env:
-                        log.warning('VALIDATE ceph_version: %s', failmsg)
-                    else:
-                        self.errors.setdefault('ceph_version', []).append(failmsg)
-                        continue
-
-            colon_idx = version.find(':')
-            if colon_idx != -1:
-                version = version[colon_idx+1:]
-            dash_idx = version.rfind('-')
-            if dash_idx != -1:
-                version = version[:dash_idx]
-            log.debug("VALIDATE ceph_version: minion ->{}<- final munged version ->{}<-"
-                      .format(minion, version))
-            assert isinstance(version, str), "version value is not a string"
-
-            # "11.10" < "11.2" in Python terms, but not in terms of
-            # version numbering semantics, so we have to break the version number
-            # down into its integer components and compare those separately.
-            #
-            # We can assume that Ceph version numbers will always begin with X.Y.Z
-            # where X, Y, and Z are integers. Here, we are only interested in X and Y.
-            #
-            # In other words, there must be at least two version components and
-            # both must be convertible into integers.
-
-            if not all(s.isdigit() for s in version.split(".")[0:2]):
-                failmsg = ("Minion {} reports unparseable Ceph version {}"
-                           .format(minion, version))
-                if self.in_dev_env:
-                    log.warning('VALIDATE ceph_version: %s', failmsg)
-                else:
-                    self.errors.setdefault('ceph_version', []).append(failmsg)
-                    continue
-
-            if LooseVersion(version) < LooseVersion(LUMINOUS_VERSION):
-                self.errors.setdefault('ceph_version', []).append(
-                    "The Ceph version available on minion {} ({}) is older than 'luminous' ({})"
-                    .format(minion, version, LUMINOUS_VERSION))
-
+        self._check_installed()
+        self._check_available()
         self._set_pass_status('ceph_version')
+
+    def _check_installed(self):
+        """
+        Check for installed Ceph packages.  The query is faster and a fresh
+        install only happens once.
+        """
+        search = __utils__['deepsea_minions.show']()
+        results = self._silent_search(search, 'pkg.info_installed')
+
+        for minion in results:
+            if isinstance(results[minion], dict) and self.package in results[minion]:
+                if 'version' in results[minion][self.package]:
+                    version = self._check_version(minion, 'pkg.info_installed',
+                                                  results[minion][self.package]['version'])
+                    if (version and LooseVersion(version) < LooseVersion(LUMINOUS_VERSION)):
+                        prefix = 'Ceph version is older than Luminous on'
+                        self.errors.setdefault('ceph_version', [prefix]).append(minion)
+                else:
+                    # Something is really wrong
+                    prefix = 'Version missing from'
+                    self.errors.setdefault('ceph_version', [prefix]).append(minion)
+            else:
+                self.uninstalled.append(minion)
+
+    def _check_available(self):
+        """
+        Check for available Ceph packages.  If all minions have Ceph installed,
+        then the query has no results.
+        """
+        if not self.uninstalled:
+            return
+
+        search = "L@{}".format(",".join(self.uninstalled))
+        results = self._silent_search(search, 'pkg.info_available')
+        for minion in results:
+            if isinstance(results[minion], dict) and self.package in results[minion]:
+                if 'version' in results[minion][self.package]:
+                    version = self._check_version(minion, 'pkg.info_available',
+                                                  results[minion][self.package]['version'])
+                    if (version and LooseVersion(version) < LooseVersion(LUMINOUS_VERSION)):
+                        prefix = 'Ceph repository version is older than Luminous on'
+                        self.errors.setdefault('ceph_version', [prefix]).append(minion)
+                else:
+                    # Something is really wrong
+                    prefix = 'Repo version missing from'
+                    self.errors.setdefault('ceph_version', [prefix]).append(minion)
+            else:
+                prefix = 'Ceph repository is missing from'
+                self.errors.setdefault('ceph_version', [prefix]).append(minion)
+
+    def _silent_search(self, search, func):
+        """
+        Search that matches no minions prints to stdout confusing users when
+        mixed with the normal messages.  Suppress stdout.
+        """
+        _stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        results = self.local.cmd(search, func, [self.package], tgt_type="compound")
+        sys.stdout = _stdout
+        return results
+
+    def _check_version(self, minion, func, version):
+        """
+        Version may be an error message
+        """
+        if version.split('.')[0].isdigit():
+            return version
+        prefix = 'Ceph repository version {} is malformed from {}'.format(version, func)
+        self.errors.setdefault('ceph_version', [prefix]).append(minion)
+        return ""
 
     def salt_version(self):
         """
@@ -973,7 +1006,7 @@ class Validate(Preparation):
         """
         Print the validation report
         """
-        self.printer.add(self.name, self.passed, self.errors, self.warnings)
+        self.printer.add(self.name, self.skipped, self.passed, self.errors, self.warnings)
         self.printer.print_result()
 
 
@@ -1141,9 +1174,22 @@ def prep(**kwargs):
 
 def setup(**kwargs):
     """
-    Check that initial files prior to any stage are correct
+    Check that initial files prior to any stage are correct.  These
+    validations are intended for fresh deployments.  Skip automatic
+    checks on working clusters.
     """
     printer = get_printer(**kwargs)
+    if ('bypass' in kwargs and kwargs['bypass'] and
+        __salt__['cephprocesses.mon']()):
+        # Disable all Salt lookups
+        valid = Validate("setup", search_pillar=False, search_grains=False,
+                         skip_init=True, printer=printer)
+        valid.skip('deepsea_minions')
+        valid.skip('master_minion')
+        valid.skip('ceph_version')
+        valid.skip('salt_version')
+        valid.report()
+        return True
     valid = Validate("setup", search_pillar=True, printer=printer)
     valid.deepsea_minions()
     valid.master_minion()
