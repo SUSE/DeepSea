@@ -1773,10 +1773,15 @@ class OSDDevices(object):
     def _uuid_device(self, device, pathname="/dev/disk/by-id"):
         """
         Return the uuid device, prefer the most descriptive
+
+        Note for future refactor:  Consider using
+          udevadm info -q symlink -n /dev/sdb
+        for discovering alternate device names.  The cephdisks and
+        proposal module share similar functionality.
         """
         if os.path.exists(device):
             if os.path.exists(pathname):
-                cmd = (r"find -L {} -samefile {} \( -name ata* -o -name scsi* "
+                cmd = (r"find -L {} -samefile {} \( -name ata* -o -name wwn* "
                        r"-o -name nvme* \)".format(pathname, device))
                 _, _stdout, _stderr = __salt__['helper.run'](cmd)
                 if _stdout:

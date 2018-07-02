@@ -2039,18 +2039,13 @@ class TestOSDDevices():
     def test_prefer_underscores(self):
         devices = [
             '/dev/disk/by-id/wwn-0x5002538d70022771',
-            '/dev/disk/by-id/scsi-SATA_Samsung_SSD_850_S24CNWAG402893J',
-            '/dev/disk/by-id/scsi-SATA_Samsung_SSD_850S24CNWAG402893J',
-            '/dev/disk/by-id/scsi-35002538d70022771',
-            '/dev/disk/by-id/scsi-1ATA_Samsung_SSD_850_EVO_M.2_500GB_S24CNWAG402893J',
-            '/dev/disk/by-id/scsi-0ATA_Samsung_SSD_850_S24CNWAG402893J',
             '/dev/disk/by-id/ata-Samsung_SSD_850_EVO_M.2_500GB_S24CNWAG402893J'
         ]
 
         with patch.object(osd.OSDDevices, "__init__", lambda self: None):
             osddevices = osd.OSDDevices()
             ret = osddevices._prefer_underscores(devices)
-            assert ret == 4
+            assert ret == 1
 
     def test_prefer_underscores_no_match(self):
         devices = [

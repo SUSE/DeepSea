@@ -238,10 +238,13 @@ def _device(drive):
     """
     if 'Device Files' in drive:
         devices = drive['Device Files'].split(', ')
+        # Exclude scsi devices since 58-scsi-sg3_symlink.rules will
+        # create symlinks that are neither unique nor persistent
+        devices = [device for device in devices
+                   if (device.startswith('/dev/disk/by-id') and
+                       not device.startswith('/dev/disk/by-id/scsi-'))]
         index = _prefer_underscores(devices)
-        # Prefer 'Device File' over last item
-        if index > -1:
-            return devices[index]
+        return devices[index]
     return drive['Device File']
 
 
