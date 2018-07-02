@@ -611,8 +611,7 @@ class CephRoles(object):
                 _create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
-            random_string = b64encode(os.urandom(64))
-            contents['fsid'] = str(uuid.uuid3(uuid.NAMESPACE_DNS, random_string))
+            contents['fsid'] = str(uuid.uuid4())
 
             public_networks_str = ", ".join([str(n) for n in self.public_networks])
             cluster_networks_str = ", ".join([str(n) for n in self.cluster_networks])
