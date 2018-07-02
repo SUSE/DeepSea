@@ -242,7 +242,6 @@ class Validate(Preparation):
         self.warnings = OrderedDict()
         if search:
             self.search = search
-        # self._minion_check()
 
         # Ceph version
         self.package = 'ceph-common'
@@ -269,16 +268,6 @@ class Validate(Preparation):
             if 'DEV_ENV' in self.data[any_minion]:
                 return self.data[any_minion]['DEV_ENV']
         return False
-
-    def _minion_check(self):
-        """
-        Originally here to stop the process, but commented out.
-        Intend to remove since we have minions.ready
-        """
-        if not self.data:
-            log.error("No minions responded")
-            # pylint: disable=protected-access
-            os._exit(1)
 
     def _set_pass_status(self, key):
         """
