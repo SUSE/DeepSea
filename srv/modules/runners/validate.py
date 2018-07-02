@@ -537,44 +537,6 @@ class Validate(Preparation):
 
         self._set_pass_status('cluster_interface')
 
-    def _monitor_check(self, name):
-        """
-        Verify the minimum number of monitors for the environment
-        """
-        same_hosts = {}
-        for node in self.data.keys():
-            if name in self.data[node]:
-                same_hosts[",".join(self.data[node][name])] = ""
-                if self.data[node][name][0].strip() == "":
-                    msg = "host {} is missing values for {}.  ".format(node, name)
-                    msg += ("Verify that "
-                            "role-mon/stack/default/ceph/minions/*.yml "
-                            "or similar is in your policy.cfg")
-                    if name in self.errors:
-                        continue
-                    else:
-                        self.errors[name] = [msg]
-            else:
-                msg = "host {} is missing {}".format(node, name)
-                self.errors.setdefault(name, []).append(msg)
-
-        if len(list(same_hosts.keys())) > 1:
-            msg = "Different entries {}".format(list(same_hosts.keys()))
-            self.errors.setdefault(name, []).append(msg)
-        elif same_hosts:
-            count = len(list(same_hosts.keys())[0].split(","))
-            if (not self.in_dev_env and count < 3) or (self.in_dev_env and count < 1):
-                if self.in_dev_env:
-                    msg = "Must have at least one monitor"
-                else:
-                    msg = "Must have at least three monitors"
-                self.errors[name] = [msg]
-        else:
-            msg = "Missing {}".format(name)
-            self.errors[name] = [msg]
-
-        self._set_pass_status(name)
-
     def master_role(self):
         """
         At least one minion has a master role
