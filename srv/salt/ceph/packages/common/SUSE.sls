@@ -2,6 +2,7 @@
 stage prep dependencies:
   pkg.installed:
     - pkgs:
+      - ses-release
       - hwinfo
       - lsscsi
       - pciutils
