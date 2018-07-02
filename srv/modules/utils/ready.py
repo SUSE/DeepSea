@@ -93,7 +93,7 @@ class Checks(object):
                 # aggregate the number of 'result': True we got
                 profiles_present = [v['result'] for k, v in
                                     profile_test[minion].items()
-                                    if v['result'] == True]
+                                    if v['result']]
                 # and compare to number of file.managed state we have, i.e. the
                 # number of profiles
                 if len(profile_test[minion]) == len(profiles_present):
