@@ -758,5 +758,5 @@ tarball:
 	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
 	rm -r $(TEMPDIR)
 
-test:
+test: setup.py
 	tox -e py27
