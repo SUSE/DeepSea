@@ -1,4 +1,22 @@
 -------------------------------------------------------------------
+Fri Jul  6 19:13:14 UTC 2018 - ejackson@suse.com
+
+- Version 0.9.6
+- Fix uuid, restart, lint issues, Makefile
+- Fix migration of empty cluster, salt api validation
+- Cleanup, remove uncalled code
+- Improve ceph version check
+- Add mon/mgr check after start
+- Support apparmor
+- Lock tox to Salt 2016
+- Address FIXMEs, use jq, bare except
+- Fix cli for absent decoding
+- Address Salt cache permissions
+- Support metapackage
+- Experiment with py-coverage
+- Add iputils dependency
+
+-------------------------------------------------------------------
 Mon May 21 15:39:30 UTC 2018 - ejackson@suse.com
 
 - Version 0.9.5
