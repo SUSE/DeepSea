@@ -36,6 +36,7 @@ Requires:       salt-master
 Requires:       salt-minion
 Requires:       salt-api
 Requires:       iputils
+Requires:       jq
 Requires:       python3-netaddr
 Requires:       python3-rados
 Requires:       python3-configobj
