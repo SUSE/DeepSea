@@ -408,3 +408,107 @@ class TestHardwareDetections_2():
     def test_detection_tool_overwrite_lshw(self):
         hwd = cephdisks.HardwareDetections(detection_method='lshw')
         assert callable(hwd.detection_method) is True
+
+class TestCephDiskDevice():
+
+    @mock.patch('srv.salt._modules.cephdisks._pathname_setting')
+    @mock.patch('srv.salt._modules.cephdisks._match_setting')
+    @mock.patch('srv.salt._modules.cephdisks._prefer_underscores')
+    def test_device_matches(self, pu, ms, ps):
+        ps.return_value = '/dev/disk/by-id'
+        ms.return_value = '-name ata* -o -name scsi* -o -name nvme*'
+        pu.return_value = -1
+        cephdisks.__salt__ = {}
+        cephdisks.__salt__['helper.run'] = mock.Mock()
+        cephdisks.__salt__['helper.run'].return_value = (0, '/dev/sda', "")
+        ret = cephdisks.device_('/dev/sda')
+        assert ret == '/dev/sda'
+
+    @mock.patch('srv.salt._modules.cephdisks._pathname_setting')
+    @mock.patch('srv.salt._modules.cephdisks._match_setting')
+    @mock.patch('srv.salt._modules.cephdisks._prefer_underscores')
+    def test_device_no_match(self, pu, ms, ps):
+        ps.return_value = '/dev/disk/by-id'
+        ms.return_value = '-name ata* -o -name scsi* -o -name nvme*'
+        pu.return_value = -1
+        cephdisks.__salt__ = {}
+        cephdisks.__salt__['helper.run'] = mock.Mock()
+        cephdisks.__salt__['helper.run'].return_value = (0, "", "")
+        ret = cephdisks.device_('/dev/sda')
+        assert ret == ""
+
+    def test_match_setting_arg(self):
+        ret = cephdisks._match_setting('custom')
+        assert ret == 'custom'
+
+    @mock.patch('srv.salt._modules.cephdisks._seek')
+    def test_match_setting_pillar(self, seek):
+        seek.return_value = 'pillar value'
+        cephdisks.__pillar__ = {}
+        ret = cephdisks._match_setting("")
+        assert ret == 'pillar value'
+
+    @mock.patch('srv.salt._modules.cephdisks._seek')
+    def test_match_setting_default(self, seek):
+        seek.return_value = None
+        cephdisks.__pillar__ = {}
+        ret = cephdisks._match_setting("")
+        assert ret == '-name ata* -o -name scsi* -o -name nvme*'
+
+    def test_pathname_setting_arg(self):
+        ret = cephdisks._pathname_setting('/dev/custom')
+        assert ret == '/dev/custom'
+
+    @mock.patch('srv.salt._modules.cephdisks._seek')
+    def test_pathname_setting_pillar(self, seek):
+        seek.return_value = 'pillar value'
+        cephdisks.__pillar__ = {}
+        ret = cephdisks._pathname_setting("")
+        assert ret == 'pillar value'
+
+    @mock.patch('srv.salt._modules.cephdisks._seek')
+    def test_pathname_setting_default(self, seek):
+        seek.return_value = None
+        cephdisks.__pillar__ = {}
+        ret = cephdisks._pathname_setting("")
+        assert ret == '/dev/disk/by-id'
+
+    def test_seek_works(self):
+        pillar = {'a':{'b':{'c':{'d':'e'}}}}
+        ret = cephdisks._seek(['a', 'b', 'c', 'd'], pillar)
+        assert ret == 'e'
+
+    def test_seek_finds_no_match(self):
+        pillar = {'a':{'b':{'c':{'x':'y'}}}}
+        ret = cephdisks._seek(['a', 'b', 'c', 'd'], pillar)
+        assert ret is None
+
+    def test_seek_finds_no_match2(self):
+        pillar = {'a':{'b':{'c':{'d':'e'}}}}
+        ret = cephdisks._seek([], pillar)
+        assert ret is None
+
+    def test_prefer_underscores(self):
+        devices = [
+            '/dev/disk/by-id/wwn-0x5002538d70022771',
+            '/dev/disk/by-id/scsi-SATA_Samsung_SSD_850_S24CNWAG402893J',
+            '/dev/disk/by-id/scsi-SATA_Samsung_SSD_850S24CNWAG402893J',
+            '/dev/disk/by-id/scsi-35002538d70022771',
+            '/dev/disk/by-id/scsi-1ATA_Samsung_SSD_850_EVO_M.2_500GB_S24CNWAG402893J',
+            '/dev/disk/by-id/scsi-0ATA_Samsung_SSD_850_S24CNWAG402893J',
+            '/dev/disk/by-id/ata-Samsung_SSD_850_EVO_M.2_500GB_S24CNWAG402893J'
+        ]
+
+
+        ret = cephdisks._prefer_underscores(devices)
+        assert ret == 4
+
+    def test_prefer_underscores_no_match(self):
+        devices = [
+            '/dev/disk/by-id/wwn-0x5002538d70022771',
+        ]
+
+        ret = cephdisks._prefer_underscores(devices)
+        assert ret == -1
+
+
