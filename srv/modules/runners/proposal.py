@@ -12,6 +12,7 @@ import os
 from sys import exit
 import logging
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
+from salt.ext import six
 import salt.client
 import yaml
 # pylint: disable=import-error
@@ -143,6 +144,7 @@ def _parse_args(kwargs):
     if 'kwargs' in kwargs:
         args.update(kwargs['kwargs'])
         args.pop('kwargs')
+    args = _cast_args(args)
     log.info("args: {}".format(args))
 
     if args.get('name') == 'import':
@@ -154,6 +156,16 @@ def _parse_args(kwargs):
                '"dmcrypt" is supported.').format(args.get('encryption'))))
         exit(-1)
 
+    return args
+
+
+def _cast_args(args):
+    """
+    Casting unicode to str
+    """
+    for key, value in args.items():
+        if isinstance(value, six.text_type):
+            args[key] = value.encode('utf-8')
     return args
 
 
