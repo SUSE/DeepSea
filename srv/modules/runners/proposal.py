@@ -222,7 +222,7 @@ def _write_proposal(p, profile_dir):
     with open(role_file, 'w') as outfile:
         content = {'roles': ['storage']}
         # implement merge of existing data
-        yaml.dump(content, outfile, default_flow_style=False)
+        yaml.safe_dump(content, outfile, default_flow_style=False)
 
     # TODO do not hardcode cluster name ceph here
     profile_file = '{}/stack/default/ceph/minions/{}.yml'.format(profile_dir,
@@ -235,7 +235,7 @@ def _write_proposal(p, profile_dir):
     with open(profile_file, 'w') as outfile:
         content = {'ceph': {'storage': {'osds': proposal}}}
         # implement merge of existing data
-        yaml.dump(content, outfile, default_flow_style=False)
+        yaml.safe_dump(content, outfile, default_flow_style=False)
 
 
 def _record_filter(args, base_dir):
@@ -259,7 +259,7 @@ def _record_filter(args, base_dir):
     current_filter[args['target']] = rec_args
 
     with open(filter_file, 'w') as f:
-        yaml.dump(current_filter, f, default_flow_style=False)
+        yaml.safe_dump(current_filter, f, default_flow_style=False)
 
 
 def populate(**kwargs):
