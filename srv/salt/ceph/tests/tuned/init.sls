@@ -3,35 +3,35 @@
 
 {% if 'storage' in roles %}
 
-ses-osd is not active:
+ceph-osd is not active:
   cmd.run:
-    - name: 'tuned-adm active | grep -q ses-osd'
+    - name: 'tuned-adm active | grep -q ceph-osd'
 
-fail if not ses-osd:
+fail if not ceph-osd:
   test.fail_without_changes:
     - onlyif:
-      - ses-osd is not active
+      - ceph-osd is not active
 
 {% elif 'mon' in roles %}
 
-ses-mon is not active:
+ceph-mon is not active:
   cmd.run:
-    - name: 'tuned-adm active | grep -q ses-mon'
+    - name: 'tuned-adm active | grep -q ceph-mon'
 
-fail if not ses-mon:
+fail if not ceph-mon:
   test.fail_without_changes:
     - onlyif:
-      - ses-mon is not active
+      - ceph-mon is not active
 
 {% elif 'mgr' in roles %}
 
-ses-mgr is not active:
+ceph-mgr is not active:
   cmd.run:
-    - name: 'tuned-adm active | grep -q ses-mgr'
+    - name: 'tuned-adm active | grep -q ceph-mgr'
 
-fail if not ses-mgr:
+fail if not ceph-mgr:
   test.fail_without_changes:
     - onlyif:
-      - ses-mgr is not active
+      - ceph-mgr is not active
 
 {% endif %}

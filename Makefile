@@ -586,12 +586,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/tuned/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mgr
 	# conf files - tuned
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ses-osd
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mon
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mgr
-	install -m 644 srv/salt/ceph/tuned/files/ses-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ses-osd
-	install -m 644 srv/salt/ceph/tuned/files/ses-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mon
-	install -m 644 srv/salt/ceph/tuned/files/ses-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ses-mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mgr
+	install -m 644 srv/salt/ceph/tuned/files/ceph-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-osd
+	install -m 644 srv/salt/ceph/tuned/files/ceph-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mon
+	install -m 644 srv/salt/ceph/tuned/files/ceph-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mgr
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade

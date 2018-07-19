@@ -2,9 +2,9 @@
 {% set mgr_off = pillar.get('tuned_mgr_init', 'default') %}
 {% set mon_off = pillar.get('tuned_mon_init', 'default') %}
 
-/etc/tuned/ses-osd/tuned.conf:
+/etc/tuned/ceph-osd/tuned.conf:
   file.managed:
-    - source: salt://ceph/tuned/files/ses-osd/tuned.conf
+    - source: salt://ceph/tuned/files/ceph-osd/tuned.conf
     - makedirs: True
     - user: root
     - group: root
@@ -17,13 +17,13 @@ start tuned:
     - name: tuned
     - enable: True
 
-apply tuned ses osd:
+apply tuned ceph osd:
   # There's a bug with the tuned 'profile' state if the tuned is off
   # tuned.profile:
-  #   - name: "ses-osd"
+  #   - name: "ceph-osd"
   # Use cmd.run instead
   cmd.run:
-    - name: 'tuned-adm profile ses-osd'
+    - name: 'tuned-adm profile ceph-osd'
 
 {% endif %}
 {% endif %}

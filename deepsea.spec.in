@@ -330,9 +330,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/tuned/mgr
 %dir /srv/salt/ceph/tuned/mon
 %dir /srv/salt/ceph/tuned/osd
-%dir /srv/salt/ceph/tuned/files/ses-mgr
-%dir /srv/salt/ceph/tuned/files/ses-mon
-%dir /srv/salt/ceph/tuned/files/ses-osd
+%dir /srv/salt/ceph/tuned/files
+%dir /srv/salt/ceph/tuned/files/ceph-mgr
+%dir /srv/salt/ceph/tuned/files/ceph-mon
+%dir /srv/salt/ceph/tuned/files/ceph-osd
 %dir /srv/salt/ceph/maintenance
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/maintenance/noout
@@ -617,9 +618,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/tuned/mgr/*.sls
 %config /srv/salt/ceph/tuned/mon/*.sls
 %config /srv/salt/ceph/tuned/osd/*.sls
-%config /srv/salt/ceph/tuned/files/ses-mgr/tuned.conf
-%config /srv/salt/ceph/tuned/files/ses-mon/tuned.conf
-%config /srv/salt/ceph/tuned/files/ses-osd/tuned.conf
+%config /srv/salt/ceph/tuned/files/ceph-mgr/tuned.conf
+%config /srv/salt/ceph/tuned/files/ceph-mon/tuned.conf
+%config /srv/salt/ceph/tuned/files/ceph-osd/tuned.conf
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls
