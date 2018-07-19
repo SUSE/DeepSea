@@ -1,9 +1,9 @@
 {% set roles = salt['pillar.get']('roles') %}
 {% set mgr_off = pillar.get('tuned_mgr_init', 'default') %}
 
-/etc/tuned/ses-mon/tuned.conf:
+/etc/tuned/ceph-mon/tuned.conf:
   file.managed:
-    - source: salt://ceph/tuned/files/ses-mon/tuned.conf
+    - source: salt://ceph/tuned/files/ceph-mon/tuned.conf
     - makedirs: True
     - user: root
     - group: root
@@ -15,8 +15,8 @@ start tuned:
     - name: tuned
     - enable: True
 
-apply tuned ses mon:
+apply tuned ceph mon:
   cmd.run:
-    - name: 'tuned-adm profile ses-mon'
+    - name: 'tuned-adm profile ceph-mon'
 
 {% endif %}
