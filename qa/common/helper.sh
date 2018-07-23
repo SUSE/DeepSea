@@ -4,15 +4,11 @@
 # helper functions (not to be called directly from test scripts)
 #
 
-function _report_stage_failure_and_die {
-  local stage_num=$1
-  #local stage_log_path=$2
-  #local number_of_failures=$3
+function _report_orch_failure_and_die {
+  local orch_name=$1
 
-  test -z $number_of_failures && number_of_failures="unknown number of"
-  echo "********** Stage $stage_num failed with $number_of_failures failures **********"
+  echo "********** $orch_name failed **********"
   echo "Here comes the systemd log:"
-  #cat $stage_log_path
   journalctl -r | head -n 1000
   exit 1
 }
@@ -55,10 +51,10 @@ function _run_stage {
               echo "DeepSea stage OK"
           else
               echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-              _report_stage_failure_and_die $stage_num
+              _report_orch_failure_and_die "Stage $stage_num"
           fi
       else
-          _report_stage_failure_and_die $stage_num
+          _report_orch_failure_and_die "Stage $stage_num"
       fi
       set -e
       return
@@ -72,11 +68,11 @@ function _run_stage {
   if [[ "$STAGE_FINISHED" ]]; then
     FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
     if [[ "$FAILED" -gt "0" ]]; then
-      _report_stage_failure_and_die $stage_num
+      _report_orch_failure_and_die "Stage $stage_num"
     fi
     echo "********** Stage $stage_num completed successfully **********"
   else
-    _report_stage_failure_and_die $stage_num
+    _report_orch_failure_and_die "Stage $stage_num"
   fi
 }
 
