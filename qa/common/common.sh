@@ -110,7 +110,7 @@ function install_deps {
 
 
 #
-# functions for running the DeepSea stages
+# functions for running the DeepSea stages and other orchestrations
 #
 
 function run_stage_0 {
@@ -141,6 +141,24 @@ function run_stage_4 {
 
 function run_stage_5 {
   _run_stage 5 "$@"
+}
+
+function run_orchestration {
+  local orch_name=$1
+  local orch_log_path="/tmp/${orch_name}.log"
+  echo -n "" > $orch_log_path
+  salt-run --no-color state.orch ${orch_name} 2>&1 | tee $orch_log_path
+  STAGE_FINISHED=$(grep -F 'Total states run' $orch_log_path)
+
+  if [[ "$STAGE_FINISHED" ]]; then
+    FAILED=$(grep -F 'Failed: ' $orch_log_path | sed 's/.*Failed:\s*//g' | head -1)
+    if [[ "$FAILED" -gt "0" ]]; then
+      _report_orch_failure_and_die $orch_name
+    fi
+    echo "********** $orch_name completed successfully **********"
+  else
+    _report_orch_failure_and_die $orch_name
+  fi
 }
 
 
