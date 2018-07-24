@@ -379,6 +379,38 @@ class TestValidation():
         validator.salt_version()
         assert 'not supported' in validator.warnings['salt_version'][0]
 
+    class MockedValidate(validate.Validate):
+        """ This Class just exists to use a defined pillar """
+        def set_pillar(self):
+            self.data = {'admin.ceph': {'roles': 'admin'},
+                         'igw1.ceph': {'roles': 'igw'}}
 
 
+    @patch('salt.client.LocalClient')
+    def test_kernel(self, mock_localclient):
+        fake_data = {'admin.ceph': True,
+                     'igw1.ceph': True}
 
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = self.MockedValidate("kernel")
+        validator.set_pillar()
+
+        assert len(validator.passed) == 0
+        validator.kernel()
+        assert validator.passed['kernel_module'] == 'valid'
+    
+
+    @patch('salt.client.LocalClient')
+    def test_kernel_wrong(self, mock_localclient):
+        fake_data = {'admin.ceph': True,
+                     'igw1.ceph': False}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = self.MockedValidate("kernel")
+        validator.set_pillar()
+
+        assert len(validator.passed) == 0
+        validator.kernel()
+        assert 'igw1.ceph:' in validator.errors['kernel_module'][0]
