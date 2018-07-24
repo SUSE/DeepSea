@@ -92,6 +92,6 @@ if [ -n "$RGW" ] ; then
     rgw_user_and_bucket_list
     rgw_validate_system_user
 fi
-test -n "$MDS" && cephfs_mount_and_sanity_test
+test -n "$MDS" -a "$CLIENT_NODES" -ge 1 && cephfs_mount_and_sanity_test
 
 echo "health-ok test result: PASS"

@@ -83,14 +83,26 @@ EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
         exit 1
-  fi
+    fi
 }
 
 function policy_cfg_mds {
-    cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
-# Role assignment - mds (all but last node)
-role-mds/cluster/*.sls slice=[:-1]
+    test -n "$CLIENT_NODES"
+
+    if [ "$CLIENT_NODES" -eq 0 ] ; then
+        cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - mds (all nodes)
+role-mds/cluster/*.sls
 EOF
+    elif [ "$CLIENT_NODES" -ge 1 ] ; then
+        cat <<EOF >> /srv/pillar/ceph/proposals/policy.cfg
+# Role assignment - mds (all non-client nodes)
+role-mds/cluster/*.sls slice=[:-$CLIENT_NODES]
+EOF
+    else
+        echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
+        exit 1
+    fi
 }
 
 function policy_cfg_rgw {
