@@ -25,10 +25,6 @@ function _run_stage {
   local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
   local deepsea_exit_status=""
 
-  # workaround for https://bugzilla.suse.com/show_bug.cgi?id=1087232
-  # delete Salt runner __pycache__
-  rm -rf /srv/modules/runners/__pycache__
-
   set +x
   echo ""
   echo "*********************************************"
