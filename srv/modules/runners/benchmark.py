@@ -263,19 +263,19 @@ def baseline(margin=10, verbose=False, **kwargs):
                              'I@roles:storage and I@cluster:ceph')
     log.info('client glob is {}'.format(client_glob))
 
+    # gotta get the master_minion...not pretty but works
+    master_minion = local_client.cmd(
+        'I@roles:master', 'pillar.get',
+        ['master_minion'], expr_form='compound').items()[0][1]
+
     # get all osd ids for a given client_glob
-    osd_list = local_client.cmd(client_glob,
-        'osd.list', [], tgt_type='compound')
+    osd_list = local_client.cmd(master_minion, 'cmd.shell',
+        ['ceph osd ls'])
 
     if not osd_list:
         raise Exception('No OSDs found for glob {}'.format(client_glob))
 
-    ids = [osd_id for (osd, osd_ids) in osd_list.items() for osd_id in osd_ids]
-
-    # gotta get the master_minion...not pretty but works
-    master_minion = list(local_client.cmd(
-        'I@roles:master', 'pillar.get',
-        ['master_minion'], tgt_type='compound').items())[0][1]
+    ids = osd_list[master_minion].split("\n")
 
     sys.stdout.write('\nRunning osd benchmarks')
     sys.stdout.flush()
