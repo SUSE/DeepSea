@@ -631,7 +631,9 @@ trap 'echo "Result: NOT_OK"' ERR
 echo "igw kludge script running as $(whoami) on $(hostname --fqdn)"
 sed -i -e 's/\("host": "target[[:digit:]]\+\)"/\1.teuthology"/' /tmp/lrbd.conf
 cat /tmp/lrbd.conf
-source /etc/sysconfig/lrbd; lrbd -v $LRBD_OPTIONS -f /tmp/lrbd.conf
+source /etc/sysconfig/lrbd
+lrbd -v $LRBD_OPTIONS -f /tmp/lrbd.conf
+lrbd -H $(hostname --fqdn)
 systemctl restart lrbd.service
 systemctl status -l lrbd.service
 echo "Result: OK"
