@@ -149,6 +149,27 @@ grains:
     - sls: ceph.osd.grains
     - failhard: True
 
+mgr tuned:
+  salt.state:
+    - tgt: 'I@roles:mgr and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.tuned.mgr
+    - failhard: True
+
+mon tuned:
+  salt.state:
+    - tgt: 'I@roles:mon and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.tuned.mon
+    - failhard: True
+
+osd tuned:
+  salt.state:
+    - tgt: 'I@roles:storage and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.tuned.osd
+    - failhard: True
+
 pools:
   salt.state:
     - tgt: {{ master }}

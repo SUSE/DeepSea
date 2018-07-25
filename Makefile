@@ -105,6 +105,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/change
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned/off
 	install -m 644 srv/salt/ceph/tests/restart/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart
 	install -m 644 srv/salt/ceph/tests/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon
 	install -m 644 srv/salt/ceph/tests/restart/mon/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon/change
@@ -122,6 +124,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/change
 	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
+	install -m 644 srv/salt/ceph/tests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned
+	install -m 644 srv/salt/ceph/tests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned/off
 	# smoketests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests
 	install -m 644 srv/salt/ceph/smoketests/*.sls $(DESTDIR)/srv/salt/ceph/smoketests
@@ -138,6 +142,9 @@ copy-files:
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
 	install -m 644 srv/salt/ceph/smoketests/restart/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
+	install -m 644 srv/salt/ceph/smoketests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/tuned
+	install -m 644 srv/salt/ceph/smoketests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
@@ -603,6 +610,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/time/chrony/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/chrony
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
 	install -m 644 srv/salt/ceph/rescind/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/tuned
+	install -m 644 srv/salt/ceph/rescind/tuned/*.sls $(DESTDIR)/srv/salt/ceph/rescind/tuned/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
@@ -682,6 +691,22 @@ copy-files:
 	install -m 644 srv/salt/ceph/sysctl/*.sls $(DESTDIR)/srv/salt/ceph/sysctl
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sysctl/files
 	install -m 644 srv/salt/ceph/sysctl/files/*.conf $(DESTDIR)/srv/salt/ceph/sysctl/files
+	# state files - tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/mgr
+	install -m 644 srv/salt/ceph/tuned/osd/*.sls $(DESTDIR)/srv/salt/ceph/tuned/osd
+	install -m 644 srv/salt/ceph/tuned/mon/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mon
+	install -m 644 srv/salt/ceph/tuned/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mgr
+	# conf files - tuned
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mgr
+	install -m 644 srv/salt/ceph/tuned/files/ceph-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-osd
+	install -m 644 srv/salt/ceph/tuned/files/ceph-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mon
+	install -m 644 srv/salt/ceph/tuned/files/ceph-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mgr
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
