@@ -953,6 +953,23 @@ class Validate(Preparation):
                    "See `/srv/pillar/ceph/deepsea_minions.sls` for details")
             self.errors['deepsea_minions'] = [msg]
 
+    def kernel(self):
+        """
+        Verify that target_core_rbd kernel module is available on iSCSI Gateways and admin node
+        """
+        targets = [node for node in self.data if node == 'admin' or
+                   ('roles' in self.data[node] and 'igw' in self.data[node]['roles'])]
+        check = self.local.cmd(targets, 'kmod.check_available', ['target_core_rbd'],
+                               tgt_type='list')
+        for node, passed in check.items():
+            if not passed:
+                self.errors.setdefault('kernel_module', []).append(
+                        "{}: kernel module not active".format(node))
+
+        if 'kernel_module' not in self.errors:
+            self.passed['kernel_module'] = 'valid'
+        self._set_pass_status('kernel_module')
+
     def report(self):
         """
         Print the validation report
@@ -1092,6 +1109,7 @@ def deploy(**kwargs):
     valid = Validate("deploy", search_pillar=True, search_grains=True,
                      printer=printer)
     valid.openattic()
+    valid.kernel()
     valid.report()
 
     if valid.errors:
