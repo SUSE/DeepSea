@@ -297,11 +297,13 @@ function ceph_version_test {
   rpm -q ceph
   local RPM_NAME=$(rpm -q ceph)
   local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)/; print "$1\n";')
-  echo "According to RPM, the ceph upstream version is $RPM_CEPH_VERSION"
+  echo "According to RPM, the ceph upstream version is ->$RPM_CEPH_VERSION<-"
+  test -n "$RPM_CEPH_VERSION"
   ceph --version
   local BUFFER=$(ceph --version)
   local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)/; print "$1\n";')
-  echo "According to \"ceph --version\", the ceph upstream version is $CEPH_CEPH_VERSION"
+  echo "According to \"ceph --version\", the ceph upstream version is ->$CEPH_CEPH_VERSION<-"
+  test -n "$RPM_CEPH_VERSION"
   test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
 }
 
