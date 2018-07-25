@@ -1,3 +1,5 @@
 
 include:
   - .pool
+  - .key
+  - .auth

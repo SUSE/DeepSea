@@ -189,20 +189,23 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/openattic
 %dir /srv/salt/ceph/openattic/auth
 %dir /srv/salt/ceph/openstack
+%dir %attr(0700, salt, salt) /srv/salt/ceph/openstack/cache
 %dir /srv/salt/ceph/openstack/cinder
 %dir /srv/salt/ceph/openstack/cinder/auth
 %dir /srv/salt/ceph/openstack/cinder/files
 %dir /srv/salt/ceph/openstack/cinder/key
 %dir /srv/salt/ceph/openstack/cinder/pool
+%dir /srv/salt/ceph/openstack/cinder-backup
+%dir /srv/salt/ceph/openstack/cinder-backup/auth
+%dir /srv/salt/ceph/openstack/cinder-backup/files
+%dir /srv/salt/ceph/openstack/cinder-backup/key
+%dir /srv/salt/ceph/openstack/cinder-backup/pool
 %dir /srv/salt/ceph/openstack/glance
 %dir /srv/salt/ceph/openstack/glance/auth
 %dir /srv/salt/ceph/openstack/glance/files
 %dir /srv/salt/ceph/openstack/glance/key
 %dir /srv/salt/ceph/openstack/glance/pool
 %dir /srv/salt/ceph/openstack/nova
-%dir /srv/salt/ceph/openstack/nova/auth
-%dir /srv/salt/ceph/openstack/nova/files
-%dir /srv/salt/ceph/openstack/nova/key
 %dir /srv/salt/ceph/openstack/nova/pool
 %dir %attr(0700, salt, salt) /srv/salt/ceph/openattic/cache
 %dir /srv/salt/ceph/openattic/files
@@ -514,15 +517,17 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/openstack/cinder/files/*.j2
 %config /srv/salt/ceph/openstack/cinder/key/*.sls
 %config /srv/salt/ceph/openstack/cinder/pool/*.sls
+%config /srv/salt/ceph/openstack/cinder-backup/*.sls
+%config /srv/salt/ceph/openstack/cinder-backup/auth/*.sls
+%config /srv/salt/ceph/openstack/cinder-backup/files/*.j2
+%config /srv/salt/ceph/openstack/cinder-backup/key/*.sls
+%config /srv/salt/ceph/openstack/cinder-backup/pool/*.sls
 %config /srv/salt/ceph/openstack/glance/*.sls
 %config /srv/salt/ceph/openstack/glance/auth/*.sls
 %config /srv/salt/ceph/openstack/glance/files/*.j2
 %config /srv/salt/ceph/openstack/glance/key/*.sls
 %config /srv/salt/ceph/openstack/glance/pool/*.sls
 %config /srv/salt/ceph/openstack/nova/*.sls
-%config /srv/salt/ceph/openstack/nova/auth/*.sls
-%config /srv/salt/ceph/openstack/nova/files/*.j2
-%config /srv/salt/ceph/openstack/nova/key/*.sls
 %config /srv/salt/ceph/openstack/nova/pool/*.sls
 %config /srv/salt/ceph/osd/*.sls
 %config /srv/salt/ceph/osd/files/*.j2
@@ -729,10 +734,12 @@ the README for more information.
 %dir /srv/salt/ceph/smoketests/keyrings
 %dir /srv/salt/ceph/smoketests/macros
 %dir /srv/salt/ceph/smoketests/macros/os_switch
+%dir /srv/salt/ceph/smoketests/openstack
 %dir /srv/salt/ceph/smoketests/quiescent
 %dir /srv/salt/ceph/smoketests/restart
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/keyrings
+%dir /srv/salt/ceph/tests/openstack
 %dir /srv/salt/ceph/tests/os_switch
 %dir /srv/salt/ceph/tests/quiescent
 %dir /srv/salt/ceph/tests/quiescent/timeout
@@ -759,9 +766,11 @@ the README for more information.
 /srv/salt/ceph/smoketests/apparmor/*.sls
 /srv/salt/ceph/smoketests/keyrings/*.sls
 /srv/salt/ceph/smoketests/macros/os_switch/*.sls
+/srv/salt/ceph/smoketests/openstack/*.sls
 /srv/salt/ceph/smoketests/quiescent/*.sls
 /srv/salt/ceph/smoketests/restart/*.sls
 /srv/salt/ceph/tests/keyrings/*.sls
+/srv/salt/ceph/tests/openstack/*.sls
 /srv/salt/ceph/tests/os_switch/*.sls
 /srv/salt/ceph/tests/quiescent/*.sls
 /srv/salt/ceph/tests/quiescent/timeout/*.sls
