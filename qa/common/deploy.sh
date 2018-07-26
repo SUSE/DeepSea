@@ -51,7 +51,7 @@ function vet_nodes {
 }
 
 function ceph_cluster_running {
-    ceph status 2>&1 >/dev/null
+    ceph status >/dev/null 2>&1
 }
 
 function deploy_ceph {
