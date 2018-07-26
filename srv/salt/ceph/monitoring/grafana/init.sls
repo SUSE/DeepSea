@@ -92,6 +92,13 @@ add rbd dashboard:
           -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
           -d @/srv/salt/ceph/monitoring/grafana/files/ceph-rbd.json
 
+add ceph scrubbing dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/ceph-scrubbing.json
+
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') %}
 
 add rgw dashboard:
