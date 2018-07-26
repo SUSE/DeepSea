@@ -1,0 +1,151 @@
+.TH deepsea 7
+.SH NAME
+DeepSea stage 0 \- a deeper insight
+.SH DESCRIPTION
+.B DeepSea Stage 0 (Prep)
+is a Salt orchestration and exists mainly for cluster maintenance and operational/preparation tasks. 
+.RE
+.PD
+.SH Preface
+.PP
+Stage.0 behaves differently depending on the presence of a ceph cluster. 
+On the first invocation, or the install phase, DeepSea will run all operations 
+in parallel to speep up the process. Once you successfully deployed the cluster more caution is 
+exercised and nodes are processed serially. The operation is chunked in three sections.
+.SS Master
+
+.B Validation:
+.RS
+DeepSea performs a set of system validation tests before running the remainder of the stage.
+
+* DeepSea minion
+  See deepsea-minions (7)
+
+* master minion
+  Check for the presence of a master minion
+
+* ceph version
+  Validate if a ceph version could be found for installation
+.RE
+
+.B Salt-Api
+.RS
+Since openATTIC communicates with DeepSea via Salt, the salt-api service must be 
+enabled and running for openATTIC to establish a connection with Salt.
+.RE
+.B Sync
+.RS
+When a new salt or DeepSea version was installed, salt needs to make sure all modules 
+are synced over to it's minions.
+.RE
+.B Updates
+.RS
+The master minion will be patched.
+.RE
+.B Reboot
+.RS
+If DeepSea detects the need for a reboot, the master will reboot. 
+This can be changed by adjusting
+
+.B stage_prep_master. See also deepsea-customization (7) 
+for more information on how to change the default behavior
+.RE
+
+.RE
+.B Readycheck
+.RS
+Make sure all minions are up. Bails out after 300seconds if not all minions 
+haven't joined back.
+.RE
+
+.SS Minions
+.B Sync
+.RS
+If an update was applied to the master, make sure to sync the modules and 
+grains back to the minions
+.RE
+.B Mines
+.RS
+Mines are synced to the cluster. See deepsea-mines (7) for more information
+.RE
+.B Serial/Parallel
+.RS
+As described in the Preface, there are two different routes that DeepSea can take depending 
+on the presence of a cluster. When there is no cluster present, the next to steps are to 
+.B update 
+and
+.B restart
+the cluster in parallel. The next chapters are written under the assumption that you have a running cluster. 
+All of the following operations are performed sequentially on 
+.B one node at a time
+following the recommended order. (Monitors, Object Storage Deamons, Managers, Metadata services, ...)
+If any of these operations are considered to be failed, the entire process is aborted and should be investigated.
+
+.B Wait for ceph's health
+.RS
+To be as disruption free as possible DeepSea expects the ceph cluster to be in a healthy state before continuing 
+with any further actions. If the cluster fails to get in a proper state the stage will be aborted.
+.RE
+.B Check running processes
+.RS
+Every assigned service should have a process up and running. If that's not the case the service is 
+considered to be failed. To detect problems early we check all corresponding services to be up and 
+running after processing a node. If the process is still not up after 15 Minutes on a physical machine 
+or 2 Minutes on a virtual machine,  the stage will abort to prevent causing harm to your system.
+Now it's up to the operator to investigate the failure.
+.RE
+.B Apply updates
+.RS
+DeepSea applies updates to get the cluster on the latest patchlevel.
+.RE
+.B Check for reboots
+.RS
+If the node received a crucial update, like a kernel patch, the node will need to reboot in order to apply it. 
+Before doing so, DeepSea sets a 'noout' flag to the cluster to prevent unneccessary data rebalancing while the 
+node performs the reboot. Please make sure to unset it when the node stays offline confirmably. 
+If the node comes up without any problems the 'noout' flag is unset automatically.
+.RE
+
+.RE
+.SS Restart
+As we installed updates on the cluster, the services might be pointing to old and/or deleted files still. 
+In order to apply the correct versions we might need to perform a restart for those services.
+After updating all cluster nodes, DeepSea initiates the 'restart orchestration'. 
+This operation performs checks to determine whether a service restrart is required or not. 
+There are two types of criteria which can trigger a restart.
+
+.B Deleted Files
+and
+.B a configuration change
+
+The process of restarting services also happens in a non-disruptive manner by only restarting 
+.B one service at a time
+followed by checking if it's up again and only then continue. 
+Here again, the orchestration exits if an error is detected to prevent harm.
+The restart happens automatically and will not impact your ability to read/write 
+data to the cluster via any interface.
+
+
+.SH Example
+deepsea salt-run state.orch ceph.stage.0
+.PP
+This command can also be used with the
+.B DeepSea cli
+to give feedback during the process from the Salt event bus. 
+Salt orchestrations are unnervingly silent during execution and only report when complete.
+.PP
+deepsea stage run ceph.stage.0
+
+.SH AUTHOR
+Joshua Schmid <jschmid@suse.com>
+.SH SEE ALSO
+.BR deepsea (1),
+.BR deepsea (7),
+.BR deepsea-commands (7),
+.BR deepsea-stage-1 (7),
+.BR deepsea-stage-2 (7),
+.BR deepsea-stage-3 (7),
+.BR deepsea-stage-4 (7),
+.BR deepsea-stage-5 (7),
+.BR deepsea-customization (7),
+.BR deepsea-mines (7)

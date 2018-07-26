@@ -118,22 +118,43 @@ salt-run state.orch ceph.redeploy.osds
 salt-run state.orch ceph.restart.ganesha
 .RS
 .RE
+salt-run state.orch ceph.restart.ganesha.lax
+.RS
+.RE
 salt-run state.orch ceph.restart.igw
+.RS
+.RE
+salt-run state.orch ceph.restart.igw.lax
 .RS
 .RE
 salt-run state.orch ceph.restart.mds
 .RS
 .RE
+salt-run state.orch ceph.restart.mds.lax
+.RS
+.RE
 salt-run state.orch ceph.restart.mgr
+.RS
+.RE
+salt-run state.orch ceph.restart.mgr.lax
 .RS
 .RE
 salt-run state.orch ceph.restart.mon
 .RS
 .RE
+salt-run state.orch ceph.restart.mon.lax
+.RS
+.RE
 salt-run state.orch ceph.restart.osd
 .RS
 .RE
+salt-run state.orch ceph.restart.osd.lax
+.RS
+.RE
 salt-run state.orch ceph.restart.rgw
+.RS
+.RE
+salt-run state.orch ceph.restart.rgw.lax
 .PP
 .SS STATES
 Salt States are the essential building blocks for running a series of steps on a single minion.  The state.apply is a Salt module that processes an
@@ -166,6 +187,12 @@ salt 'igw*' state.apply ceph.igw.keyring
 salt 'igw*' state.apply ceph.igw.restart
 .RS
 .RE
+salt 'igw*' state.apply ceph.igw.restart.force
+.RS
+.RE
+salt 'igw*' state.apply ceph.igw.restart.reload
+.RS
+.RE
 salt 'igw*' state.apply ceph.igw.sysconfig
 .RS
 .RE
@@ -181,6 +208,15 @@ salt 'storage*' state.apply ceph.osd.keyring
 .RS
 .RE
 salt 'storage*' state.apply ceph.osd.restart
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd.restart.force
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd.restart.controlled
+.RS
+.RE
+salt 'storage*' state.apply ceph.osd.restart.parallel
 .RS
 .RE
 salt 'storage*' state.apply ceph.osd.scheduler
@@ -208,6 +244,12 @@ salt 'rgw*' state.apply ceph.rgw.keyring
 .RS
 .RE
 salt 'rgw*' state.apply ceph.rgw.restart
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.restart.controlled
+.RS
+.RE
+salt 'rgw*' state.apply ceph.rgw.restart.force
 .RS
 .RE
 salt 'rgw*' state.apply ceph.rgw.users
@@ -288,6 +330,12 @@ salt 'ganesha*' state.apply ceph.ganesha.keyring
 salt 'ganesha*' state.apply ceph.ganesha.restart
 .RS
 .RE
+salt 'ganesha*' state.apply ceph.ganesha.restart.controlled
+.RS
+.RE
+salt 'ganesha*' state.apply ceph.ganesha.restart.force
+.RS
+.RE
 salt 'ganesha*' state.apply ceph.ganesha.service
 .RS
 .RE
@@ -308,6 +356,12 @@ salt 'mds*' state.apply ceph.mds.pools
 .RS
 .RE
 salt 'mds*' state.apply ceph.mds.restart
+.RS
+.RE
+salt 'mds*' state.apply ceph.mds.restart.controlled
+.RS
+.RE
+salt 'mds*' state.apply ceph.mds.restart.force
 .RS
 .RE
 salt 'mds*' state.apply ceph.mds
@@ -338,6 +392,12 @@ salt 'master_minion' state.apply ceph.mon.key
 salt 'mon*' state.apply ceph.mon.restart
 .RS
 .RE
+salt 'mon*' state.apply ceph.mon.restart.controlled
+.RS
+.RE
+salt 'mon*' state.apply ceph.mon.restart.force
+.RS
+.RE
 salt 'mon*' state.apply ceph.mon
 .PP
 .RS
@@ -363,6 +423,15 @@ salt 'openattic*' state.apply ceph.openattic.keyring
 .RS
 .RE
 salt 'openattic*' state.apply ceph.openattic.oaconfig
+.RS
+.RE
+salt 'openattic*' state.apply ceph.openattic.restart
+.RS
+.RE
+salt 'openattic*' state.apply ceph.openattic.restart.controlled
+.RS
+.RE
+salt 'openattic*' state.apply ceph.openattic.restart.force
 .RS
 .RE
 salt 'openattic*' state.apply ceph.openattic
@@ -529,6 +598,9 @@ salt '*' cephinspector.get_keyring
 salt '*' cephinspector.inspect
 .PP
 salt '*' cephprocesses.check
+.RS
+.RE
+salt '*' cephprocesses.need_restart
 .RS
 .RE
 salt '*' cephprocesses.wait
@@ -1010,7 +1082,7 @@ salt-run changed.global
 salt-run changed.client
 .RS
 .RE
-salt-run changed.config [service]
+salt-run changed.config name=service
 .PP
 
 .SH AUTHOR

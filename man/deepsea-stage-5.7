@@ -1,0 +1,42 @@
+.TH deepsea 7
+.SH NAME
+DeepSea stage 5 \- a deeper insight
+.SH DESCRIPTION
+.B DeepSea Stage 5 (Removal)
+is a Salt orchestration that removes roles.
+.RE
+.PD
+.SH Preface
+.PP
+This stage is used to remove services from nodes.
+
+.B Services:
+.RS
+If you remove a service from your policy.cfg and apply it to the pillar by running stage.2 
+.B (see deepsea-stage-2 (7)) 
+running stage.5 will remove all traces of the service from the node.
+.RE
+
+.SH Example
+deepsea salt-run state.orch ceph.stage.5
+.PP
+This command can also be used with the
+.B DeepSea cli
+to give feedback during the process from the Salt event bus.  Salt orchestrations are unnervingly silent 
+during execution and only report when complete.
+.PP
+deepsea stage run ceph.stage.5
+
+.SH AUTHOR
+Joshua Schmid <jschmid@suse.com>
+.SH SEE ALSO
+.BR deepsea (1),
+.BR deepsea (7),
+.BR deepsea-commands (7),
+.BR deepsea-stage-0 (7),
+.BR deepsea-stage-1 (7),
+.BR deepsea-stage-2 (7),
+.BR deepsea-stage-3 (7),
+.BR deepsea-stage-4 (7),
+.BR deepsea-customization (7),
+.BR deepsea-mines (7)
