@@ -94,4 +94,5 @@ if [ -n "$RGW" ] ; then
 fi
 test -n "$MDS" -a "$CLIENT_NODES" -ge 1 && cephfs_mount_and_sanity_test
 
+echo "YYYY"
 echo "health-ok test result: PASS"
