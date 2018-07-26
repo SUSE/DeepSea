@@ -3,7 +3,7 @@ These files contain all the permuations for possible OSD configrations.
 The files were generated according to the following matrix.
 
 
-```
+
 +-------------+        +------------+         +------------------+      +-------------------------+
 |             |        |            |         |                  |      |                         |
 |             |        |            |         |                  |      |                         |
@@ -21,4 +21,4 @@ The files were generated according to the following matrix.
 |             |        |            |        |  not encrypted  |
 |             |        |            |        |                 |
 +-------------+        +------------+        +-----------------+
-```
+
