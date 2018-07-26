@@ -71,10 +71,12 @@ copy-files:
 	install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	# qa
 	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/common
+	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/osd-config/ovh
 	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/suites/basic
 	install -d -m 755 $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test
 	install -m 644 qa/README $(DESTDIR)/usr/lib/deepsea/qa/
 	install -m 644 qa/common/*.sh $(DESTDIR)/usr/lib/deepsea/qa/common/
+	install -m 644 qa/osd-config/ovh/*.yaml $(DESTDIR)/usr/lib/deepsea/qa/osd-config/ovh/
 	install -m 755 qa/suites/basic/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/basic/
 	install -m 755 qa/suites/ceph-test/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test/
 	# tests
