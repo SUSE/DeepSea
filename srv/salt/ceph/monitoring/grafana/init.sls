@@ -64,6 +64,13 @@ add node dashboard:
           -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
           -d @/srv/salt/ceph/monitoring/grafana/files/node.json
 
+add node top n dashboard:
+  cmd.run:
+    - name: |
+        curl -s -H "Content-Type: application/json" \
+          -XPOST http://admin:admin@localhost:3000/api/dashboards/db \
+          -d @/srv/salt/ceph/monitoring/grafana/files/node-top-n.json
+
 add cluster dashboard:
   cmd.run:
     - name: |
