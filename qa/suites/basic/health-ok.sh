@@ -31,22 +31,25 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  $SCRIPTNAME [-h,--help] [--cli] [--mds] [--rgw] [--ssl]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X]"
+    echo "  [--mds] [--min-nodes=X] [--rgw] [--ssl]"
     echo
     echo "Options:"
-    echo "    --cli         Use DeepSea CLI"
-    echo "    --encryption  Deploy OSDs with data-at-rest encryption"
-    echo "    --mds         Deploy MDS"
-    echo "    --help        Display this usage message"
-    echo "    --rgw         Deploy RGW"
-    echo "    --ssl         Deploy RGW with SSL"
+    echo "    --cli           Use DeepSea CLI"
+    echo "    --client-nodes  Number of client (non-cluster) nodes"
+    echo "    --encryption    Deploy OSDs with data-at-rest encryption"
+    echo "    --mds           Deploy MDS"
+    echo "    --min-nodes     Minimum number of nodes"
+    echo "    --help          Display this usage message"
+    echo "    --rgw           Deploy RGW"
+    echo "    --ssl           Deploy RGW with SSL"
     exit 1
 }
 
 assert_enhanced_getopt
 
 TEMP=$(getopt -o h \
---long "cli,encrypted,encryption,help,mds,rgw,ssl" \
+--long "cli,client-nodes:,encrypted,encryption,help,mds,min-nodes:,rgw,ssl" \
 -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -56,15 +59,19 @@ eval set -- "$TEMP"
 
 # process command-line options
 CLI=""
+CLIENT_NODES=0
 STORAGE_PROFILE="default"
 MDS=""
+MIN_NODES=1
 RGW=""
 SSL=""
 while true ; do
     case "$1" in
         --cli) CLI="$1" ; shift ;;
+        --client-nodes) shift ; CLIENT_NODES=$1 ; shift ;;
         --encrypted|--encryption) STORAGE_PROFILE="dmcrypt" ; shift ;;
         --mds) MDS="$1" ; shift ;;
+        --min-nodes) shift ; MIN_NODES=$1 ; shift ;;
         -h|--help) usage ;;    # does not return
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
@@ -76,8 +83,6 @@ echo "WWWW"
 echo "Running health-ok.sh with options $CLI $ENCRYPTION $MDS $RGW $SSL"
 
 # deploy phase
-MIN_NODES=1
-CLIENT_NODES=0
 deploy_ceph
 
 # test phase
