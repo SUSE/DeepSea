@@ -126,25 +126,25 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	install -m 644 srv/salt/ceph/tests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned
 	install -m 644 srv/salt/ceph/tests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned/off
-	# smoketests
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests
-	install -m 644 srv/salt/ceph/smoketests/*.sls $(DESTDIR)/srv/salt/ceph/smoketests
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
-	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
-	install -m 644 srv/salt/ceph/smoketests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/keyrings
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/macros
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/macros/os_switch
-	install -m 644 srv/salt/ceph/smoketests/macros/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/macros/os_switch
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/openstack
-	install -m 644 srv/salt/ceph/smoketests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/openstack
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
-	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
-	install -m 644 srv/salt/ceph/smoketests/restart/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/restart
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
-	install -m 644 srv/salt/ceph/smoketests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/tuned
-	install -m 644 srv/salt/ceph/smoketests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
+	# functests/1node
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node
+	install -m 644 srv/salt/ceph/functests/1node/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
+	install -m 644 srv/salt/ceph/functests/1node/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
+	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/macros
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/macros/os_switch
+	install -m 644 srv/salt/ceph/functests/1node/macros/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/macros/os_switch
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
+	install -m 644 srv/salt/ceph/functests/1node/openstack/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
+	install -m 644 srv/salt/ceph/functests/1node/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/restart
+	install -m 644 srv/salt/ceph/functests/1node/restart/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
+	install -m 644 srv/salt/ceph/functests/1node/tuned/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
+	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
