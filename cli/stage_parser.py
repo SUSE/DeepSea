@@ -258,6 +258,11 @@ class SLSParser(object):
             return SaltExecutionFunction(step_dict, step_dict['tgt'])
         if step_dict['state'] == 'module' and step_dict['fun'] == 'run':
             return SaltExecutionFunction(step_dict, target)
+
+        # filter out test.nop state functions
+        if step_dict['state'] == 'test' and step_dict['fun'] == 'nop':
+            return None
+
         return SaltStateFunction(step_dict, target)
 
     @staticmethod
@@ -279,7 +284,8 @@ class SLSParser(object):
         logger.info("parsing stage sls file took: %ss", t1-t0)
         for step_dict in stage:
             step = cls.parse_step(step_dict)
-            steps.append(step)
+            if step:
+                steps.append(step)
 
         if hide_state_steps:
             steps = cls._process_states_requisites(stage_name, steps)
@@ -311,7 +317,7 @@ class SLSParser(object):
                 step.target_expanded.append(minion)
                 for s_step_dict in state_steps:
                     s_step = cls.parse_step(s_step_dict, minion)
-                    if not only_visible_steps or s_step.visible:
+                    if s_step and (not only_visible_steps or s_step.visible):
                         step.steps[minion].append(s_step)
 
         steps = cls._process_states_requisites(stage_name, steps)

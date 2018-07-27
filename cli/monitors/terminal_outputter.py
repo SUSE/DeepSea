@@ -151,7 +151,7 @@ class SimplePrinter(MonitorListener):
         self.current_step.append({'endl': False})
 
     def step_runner_finished(self, step):
-        if not step.success:
+        if step.order > 0 and not step.success:
             if step.name not in self.errors:
                 self.errors[step.name] = step.end_event
 
@@ -201,7 +201,7 @@ class SimplePrinter(MonitorListener):
         self.current_step.append({'endl': True})
 
     def step_state_minion_finished(self, step, minion):
-        if not step.targets[minion]['success']:
+        if step.order > 0 and not step.targets[minion]['success']:
             if step.name not in self.errors:
                 self.errors[step.name] = OrderedDict()
             self.errors[step.name][minion] = step.targets[minion]['event']
@@ -810,7 +810,7 @@ class StepListPrinter(MonitorListener):
             self.print_step(self.step)
 
     def step_runner_finished(self, step):
-        if not step.success:
+        if step.order > 0 and not step.success:
             if step.name not in self.errors:
                 self.errors[step.name] = step.end_event
 
@@ -849,7 +849,7 @@ class StepListPrinter(MonitorListener):
             self.print_step(self.step)
 
     def step_state_minion_finished(self, step, minion):
-        if not step.targets[minion]['success']:
+        if step.order > 0 and not step.targets[minion]['success']:
             if step.name not in self.errors:
                 self.errors[step.name] = OrderedDict()
             self.errors[step.name][minion] = step.targets[minion]['event']
