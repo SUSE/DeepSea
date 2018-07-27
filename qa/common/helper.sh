@@ -4,7 +4,8 @@
 # helper functions (not to be called directly from test scripts)
 #
 
-function _report_stage_failure_and_die {
+function _report_stage_failure {
+    STAGE_SUCCEEDED=""
     local stage_num=$1
     #local stage_log_path=$2
     #local number_of_failures=$3
@@ -14,7 +15,6 @@ function _report_stage_failure_and_die {
     echo "Here comes the systemd log:"
     #cat $stage_log_path
     journalctl -r | head -n 1000
-    return 1
 }
 
 function _run_stage {
@@ -27,7 +27,7 @@ function _run_stage {
     echo "*********************************************"
     set -x
 
-    # CLI case
+    STAGE_SUCCEEDED="non-empty string"
     test -n "$CLI" && _run_stage_cli $stage_num || _run_stage_non_cli $stage_num
 }
 
@@ -54,10 +54,10 @@ function _run_stage_cli {
             echo "********** Stage $stage_num completed successfully **********"
         else
             echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-            _report_stage_failure_and_die $stage_num
+            _report_stage_failure $stage_num
         fi
     else
-        _report_stage_failure_and_die $stage_num
+        _report_stage_failure $stage_num
     fi
     set -e
 }
@@ -68,16 +68,17 @@ function _run_stage_non_cli {
 
     echo -n "" > $stage_log_path
     salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 | tee $stage_log_path
+    echo "WWWW"
     STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
 
     if [[ "$STAGE_FINISHED" ]]; then
       FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
       if [[ "$FAILED" -gt "0" ]]; then
-        _report_stage_failure_and_die $stage_num
+        _report_stage_failure $stage_num
       fi
       echo "********** Stage $stage_num completed successfully **********"
     else
-      _report_stage_failure_and_die $stage_num
+      _report_stage_failure $stage_num
     fi
 }
 

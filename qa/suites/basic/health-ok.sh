@@ -101,7 +101,6 @@ deploy_ceph
 
 # verification phase
 ceph_health_test
-ceph-disk list
 salt -I roles:storage osd.report
 
 # test phase

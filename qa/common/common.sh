@@ -121,33 +121,43 @@ function run_stage_0 {
     else
         echo "Root filesystem is *not* btrfs: skipping subvolume creation"
     fi
-
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_1 {
     _run_stage 1 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_2 {
     salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
     _run_stage 2 "$@"
     salt_pillar_items
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_3 {
     cat_global_conf
+    #salt_cmd_run_lsblk
+    # assume Master node is also a storage node
+    lsblk
     _run_stage 3 "$@"
-    salt_cmd_run_lsblk
+    lsblk
+    ceph-disk list
+    ceph osd tree
     cat_ceph_conf
     admin_auth_status
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_4 {
     _run_stage 4 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_5 {
     _run_stage 5 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 
