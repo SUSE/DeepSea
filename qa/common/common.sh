@@ -138,8 +138,7 @@ function run_stage_2 {
 
 function run_stage_3 {
     cat_global_conf
-    #salt_cmd_run_lsblk
-    # assume Master node is also a storage node
+    _master_has_role storage
     lsblk
     _run_stage 3 "$@"
     lsblk

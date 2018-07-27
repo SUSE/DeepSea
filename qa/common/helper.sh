@@ -86,6 +86,12 @@ function _client_node {
     salt --static --out json -C 'not I@roles:storage' test.ping | jq -r 'keys[0]'
 }
 
+function _master_has_role {
+    local ROLE=$1
+    salt $(hostname) pillar.get roles
+    salt $(hostname) pillar.get roles | grep -q "$1"
+}
+
 function _first_x_node {
     local ROLE=$1
     salt --static --out json -C "I@roles:$ROLE" test.ping | jq -r 'keys[0]'
