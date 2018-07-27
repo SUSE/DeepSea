@@ -127,7 +127,7 @@ function deploy_ceph {
     cat_salt_config
     vet_nodes
     set -x
-    test $CLUSTER_NODES -lt 4 && DEV_ENV="true"
+    test $CLUSTER_NODES -lt 4 && export DEV_ENV="true"
     if ceph_cluster_running ; then
         echo "Running ceph cluster detected: skipping deploy phase"
         return 0
