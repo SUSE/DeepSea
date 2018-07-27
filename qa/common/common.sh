@@ -53,9 +53,10 @@ function run_stage_1 {
 }
 
 function run_stage_2 {
-    salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
+    # This was needed with SCC repos
+    #salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
     _run_stage 2 "$@"
-    salt_pillar_items
+    salt_pillar_items 2>/dev/null
     test "$STAGE_SUCCEEDED"
 }
 
@@ -110,23 +111,20 @@ function ceph_conf_small_cluster {
     local STORAGENODES=$(json_storage_nodes)
     test -n "$STORAGENODES"
     if [ "$STORAGENODES" -eq 1 ] ; then
-        # 1 node, 2 OSDs
         echo "Adjusting ceph.conf for operation with 1 storage node"
         cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 16
 osd pool default size = 2
 osd crush chooseleaf type = 0 # failure domain == osd
 EOF
-    elif [ "$STORAGENODES" -eq 2 ] ; then
-        # 2 nodes, 4 OSDs
-        echo "Adjusting ceph.conf for operation with 2 storage nodes"
+    elif [ "$STORAGENODES" -eq 2 -o "$STORAGENODES" -eq 3 ] ; then
+        echo "Adjusting ceph.conf for operation with 2 or 3 storage nodes"
         cat <<'EOF' >> /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf
 mon pg warn min per osd = 8
 osd pool default size = 2
 EOF
     else
-        echo "Three or more storage nodes; not adjusting ceph.conf"
-        # TODO: look up default value of "mon pg warn min per osd"
+        echo "Four or more storage nodes; not adjusting ceph.conf"
     fi
 }
 
@@ -197,13 +195,21 @@ function cat_global_conf {
 }
 
 function cat_ceph_conf {
-    salt '*' cmd.run "cat /etc/ceph/ceph.conf"
+    salt '*' cmd.run "cat /etc/ceph/ceph.conf" 2>/dev/null
 }
 
 function admin_auth_status {
     ceph auth get client.admin
     ls -l /etc/ceph/ceph.client.admin.keyring
     cat /etc/ceph/ceph.client.admin.keyring
+}
+
+function number_of_hosts_in_ceph_osd_tree {
+    ceph osd tree -f json-pretty | jq '[.nodes[] | select(.type == "host")] | length'
+}
+
+function number_of_osds_in_ceph_osd_tree {
+    ceph osd tree -f json-pretty | jq '[.nodes[] | select(.type == "osd")] | length'
 }
 
 function ceph_cluster_status {
@@ -249,7 +255,7 @@ function ceph_version_test {
 function ceph_health_test {
     local LOGFILE=/tmp/ceph_health_test.log
     echo "Waiting up to 15 minutes for HEALTH_OK..."
-    salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
+    salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 2>/dev/null | tee $LOGFILE
     # last line: determines return value of function
     ! grep -q 'Timeout expired' $LOGFILE
 }
@@ -436,7 +442,7 @@ EOF
 }
 
 function configure_all_OSDs_to_filestore {
-    salt-run proposal.populate format=filestore name=filestore 
+    salt-run proposal.populate format=filestore name=filestore 2>/dev/null
     chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
     sed -i 's/profile-default/profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
 }
@@ -461,15 +467,26 @@ function check_OSD_type {
 }
 
 function migrate_to_bluestore {
-    salt-run state.orch ceph.migrate.policy
+    salt-run state.orch ceph.migrate.policy 2>/dev/null
     sed -i 's/profile-filestore/migrated-profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
-    salt-run disengage.safety
-    salt-run state.orch ceph.migrate.osds
+    salt-run disengage.safety 2>/dev/null
+    salt-run state.orch ceph.migrate.osds 2>/dev/null
 }
 
-function disable_restart_in_stage_0 {
+function _disable_restart_in_stage_0_with_update {
     cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
     cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
     cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
     cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
+}
+
+function _disable_restart_in_stage_0_without_update {
+    cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
+    cp /srv/salt/ceph/stage/prep/master/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
+    cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
+    cp /srv/salt/ceph/stage/prep/minion/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
+}
+
+function disable_restart_in_stage_0 {
+    _disable_restart_in_stage_0_without_update
 }
