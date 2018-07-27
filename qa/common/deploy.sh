@@ -15,7 +15,7 @@ function report_config {
         dmcrypt)   echo "Storage profile: encrypted bluestore OSDs" ; break ;;
         filestore) echo "Storage profile: filestore OSDs"           ; break ;;
         random)    echo "Storage profile will be chosen randomly" ; break ;;
-        *) echo "No storage profile was set. Bailing out!" ; exit 1 ;;
+        *) echo "No storage profile was set. Bailing out!" ; return 1 ;;
     esac
     if [ -n "$MIN_NODES" ] ; then
         echo "MIN_NODES is set to $MIN_NODES"

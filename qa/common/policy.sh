@@ -44,7 +44,7 @@ function policy_cfg_mon_flex {
     policy_cfg_three_mons
   else
     echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
-    exit 1
+    return 1
   fi
 }
 
@@ -74,7 +74,7 @@ function maybe_random_storage_profile {
     if [ "$NUMBER_OF_MINIONS" -gt 1 ] ; then
         echo "Storage profile \"random\" only works with a single minion - you have $NUMBER_OF_MINIONS minions"
         echo "Bailing out!"
-        exit 1
+        return 1
     fi
     local DESTFILE=$(ls -1 $DESTDIR)
     local SOURCEDIR="$BASEDIR/osd-config/ovh"
@@ -103,7 +103,7 @@ profile-$STORAGE_PROFILE/stack/default/ceph/minions/*yml slice=[:-$CLIENT_NODES]
 EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
-        exit 1
+        return 1
     fi
 }
 
@@ -122,7 +122,7 @@ role-mds/cluster/*.sls slice=[:-$CLIENT_NODES]
 EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
-        exit 1
+        return 1
     fi
 }
 

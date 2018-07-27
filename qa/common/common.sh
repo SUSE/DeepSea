@@ -39,7 +39,7 @@ function global_test_init {
         MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
     else
         echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
-        exit 1
+        return 1
     fi
 }
 
@@ -79,7 +79,7 @@ function assert_enhanced_getopt {
     if [ $? -ne 4 ]; then
         echo "FAIL"
         echo "This script requires enhanced getopt. Bailing out."
-        exit 1
+        return 1
     fi
     echo "PASS"
     set -e
@@ -524,7 +524,7 @@ function verify_OSD_type {
     if [[ $osd_type != \"$1\" ]]
         then 
         echo "Error: Object store type is not $1 for OSD.ID : $2"
-        exit 1
+        return 1
     else
         echo OSD.${2} $osd_type
     fi

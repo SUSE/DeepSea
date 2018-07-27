@@ -14,7 +14,7 @@ function _report_stage_failure_and_die {
     echo "Here comes the systemd log:"
     #cat $stage_log_path
     journalctl -r | head -n 1000
-    exit 1
+    return 1
 }
 
 function _run_stage {
@@ -109,7 +109,7 @@ function _run_test_script_on_node {
     test "x$RESULT" = "xOK" && return
     echo "The test script that ran on $TESTNODE failed. The stderr output was as follows:"
     cat $STDERR_LOGFILE
-    exit 1
+    return 1
 }
 
 function _grace_period {
