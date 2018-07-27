@@ -16,7 +16,8 @@
 # forensic analysis.
 #
 
-set -ex
+set -e
+set +x
 
 SCRIPTNAME=$(basename ${0})
 BASEDIR=$(readlink -f "$(dirname ${0})/../..")
@@ -49,6 +50,8 @@ function usage {
     echo "    dmcrypt         All encrypted OSDs"
     echo "    filestore       All filestore OSDs"
     echo "    random          A randomly chosen profile (teuthology/OVH only)"
+    echo "    <OTHER>         Any other value will be assumed to be the name"
+    echo "                    of an OSD profile in qa/osd-config/ovh"
     exit 1
 }
 
@@ -67,6 +70,7 @@ eval set -- "$TEMP"
 CLI=""
 CLIENT_NODES=0
 STORAGE_PROFILE="default"
+CUSTOM_STORAGE_PROFILE=""
 MDS=""
 MIN_NODES=1
 RGW=""
@@ -85,9 +89,9 @@ while true ; do
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
-set +x
 echo "WWWW"
 echo "health-ok.sh running with the following configuration:"
+test -n "$CLI" && echo "- CLI"
 echo "- CLIENT_NODES ->$CLIENT_NODES<-"
 echo "- MIN_NODES ->$MIN_NODES<-"
 test -n "$MDS" && echo "- MDS"

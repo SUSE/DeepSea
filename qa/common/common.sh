@@ -13,61 +13,6 @@ source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
 
-function global_test_init {
-    #
-    # determine hostname of Salt Master
-    SALT_MASTER=$(hostname)
-    #
-    # show which repos are active/enabled
-    zypper lr -upEP
-    #
-    # show salt RPM version in log and fail if salt is not installed
-    rpm -q salt-master
-    rpm -q salt-minion
-    rpm -q salt-api
-    #
-    # show deepsea RPM version in case deepsea was installed from RPM
-    rpm -q deepsea || true
-    #
-    # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
-    # (otherwise we would have to set deepsea grain on all minions)
-    echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-    cat /srv/pillar/ceph/deepsea_minions.sls
-    #
-    # get list of minions
-    if type salt-key > /dev/null 2>&1; then
-        MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
-    else
-        echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
-        return 1
-    fi
-}
-
-function ping_minions_until_all_respond {
-    local NUM_MINIONS="$1"
-    local RESPONDING=""
-    for i in {1..20} ; do
-        sleep 10
-        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
-        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
-        test "$NUM_MINIONS" -eq "$RESPONDING" && break
-    done
-}
-
-function update_salt {
-    # make sure we are running the latest Salt before Stage 0 starts,
-    # otherwise Stage 0 will update Salt and then fail with cryptic
-    # error messages
-    TOTAL_NODES=$(json_total_nodes)
-    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
-    systemctl restart salt-api.service
-    systemctl restart salt-master.service
-    sleep 15
-    salt '*' cmd.run 'systemctl restart salt-minion'
-    ping_minions_until_all_respond "$TOTAL_NODES"
-    salt '*' saltutil.sync_all
-}
-
 #
 # functions that process command-line arguments
 #
@@ -96,16 +41,6 @@ function zypper_ref {
         sleep $delay
     done
     set -x
-}
-
-function install_deps {
-    echo "Installing dependencies on the Salt Master node"
-    local DEPENDENCIES="jq
-    "
-    zypper_ref
-    for d in $DEPENDENCIES ; do
-        zypper --non-interactive install --no-recommends $d
-    done
 }
 
 

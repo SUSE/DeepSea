@@ -15,6 +15,8 @@ function _report_stage_failure {
     echo "Here comes the systemd log:"
     #cat $stage_log_path
     journalctl -r | head -n 1000
+    echo "WWWW"
+    echo "There goes the systemd log"
 }
 
 function _run_stage {
@@ -141,10 +143,28 @@ function _initialize_osd_configs_array {
     shopt -u nullglob
 }
 
+function _custom_osd_config {
+    local PROFILE=$1
+    local FILENAME=""
+    for i in "${OSD_CONFIGS_ARRAY[@]}" ; do
+        case "$i" in
+            $PROFILE) FILENAME=$i ; break ;;
+            ${PROFILE}.yaml) FILENAME=$i ; break ;;
+            ${PROFILE}.yml) FILENAME=$i ; break;
+        esac
+    done
+    if [ -z "$FILENAME" ] ; then
+        echo "Custom OSD profile $PROFILE not found. Bailing out!"
+        exit 1
+    fi
+    echo "$FILENAME"
+}
+
 function _random_osd_config {
     # the bare config file names are assumed to already be in OSD_CONFIGS_ARRAY
     # (accomplished by calling _initialize_osd_configs_array first)
     OSD_CONFIGS_ARRAY_LENGTH="${#OSD_CONFIGS_ARRAY[@]}"
     local INDEX=$((RANDOM % OSD_CONFIGS_ARRAY_LENGTH))
     echo "${OSD_CONFIGS_ARRAY[$INDEX]}"
+
 }

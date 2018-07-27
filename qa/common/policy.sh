@@ -64,11 +64,11 @@ role-mgr/cluster/*.sls slice=[:3]
 EOF
 }
 
-function maybe_random_storage_profile {
-    test -n "$STORAGE_PROFILE"
-    test "$STORAGE_PROFILE" != "random" && return
+function random_or_custom_storage_profile {
+    test "$STORAGE_PROFILE"
+    test "$STORAGE_PROFILE" = "random" -o "$STORAGE_PROFILE" = "custom"
     local PROFILE_BASE="/srv/pillar/ceph/proposals"
-    cp -a $PROFILE_BASE/profile-default $PROFILE_BASE/profile-random
+    cp -a $PROFILE_BASE/profile-default $PROFILE_BASE/profile-$STORAGE_PROFILE
     local DESTDIR="$PROFILE_BASE/profile-random/stack/default/ceph/minions"
     local NUMBER_OF_MINIONS=$(ls -1 $DESTDIR | wc -l)
     if [ "$NUMBER_OF_MINIONS" -gt 1 ] ; then
@@ -79,12 +79,16 @@ function maybe_random_storage_profile {
     local DESTFILE=$(ls -1 $DESTDIR)
     local SOURCEDIR="$BASEDIR/osd-config/ovh"
     _initialize_osd_configs_array $SOURCEDIR
-    #local SOURCEFILE="bs_dedicated_db.yaml"
-    local SOURCEFILE=$(_random_osd_config)
+    local SOURCEFILE=""
+    if [ "$STORAGE_PROFILE" = "random" ] ; then
+        local SOURCEFILE=$(_random_osd_config)
+    elif [ "$STORAGE_PROFILE" = "custom" ] ; then
+        local SOURCEFILE=$(_custom_osd_config)
+    fi
     test "$SOURCEFILE"
     file $SOURCEDIR/$SOURCEFILE
     cp $SOURCEDIR/$SOURCEFILE $DESTDIR/$DESTFILE
-    echo "Your randomly chosen storage profile $SOURCEFILE has the following contents:"
+    echo "Your $STORAGE_PROFILE storage profile $SOURCEFILE has the following contents:"
     cat $DESTDIR/$DESTFILE
     ls -lR $PROFILE_BASE
 }

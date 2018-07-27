@@ -10,12 +10,13 @@ function report_config {
     else
         echo "CLI will **NOT** be used"
     fi
+    test "$STORAGE_PROFILE"
     case "$STORAGE_PROFILE" in
         default)   echo "Storage profile: bluestore OSDs (default)" ; break ;;
         dmcrypt)   echo "Storage profile: encrypted bluestore OSDs" ; break ;;
         filestore) echo "Storage profile: filestore OSDs"           ; break ;;
         random)    echo "Storage profile will be chosen randomly" ; break ;;
-        *) echo "No storage profile was set. Bailing out!" ; return 1 ;;
+        *) CUSTOM_STORAGE_PROFILE="$STORAGE_PROFILE" ; STORAGE_PROFILE="custom" ; echo "Storage profile: custom ($CUSTOM_STORAGE_PROFILE)" ; break ;;
     esac
     if [ -n "$MIN_NODES" ] ; then
         echo "MIN_NODES is set to $MIN_NODES"
@@ -32,6 +33,71 @@ function report_config {
     fi
 }
 
+function install_deps {
+    echo "Installing dependencies on the Salt Master node"
+    local DEPENDENCIES="jq
+    "
+    zypper_ref
+    for d in $DEPENDENCIES ; do
+        zypper --non-interactive install --no-recommends $d
+    done
+}
+
+function global_test_init {
+    #
+    # determine hostname of Salt Master
+    SALT_MASTER=$(hostname)
+    #
+    # show which repos are active/enabled
+    zypper lr -upEP
+    #
+    # show salt RPM version in log and fail if salt is not installed
+    rpm -q salt-master
+    rpm -q salt-minion
+    rpm -q salt-api
+    #
+    # show deepsea RPM version in case deepsea was installed from RPM
+    rpm -q deepsea || true
+    #
+    # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
+    # (otherwise we would have to set deepsea grain on all minions)
+    echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
+    cat /srv/pillar/ceph/deepsea_minions.sls
+    #
+    # get list of minions
+    if type salt-key > /dev/null 2>&1; then
+        MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
+    else
+        echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
+        return 1
+    fi
+}
+
+function _ping_minions_until_all_respond {
+    local NUM_MINIONS="$1"
+    local RESPONDING=""
+    for i in {1..20} ; do
+        sleep 10
+        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
+        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
+        test "$NUM_MINIONS" -eq "$RESPONDING" && break
+    done
+}
+
+function update_salt {
+    # make sure we are running the latest Salt before Stage 0 starts,
+    # otherwise Stage 0 will update Salt and then fail with cryptic
+    # error messages
+    TOTAL_NODES=$(json_total_nodes)
+    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
+    systemctl restart salt-api.service
+    systemctl restart salt-master.service
+    sleep 15
+    salt '*' cmd.run 'systemctl restart salt-minion'
+    _ping_minions_until_all_respond "$TOTAL_NODES"
+    salt '*' saltutil.sync_all
+}
+
 function vet_nodes {
     MIN_NODES=$(($CLIENT_NODES + 1))
     if [ "$PROPOSED_MIN_NODES" -lt "$MIN_NODES" ] ; then
@@ -46,9 +112,6 @@ function vet_nodes {
     echo "WWWW"
     echo "This script will use DeepSea to deploy a cluster of $TOTAL_NODES nodes total (including Salt Master)."
     echo "Of these, $CLIENT_NODES will be clients (nodes without any DeepSea roles except \"admin\")."
-    if [ $CLUSTER_NODES -lt 4 ] ; then
-        export DEV_ENV="true"
-    fi
 }
 
 function ceph_cluster_running {
@@ -56,12 +119,15 @@ function ceph_cluster_running {
 }
 
 function deploy_ceph {
+    set +x
     report_config
     install_deps
     global_test_init
     update_salt
     cat_salt_config
     vet_nodes
+    set -x
+    test $CLUSTER_NODES -lt 4 && DEV_ENV="true"
     if ceph_cluster_running ; then
         echo "Running ceph cluster detected: skipping deploy phase"
         return 0
@@ -71,14 +137,20 @@ function deploy_ceph {
     salt_api_test
     test -n "$RGW" -a -n "$SSL" && rgw_ssl_init
     run_stage_1 "$CLI"
-    test "$STORAGE_PROFILE" = "dmcrypt" && proposal_populate_dmcrypt
     policy_cfg_base
     policy_cfg_mon_flex
     test -n "$MDS" && policy_cfg_mds
     test -n "$RGW" && policy_cfg_rgw
     test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha
     test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
-    maybe_random_storage_profile
+    case "$STORAGE_PROFILE" in
+        dmcrypt) proposal_populate_dmcrypt ;;
+        filestore) proposal_populate_filestore ;;
+        random) random_or_custom_storage_profile ;;
+        custom) random_or_custom_storage_profile ;;
+        default) ;;
+        *) echo "Bad storage profile ->$STORAGE_PROFILE<-. Bailing out!" ; exit 1 ;;
+    esac
     policy_cfg_storage
     cat_policy_cfg
     run_stage_2 "$CLI"
