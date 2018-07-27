@@ -64,6 +64,27 @@ role-mgr/cluster/*.sls slice=[:3]
 EOF
 }
 
+function maybe_random_storage_profile {
+    test -n "$STORAGE_PROFILE"
+    test "$STORAGE_PROFILE" != "random" && return
+    local PROFILE_BASE="/srv/pillar/ceph/proposals"
+    cp -a $PROFILE_BASE/profile-default $PROFILE_BASE/profile-random
+    local DESTDIR="$PROFILE_BASE/profile-random/stack/default/ceph/minions"
+    local NUMBER_OF_MINIONS=$(ls -1 $DESTDIR | wc -l)
+    if [ "$NUMBER_OF_MINIONS" -gt 1 ] ; then
+        echo "Storage profile \"random\" only works with a single minion - you have $NUMBER_OF_MINIONS minions"
+        echo "Bailing out!"
+        exit 1
+    fi
+    local DESTFILE=$(ls -1 $DESTDIR)
+    local SOURCEDIR="$BASEDIR/osd-config/ovh"
+    local SOURCEFILE="bs_dedicated_db.yaml"
+    cp $SOURCEDIR/$SOURCEFILE $DESTDIR/$DESTFILE
+    echo "Your randomly chosen storage profile $SOURCEFILE has the following contents:"
+    cat $DESTDIR/$DESTFILE
+    ls -lR $PROFILE_BASE
+}
+
 function policy_cfg_storage {
     test -n "$CLIENT_NODES"
     test -n "$STORAGE_PROFILE"

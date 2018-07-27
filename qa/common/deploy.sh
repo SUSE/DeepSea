@@ -14,6 +14,7 @@ function report_config {
         default)   echo "Storage profile: bluestore OSDs (default)" ; break ;;
         dmcrypt)   echo "Storage profile: encrypted bluestore OSDs" ; break ;;
         filestore) echo "Storage profile: filestore OSDs"           ; break ;;
+        random)    echo "Storage profile will be chosen randomly" ; break ;;
         *) echo "No storage profile was set. Bailing out!" ; exit 1 ;;
     esac
     if [ -n "$MIN_NODES" ] ; then
@@ -77,6 +78,7 @@ function deploy_ceph {
     test -n "$RGW" && policy_cfg_rgw
     test -n "$NFS_GANESHA" && policy_cfg_nfs_ganesha
     test -n "$NFS_GANESHA" -a -n "$RGW" && rgw_demo_users
+    maybe_random_storage_profile
     policy_cfg_storage
     cat_policy_cfg
     run_stage_2 "$CLI"

@@ -499,6 +499,17 @@ EOF
     _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }
 
+function ceph_disk_list {
+    local TESTSCRIPT=/tmp/ceph_disk_list.sh
+    local STORAGENODE=$(_first_x_node storage)
+    cat << 'EOF' > $TESTSCRIPT
+set -x
+ceph-disk list
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $STORAGENODE
+}
+
 function configure_all_OSDs_to_filestore {
     salt-run proposal.populate format=filestore name=filestore 
     chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
