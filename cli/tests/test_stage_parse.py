@@ -294,3 +294,42 @@ error state:
 
         self.assertEqual(ctx.exception.stage_name, "test.test-orch8")
         self.assertIsInstance(ctx.exception.pretty_error_desc_str(), str)
+
+    def test_parse_stage_nop_state(self):
+        self.write_state_file("test.test-orch10", {
+            'test state': {
+                'salt.state': [{
+                    'sls': 'test.test-state101',
+                    'tgt': '*'
+                }]
+            }
+        })
+
+        self.write_state_file("test.test-state101", {
+            'state {{ grains["id"] }}': {
+                'pkg.installed': [{
+                    'pkgs': ['salt-master', 'salt-minion']
+                }]
+            },
+            'nop state': {
+                'test.nop': []
+            }
+        })
+
+        steps, out = SLSParser.parse_stage("test.test-orch10", False, False)
+
+        self.assertEqual(out, "")
+        self.assertEqual(len(steps), 1)
+
+        self.assertIsInstance(steps[0], SaltState)
+        self.assertEqual(len(steps[0].steps), len(self.minions()))
+        self.assertEqual(steps[0].sls, "test.test-state101")
+        self.assertEqual(set(steps[0].target), set(self.minions()))
+        for minion, s_steps in steps[0].steps.items():
+            self.assertIn(minion, self.minions())
+            self.assertEqual(len(s_steps), 1)
+            self.assertIsInstance(s_steps[0], SaltStateFunction)
+            self.assertEqual(s_steps[0].desc, "state {}".format(minion))
+            self.assertEqual(s_steps[0].function, "pkg.installed")
+            self.assertEqual(s_steps[0].pretty_string(),
+                             "pkg.installed(salt-master, salt-minion)")
