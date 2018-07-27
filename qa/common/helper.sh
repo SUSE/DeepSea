@@ -4,17 +4,17 @@
 # helper functions (not to be called directly from test scripts)
 #
 
-function _report_stage_failure_and_die {
+function _report_stage_failure {
+    STAGE_SUCCEEDED=""
     local stage_num=$1
     #local stage_log_path=$2
-    #local number_of_failures=$3
 
-    test -z $number_of_failures && number_of_failures="unknown number of"
-    echo "********** Stage $stage_num failed with $number_of_failures failures **********"
+    echo "********** Stage $stage_num failed **********"
     echo "Here comes the systemd log:"
     #cat $stage_log_path
     journalctl -r | head -n 1000
-    exit 1
+    echo "WWWW"
+    echo "There goes the systemd log"
 }
 
 function _run_stage {
@@ -25,9 +25,8 @@ function _run_stage {
     echo "*********************************************"
     echo "********** Running DeepSea Stage $stage_num **********"
     echo "*********************************************"
-    set -x
 
-    # CLI case
+    STAGE_SUCCEEDED="non-empty string"
     test -n "$CLI" && _run_stage_cli $stage_num || _run_stage_non_cli $stage_num
 }
 
@@ -36,8 +35,8 @@ function _run_stage_cli {
     local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
     local deepsea_exit_status=""
 
-    echo "using DeepSea CLI"
     set +e
+    set -x
     deepsea \
         --log-file=/var/log/salt/deepsea.log \
         --log-level=debug \
@@ -46,48 +45,86 @@ function _run_stage_cli {
         ceph.stage.${stage_num} \
         --simple-output \
         2>&1 | tee $deepsea_cli_output_path
-    deepsea_exit_status="${PIPESTATUS[0]}"
-    echo "deepsea exit status: $deepsea_exit_status"
+    local exit_status="${PIPESTATUS[0]}"
+    set +x
+    echo "deepsea exit status: $exit_status"
     echo "WWWW"
-    if [ "$deepsea_exit_status" = "0" ] ; then
-        if grep -q -F "failed=0" $deepsea_cli_output_path ; then
-            echo "********** Stage $stage_num completed successfully **********"
-        else
-            echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-            _report_stage_failure_and_die $stage_num
-        fi
-    else
-        _report_stage_failure_and_die $stage_num
+    if [ "$exit_status" != "0" ] ; then
+        _report_stage_failure $stage_num
+        set -ex
+        return 0
     fi
-    set -e
+    if grep -q -F "failed=0" $deepsea_cli_output_path ; then
+        echo "********** Stage $stage_num completed successfully **********"
+    else
+        echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
+        _report_stage_failure $stage_num
+    fi
+    set -ex
 }
 
 function _run_stage_non_cli {
     local stage_num=$1
     local stage_log_path="/tmp/stage.${stage_num}.log"
 
-    echo -n "" > $stage_log_path
+    set +e
+    set -x
     salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 | tee $stage_log_path
-    STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
-
-    if [[ "$STAGE_FINISHED" ]]; then
-      FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
-      if [[ "$FAILED" -gt "0" ]]; then
-        _report_stage_failure_and_die $stage_num
-      fi
-      echo "********** Stage $stage_num completed successfully **********"
-    else
-      _report_stage_failure_and_die $stage_num
+    local exit_status="${PIPESTATUS[0]}"
+    if [ "$exit_status" != "0" ] ; then
+        _report_stage_failure $stage_num
+        set -e
+        return 0
     fi
+    STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
+    if [ "$STAGE_FINISHED" ]; then
+        FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
+        if [ "$FAILED" -gt "0" ]; then
+            echo "ERROR: salt-run returned exit status 0, yet one or more steps failed. Bailing out!"
+            _report_stage_failure $stage_num
+        else
+            echo "********** Stage $stage_num completed successfully **********"
+        fi
+    else
+        echo "ERROR: salt-run returned exit status 0, yet Stage did not complete. Bailing out!"
+        _report_stage_failure $stage_num
+    fi
+    echo "WWWW"
+    echo "********** Stage $stage_num completed successfully **********"
+    set -ex
 }
 
 function _client_node {
     salt --static --out json -C 'not I@roles:storage' test.ping | jq -r 'keys[0]'
 }
 
+function _master_has_role {
+    local ROLE=$1
+    echo "Asserting that master minion has role ->$ROLE<-"
+    salt $MASTER_MINION pillar.get roles
+    salt $MASTER_MINION pillar.get roles | grep -q "$ROLE"
+    echo "Yes, it does."
+}
+
 function _first_x_node {
     local ROLE=$1
     salt --static --out json -C "I@roles:$ROLE" test.ping | jq -r 'keys[0]'
+}
+
+function _first_storage_only_node {
+    local COMPOUND_TARGET="I@roles:storage"
+    local NOT_ROLES="mon
+mgr
+mds
+rgw
+igw
+ganesha
+"
+    local ROLE=
+    for ROLE in $NOT_ROLES ; do
+        COMPOUND_TARGET="$COMPOUND_TARGET and not I@roles:$ROLE"
+    done
+    salt --static --out json -C "$COMPOUND_TARGET" test.ping | jq -r 'keys[0]'
 }
 
 function _run_test_script_on_node {
@@ -121,3 +158,19 @@ function _grace_period {
 function _root_fs_is_btrfs {
     stat -f / | grep -q 'Type: btrfs'
 }
+
+function _ping_minions_until_all_respond {
+    local NUM_MINIONS="$1"
+    local RESPONDING=""
+    for i in {1..20} ; do
+        sleep 10
+        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
+        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
+        test "$NUM_MINIONS" -eq "$RESPONDING" && break
+    done
+}
+
+function _ceph_cluster_running {
+    ceph status >/dev/null 2>&1
+}
+
