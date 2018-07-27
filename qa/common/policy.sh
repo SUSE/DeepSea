@@ -78,7 +78,11 @@ function maybe_random_storage_profile {
     fi
     local DESTFILE=$(ls -1 $DESTDIR)
     local SOURCEDIR="$BASEDIR/osd-config/ovh"
-    local SOURCEFILE="bs_dedicated_db.yaml"
+    _initialize_osd_configs_array $SOURCEDIR
+    #local SOURCEFILE="bs_dedicated_db.yaml"
+    local SOURCEFILE=$(_random_osd_config)
+    test "$SOURCEFILE"
+    file $SOURCEDIR/$SOURCEFILE
     cp $SOURCEDIR/$SOURCEFILE $DESTDIR/$DESTFILE
     echo "Your randomly chosen storage profile $SOURCEFILE has the following contents:"
     cat $DESTDIR/$DESTFILE

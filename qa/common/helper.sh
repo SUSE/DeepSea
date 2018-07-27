@@ -128,3 +128,23 @@ function _grace_period {
 function _root_fs_is_btrfs {
     stat -f / | grep -q 'Type: btrfs'
 }
+
+function _initialize_osd_configs_array {
+    local DIR=$1
+
+    shopt -s nullglob
+    pushd $DIR >/dev/null
+    OSD_CONFIGS_ARRAY=(*)
+    echo "Made global array containing the following OSD configs (from ->$DIR<-):"
+    printf '%s\n' "${OSD_CONFIGS_ARRAY[@]}"
+    popd >/dev/null
+    shopt -u nullglob
+}
+
+function _random_osd_config {
+    # the bare config file names are assumed to already be in OSD_CONFIGS_ARRAY
+    # (accomplished by calling _initialize_osd_configs_array first)
+    OSD_CONFIGS_ARRAY_LENGTH="${#OSD_CONFIGS_ARRAY[@]}"
+    local INDEX=$((RANDOM % OSD_CONFIGS_ARRAY_LENGTH))
+    echo "${OSD_CONFIGS_ARRAY[$INDEX]}"
+}
