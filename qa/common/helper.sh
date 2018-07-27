@@ -117,3 +117,7 @@ function _grace_period {
     echo "${SECONDS}-second grace period"
     sleep $SECONDS
 }
+
+function _root_fs_is_btrfs {
+    stat -f / | grep -q 'Type: btrfs'
+}

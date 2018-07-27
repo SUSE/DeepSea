@@ -115,6 +115,13 @@ function install_deps {
 
 function run_stage_0 {
     _run_stage 0 "$@"
+    if _root_fs_is_btrfs ; then
+        echo "Root filesystem is btrfs: creating subvolumes for /var/lib/ceph"
+        salt-run state.orch ceph.migrate.subvolume
+    else
+        echo "Root filesystem is *not* btrfs: skipping subvolume creation"
+    fi
+
 }
 
 function run_stage_1 {
