@@ -69,7 +69,7 @@ function update_salt {
 }
 
 #
-# functions for processing command-line arguments
+# functions that process command-line arguments
 #
 
 function assert_enhanced_getopt {
@@ -86,7 +86,7 @@ function assert_enhanced_getopt {
 }
 
 #
-# functions for setting up the Salt Master node so it can run these tests
+# functions that set up the Salt Master node so it can run these tests
 #
 
 function zypper_ref {
@@ -99,53 +99,60 @@ function zypper_ref {
 }
 
 function install_deps {
-  echo "Installing dependencies on the Salt Master node"
-  local DEPENDENCIES="jq
-  "
-  zypper_ref
-  for d in $DEPENDENCIES ; do
-    zypper --non-interactive install --no-recommends $d
-  done
+    echo "Installing dependencies on the Salt Master node"
+    local DEPENDENCIES="jq
+    "
+    zypper_ref
+    for d in $DEPENDENCIES ; do
+        zypper --non-interactive install --no-recommends $d
+    done
 }
 
 
 #
-# functions for running the DeepSea stages
+# functions that run the DeepSea stages
 #
 
 function run_stage_0 {
-  _run_stage 0 "$@"
+    _run_stage 0 "$@"
+    if _root_fs_is_btrfs ; then
+        echo "Root filesystem is btrfs: creating subvolumes for /var/lib/ceph"
+        salt-run state.orch ceph.migrate.subvolume
+    else
+        echo "Root filesystem is *not* btrfs: skipping subvolume creation"
+    fi
+
 }
 
 function run_stage_1 {
-  _run_stage 1 "$@"
+    _run_stage 1 "$@"
 }
 
 function run_stage_2 {
-  salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
-  _run_stage 2 "$@"
-  salt_pillar_items
+    salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
+    _run_stage 2 "$@"
+    salt_pillar_items
 }
 
 function run_stage_3 {
-  cat_global_conf
-  _run_stage 3 "$@"
-  salt_cmd_run_lsblk
-  cat_ceph_conf
-  admin_auth_status
+    cat_global_conf
+    _run_stage 3 "$@"
+    salt_cmd_run_lsblk
+    cat_ceph_conf
+    admin_auth_status
 }
 
 function run_stage_4 {
-  _run_stage 4 "$@"
+    _run_stage 4 "$@"
 }
 
 function run_stage_5 {
-  _run_stage 5 "$@"
+    _run_stage 5 "$@"
 }
 
 
 #
-# functions for generating ceph.conf
+# functions that generate /etc/ceph/ceph.conf
 # see https://github.com/SUSE/DeepSea/tree/master/srv/salt/ceph/configuration/files/ceph.conf.d
 #
 
@@ -207,20 +214,20 @@ EOF
 
 
 #
-# functions for creating pools
+# functions that create pools
 #
 
 function pgs_per_pool {
-  local TOTALPOOLS=$1
-  test -n "$TOTALPOOLS"
-  local TOTALOSDS=$(json_total_osds)
-  test -n "$TOTALOSDS"
-  # given the total number of pools and OSDs,
-  # assume triple replication and equal number of PGs per pool
-  # and aim for 100 PGs per OSD
-  let "TOTALPGS = $TOTALOSDS * 100"
-  let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
-  echo $PGSPEROSD
+    local TOTALPOOLS=$1
+    test -n "$TOTALPOOLS"
+    local TOTALOSDS=$(json_total_osds)
+    test -n "$TOTALOSDS"
+    # given the total number of pools and OSDs,
+    # assume triple replication and equal number of PGs per pool
+    # and aim for 100 PGs per OSD
+    let "TOTALPGS = $TOTALOSDS * 100"
+    let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
+    echo $PGSPEROSD
 }
 
 
@@ -229,61 +236,61 @@ function pgs_per_pool {
 #
 
 function cat_deepsea_log {
-  cat /var/log/deepsea.log
+    cat /var/log/deepsea.log
 }
 
 function cat_salt_config {
-  cat /etc/salt/master
-  cat /etc/salt/minion
+    cat /etc/salt/master
+    cat /etc/salt/minion
 }
 
 function cat_policy_cfg {
-  cat /srv/pillar/ceph/proposals/policy.cfg
+    cat /srv/pillar/ceph/proposals/policy.cfg
 }
 
 function salt_pillar_items {
-  salt '*' pillar.items
+    salt '*' pillar.items
 }
 
 function salt_pillar_get_roles {
-  salt '*' pillar.get roles
+    salt '*' pillar.get roles
 }
 
 function salt_cmd_run_lsblk {
-  salt '*' cmd.run lsblk
+    salt '*' cmd.run lsblk
 }
 
 function cat_global_conf {
-  cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf || true
+    cat /srv/salt/ceph/configuration/files/ceph.conf.d/global.conf || true
 }
 
 function cat_ceph_conf {
-  salt '*' cmd.run "cat /etc/ceph/ceph.conf"
+    salt '*' cmd.run "cat /etc/ceph/ceph.conf"
 }
 
 function admin_auth_status {
-  ceph auth get client.admin
-  ls -l /etc/ceph/ceph.client.admin.keyring
-  cat /etc/ceph/ceph.client.admin.keyring
+    ceph auth get client.admin
+    ls -l /etc/ceph/ceph.client.admin.keyring
+    cat /etc/ceph/ceph.client.admin.keyring
 }
 
 function ceph_cluster_status {
-  ceph pg stat -f json-pretty
-  _grace_period 1
-  ceph health detail -f json-pretty
-  _grace_period 1
-  ceph osd tree
-  _grace_period 1
-  ceph osd pool ls detail -f json-pretty
-  _grace_period 1
-  ceph -s
+    ceph pg stat -f json-pretty
+    _grace_period 1
+    ceph health detail -f json-pretty
+    _grace_period 1
+    ceph osd tree
+    _grace_period 1
+    ceph osd pool ls detail -f json-pretty
+    _grace_period 1
+    ceph -s
 }
 
 function ceph_log_grep_enoent_eaccess {
-  set +e
-  grep -rH "Permission denied" /var/log/ceph
-  grep -rH "No such file or directory" /var/log/ceph
-  set -e
+    set +e
+    grep -rH "Permission denied" /var/log/ceph
+    grep -rH "No such file or directory" /var/log/ceph
+    set -e
 }
 
 
@@ -294,32 +301,32 @@ function ceph_log_grep_enoent_eaccess {
 function ceph_version_test {
 # test that ceph RPM version matches "ceph --version"
 # for a loose definition of "matches"
-  rpm -q ceph
-  local RPM_NAME=$(rpm -q ceph)
-  local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)/; print "$1\n";')
-  echo "According to RPM, the ceph upstream version is ->$RPM_CEPH_VERSION<-"
-  test -n "$RPM_CEPH_VERSION"
-  ceph --version
-  local BUFFER=$(ceph --version)
-  local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)/; print "$1\n";')
-  echo "According to \"ceph --version\", the ceph upstream version is ->$CEPH_CEPH_VERSION<-"
-  test -n "$RPM_CEPH_VERSION"
-  test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
+    rpm -q ceph
+    local RPM_NAME=$(rpm -q ceph)
+    local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)/; print "$1\n";')
+    echo "According to RPM, the ceph upstream version is ->$RPM_CEPH_VERSION<-"
+    test -n "$RPM_CEPH_VERSION"
+    ceph --version
+    local BUFFER=$(ceph --version)
+    local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)/; print "$1\n";')
+    echo "According to \"ceph --version\", the ceph upstream version is ->$CEPH_CEPH_VERSION<-"
+    test -n "$RPM_CEPH_VERSION"
+    test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
 }
 
 function ceph_health_test {
-  local LOGFILE=/tmp/ceph_health_test.log
-  echo "Waiting up to 15 minutes for HEALTH_OK..."
-  salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
-  # last line: determines return value of function
-  ! grep -q 'Timeout expired' $LOGFILE
+    local LOGFILE=/tmp/ceph_health_test.log
+    echo "Waiting up to 15 minutes for HEALTH_OK..."
+    salt -C 'I@roles:master' wait.until status=HEALTH_OK timeout=900 check=1 | tee $LOGFILE
+    # last line: determines return value of function
+    ! grep -q 'Timeout expired' $LOGFILE
 }
 
 function salt_api_test {
-  echo "Salt API test: BEGIN"
-  systemctl status salt-api.service
-  curl http://${SALT_MASTER}:8000/ | python3 -m json.tool
-  echo "Salt API test: END"
+    echo "Salt API test: BEGIN"
+    systemctl status salt-api.service
+    curl http://${SALT_MASTER}:8000/ | python3 -m json.tool
+    echo "Salt API test: END"
 }
 
 function rados_write_test {
@@ -343,13 +350,13 @@ EOF
 }
 
 function cephfs_mount_and_sanity_test {
-  #
-  # run cephfs mount test script on the client node
-  # mounts cephfs in /mnt, touches a file, asserts that it exists
-  #
-  local TESTSCRIPT=/tmp/cephfs_test.sh
-  local CLIENTNODE=$(_client_node)
-  cat << 'EOF' > $TESTSCRIPT
+    #
+    # run cephfs mount test script on the client node
+    # mounts cephfs in /mnt, touches a file, asserts that it exists
+    #
+    local TESTSCRIPT=/tmp/cephfs_test.sh
+    local CLIENTNODE=$(_client_node)
+    cat << 'EOF' > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "cephfs mount test script running as $(whoami) on $(hostname --fqdn)"
@@ -364,17 +371,17 @@ test -f /mnt/bubba
 umount /mnt
 echo "Result: OK"
 EOF
-  # FIXME: assert no MDS running on $CLIENTNODE
-  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
+    # FIXME: assert no MDS running on $CLIENTNODE
+    _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
 function iscsi_kludge {
-  #
-  # apply kludge to work around bsc#1049669
-  #
-  local TESTSCRIPT=/tmp/iscsi_kludge.sh
-  local IGWNODE=$(_first_x_node igw)
-  cat << 'EOF' > $TESTSCRIPT
+    #
+    # apply kludge to work around bsc#1049669
+    #
+    local TESTSCRIPT=/tmp/iscsi_kludge.sh
+    local IGWNODE=$(_first_x_node igw)
+    cat << 'EOF' > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "igw kludge script running as $(whoami) on $(hostname --fqdn)"
@@ -385,16 +392,16 @@ systemctl restart lrbd.service
 systemctl status -l lrbd.service
 echo "Result: OK"
 EOF
-  _run_test_script_on_node $TESTSCRIPT $IGWNODE
+    _run_test_script_on_node $TESTSCRIPT $IGWNODE
 }
 
 function igw_info {
-  #
-  # peek at igw information on the igw node
-  #
-  local TESTSCRIPT=/tmp/igw_info.sh
-  local IGWNODE=$(_first_x_node igw)
-  cat << 'EOF' > $TESTSCRIPT
+    #
+    # peek at igw information on the igw node
+    #
+    local TESTSCRIPT=/tmp/igw_info.sh
+    local IGWNODE=$(_first_x_node igw)
+    cat << 'EOF' > $TESTSCRIPT
 set -ex
 trap 'echo "Result: NOT_OK"' ERR
 echo "igw info script running as $(whoami) on $(hostname --fqdn)"
@@ -405,18 +412,18 @@ ss --tcp --numeric state listening
 echo "See 3260 there?"
 echo "Result: OK"
 EOF
-  _run_test_script_on_node $TESTSCRIPT $IGWNODE
+    _run_test_script_on_node $TESTSCRIPT $IGWNODE
 }
 
 function iscsi_mount_and_sanity_test {
-  #
-  # run iscsi mount test script on the client node
-  # mounts iscsi in /mnt, touches a file, asserts that it exists
-  #
-  local TESTSCRIPT=/tmp/iscsi_test.sh
-  local CLIENTNODE=$(_client_node)
-  local IGWNODE=$(_first_x_node igw)
-  cat << EOF > $TESTSCRIPT
+    #
+    # run iscsi mount test script on the client node
+    # mounts iscsi in /mnt, touches a file, asserts that it exists
+    #
+    local TESTSCRIPT=/tmp/iscsi_test.sh
+    local CLIENTNODE=$(_client_node)
+    local IGWNODE=$(_first_x_node igw)
+    cat << EOF > $TESTSCRIPT
 set -e
 trap 'echo "Result: NOT_OK"' ERR
 for delay in 60 60 60 60 ; do
@@ -446,8 +453,8 @@ test -f /mnt/bubba
 umount /mnt
 echo "Result: OK"
 EOF
-  # FIXME: assert script not running on the iSCSI gateway node
-  _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
+    # FIXME: assert script not running on the iSCSI gateway node
+    _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
 function validate_rgw_cert_perm {
@@ -467,13 +474,13 @@ EOF
 }
 
 function test_systemd_ceph_osd_target_wants {
-  #
-  # see bsc#1051598 in which ceph-disk was omitting --runtime when it enabled
-  # ceph-osd@$ID.service units
-  #
-  local TESTSCRIPT=/tmp/test_systemd_ceph_osd_target_wants.sh
-  local STORAGENODE=$(_first_x_node storage)
-  cat << 'EOF' > $TESTSCRIPT
+    #
+    # see bsc#1051598 in which ceph-disk was omitting --runtime when it enabled
+    # ceph-osd@$ID.service units
+    #
+    local TESTSCRIPT=/tmp/test_systemd_ceph_osd_target_wants.sh
+    local STORAGENODE=$(_first_x_node storage)
+    cat << 'EOF' > $TESTSCRIPT
 set -x
 CEPH_OSD_WANTS="/systemd/system/ceph-osd.target.wants"
 ETC_CEPH_OSD_WANTS="/etc$CEPH_OSD_WANTS"
@@ -493,9 +500,9 @@ EOF
 }
 
 function configure_all_OSDs_to_filestore {
-	salt-run proposal.populate format=filestore name=filestore 
-	chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
-	sed -i 's/profile-default/profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
+    salt-run proposal.populate format=filestore name=filestore 
+    chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
+    sed -i 's/profile-default/profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
 }
 
 function verify_OSD_type {
@@ -518,16 +525,15 @@ function check_OSD_type {
 }
 
 function migrate_to_bluestore {
-	salt-run state.orch ceph.migrate.policy
-	sed -i 's/profile-filestore/migrated-profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
-	salt-run disengage.safety
-	salt-run state.orch ceph.migrate.osds
+    salt-run state.orch ceph.migrate.policy
+    sed -i 's/profile-filestore/migrated-profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
+    salt-run disengage.safety
+    salt-run state.orch ceph.migrate.osds
 }
 
 function disable_restart_in_stage_0 {
-	cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
-	cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
-	cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
-	cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
+    cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
+    cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
+    cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
+    cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
 }
-

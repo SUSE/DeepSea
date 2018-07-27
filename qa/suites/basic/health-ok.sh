@@ -32,7 +32,7 @@ function usage {
     echo
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X]"
-    echo "  [--mds] [--min-nodes=X] [--rgw] [--ssl]"
+    echo "  [--encryption] [--mds] [--min-nodes=X] [--rgw] [--ssl]"
     echo
     echo "Options:"
     echo "    --cli           Use DeepSea CLI"
