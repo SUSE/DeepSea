@@ -19,15 +19,6 @@ function _report_stage_failure_and_die {
 
 function _run_stage {
   local stage_num=$1
-  local cli=$2
-  test -z "$cli" && cli="classic"
-  local stage_log_path="/tmp/stage.${stage_num}.log"
-  local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
-  local deepsea_exit_status=""
-
-  # workaround for https://bugzilla.suse.com/show_bug.cgi?id=1087232
-  # delete Salt runner __pycache__
-  rm -rf /srv/modules/runners/__pycache__
 
   set +x
   echo ""
@@ -37,34 +28,44 @@ function _run_stage {
   set -x
 
   # CLI case
-  if [ "x$cli" = "xcli" ] ; then
-      echo "using DeepSea CLI"
-      set +e
-      deepsea \
-          --log-file=/var/log/salt/deepsea.log \
-          --log-level=debug \
-          stage \
-          run \
-          ceph.stage.${stage_num} \
-          --simple-output \
-          2>&1 | tee $deepsea_cli_output_path
-      deepsea_exit_status="${PIPESTATUS[0]}"
-      echo "deepsea exit status: $deepsea_exit_status"
-      if [ "$deepsea_exit_status" = "0" ] ; then
-          if grep -q -F "failed=0" $deepsea_cli_output_path ; then
-              echo "DeepSea stage OK"
-          else
-              echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-              _report_stage_failure_and_die $stage_num
-          fi
+  test -n "$CLI" && _run_stage_cli $stage_num || _run_stage_non_cli $stage_num
+}
+
+function _run_stage_cli {
+  local stage_num=$1
+  local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
+  local deepsea_exit_status=""
+
+  echo "using DeepSea CLI"
+  set +e
+  deepsea \
+      --log-file=/var/log/salt/deepsea.log \
+      --log-level=debug \
+      stage \
+      run \
+      ceph.stage.${stage_num} \
+      --simple-output \
+      2>&1 | tee $deepsea_cli_output_path
+  deepsea_exit_status="${PIPESTATUS[0]}"
+  echo "deepsea exit status: $deepsea_exit_status"
+  echo "WWWW"
+  if [ "$deepsea_exit_status" = "0" ] ; then
+      if grep -q -F "failed=0" $deepsea_cli_output_path ; then
+          echo "********** Stage $stage_num completed successfully **********"
       else
+          echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
           _report_stage_failure_and_die $stage_num
       fi
-      set -e
-      return
+  else
+      _report_stage_failure_and_die $stage_num
   fi
+  set -e
+}
 
-  # non-CLI ("classic") case
+function _run_stage_non_cli {
+  local stage_num=$1
+  local stage_log_path="/tmp/stage.${stage_num}.log"
+
   echo -n "" > $stage_log_path
   salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 | tee $stage_log_path
   STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)

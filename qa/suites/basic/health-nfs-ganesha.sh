@@ -36,17 +36,15 @@ function usage {
     echo
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cli] [--fsal={cephfs,rgw,both}]"
-    echo "              [--mini]"
     echo
     echo "Options:"
     echo "    --cli      Use DeepSea CLI"
     echo "    --fsal     Defaults to cephfs"
     echo "    --help     Display this usage message"
-    echo "    --mini     Omit long-running tests"
     exit 1
 }
 
-TEMP=$(getopt -o h --long "cli,fsal:,help,mini,smoke" \
+TEMP=$(getopt -o h --long "cli,fsal:,help" \
      -n 'health-nfs-ganesha.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -57,13 +55,11 @@ eval set -- "$TEMP"
 # process options
 CLI=""
 FSAL="cephfs"
-MINI=""
 while true ; do
     case "$1" in
         --cli) CLI="cli" ; shift ;;
         --fsal) FSAL=$2 ; shift ; shift ;;
         -h|--help) usage ;;    # does not return
-        --mini|--smoke) MINI="$1" ; shift ;;
         --) shift ; break ;;
         *) echo "Internal error" ; exit 1 ;;
     esac
@@ -111,9 +107,7 @@ for v in "" "3" "4" ; do
     nfs_ganesha_umount
     sleep 10
 done
-
-if [ -z "$MINI" ] ; then
-    run_stage_0 "$CLI"
-fi
+# exercise ceph.restart orchestration
+run_stage_0 "$CLI"
 
 echo "OK"

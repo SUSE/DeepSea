@@ -205,51 +205,6 @@ mgr initial modules = dashboard
 EOF
 }
 
-#
-# functions for testing ceph.restart orchestration
-#
-
-function restart_services {
-  rm -rf /srv/modules/runners/__pycache__
-  salt-run state.orch ceph.restart
-}
-
-function mon_restarted {
-  local expected_return=$1
-  local mon_hosts=$(salt --static --out json -C "I@roles:mon" test.ping | jq -r 'keys[]')
-  set +e
-  for minion in ${mon_hosts}; do
-    salt "${minion}*" cmd.shell "journalctl -u ceph-mon@*" | grep -i terminated
-    test $? = ${expected_return}
-  done
-  set -e
-}
-
-function osd_restarted {
-    local expected_return=$1
-    osd_hosts=$(salt --static --out json -C "I@roles:storage" test.ping | jq -r 'keys[]')
-    set +e
-    for host in ${osd_hosts}; do
-        osds=$(salt --static --out json ${host} osd.list | jq .[][])
-        for osd in ${osds}; do
-            salt ${host} cmd.shell "journalctl -u ceph-osd@${osd}" | grep -i terminated
-            test $? = ${expected_return}
-        done
-    done
-    set -e
-}
-
-function rgw_restarted {
-  local expected_return=$1
-  rgw_hosts=$(salt --static --out json -C "I@roles:rgw" test.ping | jq -r 'keys[]')
-  set +e
-  for host in ${rgw_hosts}; do
-    salt ${host} cmd.shell "journalctl -u ceph-radosgw@*" | grep -i terminated
-    test $? = ${expected_return}
-  done
-  set -e
-}
-
 
 #
 # functions for creating pools
@@ -342,11 +297,13 @@ function ceph_version_test {
   rpm -q ceph
   local RPM_NAME=$(rpm -q ceph)
   local RPM_CEPH_VERSION=$(perl -e '"'"$RPM_NAME"'" =~ m/ceph-(\d+\.\d+\.\d+)/; print "$1\n";')
-  echo "According to RPM, the ceph upstream version is $RPM_CEPH_VERSION"
+  echo "According to RPM, the ceph upstream version is ->$RPM_CEPH_VERSION<-"
+  test -n "$RPM_CEPH_VERSION"
   ceph --version
   local BUFFER=$(ceph --version)
   local CEPH_CEPH_VERSION=$(perl -e '"'"$BUFFER"'" =~ m/ceph version (\d+\.\d+\.\d+)/; print "$1\n";')
-  echo "According to \"ceph --version\", the ceph upstream version is $CEPH_CEPH_VERSION"
+  echo "According to \"ceph --version\", the ceph upstream version is ->$CEPH_CEPH_VERSION<-"
+  test -n "$RPM_CEPH_VERSION"
   test "$RPM_CEPH_VERSION" = "$CEPH_CEPH_VERSION"
 }
 

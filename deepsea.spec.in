@@ -745,16 +745,17 @@ the README for more information.
 
 %files qa
 %{_libexecdir}/deepsea/qa
-%dir /srv/salt/ceph/smoketests
-%dir /srv/salt/ceph/smoketests/apparmor
-%dir /srv/salt/ceph/smoketests/keyrings
-%dir /srv/salt/ceph/smoketests/macros
-%dir /srv/salt/ceph/smoketests/macros/os_switch
-%dir /srv/salt/ceph/smoketests/openstack
-%dir /srv/salt/ceph/smoketests/quiescent
-%dir /srv/salt/ceph/smoketests/restart
-%dir /srv/salt/ceph/smoketests/tuned
-%dir /srv/salt/ceph/smoketests/tuned/off
+%dir /srv/salt/ceph/functests
+%dir /srv/salt/ceph/functests/1node
+%dir /srv/salt/ceph/functests/1node/apparmor
+%dir /srv/salt/ceph/functests/1node/keyrings
+%dir /srv/salt/ceph/functests/1node/macros
+%dir /srv/salt/ceph/functests/1node/macros/os_switch
+%dir /srv/salt/ceph/functests/1node/openstack
+%dir /srv/salt/ceph/functests/1node/quiescent
+%dir /srv/salt/ceph/functests/1node/restart
+%dir /srv/salt/ceph/functests/1node/tuned
+%dir /srv/salt/ceph/functests/1node/tuned/off
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/keyrings
 %dir /srv/salt/ceph/tests/openstack
@@ -780,17 +781,17 @@ the README for more information.
 %dir /srv/salt/ceph/tests/restart/rgw/change
 %dir /srv/salt/ceph/tests/restart/rgw/forced
 %dir /srv/salt/ceph/tests/restart/rgw/nochange
-/srv/salt/ceph/smoketests/*.sls
-/srv/salt/ceph/smoketests/apparmor/*.sls
+/srv/salt/ceph/functests/1node/*.sls
+/srv/salt/ceph/functests/1node/apparmor/*.sls
 %dir /srv/salt/ceph/tests/tuned
 %dir /srv/salt/ceph/tests/tuned/off
-/srv/salt/ceph/smoketests/keyrings/*.sls
-/srv/salt/ceph/smoketests/macros/os_switch/*.sls
-/srv/salt/ceph/smoketests/openstack/*.sls
-/srv/salt/ceph/smoketests/quiescent/*.sls
-/srv/salt/ceph/smoketests/restart/*.sls
-/srv/salt/ceph/smoketests/tuned/*.sls
-/srv/salt/ceph/smoketests/tuned/off/*.sls
+/srv/salt/ceph/functests/1node/keyrings/*.sls
+/srv/salt/ceph/functests/1node/macros/os_switch/*.sls
+/srv/salt/ceph/functests/1node/openstack/*.sls
+/srv/salt/ceph/functests/1node/quiescent/*.sls
+/srv/salt/ceph/functests/1node/restart/*.sls
+/srv/salt/ceph/functests/1node/tuned/*.sls
+/srv/salt/ceph/functests/1node/tuned/off/*.sls
 /srv/salt/ceph/tests/keyrings/*.sls
 /srv/salt/ceph/tests/openstack/*.sls
 /srv/salt/ceph/tests/os_switch/*.sls
