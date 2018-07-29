@@ -1,3 +1,7 @@
+prevent empty rendering:
+  test.nop:
+    - name: skip
+
 {% set roles = salt['pillar.get']('roles') %}
 
 {% if 'storage' not in roles and 'mon' not in roles and
