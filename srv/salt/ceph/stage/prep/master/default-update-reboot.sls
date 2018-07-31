@@ -1,5 +1,3 @@
-{% set master = salt['master.minion']() %}
-
 {% if salt['saltutil.runner']('validate.setup') == False %}
 
 validate failed:
@@ -50,7 +48,7 @@ unlock:
 {% if grains.get('os_family', '') == 'Suse' %}
 restart master:
   salt.state:
-    - tgt: {{ master }}
+    - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.updates.restart
 {% endif %}
 
