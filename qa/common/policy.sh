@@ -44,7 +44,7 @@ function policy_cfg_mon_flex {
     policy_cfg_three_mons
   else
     echo "Unexpected number of nodes ->$TOTALNODES<-: bailing out!"
-    exit 1
+    return 1
   fi
 }
 
@@ -62,6 +62,35 @@ function policy_cfg_three_mons {
 role-mon/cluster/*.sls slice=[:3]
 role-mgr/cluster/*.sls slice=[:3]
 EOF
+}
+
+function random_or_custom_storage_profile {
+    test "$STORAGE_PROFILE"
+    test "$STORAGE_PROFILE" = "random" -o "$STORAGE_PROFILE" = "custom"
+    local PROFILE_BASE="/srv/pillar/ceph/proposals"
+    cp -a $PROFILE_BASE/profile-default $PROFILE_BASE/profile-$STORAGE_PROFILE
+    local DESTDIR="$PROFILE_BASE/profile-random/stack/default/ceph/minions"
+    local NUMBER_OF_MINIONS=$(ls -1 $DESTDIR | wc -l)
+    if [ "$NUMBER_OF_MINIONS" -gt 1 ] ; then
+        echo "Storage profile \"random\" only works with a single minion - you have $NUMBER_OF_MINIONS minions"
+        echo "Bailing out!"
+        return 1
+    fi
+    local DESTFILE=$(ls -1 $DESTDIR)
+    local SOURCEDIR="$BASEDIR/osd-config/ovh"
+    _initialize_osd_configs_array $SOURCEDIR
+    local SOURCEFILE=""
+    if [ "$STORAGE_PROFILE" = "random" ] ; then
+        local SOURCEFILE=$(_random_osd_config)
+    elif [ "$STORAGE_PROFILE" = "custom" ] ; then
+        local SOURCEFILE=$(_custom_osd_config)
+    fi
+    test "$SOURCEFILE"
+    file $SOURCEDIR/$SOURCEFILE
+    cp $SOURCEDIR/$SOURCEFILE $DESTDIR/$DESTFILE
+    echo "Your $STORAGE_PROFILE storage profile $SOURCEFILE has the following contents:"
+    cat $DESTDIR/$DESTFILE
+    ls -lR $PROFILE_BASE
 }
 
 function policy_cfg_storage {
@@ -82,7 +111,7 @@ profile-$STORAGE_PROFILE/stack/default/ceph/minions/*yml slice=[:-$CLIENT_NODES]
 EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
-        exit 1
+        return 1
     fi
 }
 
@@ -101,7 +130,7 @@ role-mds/cluster/*.sls slice=[:-$CLIENT_NODES]
 EOF
     else
         echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
-        exit 1
+        return 1
     fi
 }
 

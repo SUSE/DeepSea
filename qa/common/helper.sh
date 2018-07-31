@@ -4,7 +4,8 @@
 # helper functions (not to be called directly from test scripts)
 #
 
-function _report_stage_failure_and_die {
+function _report_stage_failure {
+    STAGE_SUCCEEDED=""
     local stage_num=$1
     #local stage_log_path=$2
     #local number_of_failures=$3
@@ -14,7 +15,8 @@ function _report_stage_failure_and_die {
     echo "Here comes the systemd log:"
     #cat $stage_log_path
     journalctl -r | head -n 1000
-    exit 1
+    echo "WWWW"
+    echo "There goes the systemd log"
 }
 
 function _run_stage {
@@ -27,7 +29,7 @@ function _run_stage {
     echo "*********************************************"
     set -x
 
-    # CLI case
+    STAGE_SUCCEEDED="non-empty string"
     test -n "$CLI" && _run_stage_cli $stage_num || _run_stage_non_cli $stage_num
 }
 
@@ -54,10 +56,10 @@ function _run_stage_cli {
             echo "********** Stage $stage_num completed successfully **********"
         else
             echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-            _report_stage_failure_and_die $stage_num
+            _report_stage_failure $stage_num
         fi
     else
-        _report_stage_failure_and_die $stage_num
+        _report_stage_failure $stage_num
     fi
     set -e
 }
@@ -68,21 +70,28 @@ function _run_stage_non_cli {
 
     echo -n "" > $stage_log_path
     salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 | tee $stage_log_path
+    echo "WWWW"
     STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
 
     if [[ "$STAGE_FINISHED" ]]; then
       FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
       if [[ "$FAILED" -gt "0" ]]; then
-        _report_stage_failure_and_die $stage_num
+        _report_stage_failure $stage_num
       fi
       echo "********** Stage $stage_num completed successfully **********"
     else
-      _report_stage_failure_and_die $stage_num
+      _report_stage_failure $stage_num
     fi
 }
 
 function _client_node {
     salt --static --out json -C 'not I@roles:storage' test.ping | jq -r 'keys[0]'
+}
+
+function _master_has_role {
+    local ROLE=$1
+    salt $(hostname) pillar.get roles
+    salt $(hostname) pillar.get roles | grep -q "$1"
 }
 
 function _first_x_node {
@@ -109,7 +118,7 @@ function _run_test_script_on_node {
     test "x$RESULT" = "xOK" && return
     echo "The test script that ran on $TESTNODE failed. The stderr output was as follows:"
     cat $STDERR_LOGFILE
-    exit 1
+    return 1
 }
 
 function _grace_period {
@@ -120,4 +129,42 @@ function _grace_period {
 
 function _root_fs_is_btrfs {
     stat -f / | grep -q 'Type: btrfs'
+}
+
+function _initialize_osd_configs_array {
+    local DIR=$1
+
+    shopt -s nullglob
+    pushd $DIR >/dev/null
+    OSD_CONFIGS_ARRAY=(*)
+    echo "Made global array containing the following OSD configs (from ->$DIR<-):"
+    printf '%s\n' "${OSD_CONFIGS_ARRAY[@]}"
+    popd >/dev/null
+    shopt -u nullglob
+}
+
+function _custom_osd_config {
+    local PROFILE=$1
+    local FILENAME=""
+    for i in "${OSD_CONFIGS_ARRAY[@]}" ; do
+        case "$i" in
+            $PROFILE) FILENAME=$i ; break ;;
+            ${PROFILE}.yaml) FILENAME=$i ; break ;;
+            ${PROFILE}.yml) FILENAME=$i ; break;
+        esac
+    done
+    if [ -z "$FILENAME" ] ; then
+        echo "Custom OSD profile $PROFILE not found. Bailing out!"
+        exit 1
+    fi
+    echo "$FILENAME"
+}
+
+function _random_osd_config {
+    # the bare config file names are assumed to already be in OSD_CONFIGS_ARRAY
+    # (accomplished by calling _initialize_osd_configs_array first)
+    OSD_CONFIGS_ARRAY_LENGTH="${#OSD_CONFIGS_ARRAY[@]}"
+    local INDEX=$((RANDOM % OSD_CONFIGS_ARRAY_LENGTH))
+    echo "${OSD_CONFIGS_ARRAY[$INDEX]}"
+
 }

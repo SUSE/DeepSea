@@ -13,61 +13,6 @@ source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
 
 
-function global_test_init {
-    #
-    # determine hostname of Salt Master
-    SALT_MASTER=$(hostname)
-    #
-    # show which repos are active/enabled
-    zypper lr -upEP
-    #
-    # show salt RPM version in log and fail if salt is not installed
-    rpm -q salt-master
-    rpm -q salt-minion
-    rpm -q salt-api
-    #
-    # show deepsea RPM version in case deepsea was installed from RPM
-    rpm -q deepsea || true
-    #
-    # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
-    # (otherwise we would have to set deepsea grain on all minions)
-    echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-    cat /srv/pillar/ceph/deepsea_minions.sls
-    #
-    # get list of minions
-    if type salt-key > /dev/null 2>&1; then
-        MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
-    else
-        echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
-        exit 1
-    fi
-}
-
-function ping_minions_until_all_respond {
-    local NUM_MINIONS="$1"
-    local RESPONDING=""
-    for i in {1..20} ; do
-        sleep 10
-        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
-        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
-        test "$NUM_MINIONS" -eq "$RESPONDING" && break
-    done
-}
-
-function update_salt {
-    # make sure we are running the latest Salt before Stage 0 starts,
-    # otherwise Stage 0 will update Salt and then fail with cryptic
-    # error messages
-    TOTAL_NODES=$(json_total_nodes)
-    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
-    systemctl restart salt-api.service
-    systemctl restart salt-master.service
-    sleep 15
-    salt '*' cmd.run 'systemctl restart salt-minion'
-    ping_minions_until_all_respond "$TOTAL_NODES"
-    salt '*' saltutil.sync_all
-}
-
 #
 # functions that process command-line arguments
 #
@@ -79,7 +24,7 @@ function assert_enhanced_getopt {
     if [ $? -ne 4 ]; then
         echo "FAIL"
         echo "This script requires enhanced getopt. Bailing out."
-        exit 1
+        return 1
     fi
     echo "PASS"
     set -e
@@ -98,16 +43,6 @@ function zypper_ref {
     set -x
 }
 
-function install_deps {
-    echo "Installing dependencies on the Salt Master node"
-    local DEPENDENCIES="jq
-    "
-    zypper_ref
-    for d in $DEPENDENCIES ; do
-        zypper --non-interactive install --no-recommends $d
-    done
-}
-
 
 #
 # functions that run the DeepSea stages
@@ -121,33 +56,42 @@ function run_stage_0 {
     else
         echo "Root filesystem is *not* btrfs: skipping subvolume creation"
     fi
-
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_1 {
     _run_stage 1 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_2 {
     salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
     _run_stage 2 "$@"
     salt_pillar_items
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_3 {
     cat_global_conf
+    _master_has_role storage
+    lsblk
     _run_stage 3 "$@"
-    salt_cmd_run_lsblk
+    lsblk
+    ceph-disk list
+    ceph osd tree
     cat_ceph_conf
     admin_auth_status
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_4 {
     _run_stage 4 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_5 {
     _run_stage 5 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 
@@ -499,6 +443,17 @@ EOF
     _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }
 
+function ceph_disk_list {
+    local TESTSCRIPT=/tmp/ceph_disk_list.sh
+    local STORAGENODE=$(_first_x_node storage)
+    cat << 'EOF' > $TESTSCRIPT
+set -x
+ceph-disk list
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $STORAGENODE
+}
+
 function configure_all_OSDs_to_filestore {
     salt-run proposal.populate format=filestore name=filestore 
     chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
@@ -513,7 +468,7 @@ function verify_OSD_type {
     if [[ $osd_type != \"$1\" ]]
         then 
         echo "Error: Object store type is not $1 for OSD.ID : $2"
-        exit 1
+        return 1
     else
         echo OSD.${2} $osd_type
     fi
