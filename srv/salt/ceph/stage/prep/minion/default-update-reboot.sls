@@ -3,31 +3,31 @@
 
 repo:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.repo
 
 metapackage minions:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - sls: ceph.metapackage
 
 common packages:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.packages.common
     - failhard: True
 
 sync:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.sync
 
 mines:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.mines
 
@@ -54,7 +54,7 @@ wait until the cluster has recovered before processing {{ host }}:
 
 check if all processes are still running after processing {{ host }}:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.processes
     - failhard: True
@@ -62,7 +62,7 @@ check if all processes are still running after processing {{ host }}:
 unset noout {{ host }}:
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: '{{ master }}'
+    - tgt: {{ master }}
     - failhard: True
 
 updating {{ host }}:
@@ -140,14 +140,14 @@ finishing remaining minions:
 
 updates:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.updates
 
 {% if grains.get('os_family', '') == 'Suse' %}
 restart:
   salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
     - tgt_type: compound
     - sls: ceph.updates.restart
 {% endif %}
