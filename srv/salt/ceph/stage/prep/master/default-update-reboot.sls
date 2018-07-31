@@ -1,3 +1,5 @@
+{% set master = salt['master.minion']() %}
+
 {% if salt['saltutil.runner']('validate.setup') == False %}
 
 validate failed:
@@ -7,6 +9,7 @@ validate failed:
     - failhard: True
 
 {% endif %}
+
 
 sync master:
   salt.state:
@@ -43,6 +46,13 @@ unlock:
     - queue: 'master'
     - item: 'lock'
     - unless: "rpm -q --last kernel-default | head -1 | grep -q {{ kernel }}"
+
+{% if grains.get('os_family', '') == 'Suse' %}
+restart master:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.updates.restart
+{% endif %}
 
 complete marker:
   salt.runner:

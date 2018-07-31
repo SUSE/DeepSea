@@ -74,13 +74,6 @@ set noout {{ host }}:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - failhard: True
 
-restart {{ host }} if updates required:
-  salt.state:
-    - tgt: {{ host }}
-    - tgt_type: compound
-    - sls: ceph.updates.restart
-    - failhard: True
-
 finished {{ host }}:
   salt.runner:
     - name: minions.message
@@ -106,13 +99,6 @@ updating minions without roles:
     - sls: ceph.updates
     - failhard: True
 
-restarting minions without roles:
-  salt.state:
-    - tgt: I@cluster:ceph
-    - tgt_type: compound
-    - sls: ceph.updates.restart
-    - failhard: True
-
 finishing remaining minions:
   salt.runner:
     - name: minions.message
@@ -135,11 +121,5 @@ updates:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates
-
-restart:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - tgt_type: compound
-    - sls: ceph.updates.restart
 
 {% endif %}
