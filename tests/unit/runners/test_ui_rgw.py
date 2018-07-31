@@ -27,7 +27,7 @@ class TestRadosgw():
                   'success': True}
 
         fs.CreateFile('cache/user.admin.json',
-              contents='''{\n"keys": [\n{\n"user": "admin",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
+                      contents='''{\n"keys": [\n{\n"user": "admin",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/user.admin.json')
 
@@ -46,7 +46,7 @@ class TestRadosgw():
                   'success': True}
 
         fs.CreateFile('cache/user.jdoe.json',
-            contents='''{\n"system": "true",\n"keys": [\n{\n"user": "jdoe",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
+                      contents='''{\n"system": "true",\n"keys": [\n{\n"user": "jdoe",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/user.jdoe.json')
 
@@ -65,7 +65,7 @@ class TestRadosgw():
                   'success': False}
 
         fs.CreateFile('cache/user.jdoe.json',
-            contents='''{\n"keys": [\n{\n"user": "jdoe",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
+                      contents='''{\n"keys": [\n{\n"user": "jdoe",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/user.jdoe.json')
 
@@ -84,7 +84,7 @@ class TestRadosgw():
                   'success': False}
 
         fs.CreateFile('cache/user.jdoe.json',
-            contents='''{\n"system": "false",\n"keys": [\n{\n"user": "jdoe",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
+                      contents='''{\n"system": "false",\n"keys": [\n{\n"user": "jdoe",\n"access_key": "12345",\n"secret_key": "abcdef"\n}\n]\n}''')
         rg = ui_rgw.Radosgw(pathname="cache")
         fs.RemoveFile('cache/user.jdoe.json')
 

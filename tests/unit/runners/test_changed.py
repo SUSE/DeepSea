@@ -31,7 +31,7 @@ class TestChanged():
     @patch('__builtin__.open', new=f_open)
     @patch('srv.modules.runners.changed.hashlib')
     def test_create_checksum(self, hashlib_mock, cfg, role):
-        fs.CreateFile("{}/{}".format(conf_dir, 'rgw.conf'), contents="foo=bar") 
+        fs.CreateFile("{}/{}".format(conf_dir, 'rgw.conf'), contents="foo=bar")
         cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.create_checksum()
         assert isinstance(ret, MagicMock) is True
@@ -44,7 +44,7 @@ class TestChanged():
 
     @patch('srv.modules.runners.changed.log')
     def test_write_checksum(self, log_mock, cfg, role):
-        fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar") 
+        fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar")
         cfg = cfg(role=role(role_name='rgw'))
         m = mock_open()
         with patch('__builtin__.open', m, create=True):
@@ -53,12 +53,12 @@ class TestChanged():
             m.assert_called_once_with('/srv/salt/ceph/configuration/files/ceph.conf.checksum/rgw.conf', 'w')
             m().write.assert_called_once_with('0b0b0b0b0b0b0b0b0b0b0')
             fs.RemoveFile('/srv/salt/ceph/configuration/files/ceph.conf.checksum/rgw.conf')
-    
+
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('srv.modules.runners.changed.log')
     @patch('srv.modules.runners.changed.open')
     def test_read_checksum(self, open_mock, log_mock, cfg, role):
-        fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar") 
+        fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar")
         cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.read_checksum()
         open_mock.assert_called_with('/srv/salt/ceph/configuration/files/ceph.conf.checksum/rgw.conf', 'r')
@@ -98,7 +98,7 @@ class TestChanged():
         ret = cfg.has_change()
         write_cs_mock.assert_called_once_with('0b0b')
         log_mock.info.assert_called()
-        assert ret is True 
+        assert ret is True
 
     @patch('srv.modules.runners.changed.Config.create_checksum')
     @patch('srv.modules.runners.changed.Config.read_checksum')

@@ -35,8 +35,8 @@ class TestClusterAssignment():
     @patch('salt.client.LocalClient', autospec=True)
     def test_single_cluster_unassigned(self, mock_localclient):
         cluster_dict = {"minionA":"ceph", "minionB": "ceph",
-                "minionC": "unassigned", "minionD": "ceph",
-                "minionE": "unassigned"}
+                        "minionC": "unassigned", "minionD": "ceph",
+                        "minionE": "unassigned"}
 
         local = mock_localclient.return_value
         local.cmd.return_value = cluster_dict
@@ -48,8 +48,8 @@ class TestClusterAssignment():
     @patch('salt.client.LocalClient', autospec=True)
     def test_multi_cluster_unassigned(self, mock_localclient):
         cluster_dict = {"minionA":"ceph", "minionB": "kraken",
-                "minionC": "unassigned", "minionD": "ceph",
-                "minionE": "kraken"}
+                        "minionC": "unassigned", "minionD": "ceph",
+                        "minionE": "kraken"}
 
         local = mock_localclient.return_value
         local.cmd.return_value = cluster_dict
@@ -90,7 +90,7 @@ class TestValidation():
     def test_fsid(self, mock_localclient):
         fsid = 'ba0ae5e1-4282-3282-a745-2bf12888a393'
         fake_data = {'admin.ceph':
-                {'fsid': fsid}}
+                         {'fsid': fsid}}
 
         local = mock_localclient.return_value
         local.cmd.return_value = fake_data
@@ -104,7 +104,7 @@ class TestValidation():
     def test_fsid_invalid(self, mock_localclient):
         fsid = 'not a valid-uuid  but still 36 chars'
         fake_data = {'admin.ceph':
-                {'fsid': fsid}}
+                         {'fsid': fsid}}
 
         local = mock_localclient.return_value
         local.cmd.return_value = fake_data
@@ -184,13 +184,13 @@ class TestValidation():
     @patch('salt.client.LocalClient', autospec=True)
     def test_storage(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}},
+                               'ceph': {'storage': 'dummy_osds'}},
                      'node2': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}},
+                               'ceph': {'storage': 'dummy_osds'}},
                      'node3': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}},
+                               'ceph': {'storage': 'dummy_osds'}},
                      'node4': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}}}
+                               'ceph': {'storage': 'dummy_osds'}}}
 
         local = mock_localclient.return_value
         local.cmd.return_value = fake_data
@@ -199,15 +199,15 @@ class TestValidation():
         assert len(validator.passed) == 0
         validator.storage()
         assert validator.passed['storage'] == 'valid'
-        
+
     @patch('salt.client.LocalClient', autospec=True)
     def test_storage_missing_attribute(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}},
+                               'ceph': {'storage': 'dummy_osds'}},
                      'node2': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}},
+                               'ceph': {'storage': 'dummy_osds'}},
                      'node3': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}},
+                               'ceph': {'storage': 'dummy_osds'}},
                      'node4': {'roles': 'storage'}}
 
         local = mock_localclient.return_value
@@ -216,12 +216,12 @@ class TestValidation():
 
         assert len(validator.errors) == 0
         validator.storage()
-        assert "missing storage attribute" in validator.errors['storage'][0] 
+        assert "missing storage attribute" in validator.errors['storage'][0]
 
     @patch('salt.client.LocalClient', autospec=True)
     def test_storage_too_few(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
-                                'ceph': {'storage': 'dummy_osds'}}}
+                               'ceph': {'storage': 'dummy_osds'}}}
 
         local = mock_localclient.return_value
         local.cmd.return_value = fake_data

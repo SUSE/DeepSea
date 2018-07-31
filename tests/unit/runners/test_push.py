@@ -8,19 +8,19 @@ from srv.modules.runners import push
 fs = fake_fs.FakeFilesystem()
 proposal_dir = '/srv/pillar/ceph/proposals/cluster-ceph/cluster'
 nodes = [
-        'master',
-        'mon1',
-        'mon2',
-        'mon3',
-        'mds1',
-        'mds2',
-        'osd1',
-        'osd2',
-        'osd3',
-        'osd4',
-        'osd5',
-        'rgw1',
-        ]
+    'master',
+    'mon1',
+    'mon2',
+    'mon3',
+    'mds1',
+    'mds2',
+    'osd1',
+    'osd2',
+    'osd3',
+    'osd4',
+    'osd5',
+    'rgw1',
+]
 
 for node in nodes:
     fs.CreateFile('{}/{}.sls'.format(proposal_dir,
