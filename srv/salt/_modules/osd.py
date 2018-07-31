@@ -901,14 +901,16 @@ class OSDPartitions(object):
                     log.warning(("WAL size is unsupported for same device of "
                                  "{}".format(self.osd.device)))
                 else:
-                    # Create wal of wal_size on wal device
-                    self.create(self.osd.wal, [('wal', self.osd.wal_size)])
+                    log.info(("WAL will reside on same device {} as db - "
+                              "recommend removing the WAL entry from the "
+                              "configuration for device "
+                              "{}").format(self.osd.db, self.osd.device))
             else:
                 # pylint: disable=line-too-long
                 log.warning("No size specified for wal {}. Using default sizes.".format(self.osd.wal))
 
             if self.osd.db_size:
-                if self.osd.wal == self.osd.device:
+                if self.osd.db == self.osd.device:
                     # pylint: disable=line-too-long
                     log.warning("DB size is unsupported for same device of {}".format(self.osd.device))
                 else:
@@ -917,25 +919,22 @@ class OSDPartitions(object):
             else:
                 log.warning("No size specified for db {}. Using default sizes".format(self.osd.db))
         else:
-            # This situation seems unintentional - use faster media for
-            # the wal or db but not the other.  Help newbies out by
-            # putting wal and db on same device
+            # Only WAL
             if self.osd.wal:
                 if self.osd.wal_size:
                     if self.osd.wal == self.osd.device:
                         log.warning(("WAL size is unsupported for same device of "
                                      "{}".format(self.osd.device)))
                     else:
-                        log.warning("Setting db to same device {} as wal".format(self.osd.wal))
+                        log.info("DB will reside on device {}".format(self.osd.device))
                         # Create wal of wal_size on wal device
-                        # Create db on wal device
-                        self.create(self.osd.wal, [('wal', self.osd.wal_size),
-                                                   ('db', self._halve(self.osd.wal_size))])
+                        self.create(self.osd.wal, [('wal', self.osd.wal_size)])
             else:
                 if self.osd.wal_size:
                     log.warning(("WAL size is unsupported for same device of "
                                  "{}".format(self.osd.device)))
 
+            # Only DB
             if self.osd.db:
                 if self.osd.db_size:
                     if self.osd.db == self.osd.device:
@@ -944,9 +943,7 @@ class OSDPartitions(object):
                     else:
                         log.warning("Setting wal to same device {} as db".format(self.osd.db))
                         # Create db of db_size on db device
-                        # Create wal on db device
-                        self.create(self.osd.db, [('wal', self._double(self.osd.db_size)),
-                                                  ('db', self.osd.db_size)])
+                        self.create(self.osd.db, [('db', self.osd.db_size)])
             else:
                 if self.osd.db_size:
                     log.warning(("DB size is unsupported for same device of "
@@ -1176,11 +1173,17 @@ class OSDCommands(object):
 
             # WAL cornercase with sizes
             if self.osd.wal and self.osd.wal_size and self.osd.wal != self.osd.device:
-                _partition = self.highest_partition(self.osd.wal, 'wal')
-                if _partition:
-                    args += "--block.wal {}{} ".format(self.osd.wal, _partition)
+                if self.osd.db:
+                    log.warning(("Ignoring WAL setting - "
+                                 "No need for two partitions, "
+                                 "WAL will use same device as DB "
+                                 "{}").format(self.osd.db))
                 else:
-                    args += "--block.wal {} ".format(self.osd.wal)
+                    _partition = self.highest_partition(self.osd.wal, 'wal')
+                    if _partition:
+                        args += "--block.wal {}{} ".format(self.osd.wal, _partition)
+                    else:
+                        args += "--block.wal {} ".format(self.osd.wal)
 
             # DB cornercase with sizes
             if self.osd.db and self.osd.db_size and self.osd.db != self.osd.device:
