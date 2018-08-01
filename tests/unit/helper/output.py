@@ -1,3 +1,6 @@
+from random import choice, randint
+import string
+
 class OutputHelper(object):
     def __init__(self, **kwargs):
         self.lsscsi_with_raid_fail = \
@@ -759,3 +762,70 @@ class OutputHelper(object):
         self.salt_versions = {'data4.ceph': '2016.11.4', 'data3.ceph': '2016.11.4', 'admin.ceph': '2016.11.4', 'mon2.ceph': '2016.11.4', 'mon3.ceph': '2016.11.4', 'mon1.ceph': '2016.11.4', 'data5.ceph': '2016.11.4', 'data1.ceph': '2016.11.4', 'data2.ceph': '2016.11.4'}
 
         self.os_codenames = {'data4.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'data3.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'admin.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'mon2.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'mon3.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'data2.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'data5.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'data1.ceph': 'SUSE Linux Enterprise Server 12 SP3', 'mon1.ceph': 'SUSE Linux Enterprise Server 12 SP3'}
+
+
+class GenHwinfo(object):
+
+    def __init__(self, **kwargs):
+        """
+        Generating a object that represents a return
+        from 'hwinfo'
+
+        :param kwargs:
+        """
+        self._type = kwargs.get('type', 'hdd')
+        self.attached_to_nr = str(kwargs.get('attached_to', randint(1, 100)))
+        self.capacity = kwargs.get('capacity', 745)
+        self.bytes = kwargs.get('bytes', '800166076416')
+        if kwargs.get('random_type', False):
+            self.random_type()
+
+    def generate(self):
+        self.set_attr()
+        return {'Attached to': self._attached_to_str,
+                'Bytes': self.bytes,
+                'Capacity': '{} GB'.format(self.capacity),
+                'Device File': self._device_file,
+                'Device Files': '{}, {}'.format(self._device_file, self._dev_by_id),
+                'Device Number': 'block {}:1'.format(self._device_number),
+                'Driver': self._driver,
+                'Driver Modules': self._driver,
+                'Model': 'Intel DC P{} {}'.format(self._model_ident, self._type.upper()),
+                'device': self._device,
+                'rotational': self._rotational}
+
+
+    def set_attr(self):
+        self.disk_ident = choice(string.ascii_letters)
+        self.nvme_ident = randint(1, 50)
+        self._device_file = '/dev/sd{}'.format(self.disk_ident.lower())
+        self._device = '/dev/sd{}'.format(self.disk_ident.lower())
+        self._device_number = randint(200, 300)
+        alphanum_rand = ''.join(choice('0123456789abcdef') for i in range(32))
+        self._model_ident = randint(600, 800)
+        self._dev_by_id = '/dev/disk/by-id/scsi-SDELL_PERC_H{}_{}_GENERATED'.format(self._model_ident, alphanum_rand)
+        self._driver = 'ahci'
+
+        if self._type == 'nvme':
+            self._device_file = '/dev/nvme{}n1'.format(self.nvme_ident)
+            self._device = 'nvme{}n1'.format(self.nvme_ident)
+            self._rotational = '0'
+            self._attached_to_str = '#{} (Non-Volatile memory controller)'.format(self.attached_to_nr)
+            self._driver = 'nvme'
+
+        if self._type == 'hdd':
+            self._rotational = '1'
+            self._attached_to_str = '#{} (SATA controller)'.format(self.attached_to_nr)
+
+        if self._type == 'hddraid':
+            self._rotational = '1'
+            self._attached_to_str = '#{} (RAID Bus controller)'.format(self.attached_to_nr)
+
+        if self._type == 'ssd':
+            self._rotational = '0'
+            self._attached_to_str = '#{} (SATA controller)'.format(self.attached_to_nr)
+
+    def random_type(self):
+        types = ['hdd', 'nvme', 'hddraid', 'ssd']
+        self._type = choice(types)
+

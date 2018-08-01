@@ -2,10 +2,11 @@
 
 import pytest
 import sys
+import random
 sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import proposal
 from srv.salt._modules import helper
-from tests.unit.helper.output import OutputHelper
+from tests.unit.helper.output import OutputHelper, GenHwinfo
 
 
 class TestProposal(object):
@@ -13,6 +14,18 @@ class TestProposal(object):
     @pytest.fixture(scope='module')
     def output_helper(self):
         yield OutputHelper()
+
+    @pytest.fixture()
+    def replaced_disk_hdd(self):
+        return self.replace_disk()
+
+    @pytest.fixture()
+    def replaced_disk_ssd(self):
+        return self.replace_disk(type='ssd')
+
+    @pytest.fixture()
+    def replaced_disk_nvme(self):
+        return self.replace_disk(type='nvme')
 
     def test_parse_filter(self, output_helper):
         # test defaults
@@ -129,3 +142,125 @@ class TestProposal(object):
         assert len(prop['nvme-ssd-spinner']) is 0
         assert len(prop['nvme-ssd']) is p.DEFAULT_DATA_R
         assert len(prop['nvme-spinner']) is p.DEFAULT_DATA_R
+
+
+    def replace_disk(self, type='hdd'):
+        # idx 0-11 -> HDD
+        # idx 12-17 -> SSD
+        # idx 18 -> NVME
+        wal_db_replaced = None
+        hwinfo_out = OutputHelper().cephdisks_output
+        p = proposal.Proposal(OutputHelper().cephdisks_output)
+        old_prop = p.create()
+
+        # replace a HDD
+        hwinfo_out_new = hwinfo_out
+        replace_idx = random.randint(0, 11)
+        replaced_hdd = hwinfo_out_new[replace_idx]
+        del hwinfo_out_new[replace_idx]
+        new_disk = GenHwinfo(type=type).generate()
+
+        hwinfo_out_new.insert(random.randint(0, len(hwinfo_out)), new_disk)
+
+        # gen new proposal
+        new_p = proposal.Proposal(hwinfo_out_new)
+        new_prop = new_p.create()
+
+        for prop_name, prop in  old_prop.items():
+            for disk_set in old_prop[prop_name]:
+                # ensure that its a proposal with dedicated wal/db
+                if disk_set.keys()[0] in replaced_hdd['Device Files']:
+                    if prop_name in ['ssd-spinner', 'nvme-ssd-spinner', 'nvme-ssd', 'nvme-spinner']:
+                        wal_db_replaced = disk_set.values()[0]
+                        break
+
+        return old_prop, new_prop, replaced_hdd, wal_db_replaced
+
+    def is_deterministic(self, replaced_disk):
+        old_prop = replaced_disk[0]
+        new_prop = replaced_disk[1]
+        replaced_hdd = replaced_disk[2]
+        wal_db_replaced = replaced_disk[3]
+
+        for prop_name, prop in new_prop.items():
+            for disk_set in old_prop[prop_name]:
+                found = [x for x in prop if disk_set == x]
+                osd_disk = disk_set.keys()[0]
+                wal_db = disk_set.values()[0]
+                if not found and osd_disk not in replaced_hdd['Device Files']:
+                    if 'GENERATED' in osd_disk:
+                        if wal_db != wal_db_replaced:
+                            return False, found, osd_disk, wal_db, wal_db_replaced
+                if found:
+                    assert osd_disk == found[0].keys()[0]
+                    assert wal_db == found[0].values()[0]
+                return True, [], osd_disk, wal_db, wal_db_replaced
+
+    @pytest.mark.parametrize('execution_number', range(1, 1000))
+    def test_determ_hdd(self, execution_number, replaced_disk_hdd):
+        """
+        This test tries to confirm determinism in profile.generate
+
+        Theory:
+        The fear is that in a 'replace' operation we _may_ end up with
+        different osd - wal/db mappings than before. This would mean that
+        a user will have to edit the profiles manually or face a migration.
+        We never introduced pre-sorting of disk information that we get from
+        hwinfo, which means that we can't guarantee a consistently sorted
+        input.
+
+        In order to test this, we try to do the following:
+
+        1) Generate a profile
+        2) 'replace' a disk ( replaced.disk() )
+        2.1) Generate a 'new' disk ( suffixed with 'GENERATED' )
+        2.2) Inject it a at a random index in the output from hwinfo
+        2.3) Find the old, replaced disk to compare the wal/db pointer
+        3) Compare the new and the old proposal for a match of
+           old wal/db pointer and the new wal/db pointer
+
+        To eliminate the factor of 'luck', repeat if 1000 times.
+
+        Caveat:
+          * Currently we are only testing if the newly replaced disk
+            is matching it's old entry.
+            Maybe we should test it for _every_ disk.
+            OTOH, there is no difference in the generated disks and the
+            'old' disks. If the proposal generator is not deterministic,
+            we would have noticed it.
+          * The number of repetitions could me reduced by adding more disks
+            and therefore an increase in probability of a 'missplacement'
+
+
+        There are complement test methods for SSDs and NVMEs
+
+        :param execution_number:
+        :param replaced_disk_hdd:
+        :return:
+        """
+        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(replaced_disk_hdd)
+        assert ret is True
+
+    @pytest.mark.parametrize('execution_number', range(1, 1000))
+    def test_determ_ssd(self, execution_number, replaced_disk_ssd):
+        """
+        See docstring of test_determ_hdd.
+
+        :param execution_number:
+        :param replaced_disk_ssd:
+        :return:
+        """
+        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(replaced_disk_ssd)
+        assert ret is True
+
+    @pytest.mark.parametrize('execution_number', range(1, 1000))
+    def test_determ_nvme(self, execution_number, replaced_disk_nvme):
+        """
+        See docstring of test_determ_hdd.
+
+        :param execution_number:
+        :param replaced_disk_nvme:
+        :return:
+        """
+        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(replaced_disk_nvme)
+        assert ret is True
