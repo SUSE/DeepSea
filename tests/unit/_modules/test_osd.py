@@ -1856,7 +1856,7 @@ class TestOSDCommands():
         Expect --fs-type xfs and --dmcrypt to be part of cmd
         """
         kwargs = {'encryption': 'dmcrypt',
-                 'format': 'filestore'}
+                  'format': 'filestore'}
         fs_mock.return_value = 'filestore_args'
         cn_mock.return_value = 'ceph'
         fsid_mock.return_value = '0000-0000-0000-0000-0000'
@@ -1878,7 +1878,7 @@ class TestOSDCommands():
         Expect dmrypt not to be part of cmd
         """
         kwargs = {'encryption': 'noencryption',
-                 'format': 'filestore'}
+                  'format': 'filestore'}
         fs_mock.return_value = 'filestore_args'
         cn_mock.return_value = 'ceph'
         fsid_mock.return_value = '0000-0000-0000-0000-0000'
@@ -1900,7 +1900,7 @@ class TestOSDCommands():
         Expect dmrypt to be part of cmd
         """
         kwargs = {'encryption': 'dmcrypt',
-                 'format': 'bluestore'}
+                  'format': 'bluestore'}
         bs_mock.return_value = 'bluestore_args'
         cn_mock.return_value = 'ceph'
         fsid_mock.return_value = '0000-0000-0000-0000-0000'
@@ -1922,7 +1922,7 @@ class TestOSDCommands():
         Expect dmrypt to be part of cmd
         """
         kwargs = {'encryption': 'nodmcrypt',
-                 'format': 'bluestore'}
+                  'format': 'bluestore'}
         bs_mock.return_value = 'bluestore_args'
         cn_mock.return_value = 'ceph'
         fsid_mock.return_value = '0000-0000-0000-0000-0000'

@@ -9,15 +9,15 @@ class TestStatusReport():
 
     def versions(self):
         return {'salt': {
-                  'common_version': '2016.11.4', 
-                  'old_version': '2015.0.1'},
-                'os': {
-                  'common_version': 'SUSE Linux Enterprise Server 12 SP3', 
-                  'old_version': 'SUSE Linux Enterprise Server 12 SP2'},
-                'ceph': {
-                  'common_version': 'ceph version 12.0.2-269-g9148e53 (9148e530e27266064877e632ccadecb4979b0904)',
-                  'old_version': 'ceph version 10.0.2-269-g9148e53 (9148e530e27266064881e628ccadecb4975b0904)'}
-                  }
+            'common_version': '2016.11.4',
+            'old_version': '2015.0.1'},
+            'os': {
+                'common_version': 'SUSE Linux Enterprise Server 12 SP3',
+                'old_version': 'SUSE Linux Enterprise Server 12 SP2'},
+            'ceph': {
+                'common_version': 'ceph version 12.0.2-269-g9148e53 (9148e530e27266064877e632ccadecb4979b0904)',
+                'old_version': 'ceph version 10.0.2-269-g9148e53 (9148e530e27266064881e628ccadecb4975b0904)'}
+        }
 
 
     def alter_input(self, recurrence=1, reverse=False):
@@ -51,14 +51,14 @@ class TestStatusReport():
             if reverse:
                 for node,value in data.iteritems():
                     data[node] = data[node].replace(ov, cv)
-            
+
             for count, (node, value) in enumerate(data.iteritems(), 0):
                 if count < recurrence:
                     data[node] = ov
                     if node not in expect['statusreport'][1]['out of sync']:
                         expect['statusreport'][1]['out of sync'].update({node: {}})
                     expect['statusreport'][1]['out of sync'][node].update({key: ov})
-                        
+
         return salt_versions, os_codenames, ceph_versions, expect
 
     @pytest.mark.skip()
@@ -75,7 +75,7 @@ class TestStatusReport():
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=4)
 
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
@@ -97,7 +97,7 @@ class TestStatusReport():
         """
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=3)
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
@@ -119,7 +119,7 @@ class TestStatusReport():
         """
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=1)
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
@@ -141,7 +141,7 @@ class TestStatusReport():
         """
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=0)
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
@@ -167,7 +167,7 @@ class TestStatusReport():
         """
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=4, reverse=True)
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
@@ -193,7 +193,7 @@ class TestStatusReport():
         """
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=3, reverse=True)
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
@@ -219,7 +219,7 @@ class TestStatusReport():
         """
 
         salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=0, reverse=True)
-        
+
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 

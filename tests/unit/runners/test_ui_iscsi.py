@@ -23,11 +23,11 @@ class TestIscsi():
         assert (config.call_count == 1 and 'config' in result and
                 interfaces.call_count == 1 and 'interfaces' in result and
                 images.call_count == 1 and 'images' in result)
-        
+
     @patch('salt.client.LocalClient', autospec=True)
     def test_interfaces(self, localclient):
-        expected = [{'node': 'igw1.ceph', 'addr': '172.16.11.16'}, 
-                    {'node': 'igw2.ceph', 'addr': '172.16.11.17'}, 
+        expected = [{'node': 'igw1.ceph', 'addr': '172.16.11.16'},
+                    {'node': 'igw2.ceph', 'addr': '172.16.11.17'},
                     {'node': 'igw3.ceph', 'addr': '172.16.11.18'}]
 
         local = localclient.return_value
@@ -38,7 +38,7 @@ class TestIscsi():
         iscsi = ui_iscsi.Iscsi()
         result = iscsi.interfaces()
         assert sorted(result) == expected
- 
+
     @patch('salt.client.LocalClient', autospec=True)
     def test_interfaces_unwrapped(self, localclient):
         expected = {'igw2.ceph': ['172.16.11.17'], 'igw1.ceph': ['172.16.11.16'], 'igw3.ceph': ['172.16.11.18']}
@@ -51,7 +51,7 @@ class TestIscsi():
         iscsi = ui_iscsi.Iscsi()
         result = iscsi.interfaces(wrapped=False)
         assert result == expected
- 
+
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.client.LocalClient', autospec=True)
     @patch('salt.utils.minions.mine_get', autospec=True)
@@ -64,7 +64,7 @@ class TestIscsi():
         result = iscsi.images()
 
         assert result == expected
- 
+
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.client.LocalClient', autospec=True)
     @patch('salt.utils.minions.mine_get', autospec=True)
@@ -77,7 +77,7 @@ class TestIscsi():
         result = iscsi.images(wrapped=False)
 
         assert result == expected
- 
+
     @patch('salt.client.LocalClient', autospec=True)
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
