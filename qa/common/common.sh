@@ -11,62 +11,8 @@ source $BASEDIR/common/policy.sh
 source $BASEDIR/common/pool.sh
 source $BASEDIR/common/rbd.sh
 source $BASEDIR/common/rgw.sh
+source $BASEDIR/common/zypper.sh
 
-
-function global_test_init {
-    #
-    # determine hostname of Salt Master
-    SALT_MASTER=$(hostname)
-    #
-    # show which repos are active/enabled
-    zypper lr -upEP
-    #
-    # show salt RPM version in log and fail if salt is not installed
-    rpm -q salt-master
-    rpm -q salt-minion
-    rpm -q salt-api
-    #
-    # show deepsea RPM version in case deepsea was installed from RPM
-    rpm -q deepsea || true
-    #
-    # set deepsea_minions to * - see https://github.com/SUSE/DeepSea/pull/526
-    # (otherwise we would have to set deepsea grain on all minions)
-    echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-    cat /srv/pillar/ceph/deepsea_minions.sls
-    #
-    # get list of minions
-    if type salt-key > /dev/null 2>&1; then
-        MINIONS_LIST=$(salt-key -L -l acc | grep -v '^Accepted Keys')
-    else
-        echo "Cannot find salt-key. Is Salt installed? Is this running on the Salt Master?"
-        exit 1
-    fi
-}
-
-function ping_minions_until_all_respond {
-    local NUM_MINIONS="$1"
-    local RESPONDING=""
-    for i in {1..20} ; do
-        sleep 10
-        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
-        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
-        test "$NUM_MINIONS" -eq "$RESPONDING" && break
-    done
-}
-
-function update_salt {
-    # make sure we are running the latest Salt before Stage 0 starts,
-    # otherwise Stage 0 will update Salt and then fail with cryptic
-    # error messages
-    TOTAL_NODES=$(json_total_nodes)
-    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
-    systemctl restart salt-api.service
-    systemctl restart salt-master.service
-    sleep 15
-    salt '*' cmd.run 'systemctl restart salt-minion'
-    ping_minions_until_all_respond "$TOTAL_NODES"
-    salt '*' saltutil.sync_all
-}
 
 #
 # functions that process command-line arguments
@@ -85,29 +31,6 @@ function assert_enhanced_getopt {
     set -e
 }
 
-#
-# functions that set up the Salt Master node so it can run these tests
-#
-
-function zypper_ref {
-    set +x
-    for delay in 60 60 60 60 ; do
-        zypper --non-interactive --gpg-auto-import-keys refresh && break
-        sleep $delay
-    done
-    set -x
-}
-
-function install_deps {
-    echo "Installing dependencies on the Salt Master node"
-    local DEPENDENCIES="jq
-    "
-    zypper_ref
-    for d in $DEPENDENCIES ; do
-        zypper --non-interactive install --no-recommends $d
-    done
-}
-
 
 #
 # functions that run the DeepSea stages
@@ -121,33 +44,42 @@ function run_stage_0 {
     else
         echo "Root filesystem is *not* btrfs: skipping subvolume creation"
     fi
-
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_1 {
     _run_stage 1 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_2 {
     salt '*' cmd.run "for delay in 60 60 60 60 ; do sudo zypper --non-interactive --gpg-auto-import-keys refresh && break ; sleep $delay ; done"
     _run_stage 2 "$@"
     salt_pillar_items
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_3 {
     cat_global_conf
+    _master_has_role storage
+    lsblk
     _run_stage 3 "$@"
-    salt_cmd_run_lsblk
+    lsblk
+    ceph-disk list
+    ceph osd tree
     cat_ceph_conf
     admin_auth_status
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_4 {
     _run_stage 4 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 function run_stage_5 {
     _run_stage 5 "$@"
+    test "$STAGE_SUCCEEDED"
 }
 
 
@@ -325,7 +257,7 @@ function ceph_health_test {
 function salt_api_test {
     echo "Salt API test: BEGIN"
     systemctl status salt-api.service
-    curl http://${SALT_MASTER}:8000/ | python3 -m json.tool
+    curl http://$(hostname):8000/ | python3 -m json.tool
     echo "Salt API test: END"
 }
 
@@ -335,18 +267,11 @@ function rados_write_test {
     # created by calling e.g. "create_all_pools_at_once write_test" immediately
     # before calling this function.
     #
-    local TESTSCRIPT=/tmp/test_rados_put.sh
-    cat << 'EOF' > $TESTSCRIPT
-set -ex
-trap 'echo "Result: NOT_OK"' ERR
-ceph osd pool application enable write_test deepsea_qa
-echo "dummy_content" > verify.txt
-rados -p write_test put test_object verify.txt
-rados -p write_test get test_object verify_returned.txt
-test "x$(cat verify.txt)" = "x$(cat verify_returned.txt)"
-echo "Result: OK"
-EOF
-    _run_test_script_on_node $TESTSCRIPT $SALT_MASTER
+    ceph osd pool application enable write_test deepsea_qa
+    echo "dummy_content" > verify.txt
+    rados -p write_test put test_object verify.txt
+    rados -p write_test get test_object verify_returned.txt
+    test "x$(cat verify.txt)" = "x$(cat verify_returned.txt)"
 }
 
 function cephfs_mount_and_sanity_test {
@@ -494,6 +419,17 @@ test -d "$ETC_CEPH_OSD_WANTS" && false
 echo "Asserting that $RUN_CEPH_OSD_WANTS exists, is a directory, and is not empty"
 test -d "$RUN_CEPH_OSD_WANTS"
 test -n "$(ls --almost-all $RUN_CEPH_OSD_WANTS)"
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $STORAGENODE
+}
+
+function ceph_disk_list {
+    local TESTSCRIPT=/tmp/ceph_disk_list.sh
+    local STORAGENODE=$(_first_x_node storage)
+    cat << 'EOF' > $TESTSCRIPT
+set -x
+ceph-disk list
 echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $STORAGENODE
