@@ -5,12 +5,12 @@
 
 function json_total_nodes {
     # total number of nodes in the cluster
-    salt --static --out json '*' test.ping | jq '. | length'
+    salt --static --out json '*' test.ping 2>/dev/null | jq '. | length'
 }
 
 function _json_nodes_of_role_x {
     local ROLE=$1
-    salt --static --out json -C "I@roles:$ROLE" test.ping | jq '. | length'
+    salt --static --out json -C "I@roles:$ROLE" test.ping 2>/dev/null | jq '. | length'
 }
 
 function json_storage_nodes {

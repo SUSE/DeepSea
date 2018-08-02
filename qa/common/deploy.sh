@@ -8,9 +8,9 @@ function _os_specific_install_deps {
     echo "Installing dependencies on the Salt Master node"
     local DEPENDENCIES="jq
     "
-    _zypper_ref
+    _zypper_ref_on_master
     for d in $DEPENDENCIES ; do
-        _zypper_install $d
+        _zypper_install_on_master $d
     done
 }
 
@@ -61,13 +61,13 @@ function _update_salt {
     # otherwise Stage 0 will update Salt and then fail with cryptic
     # error messages
     TOTAL_NODES=$(json_total_nodes)
-    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion'
+    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion' 2>/dev/null
     systemctl restart salt-api.service
     systemctl restart salt-master.service
     sleep 15
-    salt '*' cmd.run 'systemctl restart salt-minion'
+    salt '*' cmd.run 'systemctl restart salt-minion' 2>/dev/null
     _ping_minions_until_all_respond "$TOTAL_NODES"
-    salt '*' saltutil.sync_all
+    salt '*' saltutil.sync_all 2>/dev/null
 }
 
 function _initialize_storage_profile {
@@ -106,9 +106,9 @@ function _initialize_and_vet_nodes {
     fi
     test "$PROPOSED_MIN_NODES" -gt "$MIN_NODES" && MIN_NODES="$PROPOSED_MIN_NODES"
     echo "Final MIN_NODES is $MIN_NODES"
-    TOTAL_NODES=$(json_total_nodes)
+    test -n "$TOTAL_NODES" # set in _update_salt
     test "$TOTAL_NODES" -ge "$MIN_NODES"
-    CLUSTER_NODES=$(($TOTAL_NODES - $CLIENT_NODES))
+    STORAGE_NODES=$((TOTAL_NODES - CLIENT_NODES))
     echo "WWWW"
     echo "This script will use DeepSea to deploy a cluster of $TOTAL_NODES nodes total (including Salt Master)."
     echo "Of these, $CLIENT_NODES will be clients (nodes without any DeepSea roles except \"admin\")."
@@ -119,6 +119,9 @@ function initialization_sequence {
     _determine_master_minion
     _os_specific_install_deps
     _os_specific_repos_and_packages_info
+    python --version || true
+    python2 --version || true
+    python3 --version
     deepsea --version
     _set_deepsea_minions
     _initialize_minion_array
@@ -135,7 +138,7 @@ function deploy_ceph {
         echo "Running ceph cluster detected: skipping deploy phase"
         return 0
     fi
-    test $CLUSTER_NODES -lt 4 && export DEV_ENV="true"
+    test $STORAGE_NODES -lt 4 && export DEV_ENV="true"
     disable_restart_in_stage_0
     run_stage_0 "$CLI"
     salt_api_test
