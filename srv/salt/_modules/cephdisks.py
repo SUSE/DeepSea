@@ -512,29 +512,33 @@ def list_(**kwargs):
     return hwd.assemble_device_list()
 
 
-def disable_write_cache(disk=None, persistent=False, **kwargs):
+def disable_write_cache(disk="All", persistent=False, **kwargs):
     """
     Disable write cache (WCE) on rotational disks
     """
     hwd = HardwareDetections(**kwargs)
     sdparm_path = hwd._which('sdparm')
-    base_disk_path = "/sys/block/{}".format(disk)
-    disk_path = "/dev/{}".format(disk)
 
-    if persistent:
-        cmd = "{} --clear=WCE --save {}".format(sdparm_path, disk_path)
+
+    if disk == "All":
+        hwd_list = hwd.assemble_device_list()
+        disks_to_modify = [d['device'] for d in hwd_list if d['rotational'] == '1']:
     else:
-        cmd = "{} --clear=WCE {}".format(sdparm_path, disk_path)
+        disks_to_modify = [disk]
 
-    if hwd._is_rotational(base_disk_path):
+    for d in disks_to_modify:
+        base_disk_path = "/sys/block/{}".format(d)
+        disk_path = "/dev/{}".format(d)
+
+        if persistent:
+            cmd = "{} --clear=WCE --save {}".format(sdparm_path, disk_path)
+        else:
+            cmd = "{} --clear=WCE {}".format(sdparm_path, disk_path)
+
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = proc.communicate()
         if stderr:
-            log.warning("Could not change write cache settings for {}".format(disk))
-            return False
-    else:
-        log.warning("Disk {} is not rotational".format(disk))
-        return False
+            log.warning("Could not change write cache settings for {}".format(d))
     return True
 
 def version():
