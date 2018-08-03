@@ -20,6 +20,10 @@ class TestProposal(object):
         return self.replace_disk()
 
     @pytest.fixture()
+    def replaced_disk_hdd_ratio_4(self):
+        return self.replace_disk(ratio=4)
+
+    @pytest.fixture()
     def replaced_disk_ssd(self):
         return self.replace_disk(type='ssd')
 
@@ -144,13 +148,13 @@ class TestProposal(object):
         assert len(prop['nvme-spinner']) is p.DEFAULT_DATA_R
 
 
-    def replace_disk(self, type='hdd'):
+    def replace_disk(self, type='hdd', ratio=2):
         # idx 0-11 -> HDD
         # idx 12-17 -> SSD
         # idx 18 -> NVME
         wal_db_replaced = None
         hwinfo_out = OutputHelper().cephdisks_output
-        p = proposal.Proposal(OutputHelper().cephdisks_output)
+        p = proposal.Proposal(OutputHelper().cephdisks_output, ratio=ratio)
         old_prop = p.create()
 
         # replace a HDD
@@ -184,16 +188,21 @@ class TestProposal(object):
 
         for prop_name, prop in new_prop.items():
             for disk_set in old_prop[prop_name]:
-                found = [x for x in prop if disk_set == x]
+                matching_disk_from_old_prop = [x for x in prop if disk_set == x]
                 osd_disk = disk_set.keys()[0]
                 wal_db = disk_set.values()[0]
-                if not found and osd_disk not in replaced_hdd['Device Files']:
+                # iterate over old proposal
+                # find disk in new proposal
+                # compare wal-db mapping
+
+                if not matching_disk_from_old_prop and osd_disk not in replaced_hdd['Device Files']:
                     if 'GENERATED' in osd_disk:
                         if wal_db != wal_db_replaced:
-                            return False, found, osd_disk, wal_db, wal_db_replaced
-                if found:
-                    assert osd_disk == found[0].keys()[0]
-                    assert wal_db == found[0].values()[0]
+                            return False, matching_disk_from_old_prop, osd_disk, wal_db, wal_db_replaced
+
+                if matching_disk_from_old_prop:
+                    assert osd_disk == matching_disk_from_old_prop[0].keys()[0]
+                    assert wal_db == matching_disk_from_old_prop[0].values()[0]
                 return True, [], osd_disk, wal_db, wal_db_replaced
 
     @pytest.mark.parametrize('execution_number', range(1, 1000))
@@ -251,6 +260,18 @@ class TestProposal(object):
         :return:
         """
         ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(replaced_disk_ssd)
+        assert ret is True
+
+    @pytest.mark.parametrize('execution_number', range(1, 1000))
+    def test_determ_hdd_ratio_4(self, execution_number, replaced_disk_hdd_ratio_4):
+        """
+        See docstring of test_determ_hdd.
+
+        :param execution_number:
+        :param replaced_disk_ssd:
+        :return:
+        """
+        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(replaced_disk_hdd_ratio_4)
         assert ret is True
 
     @pytest.mark.parametrize('execution_number', range(1, 1000))
