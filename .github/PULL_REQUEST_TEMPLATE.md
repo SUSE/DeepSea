@@ -6,4 +6,8 @@ Description:
 
 -----------------
 
-[Please find more information on how to run integration tests here](https://github.com/SUSE/DeepSea/wiki/Integration-tests)
+**Checklist:**
+- [ ] Added unittests and or functional tests
+- [ ] Adapted documentation
+- [ ] Referenced issues or internal bugtracker
+- [ ] Ran integration tests successfully ( trigger with @susebot run teuthology )
