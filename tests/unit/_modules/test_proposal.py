@@ -182,24 +182,23 @@ class TestProposal(object):
         new_prop = replaced_disk[1]
         wal_db_replaced = replaced_disk[3]
 
-        results = list()
         for prop_name, prop in new_prop.items():
             for new_disk_set in prop:
                 matching_old_disk_set = [
-                    x for x in old_prop[prop_name] if x == new_disk_set
+                    x
+                    for x in old_prop[prop_name]
+                    if x.keys()[0] == new_disk_set.keys()[0]
                 ]
                 osd_disk = new_disk_set.keys()[0]
                 wal_db = new_disk_set.values()[0]
                 if matching_old_disk_set:
-                    assert osd_disk == matching_old_disk_set[0].keys()[0]
-                    assert wal_db == matching_old_disk_set[0].values()[0]
+                    old_disk = matching_old_disk_set[0].keys()[0]
+                    old_wal_db = matching_old_disk_set[0].values()[0]
+                    assert osd_disk == old_disk
+                    assert wal_db == old_wal_db
                 if "GENERATED" in osd_disk:
                     if prop_name != "standalone":
                         assert wal_db == wal_db_replaced[prop_name]
-
-        for res in results:
-            assert res is True
-        return True, [], osd_disk, wal_db, wal_db_replaced
 
     @pytest.mark.parametrize("execution_number", range(1, 1000))
     def test_determ_hdd(self, execution_number, replaced_disk_hdd):
@@ -243,10 +242,7 @@ class TestProposal(object):
         :param replaced_disk_hdd:
         :return:
         """
-        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(
-            replaced_disk_hdd
-        )
-        assert ret is True
+        self.is_deterministic(replaced_disk_hdd)
 
     @pytest.mark.parametrize("execution_number", range(1, 1000))
     def test_determ_ssd(self, execution_number, replaced_disk_ssd):
@@ -257,10 +253,7 @@ class TestProposal(object):
         :param replaced_disk_ssd:
         :return:
         """
-        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(
-            replaced_disk_ssd
-        )
-        assert ret is True
+        self.is_deterministic(replaced_disk_ssd)
 
     @pytest.mark.parametrize("execution_number", range(1, 1000))
     def test_determ_hdd_ratio_4(self, execution_number, replaced_disk_hdd_ratio_4):
@@ -271,10 +264,7 @@ class TestProposal(object):
         :param replaced_disk_ssd:
         :return:
         """
-        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(
-            replaced_disk_hdd_ratio_4
-        )
-        assert ret is True
+        self.is_deterministic(replaced_disk_hdd_ratio_4)
 
     @pytest.mark.parametrize("execution_number", range(1, 1000))
     def test_determ_nvme(self, execution_number, replaced_disk_nvme):
@@ -285,7 +275,4 @@ class TestProposal(object):
         :param replaced_disk_nvme:
         :return:
         """
-        ret, found, osd_disk, wal_db, wal_db_replaced = self.is_deterministic(
-            replaced_disk_nvme
-        )
-        assert ret is True
+        self.is_deterministic(replaced_disk_nvme)
