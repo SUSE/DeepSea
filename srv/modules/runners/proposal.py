@@ -7,12 +7,18 @@ import salt.client
 # import salt.utils.minions
 
 import pprint
-import yaml
-from os.path import isdir, isfile
+import deepsea_minions
+from os.path import isdir, isfile, join
 import os
+import re
+# pylint: disable=redefined-builtin
 from sys import exit
 import logging
-import deepsea_minions
+from collections import namedtuple
+# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
+import salt.client
+import yaml
+# pylint: disable=import-error
 
 log = logging.getLogger(__name__)
 
@@ -262,16 +268,221 @@ def _record_filter(args, base_dir):
         yaml.safe_dump(current_filter, f, default_flow_style=False)
 
 
+def _find_minions_to_replace(profile_dir):
+    """
+    Search through a given profile directory for files that end with '-replace'.
+
+    :param profile_dir: Profile directory, e.g. "/srv/pillar/ceph/proposals/profile-default"
+    """
+    to_replace = namedtuple('to_replace', ['fullpath', 'filename'])
+    dir_ = '{}/stack/default/ceph/minions'.format(profile_dir)
+    files = [f for f in os.listdir(dir_) if isfile(join(dir_, f)) and f.endswith('-replace')]
+
+    return [to_replace(join(dir_, f), f) for f in files]
+
+
+# pylint: disable=too-many-instance-attributes
+class ReplaceDiskOn(object):
+    """
+    Handle replacement of disks on OSD minions.
+
+    This class encapsulates everything that is needed to parse an old
+    proposal, compare it to the new/unused disks on the given minion and adapt
+    the old proposal if necessary.
+    When the same physical slots for are used, the only change of the proposal
+    is that the "replace: true" attribute gets stripped out of the proposal.
+    Otherwise the disks identifiers in the proposal are replaced by new ones.
+
+    Public method: replace() - trigger replacement of all flagged disks
+
+    :param minion: namedtuple with 'filename' and 'fullpath' as fields
+
+    """
+
+    def __init__(self, minion):
+        self.minion = minion
+        self.proposal_basename = self._proposal_basename()
+        self.proposal_basepath = self._proposal_basepath()
+        self.name = self._minion_name_from_file()
+        self.proposal = self._load_proposal()
+        self.disks = self._query_node_disks()
+        self.unused_disks = self._prepare_device_files()
+        self.flagged_replace = self._flagged_replace()
+
+    def _proposal_basename(self):
+        """ Get proposal basename from the provided filename """
+        pattern = re.compile(r'[^/]*\w\.yml', re.IGNORECASE)
+        return pattern.findall(self.minion.filename)[0]
+
+    def _proposal_basepath(self):
+        """ Get proposal basepath from the provided filename """
+        pattern = re.compile(r'.+\.yml', re.IGNORECASE)
+        return pattern.findall(self.minion.fullpath)[0]
+
+    def _minion_name_from_file(self):
+        """ Get minion name from the proposal basename """
+        return self.proposal_basename.replace(".yml", "")
+
+    def _load_proposal(self):
+        """ Load proposal YAML file """
+        with open(self.minion.fullpath, 'rb') as filename:
+            return yaml.safe_load(filename)
+
+    def _query_node_disks(self):
+        """ Return a list of currently present disks on the minion """
+        local_client = salt.client.LocalClient()
+        # ensure fresh data in case cephdisks.list was run shortly before with
+        # old disks present
+        local_client.cmd(self.name, 'mine.flush', expr_form='compound')
+        local_client.cmd(self.name, 'mine.update', expr_form='compound')
+        # the return of this call is a dictionary with the targets as keys
+        # even if there is only a single target
+        return local_client.cmd(self.name, 'cephdisks.list',
+                                expr_form='compound')[self.name]
+
+    def _prepare_device_files(self):
+        """
+        Check which of the device file style is used and build a list of device files
+        """
+        local_client = salt.client.LocalClient()
+        new_disk_device_files = []
+        for old_disk_key, old_disk_val in self.proposal['ceph']['storage']['osds'].items():
+            for new_disk in self.disks:
+                for dev_file in new_disk['Device Files'].split(','):
+                    # remove osd disks from self.disks unless they are marked for replacement
+                    if old_disk_key == dev_file.strip() and (
+                           'replace' not in old_disk_val
+                           or old_disk_val['replace'] is False
+                    ):
+
+                        self.disks.remove(new_disk)
+                    else:
+                        # remove wal db and journal disks from self.disks
+                        self._check_nested_for_disk(old_disk_val, dev_file, new_disk)
+
+        for disk in self.disks:
+            new_disk_device_files.append(local_client.cmd(self.name, 'cephdisks.device',
+                                         [disk['Device File']], expr_form="compound")[self.name])
+        return sorted(new_disk_device_files)
+
+    def _check_nested_for_disk(self, old_disk_val, dev_file, new_disk):
+        """ Check nested proposal entries for occurances of the new disk """
+
+        for val in old_disk_val.values():
+            if val == dev_file.strip():
+                # if more than one disk points to e.g. one journal, the journal disk is already
+                # removed and another removal fails.
+                try:
+                    self.disks.remove(new_disk)
+                except ValueError:
+                    pass
+
+    def _flagged_replace(self):
+        """ Return a list of all disks in the old proposal that will be replaced """
+        return sorted([x for x in self.proposal['ceph']['storage']['osds']
+                       if 'replace' in self.proposal['ceph']['storage']['osds'][x]])
+
+    def _swap_disks_in_proposal(self):
+        """
+        Iterate over the old proposal and call _change_disk_path for all disks that need
+        replacement
+        """
+        for disk in self.flagged_replace:
+            if self.proposal['ceph']['storage']['osds'][disk]['replace'] is True:
+                self._change_disk_path(disk)
+
+    def _change_disk_path(self, old_disk):
+        """ Exchange the old disk for the new disk for one disk replacement """
+        unused_disk = self.unused_disks.pop(0)
+        temp = self.proposal['ceph']['storage']['osds'][old_disk]
+        del self.proposal['ceph']['storage']['osds'][old_disk]
+        self.proposal['ceph']['storage']['osds'][unused_disk] = temp
+
+    def _strip_replace_flags(self):
+        """ Remove all 'replace' flags from the proposal """
+        for disk in self.proposal['ceph']['storage']['osds']:
+            if 'replace' in self.proposal['ceph']['storage']['osds'][disk]:
+                del self.proposal['ceph']['storage']['osds'][disk]['replace']
+
+    def _write_new_proposal(self):
+        """ Write the changed proposal to the original (pre 'replace' suffix) location """
+        with open(self.proposal_basepath, 'w') as filename:
+            yaml.dump(self.proposal, filename, default_flow_style=False)
+
+    def _delete_old_proposal(self):
+        """ Remove file with 'replace' suffix """
+        os.remove(self.minion.fullpath)
+
+    def replace(self):
+        """
+        Adapt the proposal for replaced disks.
+
+        Following steps take place:
+        (0.) Use a new disk (by-path) for the proposal if the physical location
+            has changed.
+        1. Remove all "replace: " attributes from the proposal
+        2. Write proposal to the "normal" proposal file
+        3. Remove proposal file with "-replace" in its name
+        """
+
+        num_unused = len(self.unused_disks)
+        num_replace = len([x for x in self.flagged_replace
+                          if self.proposal['ceph']['storage']['osds'][x]['replace'] is True])
+        if num_unused < 1:
+            log.error("At least one unused disk is needed.")
+            return False
+        elif num_unused > num_replace:
+            log.error("There are more ({}) unsused disks than disks to replace ({})".format(
+            num_unused, num_replace))
+            return False
+        elif num_unused < num_replace:
+            log.error("There are fewer ({}) unsused disks than disks to replace ({})".format(
+            num_unused, num_replace))
+            return False
+
+        log.debug("Correct amount of unused disks ({}). Swapping disks in proposal.".format(
+            num_unused))
+        self._swap_disks_in_proposal()
+        self._strip_replace_flags()
+
+        try:
+            self._write_new_proposal()
+            log.info("New proposal was written to {}".format(
+                     self.proposal_basepath))
+            self._delete_old_proposal()
+        # pylint: disable=bare-except
+        except:
+            log.error("Writing new proposal failed.")
+
+        return None
+
+
 def populate(**kwargs):
     args = _parse_args(kwargs)
 
     local_client = salt.client.LocalClient()
 
-    proposals = local_client.cmd(args['target'], 'proposal.generate',
-                                 expr_form='compound', kwarg=args)
+    minions_to_replace = []
+    profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
+    if isdir(profile_dir):
+        minions_to_replace = _find_minions_to_replace(profile_dir)
+
+    non_targets = []
+    if minions_to_replace:
+        for minion in minions_to_replace:
+            replace_operation = ReplaceDiskOn(minion)
+            replace_operation.replace()
+            non_targets.append(replace_operation.name)
+
+        # generate proposals for all nodes but the ones with a replace operation
+        proposals = local_client.cmd("{} and not {}".format(args['target'],
+                                                            ' and not '.join(non_targets)),
+                                     'proposal.generate', expr_form='compound', kwarg=args)
+    else:
+        proposals = local_client.cmd(args['target'], 'proposal.generate',
+                                     expr_form='compound', kwarg=args)
 
     # check if profile of 'name' exists
-    profile_dir = '{}/profile-{}'.format(base_dir, args['name'])
     if not isdir(profile_dir):
         os.makedirs(profile_dir, 0755)
     # TODO do not hardcode cluster name ceph here
