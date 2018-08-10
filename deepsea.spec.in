@@ -41,6 +41,7 @@ Requires:       python-netaddr
 Requires:       python-rados
 Requires:       python-setuptools
 Requires:       python-click
+Requires:       jq
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
@@ -281,6 +282,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/storage/keyring
 %dir /srv/salt/ceph/rescind/openattic
 %dir /srv/salt/ceph/rescind/openattic/keyring
+%dir /srv/salt/ceph/rescind/tuned
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/osd
 %dir /srv/salt/ceph/restart/osd/lax
@@ -344,6 +346,14 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/time
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/time/ntp/files
+%dir /srv/salt/ceph/tuned
+%dir /srv/salt/ceph/tuned/mgr
+%dir /srv/salt/ceph/tuned/mon
+%dir /srv/salt/ceph/tuned/osd
+%dir /srv/salt/ceph/tuned/files
+%dir /srv/salt/ceph/tuned/files/ceph-mgr
+%dir /srv/salt/ceph/tuned/files/ceph-mon
+%dir /srv/salt/ceph/tuned/files/ceph-osd
 %dir /srv/salt/ceph/maintenance
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/maintenance/noout
@@ -574,6 +584,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/rgw/monitoring/*.sls
 %config /srv/salt/ceph/rescind/storage/*.sls
 %config /srv/salt/ceph/rescind/storage/keyring/*.sls
+%config /srv/salt/ceph/rescind/tuned/*.sls
 %config /srv/salt/ceph/rescind/openattic/*.sls
 %config /srv/salt/ceph/rescind/openattic/keyring/*.sls
 %config /srv/salt/ceph/reset/*.sls
@@ -642,6 +653,12 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/time/ntp/files/*.j2
+%config /srv/salt/ceph/tuned/mgr/*.sls
+%config /srv/salt/ceph/tuned/mon/*.sls
+%config /srv/salt/ceph/tuned/osd/*.sls
+%config /srv/salt/ceph/tuned/files/ceph-mgr/tuned.conf
+%config /srv/salt/ceph/tuned/files/ceph-mon/tuned.conf
+%config /srv/salt/ceph/tuned/files/ceph-osd/tuned.conf
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls
@@ -698,6 +715,8 @@ the README for more information.
 %dir /srv/salt/ceph/smoketests/openstack
 %dir /srv/salt/ceph/smoketests/quiescent
 %dir /srv/salt/ceph/smoketests/restart
+%dir /srv/salt/ceph/smoketests/tuned
+%dir /srv/salt/ceph/smoketests/tuned/off
 %dir /srv/salt/ceph/tests
 %dir /srv/salt/ceph/tests/openstack
 %dir /srv/salt/ceph/tests/quiescent
@@ -722,9 +741,13 @@ the README for more information.
 %dir /srv/salt/ceph/tests/restart/rgw/forced
 %dir /srv/salt/ceph/tests/restart/rgw/nochange
 /srv/salt/ceph/smoketests/apparmor/*.sls
-/srv/salt/ceph/smoketests/openstack/*.sls
+%dir /srv/salt/ceph/tests/tuned
+%dir /srv/salt/ceph/tests/tuned/off
 /srv/salt/ceph/smoketests/quiescent/*.sls
 /srv/salt/ceph/smoketests/restart/*.sls
+/srv/salt/ceph/smoketests/tuned/*.sls
+/srv/salt/ceph/smoketests/tuned/off/*.sls
+/srv/salt/ceph/smoketests/openstack/*.sls
 /srv/salt/ceph/tests/openstack/*.sls
 /srv/salt/ceph/tests/quiescent/*.sls
 /srv/salt/ceph/tests/quiescent/timeout/*.sls
@@ -745,5 +768,6 @@ the README for more information.
 /srv/salt/ceph/tests/restart/rgw/change/*.sls
 /srv/salt/ceph/tests/restart/rgw/forced/*.sls
 /srv/salt/ceph/tests/restart/rgw/nochange/*.sls
-
+/srv/salt/ceph/tests/tuned/*.sls
+/srv/salt/ceph/tests/tuned/off/*.sls
 %changelog
