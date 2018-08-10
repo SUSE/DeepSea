@@ -9,6 +9,7 @@ from __future__ import print_function
 import time
 import logging
 import os
+import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.runner
@@ -64,7 +65,7 @@ def osd(*args, **kwargs):
                 continue
 
             # Rename minion profile
-            minion_profile(host)
+            minion_profile(host, osds)
 
     if 'called' in kwargs and kwargs['called']:
         # Return for remove.osd
@@ -135,7 +136,7 @@ def _find_host(osd_id, host_osds):
     return ""
 
 
-def minion_profile(minion):
+def minion_profile(minion, osds):
     """
     Rename a minion profile to indicate that the minion profile needs to be
     recreated.
@@ -146,13 +147,27 @@ def minion_profile(minion):
     belong to more than one hardware profile.  Each must be renamed.
     """
     files = __salt__['push.organize']()
+    local = salt.client.LocalClient()
+    grains = local.cmd(minion, 'grains.get', ['ceph'],tgt_type='compound')
 
+    
     yaml_file = 'stack/default/ceph/minions/{}.yml'.format(minion)
     if yaml_file in files:
         for filename in files[yaml_file]:
             if os.path.exists(filename):
                 print("Renaming minion {} profile".format(minion))
                 os.rename(filename, "{}-replace".format(filename))
+                with open("{}-replace".format(filename), 'rb') as f:
+                    content = yaml.safe_load(f)
+                # TODO: Rollback (try-except)
+                # import pdb; pdb.set_trace()
+                paths_by_id = [grains[minion][str(osd)]['partitions']['osd'][:-1] for osd in osds if str(osd) in grains[minion]]
+                for path in paths_by_id:
+                    content['ceph']['storage']['osds'][path]['replace'] = True
+                with open("{}-replace".format(filename), 'w') as f:
+                    yaml.dump(content, f, default_flow_style=False)
+
+
     return ""
 
 
