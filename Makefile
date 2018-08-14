@@ -37,6 +37,8 @@ copy-files:
 	install -m 755 qa/suites/basic/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/basic/
 	install -m 755 qa/suites/ceph-test/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test/
 	# tests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/openstack
+	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
@@ -82,6 +84,8 @@ copy-files:
 	# smoketests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
 	install -m 644 srv/salt/ceph/smoketests/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/openstack
+	install -m 644 srv/salt/ceph/smoketests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
@@ -359,6 +363,43 @@ copy-files:
 	install -m 644 srv/salt/ceph/openattic/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
 	install -m 644 srv/salt/ceph/openattic/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
+	# state files - openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack
+	install -m 644 srv/salt/ceph/openstack/*.sls $(DESTDIR)/srv/salt/ceph/openstack/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder
+	install -m 644 srv/salt/ceph/openstack/cinder/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/auth
+	install -m 644 srv/salt/ceph/openstack/cinder/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/files
+	install -m 644 srv/salt/ceph/openstack/cinder/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/cinder/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/key
+	install -m 644 srv/salt/ceph/openstack/cinder/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder/pool
+	install -m 644 srv/salt/ceph/openstack/cinder/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder/pool
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/auth
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/files
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/key
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/pool
+	install -m 644 srv/salt/ceph/openstack/cinder-backup/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/cinder-backup/pool
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance
+	install -m 644 srv/salt/ceph/openstack/glance/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/auth
+	install -m 644 srv/salt/ceph/openstack/glance/auth/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/auth
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/files
+	install -m 644 srv/salt/ceph/openstack/glance/files/*.j2 $(DESTDIR)/srv/salt/ceph/openstack/glance/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/key
+	install -m 644 srv/salt/ceph/openstack/glance/key/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/key
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/glance/pool
+	install -m 644 srv/salt/ceph/openstack/glance/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/glance/pool
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova
+	install -m 644 srv/salt/ceph/openstack/nova/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack/nova/pool
+	install -m 644 srv/salt/ceph/openstack/nova/pool/*.sls $(DESTDIR)/srv/salt/ceph/openstack/nova/pool
 	# state files - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd
 	install -m 644 srv/salt/ceph/osd/*.sls $(DESTDIR)/srv/salt/ceph/osd/
@@ -736,6 +777,7 @@ copy-files:
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mgr/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mon/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openattic/cache
+	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openstack/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/rgw/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum
@@ -750,6 +792,7 @@ copy-files:
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mgr/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/mon/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openattic/cache || true
+	-chown salt:salt $(DESTDIR)/srv/salt/ceph/openstack/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/osd/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
