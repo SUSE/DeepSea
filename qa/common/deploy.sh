@@ -122,7 +122,7 @@ function initialization_sequence {
     python --version || true
     python2 --version || true
     python3 --version
-    deepsea --version
+    deepsea --version || true
     _set_deepsea_minions
     _initialize_minion_array
     _update_salt
