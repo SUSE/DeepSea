@@ -15,6 +15,8 @@ stage prep dependencies suse:
   pkg.installed:
     - pkgs:
       - lsscsi
+      - smartmontools
+      - hwinfo
       - pciutils
       - gptfdisk
       - python-boto
@@ -34,6 +36,8 @@ stage prep dependencies ubuntu:
   pkg.installed:
     - pkgs:
       - lsscsi
+      - lshw
+      - smartmontools
       - pciutils
       - gdisk
       - python-boto
