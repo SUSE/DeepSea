@@ -9,7 +9,7 @@
     "targets": [
         {
             "hosts": [
-{% for minion in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw', host=True) %}
+{% for minion in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
                 {
                     "host": "{{ minion }}",
                     "portal": "portal-{{ minion }}"
@@ -25,7 +25,7 @@
         }
     ],
     "portals": [
-{% for minion, address in salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='igw', tuples=True, host=True) %}
+{% for minion, address in salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='igw', tuples=True) %}
         {
             "name": "portal-{{ minion }}",
             "addresses": [
