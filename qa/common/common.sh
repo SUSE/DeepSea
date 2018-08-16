@@ -62,11 +62,9 @@ function run_stage_2 {
 
 function run_stage_3 {
     cat_global_conf
-    _master_has_role storage
-    lsblk
+    lsblk_on_storage_node
     _run_stage 3 "$@"
-    lsblk
-    ceph-disk list
+    ceph_disk_list_on_storage_node
     ceph osd tree
     cat_ceph_conf
     admin_auth_status
@@ -278,6 +276,33 @@ function rados_write_test {
     rados -p write_test put test_object verify.txt
     rados -p write_test get test_object verify_returned.txt
     test "x$(cat verify.txt)" = "x$(cat verify_returned.txt)"
+}
+
+function lsblk_on_storage_node {
+    local TESTSCRIPT=/tmp/lsblk_test.sh
+    local STORAGENODE=$(_first_x_node storage)
+    cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "running lsblk as $(whoami) on $(hostname --fqdn)"
+lsblk
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $STORAGENODE
+}
+
+function ceph_disk_list_on_storage_node {
+    local TESTSCRIPT=/tmp/ceph_disk_list_test.sh
+    local STORAGENODE=$(_first_x_node storage)
+    cat << 'EOF' > $TESTSCRIPT
+set -ex
+trap 'echo "Result: NOT_OK"' ERR
+echo "running lsblk and ceph-disk list as $(whoami) on $(hostname --fqdn)"
+lsblk
+ceph-disk list
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $STORAGENODE
 }
 
 function cephfs_mount_and_sanity_test {
