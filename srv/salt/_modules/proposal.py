@@ -236,31 +236,10 @@ def _device(drive):
     """
     Default to Device File value.  Prefer most descriptive.
     """
-    if 'Device Files' in drive:
-        devices = drive['Device Files'].split(', ')
-        index = _prefer_underscores(devices)
-        # Prefer 'Device File' over last item
-        if index > -1:
-            return devices[index]
+    devicename = __salt__['cephdisks.device'](drive['Device File'])
+    if devicename:
+        return devicename
     return drive['Device File']
-
-
-def _prefer_underscores(devicenames):
-    """
-    Many symlinks in /dev/disk/by-id refer to the same device.  The
-    most descriptive names have the most underscores.  These are likely
-    the most useful to the admin.
-
-    In the worst case, return the last device
-    """
-    index = -1
-    count = 0
-    for _idx, device in enumerate(devicenames):
-        underscores = device.count('_')
-        if underscores > count:
-            count = underscores
-            index = _idx
-    return index
 
 
 def generate(**kwargs):
