@@ -140,7 +140,8 @@ ganesha
     for ROLE in $NOT_ROLES ; do
         COMPOUND_TARGET="$COMPOUND_TARGET and not I@roles:$ROLE"
     done
-    salt --static --out json -C "$COMPOUND_TARGET" test.ping 2>/dev/null | jq -r 'keys[0]'
+    local MAYBEJSON=$(salt --static --out json -C "$COMPOUND_TARGET" test.ping 2>/dev/null)
+    echo $MAYBEJSON | jq --raw-output 'keys[0]'
 }
 
 function _run_test_script_on_node {
