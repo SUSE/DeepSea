@@ -4,7 +4,6 @@ import rados
 import json
 import time
 import logging
-import pprint
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class HealthCheck(object):
             raise ValueError(msg)
 
         self.settings = {
-            'conf' : "/etc/ceph/ceph.conf",
+            'conf': "/etc/ceph/ceph.conf",
             'timeout': 300,
             'check': 2,
             'delay': 6,
@@ -34,7 +33,7 @@ class HealthCheck(object):
         """
         Connect to Ceph cluster
         """
-        self.cluster=rados.Rados(conffile=self.settings['conf'])
+        self.cluster = rados.Rados(conffile=self.settings['conf'])
         self.cluster.connect()
 
     def _wait(self, cmd, success):
@@ -46,7 +45,7 @@ class HealthCheck(object):
 
         log.debug('wait on condition of command {}'.format(cmd))
         while i < (self.settings['timeout']/self.settings['delay']):
-            ret,output,err = self.cluster.mon_command(cmd, b'', timeout=6)
+            ret, output, err = self.cluster.mon_command(cmd, b'', timeout=6)
             json_output = json.loads(output)
 
             if success(json_output):
@@ -89,67 +88,7 @@ class FsStatusCheck(HealthCheck):
         """
         Poll until all active MDS' are up:active
         """
-        cmd = json.dumps({"prefix":"status", "format":"json" })
-
-        def success(status):
-            if 'fsmap' in status:
-                fsmap = status['fsmap']
-            else:
-                raise RuntimeError('No fsmap found in status output')
-
-            for rank in fsmap['by_rank']:
-                if not self._check_status(rank['status']):
-                    return False
-            return True
-
-        self._wait(cmd, success)
-
-
-class HealthStatusCheck(HealthCheck):
-    """
-    Check the Ceph health status.  Wait to return until the number of
-    successive checks matches the desired state.
-    """
-
-    def __init__(self, **kwargs):
-        super(HealthStatusCheck, self).__init__(**kwargs)
-
-    def wait(self):
-        """
-        Poll until the status "matches" the specificed number of checks.
-        """
-        cmd = json.dumps({"prefix":"health", "format":"json" })
-
-        def success(health):
-            if 'overall_status' in health:
-                current_status = health['overall_status']
-            if 'status' in health:
-                current_status = health['status']
-            if current_status:
-                log.debug("status: {}".format(current_status))
-            else:
-                raise RuntimeError("Neither status nor overall_status defined in health check")
-
-            return self._check_status(current_status)
-
-
-        self._wait(cmd, success)
-
-
-class FsStatusCheck(HealthCheck):
-    """
-    Check the fsmap status of the ceph status output. Wait till all active MDS's
-    daemons have reached up:active status
-    """
-
-    def __init__(self, **kwargs):
-        super(FsStatusCheck, self).__init__(**kwargs)
-
-    def wait_for_healthy_mds(self):
-        """
-        Poll until all active MDS' are up:active
-        """
-        cmd = json.dumps({"prefix":"status", "format":"json" })
+        cmd = json.dumps({"prefix": "status", "format": "json"})
 
         def success(status):
             if 'fsmap' in status:
@@ -180,7 +119,7 @@ class HealthStatusCheck(HealthCheck):
         """
         Poll until the status "matches" the specificed number of checks.
         """
-        cmd = json.dumps({"prefix":"health", "format":"json" })
+        cmd = json.dumps({"prefix": "health", "format": "json"})
 
         def success(health):
             if 'overall_status' in health:
@@ -194,15 +133,19 @@ class HealthStatusCheck(HealthCheck):
 
             return self._check_status(current_status)
 
-
         self._wait(cmd, success)
 
     def just(self):
         time.sleep(self.settings['delay'])
 
+
 def just(**kwargs):
-    hc = HealthCheck(**kwargs)
-    hc.just()
+    """
+    Wait for the delay
+    """
+    healthcheck = HealthStatusCheck(**kwargs)
+    healthcheck.just()
+
 
 def until(**kwargs):
     """
@@ -233,5 +176,4 @@ def _skip_dunder(settings):
     """
     Skip double underscore keys
     """
-    return {k:v for k,v in settings.iteritems() if not k.startswith('__')}
-
+    return {k: v for k, v in settings.iteritems() if not k.startswith('__')}
