@@ -3,6 +3,7 @@
 import pytest
 from srv.salt._modules import proposal
 from tests.unit.helper.output import OutputHelper
+from mock import mock
 
 
 class TestProposal(object):
@@ -46,13 +47,17 @@ class TestProposal(object):
         assert p.journal_max is jma, 'journal_max not correct'
         assert p.journal_min is jmi, 'journal_min not correct'
 
-    def test_propose_standalone(self, output_helper):
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
+    def test_propose_standalone(self, pd, output_helper):
+        pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
         expected_len = len(p.spinner)
         prop = p._propose_standalone(p.spinner)
         assert len(prop) is expected_len
 
-    def test_propose_external(self, output_helper):
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
+    def test_propose_external(self, pd, output_helper):
+        pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
         prop = p._propose_external(p.ssd, p.nvme)
         assert len(prop) is p.DEFAULT_DATA_R
@@ -67,7 +72,9 @@ class TestProposal(object):
         prop = p._propose_external(p.spinner, p.ssd)
         assert len(prop) is expected_len
 
-    def test_propose_external_db_wal(self, output_helper):
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
+    def test_propose_external_db_wal(self, pd, output_helper):
+        pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
         prop = p._propose_external_db_wal(p.spinner, p.ssd, p.nvme)
         assert len(prop) is 0
@@ -77,7 +84,9 @@ class TestProposal(object):
         prop = p._propose_external_db_wal(p.spinner, p.ssd, p.nvme)
         assert len(prop) is p.DEFAULT_DB_R * r
 
-    def test_propose(self, output_helper):
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
+    def test_propose(self, pd, output_helper):
+        pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
         prop = p._propose(p.ssd, p.nvme)
         assert len(prop) is p.DEFAULT_DATA_R
@@ -117,7 +126,9 @@ class TestProposal(object):
         filtered = p._filter(p.nvme, 'journal')
         assert len(filtered) is len(p.nvme)
 
-    def test_create(self, output_helper):
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
+    def test_create(self, pd, output_helper):
+        pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
         prop = p.create()
         assert len(prop['standalone']) is (len(p.ssd) + len(p.spinner) +

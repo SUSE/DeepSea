@@ -1732,32 +1732,11 @@ class OSDDevices(object):
         """
         if os.path.exists(device):
             if os.path.exists(pathname):
-                cmd = (r"find -L {} -samefile {} \( -name ata* -o -name scsi* "
-                       r"-o -name nvme* \)".format(pathname, device))
-                _, _stdout, _stderr = _run(cmd)
-                if _stdout:
-                    _devices = _stdout.split()
-                    index = self._prefer_underscores(_devices)
-                    return _devices[index]
+                devicename = __salt__['cephdisks.device'](device)
+                if devicename:
+                    return devicename
                 return readlink(device)
             return readlink(device)
-
-    def _prefer_underscores(self, devicenames):
-        """
-        Many symlinks in /dev/disk/by-id refer to the same device.  The
-        most descriptive names have the most underscores.  These are likely
-        the most useful to the admin.
-
-        In the worst case, return the last device
-        """
-        index = -1
-        count = 0
-        for _idx, device in enumerate(devicenames):
-            underscores = device.count('_')
-            if underscores > count:
-                count = underscores
-                index = _idx
-        return index
 
 
 class OSDGrains(object):

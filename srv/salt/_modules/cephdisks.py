@@ -475,6 +475,82 @@ class HardwareDetections(object):
         return drives
 
 
+def device_(devicename, pathname=None, match=None):
+    """
+    Find all matching symlinks for devicename.
+    """
+    pathname = _pathname_setting(pathname)
+    match = _match_setting(match)
+
+    cmd = (r"find -L {} -samefile {} \( {} \)".format(pathname, devicename, match))
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    _stdout, stderr = proc.communicate()
+    if _stdout:
+        _devices = _stdout.split()
+        index = _prefer_underscores(_devices)
+        return _devices[index]
+    return ""
+
+
+def _match_setting(match):
+    """
+    Predence is command line, pillar, then default
+    """
+    if match:
+        log.warning("Using argument {} for match".format(match))
+    else:
+        match = _seek('ceph:modules:cephdisks:device:match'.split(':'), __pillar__)
+        if match:
+            log.warning("Using pillar value {} for match".format(match))
+        else:
+            match = "-name ata* -o -name scsi* -o -name nvme*"
+    return match
+
+
+def _pathname_setting(pathname):
+    """
+    Predence is command line, pillar, then default
+    """
+    if pathname:
+        log.warning("Using argument {} for pathname".format(pathname))
+    else:
+        pathname = _seek('ceph:modules:cephdisks:device:pathname'.split(':'), __pillar__)
+        if pathname:
+            log.warning("Using pillar value {} for pathname".format(pathname))
+        else:
+            pathname = "/dev/disk/by-id"
+    return pathname
+
+
+def _seek(keys, saltdict):
+    """
+    Recursively check for nested keys
+    """
+    if keys and keys[0] in saltdict:
+        if keys[1:]:
+            return _seek(keys[1:], saltdict[keys[0]])
+        return saltdict[keys[0]]
+    return None
+
+
+def _prefer_underscores(devicenames):
+    """
+    Many symlinks in /dev/disk/by-id refer to the same device.  The
+    most descriptive names have the most underscores.  These are likely
+    the most useful to the admin.
+
+    In the worst case, return the last device
+    """
+    index = -1
+    count = 0
+    for _idx, device in enumerate(devicenames):
+        underscores = device.count('_')
+        if underscores > count:
+            count = underscores
+            index = _idx
+    return index
+
+
 def list_(**kwargs):
     hwd = HardwareDetections(**kwargs)
     return hwd.assemble_device_list()
@@ -485,4 +561,5 @@ def version():
 
 __func_alias__ = {
                 'list_': 'list',
+                'device_': 'device',
                 }
