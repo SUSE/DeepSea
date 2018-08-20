@@ -42,7 +42,7 @@ def _grain_host(client, minion):
     """
     Return the host grain for a given minion, for use a short hostname
     """
-    return list(client.cmd(minion, 'grains.item', ['nodename']).values())[0]['nodename']
+    return list(client.cmd(minion, 'grains.item', ['host']).values())[0]['host']
 
 
 def minions(host=False, **kwargs):
