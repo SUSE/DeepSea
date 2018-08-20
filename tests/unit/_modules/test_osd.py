@@ -906,16 +906,13 @@ class TestOSDPartitions():
         obj._bluestore_partitions(obj.osd.device)
         mock_log.warn.assert_any_call('WAL size is unsupported for same device of /dev/sdx')
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._halve')
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
-    def test_bluestore_partitions_no_waldb_only_wal_and_size_no_eq(self, mock_log, create_mock, halve_mock, osdp_o):
+    def test_bluestore_partitions_no_waldb_only_wal_and_size_no_eq(self, mock_log, create_mock, osdp_o):
         """
         Given I defined only wal
         And I have a wal_size
         And wal is not equivalent to the device
-        Expect to call log()
-        Expect to call _halve()
         Expect to call create()
         """
         kwargs = {'format': 'bluestore',
@@ -926,9 +923,7 @@ class TestOSDPartitions():
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
         obj._bluestore_partitions(obj.osd.device)
-        mock_log.warn.assert_called_with('Setting db to same device /dev/sdwal as wal')
-        create_mock.assert_called_with('/dev/sdwal', [('wal', 100000), ('db', halve_mock('100000'))])
-        halve_mock.assert_called_with('100000')
+        create_mock.assert_called_with('/dev/sdwal', [('wal', 100000)])
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_only_wal_and_no_size(self, mock_log, osdp_o):
@@ -965,15 +960,12 @@ class TestOSDPartitions():
         obj._bluestore_partitions(obj.osd.device)
         mock_log.warn.assert_called_with('DB size is unsupported for same device of /dev/sdx')
 
-    @mock.patch('srv.salt._modules.osd.OSDPartitions._double')
     @mock.patch('srv.salt._modules.osd.OSDPartitions.create')
     @mock.patch('srv.salt._modules.osd.log')
-    def test_bluestore_partitions_no_waldb_only_db_and_size_no_eq_create(self, mock_log, create_mock, double_mock, osdp_o):
+    def test_bluestore_partitions_no_waldb_only_db_and_size_no_eq_create(self, mock_log, create_mock, osdp_o):
         """
-        Given I haven't defined wal but a db
+        Given I have defined a db
         And I have a db_size
-        And wal isn't the same
-        Expect to call log()
         Expect to call create()
         """
         kwargs = {'format': 'bluestore',
@@ -984,9 +976,7 @@ class TestOSDPartitions():
         osd_config = OSDConfig(**kwargs)
         obj = osdp_o(osd_config)
         obj._bluestore_partitions(obj.osd.device)
-        mock_log.warn.assert_called_with('Setting wal to same device /dev/sddb as db')
-        create_mock.assert_called_with('/dev/sddb', [('wal', double_mock(100000)), ('db', 100000)])
-        double_mock.assert_called_with(100000)
+        create_mock.assert_called_with('/dev/sddb', [('db', 100000)])
 
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_no_waldb_no_db_log(self, mock_log, osdp_o):

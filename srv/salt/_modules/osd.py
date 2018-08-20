@@ -889,25 +889,6 @@ class OSDPartitions(object):
                 #FIXME: The calls in the conditionals are the same.
 
 
-    def _double(self, size):
-        """
-        Double the value of numeral
-        """
-        log.info("double {}".format(size))
-        numeral = int(size[0:-1])
-        suffix = size[-1]
-        return "{}{}".format(numeral * 2, suffix)
-
-
-    def _halve(self, size):
-        """
-        Halve the value of numeral
-        """
-        log.info("halve {}".format(size))
-        numeral = int(size[0:-1])
-        suffix = size[-1]
-        return "{}{}".format(int(numeral / 2), suffix)
-
     def _bluestore_partitions(self, device):
         """
         Create partitions when wal_size and/or db_size is specified
@@ -946,19 +927,13 @@ class OSDPartitions(object):
             else:
                 log.warn("No size specified for db {}. Using default sizes".format(self.osd.db))
         else:
-            # This situation seems unintentional - use faster media for
-            # the wal or db but not the other.  Help newbies out by
-            # putting wal and db on same device
             if self.osd.wal:
                 if self.osd.wal_size:
                     if self.osd.wal == self.osd.device:
                         log.warn("WAL size is unsupported for same device of {}".format(self.osd.device))
                     else:
-                        log.warn("Setting db to same device {} as wal".format(self.osd.wal))
                         # Create wal of wal_size on wal device
-                        # Create db on wal device
-                        self.create(self.osd.wal, [('wal', self.osd.wal_size),
-                                                 ('db', self._halve(self.osd.wal_size))])
+                        self.create(self.osd.wal, [('wal', self.osd.wal_size)])
             else:
                 if self.osd.wal_size:
                     log.warn("WAL size is unsupported for same device of {}".format(self.osd.device))
@@ -968,11 +943,9 @@ class OSDPartitions(object):
                     if self.osd.db == self.osd.device:
                         log.warn("DB size is unsupported for same device of {}".format(self.osd.device))
                     else:
-                        log.warn("Setting wal to same device {} as db".format(self.osd.db))
-                        # Create db of db_size on db device
                         # Create wal on db device
-                        self.create(self.osd.db, [('wal', self._double(self.osd.db_size)),
-                                                ('db', self.osd.db_size)])
+                        # Create db of db_size on db device
+                        self.create(self.osd.db, [('db', self.osd.db_size)])
             else:
                 if self.osd.db_size:
                     log.warn("DB size is unsupported for same device of {}".format(self.osd.device))
@@ -1008,6 +981,7 @@ class OSDPartitions(object):
                 _run(wipe_cmd)
             index += 1
 
+    # pylint: disable=no-self-use
     def _part_probe(self, device):
         """
         """
@@ -1021,6 +995,7 @@ class OSDPartitions(object):
             time.sleep(wait_time)
         raise RuntimeError("{} failed".format(cmd))
 
+    # pylint: disable=no-self-use
     def _last_partition(self, device):
         """
         Return the last partition. Only the number is needed for the sgdisk
