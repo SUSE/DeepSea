@@ -408,26 +408,30 @@ class TestCephDiskDevice():
     @mock.patch('srv.salt._modules.cephdisks._pathname_setting')
     @mock.patch('srv.salt._modules.cephdisks._match_setting')
     @mock.patch('srv.salt._modules.cephdisks._prefer_underscores')
-    def test_device_matches(self, pu, ms, ps):
+    @mock.patch('srv.salt._modules.cephdisks.Popen')
+    def test_device_matches(self, po, pu, ms, ps):
         ps.return_value = '/dev/disk/by-id'
         ms.return_value = '-name ata* -o -name scsi* -o -name nvme*'
         pu.return_value = -1
-        cephdisks.__salt__ = {}
-        cephdisks.__salt__['helper.run'] = mock.Mock()
-        cephdisks.__salt__['helper.run'].return_value = (0, '/dev/sda', "")
+        process_mock = mock.Mock()
+        attrs = {'communicate.return_value': ('/dev/sda', "")}
+        process_mock.configure_mock(**attrs)
+        po.return_value = process_mock 
         ret = cephdisks.device_('/dev/sda')
         assert ret == '/dev/sda'
 
     @mock.patch('srv.salt._modules.cephdisks._pathname_setting')
     @mock.patch('srv.salt._modules.cephdisks._match_setting')
     @mock.patch('srv.salt._modules.cephdisks._prefer_underscores')
-    def test_device_no_match(self, pu, ms, ps):
+    @mock.patch('srv.salt._modules.cephdisks.Popen')
+    def test_device_no_match(self, po, pu, ms, ps):
         ps.return_value = '/dev/disk/by-id'
         ms.return_value = '-name ata* -o -name scsi* -o -name nvme*'
         pu.return_value = -1
-        cephdisks.__salt__ = {}
-        cephdisks.__salt__['helper.run'] = mock.Mock()
-        cephdisks.__salt__['helper.run'].return_value = (0, "", "")
+        process_mock = mock.Mock()
+        attrs = {'communicate.return_value': ("", "")}
+        process_mock.configure_mock(**attrs)
+        po.return_value = process_mock 
         ret = cephdisks.device_('/dev/sda')
         assert ret == ""
 

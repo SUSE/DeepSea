@@ -483,7 +483,8 @@ def device_(devicename, pathname=None, match=None):
     match = _match_setting(match)
 
     cmd = (r"find -L {} -samefile {} \( {} \)".format(pathname, devicename, match))
-    _, _stdout, _stderr = __salt__['helper.run'](cmd)
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    _stdout, stderr = proc.communicate()
     if _stdout:
         _devices = _stdout.split()
         index = _prefer_underscores(_devices)
