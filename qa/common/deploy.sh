@@ -61,7 +61,7 @@ function _update_salt {
     # otherwise Stage 0 will update Salt and then fail with cryptic
     # error messages
     TOTAL_NODES=$(json_total_nodes)
-    salt '*' cmd.run 'zypper -n in -f python3-salt salt salt-api salt-master salt-minion' 2>/dev/null
+    salt '*' cmd.run 'zypper -n in -f salt salt-api salt-master salt-minion' 2>/dev/null
     systemctl restart salt-api.service
     systemctl restart salt-master.service
     sleep 15
