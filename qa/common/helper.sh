@@ -4,106 +4,193 @@
 # helper functions (not to be called directly from test scripts)
 #
 
-function _report_stage_failure_and_die {
-  local stage_num=$1
-  local stage_log_path=$2
-  local number_of_failures=$3
+STAGE_TIMEOUT_DURATION="30m"
 
-  test -z $number_of_failures && number_of_failures="unknown number of"
-  echo "********** Stage $stage_num failed with $number_of_failures failures **********"
-  echo "Here comes the log:"
-  cat $stage_log_path
-  exit 1
+function _report_stage_failure {
+    STAGE_SUCCEEDED=""
+    local stage_num=$1
+    #local stage_log_path=$2
+
+    echo "********** Stage $stage_num failed **********"
+    echo "Here comes the systemd log:"
+    #cat $stage_log_path
+    journalctl -r | head -n 1000
+    echo "WWWW"
+    echo "There goes the systemd log"
 }
 
 function _run_stage {
-  local stage_num=$1
-  local cli=$2
-  test -z "$cli" && cli="classic"
-  local stage_log_path="/tmp/stage.${stage_num}.log"
-  local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
-  local deepsea_exit_status=""
+    local stage_num=$1
 
-  set +x
-  echo ""
-  echo "*********************************************"
-  echo "********** Running DeepSea Stage $stage_num **********"
-  echo "*********************************************"
-  set -x
+    set +x
+    echo ""
+    echo "*********************************************"
+    echo "********** Running DeepSea Stage $stage_num **********"
+    echo "*********************************************"
 
-  # CLI case
-  if [ "x$cli" = "xcli" ] ; then
-      echo "using DeepSea CLI"
-      set +e
-      deepsea \
-          --log-file=/var/log/salt/deepsea.log \
-          --log-level=debug \
-          stage \
-          run \
-          ceph.stage.${stage_num} \
-          --simple-output \
-          2>&1 | tee $deepsea_cli_output_path
-      deepsea_exit_status="${PIPESTATUS[0]}"
-      echo "deepsea exit status: $deepsea_exit_status"
-      if [ "$deepsea_exit_status" = "0" ] ; then
-          if grep -q -F "failed=0" $deepsea_cli_output_path ; then
-              echo "DeepSea stage OK"
-          else
-              echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-              exit 1
-          fi
-      else
-          exit 1
-      fi
-      set -e
-      return
-  fi
+    STAGE_SUCCEEDED="non-empty string"
+    test -n "$CLI" && _run_stage_cli $stage_num || _run_stage_non_cli $stage_num
+}
 
-  # non-CLI ("classic") case
-  echo -n "" > $stage_log_path
-  salt-run --no-color state.orch ceph.stage.${stage_num} 2>&1 | tee $stage_log_path
-  STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
+function _run_stage_cli {
+    local stage_num=$1
+    local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
+    local deepsea_exit_status=""
 
-  if [[ "$STAGE_FINISHED" ]]; then
-    FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
-    if [[ "$FAILED" -gt "0" ]]; then
-      _report_stage_failure_and_die $stage_num $stage_log_path $FAILED
+    set +e
+    set -x
+    timeout $STAGE_TIMEOUT_DURATION \
+        deepsea \
+        --log-file=/var/log/salt/deepsea.log \
+        --log-level=debug \
+        stage \
+        run \
+        ceph.stage.${stage_num} \
+        --simple-output \
+        2>&1 | tee $deepsea_cli_output_path
+    local exit_status="${PIPESTATUS[0]}"
+    set +x
+    echo "deepsea exit status: $exit_status"
+    echo "WWWW"
+    if [ "$exit_status" = "124" ] ; then
+        echo "Stage $stage_num timed out after $STAGE_TIMEOUT_DURATION"
+        exit 1
     fi
-    echo "********** Stage $stage_num completed successefully **********"
-  else
-    _report_stage_failure_and_die $stage_num $stage_log_path
-  fi
+    if [ "$exit_status" != "0" ] ; then
+        _report_stage_failure $stage_num
+        set -ex
+        return 0
+    fi
+    if grep -q -F "failed=0" $deepsea_cli_output_path ; then
+        echo "********** Stage $stage_num completed successfully **********"
+    else
+        echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
+        _report_stage_failure $stage_num
+    fi
+    set -ex
+}
+
+function _run_stage_non_cli {
+    local stage_num=$1
+    local stage_log_path="/tmp/stage.${stage_num}.log"
+
+    set +e
+    set -x
+    timeout $STAGE_TIMEOUT_DURATION \
+        salt-run \
+        --no-color \
+        state.orch \
+        ceph.stage.${stage_num} \
+        2>/dev/null | tee $stage_log_path
+    local exit_status="${PIPESTATUS[0]}"
+    set +x
+    echo "WWWW"
+    if [ "$exit_status" = "124" ] ; then
+        echo "Stage $stage_num timed out after $STAGE_TIMEOUT_DURATION"
+        exit 1
+    fi
+    if [ "$exit_status" != "0" ] ; then
+        _report_stage_failure $stage_num
+        set -ex
+        return 0
+    fi
+    STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
+    if [ "$STAGE_FINISHED" ]; then
+        FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
+        if [ "$FAILED" -gt "0" ]; then
+            echo "ERROR: salt-run returned exit status 0, yet one or more steps failed. Bailing out!"
+            _report_stage_failure $stage_num
+        else
+            echo "********** Stage $stage_num completed successfully **********"
+        fi
+    else
+        echo "ERROR: salt-run returned exit status 0, yet Stage did not complete. Bailing out!"
+        _report_stage_failure $stage_num
+    fi
+    set -ex
 }
 
 function _client_node {
-  #
-  # FIXME: migrate this to "salt --static --out json ... | jq ..."
-  #
-  salt --no-color -C 'not I@roles:storage' test.ping | grep -o -P '^\S+(?=:)' | sort | head -1
+    salt --static --out json -C 'not I@roles:storage' test.ping 2>/dev/null | jq -r 'keys[0]'
+}
+
+function _master_has_role {
+    local ROLE=$1
+    echo "Asserting that master minion has role ->$ROLE<-"
+    salt $MASTER_MINION pillar.get roles 2>/dev/null
+    salt $MASTER_MINION pillar.get roles 2>/dev/null | grep -q "$ROLE"
+    echo "Yes, it does."
 }
 
 function _first_x_node {
-  local ROLE=$1
-  salt --no-color -C "I@roles:$ROLE" test.ping | grep -o -P '^\S+(?=:)' | sort | head -1
+    local ROLE=$1
+    salt --static --out json -C "I@roles:$ROLE" test.ping 2>/dev/null | jq -r 'keys[0]'
+}
+
+function _first_storage_only_node {
+    local COMPOUND_TARGET="I@roles:storage"
+    local NOT_ROLES="mon
+mgr
+mds
+rgw
+igw
+ganesha
+"
+    local ROLE=
+    for ROLE in $NOT_ROLES ; do
+        COMPOUND_TARGET="$COMPOUND_TARGET and not I@roles:$ROLE"
+    done
+    local MAYBEJSON=$(salt --static --out json -C "$COMPOUND_TARGET" test.ping 2>/dev/null)
+    echo $MAYBEJSON | jq --raw-output 'keys[0]'
 }
 
 function _run_test_script_on_node {
-  local TESTSCRIPT=$1
-  local TESTNODE=$2
-  local ASUSER=$3
-  salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT
-  local LOGFILE=/tmp/test_script.log
-  if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
-    salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>&1 | tee $LOGFILE
-  else
-    salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>&1 | tee $LOGFILE
-  fi
-  local RESULT=$(grep -o -P '(?<=Result: )(OK|NOT_OK)$' $LOGFILE | head -1)
-  test "x$RESULT" = "xOK"
+    local TESTSCRIPT=$1 # on success, TESTSCRIPT must output the exact string
+                        # "Result: OK" on a line by itself, otherwise it will
+                        # be considered to have failed
+    local TESTNODE=$2
+    local ASUSER=$3
+    salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT 2>/dev/null
+    local LOGFILE=/tmp/test_script.log
+    local STDERR_LOGFILE=/tmp/test_script_stderr.log
+    local exit_status=
+    if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
+      salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>$STDERR_LOGFILE | tee $LOGFILE
+      exit_status="${PIPESTATUS[0]}"
+    else
+      salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>$STDERR_LOGFILE | tee $LOGFILE
+      exit_status="${PIPESTATUS[0]}"
+    fi
+    local RESULT=$(grep -o -P '(?<=Result: )(OK)$' $LOGFILE) # since the script
+                                  # is run by salt, the output appears indented
+    test "x$RESULT" = "xOK" && return
+    echo "The test script that ran on $TESTNODE failed. The stderr output was as follows:"
+    cat $STDERR_LOGFILE
+    exit 1
 }
 
 function _grace_period {
-  local SECONDS=$1
-  echo "${SECONDS}-second grace period"
-  sleep $SECONDS
+    local SECONDS=$1
+    echo "${SECONDS}-second grace period"
+    sleep $SECONDS
 }
+
+function _root_fs_is_btrfs {
+    stat -f / | grep -q 'Type: btrfs'
+}
+
+function _ping_minions_until_all_respond {
+    local NUM_MINIONS="$1"
+    local RESPONDING=""
+    for i in {1..20} ; do
+        sleep 10
+        RESPONDING=$(salt '*' test.ping 2>/dev/null | grep True 2>/dev/null | wc --lines)
+        echo "Of $NUM_MINIONS total minions, $RESPONDING are responding"
+        test "$NUM_MINIONS" -eq "$RESPONDING" && break
+    done
+}
+
+function _ceph_cluster_running {
+    ceph status >/dev/null 2>&1
+}
+
