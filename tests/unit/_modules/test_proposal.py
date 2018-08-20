@@ -47,7 +47,7 @@ class TestProposal(object):
         assert p.journal_max is jma, 'journal_max not correct'
         assert p.journal_min is jmi, 'journal_min not correct'
 
-    @mock.patch('srv.salt._modules.proposal._device')
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
     def test_propose_standalone(self, pd, output_helper):
         pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
@@ -55,7 +55,7 @@ class TestProposal(object):
         prop = p._propose_standalone(p.spinner)
         assert len(prop) is expected_len
 
-    @mock.patch('srv.salt._modules.proposal._device')
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
     def test_propose_external(self, pd, output_helper):
         pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
@@ -72,7 +72,7 @@ class TestProposal(object):
         prop = p._propose_external(p.spinner, p.ssd)
         assert len(prop) is expected_len
 
-    @mock.patch('srv.salt._modules.proposal._device')
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
     def test_propose_external_db_wal(self, pd, output_helper):
         pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
@@ -84,7 +84,7 @@ class TestProposal(object):
         prop = p._propose_external_db_wal(p.spinner, p.ssd, p.nvme)
         assert len(prop) is p.DEFAULT_DB_R * r
 
-    @mock.patch('srv.salt._modules.proposal._device')
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
     def test_propose(self, pd, output_helper):
         pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
@@ -126,7 +126,7 @@ class TestProposal(object):
         filtered = p._filter(p.nvme, 'journal')
         assert len(filtered) is len(p.nvme)
 
-    @mock.patch('srv.salt._modules.proposal._device')
+    @mock.patch('srv.salt._modules.proposal.Proposal._device')
     def test_create(self, pd, output_helper):
         pd.return_value = "/dev/sda"
         p = proposal.Proposal(output_helper.cephdisks_output)
