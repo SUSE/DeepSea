@@ -1,8 +1,8 @@
 
-reweight nop:
+remove storage nop:
   test.nop
 
-{% for id in salt.saltutil.runner('rescinded.ids', cluster='ceph') %}
+{% for id in salt.saltutil.runner('rescinded.ids') %}
 
 remove osd.{{ id }}:
   cmd.run:
@@ -17,6 +17,10 @@ remove id {{ id }}:
     - name: "ceph osd rm {{ id }}"
 
 {% endfor %}
+
+delete orphaned host buckets:
+  salt.runner:
+    - name: rescinded.delete_orphaned_host_buckets
 
 fix salt job cache permissions:
   cmd.run:
