@@ -41,6 +41,7 @@ Requires:       python-netaddr
 Requires:       python-rados
 Requires:       python-setuptools
 Requires:       python-click
+Requires:       python-six
 Requires:       jq
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
