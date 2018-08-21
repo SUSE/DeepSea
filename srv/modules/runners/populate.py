@@ -1124,7 +1124,6 @@ def engulf_existing_cluster(**kwargs):
         if "ceph-mon" in info["running_services"].keys():
             mon_minions.append(minion)
             policy_cfg.append("role-mon/cluster/" + minion + ".sls")
-            policy_cfg.append("role-mon/stack/default/ceph/minions/" + minion + ".yml")
             for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks", [], expr_form="compound").items():
                 mon_addrs[minion] = ipaddrs
 
