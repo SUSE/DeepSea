@@ -242,7 +242,12 @@ def get_ceph_disks_yml(**kwargs):
                         _append_fs_to_ceph_disk(ceph_disks, path, part_dict)
                     elif osd_type == "bluestore":
                         _append_bs_to_ceph_disk(ceph_disks, path, part_dict)
+                    elif osd_type is None:
+                        log.warning(("Unable to determine OSD type at {}, "
+                                     "assuming filestore.".format(path)))
+                        _append_fs_to_ceph_disk(ceph_disks, path, part_dict)
                     else:
+                        # Some other type.  This can't possibly happen.
                         log.warning(("Unable to engulf OSD at {}. Unsupported "
                                      "type. Skipping.".format(path)))
 
