@@ -114,6 +114,10 @@ function _initialize_and_vet_nodes {
     echo "Of these, $CLIENT_NODES will be clients (nodes without any DeepSea roles except \"admin\")."
 }
 
+function _zypper_ps {
+    salt '*' cmd.run 'zypper ps -s' 2>/dev/null || true
+}
+
 function initialization_sequence {
     set +x
     _determine_master_minion
@@ -141,6 +145,7 @@ function deploy_ceph {
     test $STORAGE_NODES -lt 4 && export DEV_ENV="true"
     disable_restart_in_stage_0
     run_stage_0 "$CLI"
+    _zypper_ps
     salt_api_test
     test -n "$RGW" -a -n "$SSL" && rgw_ssl_init
     run_stage_1 "$CLI"
@@ -181,5 +186,6 @@ function deploy_ceph {
         echo "NFS-Ganesha set to debug logging"
     fi
     ceph_cluster_status
+    _zypper_ps
     return 0
 }
