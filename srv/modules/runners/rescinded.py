@@ -32,7 +32,7 @@ def help():
 
 def ids(cluster='ceph', **kwargs):
     """
-    List the OSD ids of a minion that is not a storage node
+    List the OSD ids of minions that are not storage nodes
     """
     search = "I@cluster:{}".format(cluster)
     local = salt.client.LocalClient()
@@ -87,7 +87,6 @@ def nodes(cluster='ceph', **kwargs):
     """
     List the short hostnames of minions that are not storage nodes
     and whose corresponding CRUSH host buckets are now orphaned
-    (there should be only one, but handle multiple)
     """
     search = "I@cluster:{}".format(cluster)
     local = salt.client.LocalClient()
