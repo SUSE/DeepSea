@@ -489,7 +489,7 @@ def device_(devicename, pathname=None, match=None):
         _devices = _stdout.split()
         index = _prefer_underscores(_devices)
         return _devices[index]
-    return ""
+    return devicename
 
 
 def _match_setting(match):
