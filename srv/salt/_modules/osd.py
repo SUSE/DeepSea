@@ -1541,7 +1541,7 @@ class OSDRemove(object):
                 else:
                     mount = entry[0]
                 if mount in mounted:
-                    cmd = "umount {}".format(mount)
+                    cmd = "umount -lf {}".format(mount)
                     _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
                     log.debug("returncode: {}".format(_rc))
                     if _rc != 0:
