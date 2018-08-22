@@ -45,7 +45,9 @@ The master minion will be patched.
 .B Reboot
 .RS
 By default the master will not reboot. 
-This can be changed by adjusting
+If you still need a reboot you can modify stage 0 defaults to "default-update-reboot"
+or any other available option.
+This can be done by adjusting
 
 .B stage_prep_master. See also deepsea-customization (7) 
 for more information on how to change the default behavior
