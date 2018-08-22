@@ -498,13 +498,6 @@ function migrate_to_bluestore {
     salt-run state.orch ceph.migrate.osds 2>/dev/null
 }
 
-function _disable_restart_in_stage_0_with_update {
-    cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
-    cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
-    cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
-    cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
-}
-
 function _disable_restart_in_stage_0_without_update {
     cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
     cp /srv/salt/ceph/stage/prep/master/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
