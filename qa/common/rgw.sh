@@ -68,6 +68,9 @@ function rgw_curl_test {
     done
     set -x
     zypper --non-interactive install --no-recommends curl libxml2-tools
+    # installing curl RPM causes ceph-radosgw service to need restart
+    salt-run state.orch ceph.restart.rgw 2>/dev/null
+    _zypper_ps
     RGWNODE=$(salt --no-color -C "I@roles:rgw" test.ping | grep -o -P '^\S+(?=:)' | head -1)
     RGWXMLOUT=/tmp/rgw_test.xml
     curl $CURL_OPTS "${PROTOCOL}://$RGWNODE" > $RGWXMLOUT
