@@ -1,11 +1,11 @@
 
 {% set node = salt.saltutil.runner('select.first', roles='storage') %}
-{% set label = "b2tof2" %}
+{% set label = "b3tof" %}
 
 Check environment {{ label }}:
   salt.state:
     - tgt: {{ node }}
-    - sls: ceph.tests.migrate.check3
+    - sls: ceph.tests.migrate.check4
     - failhard: True
 
 Update destroyed for reset {{ label }}:
@@ -18,29 +18,32 @@ Remove OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.remove_osds
+    - failhard: True
        
 Remove destroyed {{ label }}:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
     - sls: ceph.remove.destroyed
+    - failhard: True
 
 Initialize OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.init_osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore2') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore3') }}
+    - failhard: True
        
 Save reset checklist {{ label }}:
   salt.runner:
     - name: smoketests.checklist
     - minion: {{ node }}
-    - configuration: 'bluestore2'
+    - configuration: 'bluestore3'
 
 Check reset OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.check_osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore2') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore3') }}
     - failhard: True
 
 Update destroyed for migrate {{ label }}:
@@ -53,17 +56,20 @@ Migrate {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.redeploy.osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore2') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore') }}
+    - failhard: True
 
 Save checklist {{ label }}:
   salt.runner:
     - name: smoketests.checklist
     - minion: {{ node }}
-    - configuration: 'filestore2'
+    - configuration: 'filestore'
 
 Check OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.check_osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore2') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore') }}
+    - failhard: True
+
 
