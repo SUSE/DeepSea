@@ -420,14 +420,14 @@ class TestCephDiskDevice():
         pu.return_value = -1
         cephdisks.__salt__ = {}
         cephdisks.__salt__['helper.run'] = mock.Mock()
-        cephdisks.__salt__['helper.run'].return_value = (0, '/dev/sda', "")
+        cephdisks.__salt__['helper.run'].return_value = (0, '/dev/disk/by-id/sda', "")
         ret = cephdisks.device_('/dev/sda')
-        assert ret == '/dev/sda'
+        assert ret == '/dev/disk/by-id/sda'
 
     @mock.patch('srv.salt._modules.cephdisks._pathname_setting')
     @mock.patch('srv.salt._modules.cephdisks._match_setting')
     @mock.patch('srv.salt._modules.cephdisks._prefer_underscores')
-    def test_device_no_match(self, pu, ms, ps):
+    def test_device_returns_input_if_no_match(self, pu, ms, ps):
         ps.return_value = '/dev/disk/by-id'
         ms.return_value = '-name ata* -o -name scsi* -o -name nvme*'
         pu.return_value = -1
@@ -435,7 +435,7 @@ class TestCephDiskDevice():
         cephdisks.__salt__['helper.run'] = mock.Mock()
         cephdisks.__salt__['helper.run'].return_value = (0, "", "")
         ret = cephdisks.device_('/dev/sda')
-        assert ret == ""
+        assert ret == "/dev/sda"
 
     def test_match_setting_arg(self):
         ret = cephdisks._match_setting('custom')
