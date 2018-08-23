@@ -10,7 +10,11 @@ import time
 import logging
 # pylint: disable=import-error,3rd-party-module-not-gated
 import salt.ext.six as six
-import rados
+try:
+    import rados
+except ImportError:
+    logging.info("Could not import rados")
+
 # pylint: disable=incompatible-py3-code
 log = logging.getLogger(__name__)
 
