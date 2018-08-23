@@ -60,14 +60,14 @@ def _get_device_of_partition(partition):
 def _get_disk_id(partition):
     """
     Return the disk id of a partition/device, or the original partition/device if
-    the disk id is not available.
+    the disk id is not available.  This is essentially the same thing as _uuid_device()
+    in srv/salt/_modules/osd.py
     """
-    disk_id_cmd = Popen("find -L /dev/disk/by-id -samefile " + partition + " \( -name ata* -o -name nvme* \)", stdout=PIPE, stderr=PIPE, shell=True)
-    out, err = disk_id_cmd.communicate()
+    if os.path.exists(partition) and os.path.exists("/dev/disk/by-id"):
+        devicename = __salt__['cephdisks.device'](partition)
+        if devicename:
+            return devicename
 
-    # We should only ever have one entry that we return.
-    if out:
-        return out.split()[-1]
     return partition
 
 
