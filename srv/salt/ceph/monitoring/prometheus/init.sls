@@ -14,6 +14,16 @@ golang-github-prometheus-prometheus:
     - makedirs: True
     - fire_event: True
 
+/etc/prometheus/alerts/ses_default_alerts.yml:
+  file.managed:
+    - source: salt://ceph/monitoring/prometheus/files/alerts.yml.j2
+    - template: jinja
+    - user: root
+    - group: root
+    - mode: 644
+    - makedirs: True
+    - fire_event: True
+
 start prometheus:
   service.running:
     - name: prometheus
