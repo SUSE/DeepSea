@@ -18,72 +18,39 @@ def help_():
     """
     Usage
     """
-    usage = ('salt-run remove.osd id:\n\n'
+    usage = ('salt-run remove.osd id [id ...][force=True]:\n\n'
              '    Removes an OSD\n'
              '\n\n')
     print(usage)
     return ""
 
 
-def osd(id_, drain=False):
+def osd(*args, **kwargs):
     """
-    Removes an OSD gracefully
+    Remove an OSD gracefully or forcefully.  Always attempt to remove
+    ID from Ceph even if OSD has been removed from the minion.
     """
-    runner_cli = salt.runner.RunnerClient(
-        salt.config.client_config('/etc/salt/master'))
+    result = __salt__['replace.osd'](*args, called=True, **kwargs)
 
-    if not runner_cli.cmd('disengage.check'):
-        log.error(('Safety is not disengaged...refusing to remove OSD',
-                  ' run "salt-run disengage.safety" first'
-                   ' THIS WILL CAUSE DATA LOSS.'))
-        return False
+    # Replace OSD exited early
+    if not result:
+        return ""
 
-    if id_ < 0:
-        log.error('Bogus id supplied...OSDs have IDs >= 0')
-        return False
+    master_minion = result['master_minion']
+    osds = result['osds']
 
-    local_cli = salt.client.LocalClient()
+    local = salt.client.LocalClient()
 
-    osds = local_cli.cmd('I@roles:storage', 'osd.list', tgt_type='compound')
+    for osd_id in osds:
+        cmds = ['ceph osd crush remove osd.{}'.format(osd_id),
+                'ceph auth del osd.{}'.format(osd_id),
+                'ceph osd rm {}'.format(osd_id)]
 
-    host = ''
-    for _osd in osds:
-        if '{}'.format(id_) in osds[_osd]:
-            host = _osd
-            break
-    else:
-        log.error('No OSD with ID {} found...giving up'.format(id_))
-        return False
+        print("Removing osd {} from Ceph".format(osd_id))
+        for cmd in cmds:
+            local.cmd(master_minion, 'cmd.run', [cmd], tgt_type='compound')
 
-    master_minion = list(local_cli.cmd('I@roles:master', 'pillar.get',
-                                       ['master_minion'],
-                                       tgt_type='compound').items())[0][1]
-
-    if drain:
-        log.info('Draining OSD {} now'.format(id_))
-        ret = local_cli.cmd(host, 'osd.zero_weight', [id_])
-
-    log.info('Setting OSD {} out'.format(id_))
-
-    ret = local_cli.cmd(master_minion, 'cmd.run',
-                        ['ceph osd out {}'.format(id_)])
-
-    log.info('Stopping and wiping OSD {} now'.format(id_))
-
-    ret = local_cli.cmd(host, 'osd.remove', [id_])
-    log.info(ret)
-
-    ret = local_cli.cmd(master_minion, 'cmd.run',
-                        ['ceph osd crush remove osd.{}'.format(id_)])
-    log.info(ret)
-    ret = local_cli.cmd(master_minion, 'cmd.run',
-                        ['ceph auth del osd.{}'.format(id_)])
-    log.info(ret)
-    ret = local_cli.cmd(master_minion, 'cmd.run',
-                        ['ceph osd rm {}'.format(id_)])
-    log.info(ret)
-
-    return True
+    return ""
 
 __func_alias__ = {
                  'help_': 'help',

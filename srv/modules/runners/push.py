@@ -94,6 +94,18 @@ def proposal(filename="/srv/pillar/ceph/proposals/policy.cfg", dryrun=False):
     return True
 
 
+def organize(filename="/srv/pillar/ceph/proposals/policy.cfg"):
+    """
+    Read the passed filename, organize the files with common subdirectories
+    """
+    if not os.path.isfile(filename):
+        log.warning("{} is missing".format(filename))
+        return ""
+    pillar_data = PillarData()
+    common = pillar_data.organize(filename)
+    return common
+
+
 def convert(filename="/srv/pillar/ceph/proposals/policy.cfg"):
     """
     Convert the hardware profiles that policy.cfg is using and update

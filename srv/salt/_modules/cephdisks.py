@@ -587,6 +587,16 @@ def list_(**kwargs):
     return hwd.assemble_device_list()
 
 
+def filter_(key="Device File", **kwargs):
+    """
+    Return list of specified key
+    """
+    hwd = HardwareDetections(**kwargs)
+    result = hwd.assemble_device_list()
+    results = [device[key] for device in result]
+    return sorted(results)
+
+
 def version():
     """
     Displays version
@@ -597,4 +607,5 @@ def version():
 __func_alias__ = {
                 'list_': 'list',
                 'device_': 'device',
-                }
+                'filter_': 'filter',
+                 }

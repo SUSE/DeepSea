@@ -102,3 +102,63 @@ def networks():
 __func_alias__ = {
                  'help_': 'help',
                  }
+
+
+def osds():
+    """
+    Inform the admin of pending changes and appropriate actions
+
+    Note: I went with the mapping here such as 'unconfigured' implies
+    'deploy'.  This is more about communicating with the maintainers
+    although picking the "best" name and propogating may be a solution.
+
+    The deploy and redeploy are osd methods.
+    """
+    local = salt.client.LocalClient()
+    report = local.cmd('I@roles:storage', 'osd.report',
+                       ['human=False'], tgt_type="compound")
+
+    bold = '\033[1m'
+    endc = '\033[0m'
+
+    unconfigured = _tidy('unconfigured', report)
+    changed = _tidy('changed', report)
+    unmounted = _tidy('unmounted', report)
+
+    messages = {'deploy': {'header': '\nThese devices will be deployed',
+                           'footer': "Run 'salt-run state.orch ceph.stage.3'"},
+                'redeploy': {'header': "\nThe devices will be redeployed",
+                             'footer': "Run 'salt-run state.orch ceph.migrate.osds'"},
+                'stale': {'header': "\nVerify that these devices are in the desired state",
+                          'footer': "Run 'salt MINION osd.delete_grain ID' for a stale entry"}}
+
+    if unconfigured:
+        print(messages['deploy']['header'])
+        print("{}{}{}".format(bold, unconfigured, endc))
+        print(messages['deploy']['footer'])
+
+    if changed:
+        print(messages['redeploy']['header'])
+        print("{}{}{}".format(bold, changed, endc))
+        print(messages['redeploy']['footer'])
+
+    if unmounted:
+        print(messages['stale']['header'])
+        print("{}{}{}".format(bold, unmounted, endc))
+        print(messages['stale']['footer'])
+
+    return ""
+
+
+def _tidy(key, report):
+    """
+    Return a line of minion followed by comma separated devices if present
+    """
+    line = ""
+    for minion in sorted(report):
+        if report[minion][key]:
+            if len(minion) + len(", ".join(report[minion][key])) < 80:
+                line += "{}: {}\n".format(minion, ", ".join(sorted(report[minion][key])))
+            else:
+                line += "\n{}:\n  {}\n".format(minion, "\n  ".join(sorted(report[minion][key])))
+    return line

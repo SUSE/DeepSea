@@ -96,6 +96,17 @@ def one_minion(**kwargs):
     return ret[0]
 
 
+def first(**kwargs):
+    """
+    Some steps only need to be run once, but on any minion in a specific
+    search.  Return the first matching key.
+    """
+    ret = sorted(minions(**kwargs))
+    if ret:
+        return ret[0]
+    return ""
+
+
 def public_addresses(tuples=False, host=False, **kwargs):
     """
     Returns an array of public addresses matching the search critieria.
