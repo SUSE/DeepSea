@@ -1,3 +1,4 @@
+
 {% set master = salt['master.minion']() %}
 
 {% if salt['saltutil.runner']('validate.setup') == False %}
