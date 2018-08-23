@@ -33,14 +33,18 @@ function usage {
     echo
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X]"
-    echo "  [--mds] [--min-nodes=X] [--profile=X] [--rgw] [--ssl]"
+    echo "  [--fsal={cephfs,rgw,both}] [--igw] [--mds] [--min-nodes=X]"
+    echo "  [--nfs-ganesha] [--profile=X] [--rgw] [--ssl]"
     echo
     echo "Options:"
     echo "    --cli           Use DeepSea CLI"
     echo "    --client-nodes  Number of client (non-cluster) nodes"
+    echo "    --fsal          which FSAL(s) to use with NFS-Ganesha"
     echo "    --help          Display this usage message"
+    echo "    --igw           Deploy iSCSI Gateway"
     echo "    --mds           Deploy MDS"
     echo "    --min-nodes     Minimum number of nodes"
+    echo "    --nfs-ganesha   Deploy NFS-Ganesha"
     echo "    --profile       Storage/OSD profile (see below)"
     echo "    --rgw           Deploy RGW"
     echo "    --ssl           Deploy RGW with SSL"
@@ -58,7 +62,7 @@ function usage {
 assert_enhanced_getopt
 
 TEMP=$(getopt -o h \
---long "cli,client-nodes:,help,mds,min-nodes:,profile:,rgw,ssl" \
+--long "cli,client-nodes:,fsal:,help,igw,mds,min-nodes:,nfs-ganesha,profile:,rgw,ssl" \
 -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -71,17 +75,23 @@ CLI=""
 CLIENT_NODES=0
 STORAGE_PROFILE="default"
 CUSTOM_STORAGE_PROFILE=""
+FSAL="cephfs"
+IGW=""
 MDS=""
 MIN_NODES=1
+NFS_GANESHA=""
 RGW=""
 SSL=""
 while true ; do
     case "$1" in
         --cli) CLI="$1" ; shift ;;
         --client-nodes) shift ; CLIENT_NODES=$1 ; shift ;;
+        --fsal) FSAL=$2 ; shift ; shift ;;
         -h|--help) usage ;;    # does not return
+        --igw) IGW="$1" ; shift ;;
         --mds) MDS="$1" ; shift ;;
         --min-nodes) shift ; MIN_NODES=$1 ; shift ;;
+        --nfs-ganesha) NFS_GANESHA="$1" ; shift ;;
         --profile) shift ; STORAGE_PROFILE=$1 ; shift ;;
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
@@ -89,12 +99,20 @@ while true ; do
         *) echo "Internal error" ; exit 1 ;;
     esac
 done
+case "$FSAL" in
+    cephfs) MDS="--mds" ;;
+    rgw) RGW="--rgw" ;;
+    both) MDS="--mds" ; RGW="--rgw" ;;
+    *) usage ;; # does not return
+esac
 echo "WWWW"
 echo "health-ok.sh running with the following configuration:"
 test -n "$CLI" && echo "- CLI"
 echo "- CLIENT_NODES ->$CLIENT_NODES<-"
 echo "- MIN_NODES ->$MIN_NODES<-"
+test -n "$IGW" && echo "- IGW"
 test -n "$MDS" && echo "- MDS"
+test -n "$NFS_GANESHA" && echo -n "- NFS-Ganesha (FSAL: $FSAL)"
 test -n "$RGW" && echo "- RGW"
 test -n "$SSL" && echo "- SSL"
 echo "- PROFILE ->$STORAGE_PROFILE<-"
@@ -120,6 +138,41 @@ if [ -n "$RGW" ] ; then
     rgw_validate_system_user
 fi
 test -n "$MDS" -a "$CLIENT_NODES" -ge 1 && cephfs_mount_and_sanity_test
+if [ -n "$IGW" -a "$CLIENT_NODES" -ge 1 ] ; then
+    #iscsi_kludge # see bsc#1049669
+    igw_info
+    iscsi_mount_and_sanity_test
+    # exercise ceph.restart orchestration
+    run_stage_0 "$CLI"
+fi
+if [ -n "$NFS_GANESHA" ] ; then
+    for v in "" "3" "4" ; do
+        echo "Testing NFS-Ganesha with NFS version ->$v<-"
+        if [ "$FSAL" = "rgw" -a "$v" = "3" ] ; then
+            echo "Not testing RGW FSAL on NFSv3"
+            continue
+        else
+            nfs_ganesha_mount "$v"
+        fi
+        if [ "$FSAL" = "cephfs" -o "$FSAL" = "both" ] ; then
+            nfs_ganesha_write_test cephfs "$v"
+        fi
+        if [ "$FSAL" = "rgw" -o "$FSAL" = "both" ] ; then
+            if [ "$v" = "3" ] ; then
+                echo "Not testing RGW FSAL on NFSv3"
+            else
+                rgw_curl_test
+                rgw_user_and_bucket_list
+                rgw_validate_demo_users
+                nfs_ganesha_write_test rgw "$v"
+            fi
+        fi
+        nfs_ganesha_umount
+        sleep 10
+    done
+    # exercise ceph.restart orchestration
+    run_stage_0 "$CLI"
+fi
 
 echo "YYYY"
 echo "health-ok test result: PASS"
