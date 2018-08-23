@@ -176,19 +176,19 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
 	install -m 644 srv/salt/ceph/functests/1node/tuned/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
 	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
-	# functests/3node
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3node/migrate
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/filestore
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/filestore2
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/bluestore
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/bluestore2
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/bluestore3
-	install -m 644 srv/salt/ceph/functests/3node/migrate/*.sls $(DESTDIR)/srv/salt/ceph/functests/3node/migrate
-	install -m 644 srv/salt/ceph/functests/3node/migrate/filestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/filestore
-	install -m 644 srv/salt/ceph/functests/3node/migrate/filestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/filestore2
-	install -m 644 srv/salt/ceph/functests/3node/migrate/bluestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/bluestore
-	install -m 644 srv/salt/ceph/functests/3node/migrate/bluestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/bluestore2
-	install -m 644 srv/salt/ceph/functests/3node/migrate/bluestore3/*.sls $(DESTDIR)/srv/salt/ceph/functests/3node/migrate/bluestore3
+	# functests/3nodes
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/filestore
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/filestore2
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/bluestore
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/bluestore2
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/bluestore3
+	install -m 644 srv/salt/ceph/functests/3nodes/migrate/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate
+	install -m 644 srv/salt/ceph/functests/3nodes/migrate/filestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/filestore
+	install -m 644 srv/salt/ceph/functests/3nodes/migrate/filestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/filestore2
+	install -m 644 srv/salt/ceph/functests/3nodes/migrate/bluestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/bluestore
+	install -m 644 srv/salt/ceph/functests/3nodes/migrate/bluestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/bluestore2
+	install -m 644 srv/salt/ceph/functests/3nodes/migrate/bluestore3/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/migrate/bluestore3
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
