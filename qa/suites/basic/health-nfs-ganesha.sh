@@ -68,9 +68,9 @@ done
 MDS=""
 RGW=""
 case "$FSAL" in
-    cephfs) MDS="--mds" ; break ;;
-    rgw) RGW="--rgw" ; break ;;
-    both) MDS="--mds" ; RGW="--rgw" ; break ;;
+    cephfs) MDS="--mds" ;;
+    rgw) RGW="--rgw" ;;
+    both) MDS="--mds" ; RGW="--rgw" ;;
     *) usage ;; # does not return
 esac
 
