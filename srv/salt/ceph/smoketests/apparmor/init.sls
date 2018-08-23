@@ -1,4 +1,4 @@
-{% set master = salt['master.minion']() %}
+{% set master = salt['pillar.get']('master_minion') %}
 
 enforce apparmor profiles:
   salt.state:
