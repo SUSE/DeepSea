@@ -1,8 +1,8 @@
 
-reweight nop:
+drain nop:
   test.nop
 
-{% for id in salt.saltutil.runner('rescinded.ids', cluster='ceph') %}
+{% for id in salt.saltutil.runner('rescinded.ids') %}
 drain osd.{{ id }}:
   module.run:
     - name: osd.zero_weight
