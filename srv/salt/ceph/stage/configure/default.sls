@@ -44,3 +44,7 @@ setup node exporters:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.node_exporter
 
+advise OSDs:
+  salt.runner:
+    - name: advise.osds
+

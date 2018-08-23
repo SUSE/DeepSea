@@ -43,6 +43,12 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -m 644 srv/salt/ceph/tests/quiescent/timeout/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/migrate
+	install -m 644 srv/salt/ceph/tests/migrate/*.sls $(DESTDIR)/srv/salt/ceph/tests/migrate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/remove
+	install -m 644 srv/salt/ceph/tests/remove/*.sls $(DESTDIR)/srv/salt/ceph/tests/remove
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/replace
+	install -m 644 srv/salt/ceph/tests/replace/*.sls $(DESTDIR)/srv/salt/ceph/tests/replace
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/mon/change
@@ -88,6 +94,30 @@ copy-files:
 	install -m 644 srv/salt/ceph/smoketests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
 	install -m 644 srv/salt/ceph/smoketests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/quiescent
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/migrate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/migrate/filestore
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/migrate/filestore2
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/migrate/bluestore
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/migrate/bluestore2
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/migrate/bluestore3
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
+	install -m 644 srv/salt/ceph/functests/1node/migrate/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore
+	install -m 644 srv/salt/ceph/functests/1node/migrate/filestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore2
+	install -m 644 srv/salt/ceph/functests/1node/migrate/filestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore2
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore
+	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore2
+	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore2
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore3
+	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore3/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore3
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/replace
+	install -m 644 srv/salt/ceph/functests/1node/replace/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/replace
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/remove
+	install -m 644 srv/salt/ceph/functests/1node/remove/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/restart
 	install -m 644 srv/salt/ceph/smoketests/restart/*.sls $(DESTDIR)/srv/salt/ceph/smoketests/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/smoketests/tuned/off
@@ -137,6 +167,9 @@ copy-files:
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
 	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
+	# state modules
+	install -d -m 755 $(DESTDIR)/srv/salt/_states
+	install -m 644 srv/salt/_states/*.py* $(DESTDIR)/srv/salt/_states/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
 	install -m 644 srv/salt/ceph/admin/*.sls $(DESTDIR)/srv/salt/ceph/admin/
@@ -465,8 +498,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/remove/igw/auth/*.sls $(DESTDIR)/srv/salt/ceph/remove/igw/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mds
 	install -m 644 srv/salt/ceph/remove/mds/*.sls $(DESTDIR)/srv/salt/ceph/remove/mds/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/migrated
-	install -m 644 srv/salt/ceph/remove/migrated/*.sls $(DESTDIR)/srv/salt/ceph/remove/migrated/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/destroyed
+	install -m 644 srv/salt/ceph/remove/destroyed/*.sls $(DESTDIR)/srv/salt/ceph/remove/destroyed/
+	# Renamed for deprecation
+	ln -sf destroyed	$(DESTDIR)/srv/salt/ceph/remove/migrated 
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mgr
 	install -m 644 srv/salt/ceph/remove/mgr/*.sls $(DESTDIR)/srv/salt/ceph/remove/mgr/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mon

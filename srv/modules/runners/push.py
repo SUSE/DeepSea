@@ -88,7 +88,20 @@ def proposal(filename = "/srv/pillar/ceph/proposals/policy.cfg", dryrun = False)
     pillar_data.output(common)
     return True
 
-def convert(filename = "/srv/pillar/ceph/proposals/policy.cfg"):
+
+def organize(filename="/srv/pillar/ceph/proposals/policy.cfg"):
+    """
+    Read the passed filename, organize the files with common subdirectories
+    """
+    if not os.path.isfile(filename):
+        log.warning("{} is missing".format(filename))
+        return ""
+    pillar_data = PillarData()
+    common = pillar_data.organize(filename)
+    return common
+
+
+def convert(filename="/srv/pillar/ceph/proposals/policy.cfg"):
     """
     Convert the hardware profiles that policy.cfg is using and update
     the policy.cfg.
@@ -357,7 +370,7 @@ class PillarData(object):
                 elif k == "slice":
                     files = eval("files{}".format(v))
                 else:
-                    log.warning("keyword {} unsupported", k)
+                    log.warning("keyword {} unsupported".format(k))
 
         else:
             files = glob.glob(line)

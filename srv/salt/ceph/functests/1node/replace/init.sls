@@ -1,0 +1,5 @@
+
+include:
+  - .multiple
+  - .delay
+  - .force
