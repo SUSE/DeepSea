@@ -260,7 +260,7 @@ function ceph_health_test {
 
 function salt_api_test {
     echo "Salt API test: BEGIN"
-    systemctl status salt-api.service
+    systemctl --no-pager --full status salt-api.service
     curl http://$(hostname):8000/ | python3 -m json.tool
     echo "Salt API test: END"
 }
@@ -345,7 +345,7 @@ sed -i -e 's/\("host": "target[[:digit:]]\+\)"/\1.teuthology"/' /tmp/lrbd.conf
 cat /tmp/lrbd.conf
 source /etc/sysconfig/lrbd; lrbd -v $LRBD_OPTIONS -f /tmp/lrbd.conf
 systemctl restart lrbd.service
-systemctl status -l lrbd.service
+systemctl --no-pager --full status lrbd.service
 echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $IGWNODE
@@ -390,12 +390,12 @@ set -x
 zypper --non-interactive install --no-recommends open-iscsi multipath-tools
 systemctl start iscsid.service
 sleep 5
-systemctl status -l iscsid.service
+systemctl --no-pager --full status iscsid.service
 iscsiadm -m discovery -t st -p $IGWNODE
 iscsiadm -m node -L all
 systemctl start multipathd.service
 sleep 5
-systemctl status -l multipathd.service
+systemctl --no-pager --full status multipathd.service
 ls -lR /dev/mapper
 ls -l /dev/disk/by-path
 ls -l /dev/disk/by-*id
