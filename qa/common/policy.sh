@@ -187,21 +187,18 @@ function policy_remove_storage_node {
 }
 
 function policy_cfg_mds {
-    test -n "$CLIENT_NODES"
-
-    if [ "$CLIENT_NODES" -eq 0 ] ; then
+    test -n "$STORAGE_NODES"
+    # MDS on up to 3 storage nodes
+    if [ "$STORAGE_NODES" -le 3 ] ; then
         cat <<EOF >> $POLICY_CFG
-# Role assignment - mds (all nodes)
-role-mds/cluster/*.sls
-EOF
-    elif [ "$CLIENT_NODES" -ge 1 ] ; then
-        cat <<EOF >> $POLICY_CFG
-# Role assignment - mds (all non-client nodes)
-role-mds/cluster/*.sls slice=[:-$CLIENT_NODES]
+# Role assignment - mds
+role-mds/cluster/*.sls slice=[:$STORAGE_NODES]
 EOF
     else
-        echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
-        exit 1
+        cat <<EOF >> $POLICY_CFG
+# Role assignment - mds
+role-mds/cluster/*.sls slice=[:3]
+EOF
     fi
 }
 
