@@ -171,7 +171,7 @@ function deploy_ceph {
     run_stage_3 "$CLI"
     pre_create_pools
     ceph_cluster_status
-    if [ -z "$MDS" -a -z "$NFS_GANESHA" -a -z "$RGW" -a -z "$IGW" ] ; then
+    if [ -z "$MDS" -a -z "$NFS_GANESHA" -a -z "$RGW" -a -z "$IGW" -a -z "$OPENATTIC" ] ; then
         echo "WWWW"
         echo "Stages 0-3 OK, no roles requiring Stage 4: deploy phase complete!"
         return 0
