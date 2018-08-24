@@ -1,29 +1,29 @@
 repo:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.repo
 
 metapackage minions:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - sls: ceph.metapackage
 
 common packages:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.packages.common
 
 sync:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.sync
 
 mines:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.mines
 
@@ -44,13 +44,13 @@ starting {{ host }}:
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.wait
     - failhard: True
 
 check if all processes are still running after processing {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.processes
     - failhard: True
@@ -58,7 +58,7 @@ check if all processes are still running after processing {{ host }}:
 unset noout {{ host }}:
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - failhard: True
 
 updating {{ host }}:
@@ -71,7 +71,7 @@ updating {{ host }}:
 set noout {{ host }}:
   salt.state:
     - sls: ceph.noout.set
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - failhard: True
 
 {% if grains.get('os_family', '') == 'Suse' %}
@@ -93,7 +93,7 @@ finished {{ host }}:
 unset noout after final iteration:
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - failhard: True
 
 starting remaining minions:
@@ -136,14 +136,14 @@ finishing remaining minions:
 
 updates:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates
 
 {% if grains.get('os_family', '') == 'Suse' %}
 restart:
   salt.state:
-    - tgt: {{ salt['pillar.get']('deepsea_minions') }}
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates.restart
 {% endif %}

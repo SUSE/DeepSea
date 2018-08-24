@@ -3,36 +3,36 @@
 validate failed:
   salt.state:
     - name: just.exit
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - failhard: True
 
 {% endif %}
 
 sync master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.sync
 
 salt-api:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.salt-api
 
 {% set notice = salt['saltutil.runner']('advise.salt_run') %}
 
 repo master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.repo
 
 metapackage master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.metapackage
 
 prepare master:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.updates
 
 {% set kernel= grains['kernelrelease'] | replace('-default', '')  %}
