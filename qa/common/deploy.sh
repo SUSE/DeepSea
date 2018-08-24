@@ -143,7 +143,6 @@ function deploy_ceph {
         return 0
     fi
     test $STORAGE_NODES -lt 4 && export DEV_ENV="true"
-    disable_restart_in_stage_0
     run_stage_0 "$CLI"
     _zypper_ps
     salt_api_test

@@ -36,7 +36,8 @@ function usage {
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X]"
     echo "  [--fsal={cephfs,rgw,both}] [--mds] [--min-nodes=X]"
-    echo "  [--nfs-ganesha] [--profile=X] [--rgw] [--ssl]"
+    echo "  [--nfs-ganesha] [--no-update] [--profile=X] [--rgw]"
+    echo "  [--ssl]"
     echo
     echo "Options:"
     echo "    --cli           Use DeepSea CLI"
@@ -46,6 +47,7 @@ function usage {
     echo "    --mds           Deploy MDS"
     echo "    --min-nodes     Minimum number of nodes"
     echo "    --nfs-ganesha   Deploy NFS-Ganesha"
+    echo "    --no-update     Use no-update-no-reboot Stage 0 alt default"
     echo "    --profile       Storage/OSD profile (see below)"
     echo "    --rgw           Deploy RGW"
     echo "    --ssl           Deploy RGW with SSL"
@@ -63,7 +65,7 @@ function usage {
 assert_enhanced_getopt
 
 TEMP=$(getopt -o h \
---long "cli,client-nodes:,fsal:,help,igw,mds,min-nodes:,nfs-ganesha,profile:,rgw,ssl" \
+--long "cli,client-nodes:,fsal:,help,igw,mds,min-nodes:,nfs-ganesha,no-update,profile:,rgw,ssl" \
 -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -80,6 +82,7 @@ FSAL="cephfs"
 MDS=""
 MIN_NODES=1
 NFS_GANESHA=""
+NO_UPDATE=""
 RGW=""
 SSL=""
 while true ; do
@@ -91,6 +94,7 @@ while true ; do
         --mds) MDS="$1" ; shift ;;
         --min-nodes) shift ; MIN_NODES=$1 ; shift ;;
         --nfs-ganesha) NFS_GANESHA="$1" ; shift ;;
+        --no-update) NO_UPDATE="$1" ; shift ;;
         --profile) shift ; STORAGE_PROFILE=$1 ; shift ;;
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
@@ -114,6 +118,8 @@ test -n "$NFS_GANESHA" && echo "- NFS-Ganesha (FSAL: $FSAL)"
 test -n "$RGW" && echo "- RGW"
 test -n "$SSL" && echo "- SSL"
 echo "- PROFILE ->$STORAGE_PROFILE<-"
+echo -n "Stage 0 update: "
+test -n "$NO_UPDATE" && echo "disabled" || echo "enabled"
 set -x
 
 # deploy phase
