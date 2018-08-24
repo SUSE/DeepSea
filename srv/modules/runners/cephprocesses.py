@@ -115,7 +115,7 @@ def need_restart_config_change(role=None, cluster='ceph'):
     restart = local.cmd(role_search,
                         'cephprocesses.need_restart_config_change',
                         ["role={}".format(role)],
-                        tgt_type="compound")
+                        expr_form="compound")
 
     sys.stdout = _stdout
     for minion, need_rs in six.iteritems(restart):
@@ -138,7 +138,7 @@ def need_restart(role=None, cluster='ceph'):
     restart = local.cmd(role_search,
                         'cephprocesses.need_restart',
                         ["role={}".format(role)],
-                        tgt_type="compound")
+                        expr_form="compound")
 
     sys.stdout = _stdout
     for minion, need_rs in six.iteritems(restart):
