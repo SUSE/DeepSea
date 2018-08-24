@@ -187,49 +187,85 @@ function policy_remove_storage_node {
 }
 
 function policy_cfg_mds {
-    test -n "$CLIENT_NODES"
-
-    if [ "$CLIENT_NODES" -eq 0 ] ; then
+    test -n "$STORAGE_NODES"
+    # MDS on up to 3 storage nodes
+    if [ "$STORAGE_NODES" -le 3 ] ; then
         cat <<EOF >> $POLICY_CFG
-# Role assignment - mds (all nodes)
-role-mds/cluster/*.sls
-EOF
-    elif [ "$CLIENT_NODES" -ge 1 ] ; then
-        cat <<EOF >> $POLICY_CFG
-# Role assignment - mds (all non-client nodes)
-role-mds/cluster/*.sls slice=[:-$CLIENT_NODES]
+# Role assignment - mds
+role-mds/cluster/*.sls slice=[:$STORAGE_NODES]
 EOF
     else
-        echo "Unexpected number of client nodes ->$CLIENT_NODES<-; bailing out!"
+        cat <<EOF >> $POLICY_CFG
+# Role assignment - mds
+role-mds/cluster/*.sls slice=[:3]
+EOF
+    fi
+}
+
+function policy_cfg_openattic_rgw_igw_ganesha {
+    # first, determine the slices
+    local slice_openattic=""
+    local slice_rgw=""
+    local slice_igw=""
+    local slice_ganesha=""
+    # lest we become confused, "storage nodes" is a synonym for "cluster nodes"
+    test -n "$STORAGE_NODES"
+    if [ "$STORAGE_NODES" -eq 1 ] ; then
+        slice_openattic="[:1]"
+        slice_rgw="[:1]"
+        slice_igw="[:1]"
+        slice_ganesha="[:1]"
+    elif [ "$STORAGE_NODES" -eq 2 ] ; then
+        slice_openattic="[:1]"
+        slice_rgw="[1:2]"
+        slice_igw="[1:2]"
+        slice_ganesha="[1:2]"
+    elif [ "$STORAGE_NODES" -eq 3 ] ; then
+        slice_openattic="[:1]"
+        slice_rgw="[1:2]"
+        slice_igw="[2:3]"
+        slice_ganesha="[2:3]"
+    elif [ "$STORAGE_NODES" -ge 4 ] ; then
+        slice_openattic="[:1]"
+        slice_rgw="[1:2]"
+        slice_igw="[2:3]"
+        slice_ganesha="[3:4]"
+    else
+        echo "Unexpected number of cluster/storage nodes ->$STORAGE_NODES<-: bailing out!"
         exit 1
     fi
-}
-
-function policy_cfg_rgw {
-    if [ -z "$SSL" ] ; then
+    # then, populate policy.cfg
+    if [ "$OPENATTIC" ] ; then
         cat <<EOF >> $POLICY_CFG
-# Role assignment - rgw (first node)
-role-rgw/cluster/*.sls slice=[:1]
+# Role assignment - openattic
+role-openattic/cluster/*.sls slice=$slice_openattic
 EOF
-    else
+    fi
+    if [ "$RGW" ] ; then
+        if [ -z "$SSL" ] ; then
+            cat <<EOF >> $POLICY_CFG
+# Role assignment - rgw
+role-rgw/cluster/*.sls slice=$slice_rgw
+EOF
+        else
+            cat <<EOF >> $POLICY_CFG
+# Role assignment - rgw
+role-rgw/cluster/*.sls slice=$slice_rgw
+role-rgw-ssl/cluster/*.sls slice=$slice_rgw
+EOF
+        fi
+    fi
+    if [ "$IGW" ] ; then
         cat <<EOF >> $POLICY_CFG
-# Role assignment - rgw (first node)
-role-rgw/cluster/*.sls slice=[:1]
-role-rgw-ssl/cluster/*.sls slice=[:1]
+# Role assignment - igw
+role-igw/cluster/*.sls slice=$slice_igw
+EOF
+    fi
+    if [ "$NFS_GANESHA" ] ; then
+        cat <<EOF >> $POLICY_CFG
+# Role assignment - ganesha
+role-ganesha/cluster/*.sls slice=$slice_ganesha
 EOF
     fi
 }
 
-function policy_cfg_igw {
-    cat <<EOF >> $POLICY_CFG
-# Role assignment - igw (first node)
-role-igw/cluster/*.sls slice=[:1]
-EOF
-}
-
-function policy_cfg_nfs_ganesha {
-    cat <<EOF >> $POLICY_CFG
-# Role assignment - NFS-Ganesha (first node)
-role-ganesha/cluster/*.sls slice=[:1]
-EOF
-}
