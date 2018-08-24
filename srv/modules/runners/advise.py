@@ -110,7 +110,7 @@ def osds():
     """
     local = salt.client.LocalClient()
     report = local.cmd('I@roles:storage', 'osd.report',
-                       ['human=False'], tgt_type="compound")
+                       ['human=False'], expr_form="compound")
 
     bold = '\033[1m'
     endc = '\033[0m'

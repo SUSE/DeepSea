@@ -44,7 +44,7 @@ def osd(*args, **kwargs):
 
         print("Removing osd {} from Ceph".format(osd_id))
         for cmd in cmds:
-            local.cmd(master_minion, 'cmd.run', [cmd], tgt_type='compound')
+            local.cmd(master_minion, 'cmd.run', [cmd], expr_form='compound')
 
     return ""
 
