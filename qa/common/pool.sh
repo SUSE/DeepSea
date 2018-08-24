@@ -45,6 +45,6 @@ function pre_create_pools {
     test "$IGW" && POOLS+=" iscsi-images"
     create_all_pools_at_once $POOLS
     ceph osd pool application enable write_test deepsea_qa
-    test "$IGW" && ceph osd pool application enable iscsi-images deepsea_qa
+    test "$IGW" && ceph osd pool application enable iscsi-images rbd
     sleep 10
 }
