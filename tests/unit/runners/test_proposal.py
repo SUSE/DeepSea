@@ -1,10 +1,13 @@
-from srv.modules.runners import proposal
 import pytest
 from mock import patch, mock_open, call
 import sys
 from collections import namedtuple
 sys.path.insert(0, 'srv/modules/pillar')
 
+# importing proposals triggers a salt call that returns a deepsea_minions target
+with patch('salt.client.LocalClient', autospec=True) as mock_client:
+    mock_client.cmd.return_value = '*'
+    from srv.modules.runners import proposal
 
 @pytest.fixture
 def minions():
