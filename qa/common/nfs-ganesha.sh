@@ -13,9 +13,6 @@ function nfs_ganesha_no_root_squash {
   sed -i '/Access_Type = RW;/a \\tSquash = No_root_squash;' $GANESHAJ2
 }
 
-#
-# Since we don't seem to be using NFSv4, the effect of this option is unclear
-#
 function nfs_ganesha_no_grace_period {
   local GANESHAJ2=/srv/salt/ceph/ganesha/files/ganesha.conf.j2
   cat <<EOF >>$GANESHAJ2
@@ -156,7 +153,7 @@ for delay in 60 60 60 60 ; do
     sleep $delay
 done
 set -x
-zypper --non-interactive install --no-recommends krb5-devel python-devel
+zypper --non-interactive install --no-recommends krb5-devel python3-devel
 git clone --depth 1 https://github.com/supriti/Pynfs
 cd Pynfs
 ./setup.py build
