@@ -44,7 +44,7 @@ starting {{ host }}:
 
 wait until the cluster has recovered before processing {{ host }}:
   salt.state:
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - sls: ceph.wait
     - failhard: True
 
@@ -71,14 +71,7 @@ updating {{ host }}:
 set noout {{ host }}:
   salt.state:
     - sls: ceph.noout.set
-    - tgt: {{ salt['pillar.get']('master_minion') }}
-    - failhard: True
-
-restart {{ host }} if updates required:
-  salt.state:
-    - tgt: {{ host }}
-    - tgt_type: compound
-    - sls: ceph.updates.restart
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - failhard: True
 
 finished {{ host }}:
@@ -91,7 +84,7 @@ finished {{ host }}:
 unset noout after final iteration: 
   salt.state:
     - sls: ceph.noout.unset
-    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt: '{{ salt['pillar.get']('master_minion') }}'
     - failhard: True
 
 starting remaining minions:
@@ -104,13 +97,6 @@ updating minions without roles:
     - tgt: I@cluster:ceph
     - tgt_type: compound
     - sls: ceph.updates
-    - failhard: True
-
-restarting minions without roles:
-  salt.state:
-    - tgt: I@cluster:ceph
-    - tgt_type: compound
-    - sls: ceph.updates.restart
     - failhard: True
 
 finishing remaining minions:
@@ -135,11 +121,5 @@ updates:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.updates
-
-restart:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - tgt_type: compound
-    - sls: ceph.updates.restart
 
 {% endif %}
