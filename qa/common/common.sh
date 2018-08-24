@@ -36,7 +36,15 @@ function assert_enhanced_getopt {
 # functions that run the DeepSea stages
 #
 
+function _disable_update_in_stage_0 {
+    cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls
+    cp /srv/salt/ceph/stage/prep/master/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls
+    cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls
+    cp /srv/salt/ceph/stage/prep/minion/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
+}
+
 function run_stage_0 {
+    test "$NO_UPDATE" && _disable_update_in_stage_0
     _run_stage 0 "$@"
     if _root_fs_is_btrfs ; then
         echo "Root filesystem is btrfs: creating subvolumes for /var/lib/ceph"
@@ -496,22 +504,4 @@ function migrate_to_bluestore {
     sed -i 's/profile-filestore/migrated-profile-filestore/g' /srv/pillar/ceph/proposals/policy.cfg
     salt-run disengage.safety 2>/dev/null
     salt-run state.orch ceph.migrate.osds 2>/dev/null
-}
-
-function _disable_restart_in_stage_0_with_update {
-    cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
-    cp /srv/salt/ceph/stage/prep/master/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
-    cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
-    cp /srv/salt/ceph/stage/prep/minion/default-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
-}
-
-function _disable_restart_in_stage_0_without_update {
-    cp /srv/salt/ceph/stage/prep/master/default.sls /srv/salt/ceph/stage/prep/master/default-orig.sls 
-    cp /srv/salt/ceph/stage/prep/master/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/master/default.sls 
-    cp /srv/salt/ceph/stage/prep/minion/default.sls /srv/salt/ceph/stage/prep/minion/default-orig.sls 
-    cp /srv/salt/ceph/stage/prep/minion/default-no-update-no-reboot.sls /srv/salt/ceph/stage/prep/minion/default.sls
-}
-
-function disable_restart_in_stage_0 {
-    _disable_restart_in_stage_0_without_update
 }
