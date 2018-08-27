@@ -408,6 +408,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
+%config(noreplace) %attr(-, salt, salt) /etc/salt/minion.d/*.conf
 /srv/modules/modules/*.py*
 /srv/modules/runners/*.py*
 %exclude /srv/modules/runners/smoketests.py
