@@ -236,10 +236,7 @@ def _device(drive):
     """
     Default to Device File value.  Prefer most descriptive.
     """
-    devicename = __salt__['cephdisks.device'](drive['Device File'])
-    if devicename:
-        return devicename
-    return drive['Device File']
+    return __salt__['cephdisks.device'](drive['Device File'])
 
 
 def generate(**kwargs):
