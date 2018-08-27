@@ -1793,17 +1793,19 @@ class OSDDevices(object):
         else:
             log.error("file {} is missing".format(filename))
 
-    def _uuid_device(self, device, pathname="/dev/disk/by-id"):
+    # pylint: disable=no-self-use, no-else-return
+    def _uuid_device(self, device):
         """
         Return the uuid device, prefer the most descriptive
         """
         if os.path.exists(device):
-            if os.path.exists(pathname):
-                devicename = __salt__['cephdisks.device'](device)
-                if devicename:
-                    return devicename
+            devicename = __salt__['cephdisks.device'](device)
+            # if the devicename and device are the same, cephdisks.device did not find any symlinks
+            if devicename != device:
+                return devicename
+            else:
                 return readlink(device)
-            return readlink(device)
+        return None
 
 
 class OSDDestroyed(object):

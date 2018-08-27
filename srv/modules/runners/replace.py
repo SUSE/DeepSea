@@ -9,6 +9,7 @@ from __future__ import print_function
 import time
 import logging
 import os
+import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.runner
@@ -56,23 +57,24 @@ def osd(*args, **kwargs):
     local = salt.client.LocalClient()
     master_minion = _master_minion(local)
     host_osds = local.cmd('I@roles:storage', 'osd.list', expr_form='compound')
+    assert isinstance(host_osds, dict)
 
-    completed = osds
     for osd_id in osds:
         host = _find_host(osd_id, host_osds)
         if host:
+            grains = local.cmd(host, 'grains.get', ['ceph'], expr_form='compound')
             msg = _remove_osd(local, master_minion, osd_id, passed, host)
             if msg:
                 print("{}\nFailed to remove osd {}".format(msg, osd_id))
-                completed.remove(osd_id)
+                osds.remove(osd_id)
                 continue
 
             # Rename minion profile
-            minion_profile(host)
+            minion_profile(host, osds, grains)
 
     if 'called' in kwargs and kwargs['called']:
         # Return for remove.osd
-        return {'master_minion': master_minion, 'osds': completed}
+        return {'master_minion': master_minion, 'osds': osds}
     return ""
 
 
@@ -136,7 +138,7 @@ def _find_host(osd_id, host_osds):
     return ""
 
 
-def minion_profile(minion):
+def minion_profile(minion, osds, grains):
     """
     Rename a minion profile to indicate that the minion profile needs to be
     recreated.
@@ -147,14 +149,63 @@ def minion_profile(minion):
     belong to more than one hardware profile.  Each must be renamed.
     """
     files = __salt__['push.organize']()
+    local = salt.client.LocalClient()
+    disks = local.cmd(minion, 'cephdisks.list', expr_form="compound")[minion]
+
 
     yaml_file = 'stack/default/ceph/minions/{}.yml'.format(minion)
     if yaml_file in files:
         for filename in files[yaml_file]:
             if os.path.exists(filename):
-                print("Renaming minion {} profile".format(minion))
-                os.rename(filename, "{}-replace".format(filename))
+                try:
+                    print("Renaming minion {} profile".format(minion))
+                    os.rename(filename, "{}-replace".format(filename))
+                    _insert_replace_flag(grains, minion, disks, osds, "{}-replace".format(filename))
+                # pylint: disable=bare-except
+                except:
+                    log.error("Failed to rename minion {} profile".format(minion))
+                    os.rename("{}-replace".format(filename), filename)
+
     return ""
+
+
+def _map_grains_proposal_disk(grains_disk, disks, content):
+    """
+    Compare grains to proposal to find the correct path for the disk
+
+    This makes use of cephdisks.list as a base that has different names ("Device Files")
+    1. iterate over cephdisks.list output
+    2. check if the disk that is written in the grain matches the current disk
+    3. if it matches, look for the disk-path that is used in the proposal
+    4. add that disk-path the the list of paths that will get the replace flag
+    """
+
+    for disk in disks:
+        if grains_disk in disk['Device Files']:
+            for prop_disk in content['ceph']['storage']['osds']:
+                if prop_disk in disk['Device Files']:
+                    return prop_disk
+    return None
+
+
+def _insert_replace_flag(grains, minion, disks, osds, filename):
+    """ Insert 'replace: true' into proposal file for all osds that are passed in """
+
+    with open(filename, 'rb') as proposal_file:
+        content = yaml.safe_load(proposal_file)
+
+    paths_to_flag = []
+    for osd_id in osds:
+        if str(osd_id) in grains[minion]:
+            osd_partition = grains[minion][str(osd_id)]['partitions']['osd']
+            grains_disk = osd_partition.rstrip('0123456789').replace("-part", "")
+            paths_to_flag.append(_map_grains_proposal_disk(grains_disk, disks, content))
+
+    for path in paths_to_flag:
+        content['ceph']['storage']['osds'][path]['replace'] = True
+
+    with open(filename, 'w') as proposal_file:
+        yaml.dump(content, proposal_file, default_flow_style=False)
 
 
 __func_alias__ = {
