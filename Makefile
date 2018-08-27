@@ -5,6 +5,7 @@ VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' 
 usage:
 	@echo "Usage:"
 	@echo -e "\tmake install\tInstall DeepSea on this host"
+	@echo -e "\tmake tarball\tBuild a tarball"
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
 	@echo -e "\tmake test\tRun unittests"
 
