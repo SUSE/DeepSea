@@ -177,7 +177,7 @@ def rescinded():
 def _children():
     """
     """
-    result = json.loads(tree())
+    result = tree_from_any()
     entries = []
     for entry in result['nodes']:
         if entry['name'] == __grains__['host']:
@@ -193,26 +193,42 @@ def ids():
     """
     return list()
 
-def tree():
+
+def _tree(**kwargs):
     """
     Return osd tree
-
-    Note: Currently hardcoded to the bootstrap keyring.  This should work on
-    the master with the admin keyring.  This should also be refactored since
-    overriding the keyring is happening in three places.
     """
-    settings = {
-        'conf': "/etc/ceph/ceph.conf" ,
-        'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
-        'client': 'client.bootstrap-osd'
-    }
-    #cluster=rados.Rados(conffile=settings['conf'])
-    cluster=rados.Rados(conffile=settings['conf'], conf=dict(keyring=settings['keyring']), name=settings['client'])
+    cluster = rados.Rados(**kwargs)
     cluster.connect()
-    cmd = json.dumps({"prefix":"osd tree", "format":"json" })
-    ret,output,err = cluster.mon_command(cmd, b'', timeout=6)
-    log.debug(json.dumps(json.loads(output), indent=4))
-    return json.dumps(json.loads(output), indent=4)
+    cmd = json.dumps({"prefix": "osd tree", "format": "json"})
+    _, output, _ = cluster.mon_command(cmd, b'', timeout=6)
+    osd_tree = json.loads(output)
+    log.debug(json.dumps(osd_tree, indent=4))
+    return osd_tree
+
+
+def tree_from_master():
+    """
+    Return osd tree; use if running on master node
+    """
+    kwargs = {
+        'conffile': "/etc/ceph/ceph.conf",
+    }
+    return _tree(**kwargs)
+
+
+def tree_from_any():
+    """
+    Return osd tree; can be run on any storage node (needs bootstrap-osd keyring)
+    """
+    kwargs = {
+        'conffile': "/etc/ceph/ceph.conf",
+        'conf': {
+            'keyring': '/var/lib/ceph/bootstrap-osd/ceph.keyring',
+        },
+        'name': 'client.bootstrap-osd'
+    }
+    return _tree(**kwargs)
 
 
 class OSDState(object):
@@ -309,7 +325,7 @@ class OSDWeight(object):
         }
         self.settings.update(kwargs)
         log.debug("settings: {}".format(pprint.pformat(self.settings)))
-        #self.cluster=rados.Rados(conffile=self.settings['conf'])
+        # self.cluster=rados.Rados(conffile=self.settings['conf'])
         self.cluster=rados.Rados(conffile=self.settings['conf'], conf=dict(keyring=self.settings['keyring']), name=self.settings['client'])
         try:
             self.cluster.connect()
