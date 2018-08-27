@@ -39,6 +39,8 @@ copy-files:
 	install -m 755 qa/suites/basic/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/basic/
 	install -m 755 qa/suites/ceph-test/*.sh $(DESTDIR)/usr/lib/deepsea/qa/suites/ceph-test/
 	# tests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/grafana
+	install -m 644 srv/salt/ceph/tests/grafana/*.sls $(DESTDIR)/srv/salt/ceph/tests/grafana
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
@@ -96,6 +98,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
 	install -m 644 srv/salt/ceph/functests/1node/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/grafana
+	install -m 644 srv/salt/ceph/functests/1node/grafana/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/grafana
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
