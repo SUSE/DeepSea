@@ -6,4 +6,6 @@ include:
   - .restart.mon
   - .restart.rgw
   - .apparmor
+  - .tuned
+  - .remove
   - .grafana
