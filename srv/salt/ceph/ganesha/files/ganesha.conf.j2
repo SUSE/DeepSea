@@ -22,6 +22,19 @@ EXPORT
 
 }
 
+# The libcephfs client will aggressively cache information while it
+# can, so there is little benefit to ganesha actively caching the same
+# objects. Doing so can also hurt cache coherency. Here, we disable
+# as much attribute and directory caching as we can.
+CACHEINODE {
+    # Size the dirent cache down as small as possible.
+    Dir_Chunk = 0;
+
+    # size the inode cache as small as possible
+    NParts = 1;
+    Cache_Size = 1;
+}
+
 {% endif %}
 
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles=role) != [] %}
