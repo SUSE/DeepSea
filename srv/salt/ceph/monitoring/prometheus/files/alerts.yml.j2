@@ -4,13 +4,13 @@ groups:
       - alert: health error
         expr: ceph_health_status == 2
         for: 5m
-        annotations
+        annotations:
           description: Ceph in error for > 5m
-          severity: ciritical
+          severity: critical
       - alert: unhealthy
         expr: ceph_health_status != 0
         for: 15m
-        annotations
+        annotations:
           description: Ceph not healthy for > 5m
           severity: warning
   - name: mon
