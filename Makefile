@@ -366,6 +366,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/monitoring/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
 	install -m 644 srv/salt/ceph/monitoring/prometheus/files/*.j2 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
+	install -m 644 srv/salt/ceph/monitoring/prometheus/files/*.yml $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters
 	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/files

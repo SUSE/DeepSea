@@ -503,6 +503,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/monitoring/prometheus/exporters/ceph_rgw_exporter/files/*
 %config /srv/salt/ceph/monitoring/prometheus/exporters/files/*
 %config /srv/salt/ceph/monitoring/prometheus/files/*.j2
+%config /srv/salt/ceph/monitoring/prometheus/files/*.yml
 %config /srv/salt/ceph/noout/set/*.sls
 %config /srv/salt/ceph/noout/unset/*.sls
 %config /srv/salt/ceph/openattic/*.sls

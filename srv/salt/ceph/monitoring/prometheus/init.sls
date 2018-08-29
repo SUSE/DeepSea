@@ -16,8 +16,7 @@ golang-github-prometheus-prometheus:
 
 /etc/prometheus/alerts/ses_default_alerts.yml:
   file.managed:
-    - source: salt://ceph/monitoring/prometheus/files/alerts.yml.j2
-    - template: jinja
+    - source: salt://ceph/monitoring/prometheus/files/ses_default_alerts.yml
     - user: root
     - group: root
     - mode: 644
