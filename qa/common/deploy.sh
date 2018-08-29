@@ -123,9 +123,9 @@ function initialization_sequence {
     _determine_master_minion
     _os_specific_install_deps
     _os_specific_repos_and_packages_info
-    python --version || true
-    python2 --version || true
-    python3 --version
+    python --version
+    python2 --version
+    python3 --version || true
     deepsea --version || true
     _set_deepsea_minions
     _initialize_minion_array
