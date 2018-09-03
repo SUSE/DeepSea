@@ -34,7 +34,7 @@ for conf in /etc/ceph/*.conf
 do
     filename=$(basename "$conf")
     cluster="${filename%.*}"
-    pools="$(ceph -c $conf osd lspools 2>/dev/null | sed 's/[[:digit:]] \([^,]*\),/\1 /g')"
+    pools="$(ceph -c $conf osd lspools 2>/dev/null | sed 's/[[:digit:]]\+ \([^,]*\),/\1 /g')"
     for pool in $pools
     do
         for img in `rbd -p $pool ls`; do
