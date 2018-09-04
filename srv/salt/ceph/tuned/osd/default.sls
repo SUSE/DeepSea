@@ -12,7 +12,7 @@
 
 {% if 'mgr' not in roles or 'default-off' not in mgr_off %}
 {% if 'mon' not in roles or 'default-off' not in mon_off %}
-start tuned:
+start tuned ceph osd:
   service.running:
     - name: tuned
     - enable: True
