@@ -135,7 +135,8 @@ cmd.run:
 
         self.assertIsInstance(steps[0], SaltState)
         self.assertEqual(len(steps[0].steps), len(self.minions()))
-        self.assertEqual(steps[0].sls, "test.test-state1")
+        self.assertEqual(steps[0].sls, ["test.test-state1"])
+        self.assertEqual(steps[0].sls_str, "test.test-state1")
         self.assertEqual(set(steps[0].target), set(self.minions()))
         for minion, s_steps in steps[0].steps.items():
             self.assertIn(minion, self.minions())
@@ -148,7 +149,8 @@ cmd.run:
 
         self.assertIsInstance(steps[1], SaltState)
         self.assertEqual(len(steps[1].steps), 1)
-        self.assertEqual(steps[1].sls, "test.test-state2")
+        self.assertEqual(steps[1].sls, ["test.test-state2"])
+        self.assertEqual(steps[1].sls_str, "test.test-state2")
         self.assertEqual(steps[1].target, [self.minions()[0]])
         for minion, s_steps in steps[1].steps.items():
             self.assertIn(minion, self.minions())
@@ -184,7 +186,8 @@ cmd.run:
 
         self.assertIsInstance(steps[0], SaltState)
         self.assertEqual(len(steps[0].steps), len(self.minions()))
-        self.assertEqual(steps[0].sls, "test.test-state3")
+        self.assertEqual(steps[0].sls, ["test.test-state3"])
+        self.assertEqual(steps[0].sls_str, "test.test-state3")
         self.assertEqual(set(steps[0].target), set(self.minions()))
         for minion, s_steps in steps[0].steps.items():
             self.assertIn(minion, self.minions())
@@ -323,7 +326,8 @@ error state:
 
         self.assertIsInstance(steps[0], SaltState)
         self.assertEqual(len(steps[0].steps), len(self.minions()))
-        self.assertEqual(steps[0].sls, "test.test-state101")
+        self.assertEqual(steps[0].sls, ["test.test-state101"])
+        self.assertEqual(steps[0].sls_str, "test.test-state101")
         self.assertEqual(set(steps[0].target), set(self.minions()))
         for minion, s_steps in steps[0].steps.items():
             self.assertIn(minion, self.minions())
@@ -333,3 +337,55 @@ error state:
             self.assertEqual(s_steps[0].function, "pkg.installed")
             self.assertEqual(s_steps[0].pretty_string(),
                              "pkg.installed(salt-master, salt-minion)")
+
+    def test_parse_stage_single_state_with_sls_list(self):
+        self.write_state_file("test.test-orch102", {
+            'test state': {
+                'salt.state': [{
+                    'sls': ['test.test-state102-1', 'test.test-state102-2', 'test.test-state102-1'],
+                    'tgt': '*'
+                }]
+            }
+        })
+
+        self.write_state_file("test.test-state102-1", {
+            'state {{ grains["id"] }}': {
+                'pkg.installed': [{
+                    'pkgs': ['salt-master', 'salt-minion']
+                }]
+            }
+        })
+
+        self.write_state_file("test.test-state102-2", {
+            'state cmd {{ grains["id"] }}': {
+                'cmd.run': [{
+                    'name': 'ls -l /srv'
+                }]
+            }
+        })
+
+
+        steps, out = SLSParser.parse_stage("test.test-orch102", False, False)
+
+        self.assertEqual(out, "")
+        self.assertEqual(len(steps), 1)
+
+        self.assertIsInstance(steps[0], SaltState)
+        self.assertEqual(len(steps[0].steps), len(self.minions()))
+        self.assertEqual(steps[0].sls, ["test.test-state102-1", "test.test-state102-2"])
+        self.assertEqual(steps[0].sls_str,
+                         "test.test-state102-1,test.test-state102-2,test.test-state102-1")
+        self.assertEqual(set(steps[0].target), set(self.minions()))
+        for minion, s_steps in steps[0].steps.items():
+            self.assertIn(minion, self.minions())
+            self.assertEqual(len(s_steps), 2)
+            self.assertIsInstance(s_steps[0], SaltStateFunction)
+            self.assertEqual(s_steps[0].desc, "state {}".format(minion))
+            self.assertEqual(s_steps[0].function, "pkg.installed")
+            self.assertEqual(s_steps[0].pretty_string(),
+                             "pkg.installed(salt-master, salt-minion)")
+            self.assertIsInstance(s_steps[1], SaltStateFunction)
+            self.assertEqual(s_steps[1].desc, "state cmd {}".format(minion))
+            self.assertEqual(s_steps[1].function, "cmd.run")
+            self.assertEqual(s_steps[1].pretty_string(),
+                             "cmd.run(ls -l /srv)")

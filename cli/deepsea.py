@@ -140,7 +140,7 @@ def _print_deps(step, indent, step_order_map):
 
 def _print_stage_step(step, indent, step_order_map):
     if isinstance(step, SaltState):
-        PP.print(PP.orange(step.sls))
+        PP.print(PP.orange(step.sls_str))
         PP.print(PP.dark_green(" ({})".format(step.desc)))
         PP.println(PP.orange(" on"))
         _print_deps(step, indent, step_order_map)
