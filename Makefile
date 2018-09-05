@@ -855,7 +855,7 @@ install: copy-files setup.py
 	zypper -n install python-setuptools python-click
 	python setup.py install --root=$(DESTDIR)/
 
-rpm: pyc tarball test
+rpm: pyc tarball
 	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
 	rpmbuild -bb deepsea.spec
 
