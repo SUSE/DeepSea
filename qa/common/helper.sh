@@ -4,7 +4,7 @@
 # helper functions (not to be called directly from test scripts)
 #
 
-STAGE_TIMEOUT_DURATION="30m"
+STAGE_TIMEOUT_DURATION="60m"
 
 function _report_stage_failure {
     STAGE_SUCCEEDED=""

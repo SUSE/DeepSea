@@ -68,9 +68,25 @@ function run_stage_2 {
     test "$STAGE_SUCCEEDED"
 }
 
+function _disable_tuned {
+    local prefix=/srv/salt/ceph/tuned
+    mv $prefix/mgr/default.sls $prefix/mgr/default.sls-MOVED
+    mv $prefix/mon/default.sls $prefix/mon/default.sls-MOVED
+    mv $prefix/osd/default.sls $prefix/osd/default.sls-MOVED
+    mv $prefix/mgr/default-off.sls $prefix/mgr/default.sls
+    mv $prefix/mon/default-off.sls $prefix/mon/default.sls
+    mv $prefix/osd/default-off.sls $prefix/osd/default.sls
+}
+
 function run_stage_3 {
     cat_global_conf
     lsblk_on_storage_node
+    if [ "$TUNED" ] ; then
+        echo "WWWW: tuned will be deployed as usual"
+    else
+        echo "WWWW: tuned will NOT be deployed"
+        _disable_tuned
+    fi
     _run_stage 3 "$@"
     ceph_disk_list_on_storage_node
     ceph osd tree

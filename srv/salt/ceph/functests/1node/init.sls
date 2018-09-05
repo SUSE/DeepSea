@@ -7,3 +7,4 @@ include:
   - .restart.mon
   - .restart.rgw
   - .apparmor
+  - .openstack
