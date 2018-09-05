@@ -15,3 +15,7 @@ start prometheus-alertmanager:
   service.running:
     - name: prometheus-alertmanager
     - enable: True
+{% if alertmanager_cfg != '' %}
+    - watch:
+      - file: /etc/prometheus/alertmanager.yml
+{% endif %}

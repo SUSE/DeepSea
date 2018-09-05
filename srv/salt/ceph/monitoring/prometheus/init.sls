@@ -41,3 +41,4 @@ start prometheus:
     - restart: True
     - watch:
       - file: /etc/prometheus/prometheus.yml
+      - file: /etc/prometheus/alerts/*
