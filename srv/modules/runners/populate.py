@@ -57,8 +57,6 @@ try:
     import configparser
 except ImportError:
     import six.moves.configparser as configparser
-# notused
-#from cStringIO import StringIO
 
 
 log = logging.getLogger(__name__)
@@ -1299,7 +1297,7 @@ def engulf_existing_cluster(**kwargs):
     # This little bit of natiness strips whitespace from all the lines, as
     # Python's configparser interprets leading whitespace as a line continuation,
     # whereas ceph itself is happy to have leading whitespace.
-    cp.readfp(StringIO("\n".join([line.strip() for line in ceph_conf.split("\n")])))
+    cp.read_string("\n".join([line.strip() for line in ceph_conf.split("\n")]))
 
     if not cp.has_section("global"):
         return _runtime_error(exception, "ceph.conf is missing [global] section")
