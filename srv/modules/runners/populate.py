@@ -954,7 +954,7 @@ def _get_existing_cluster_networks(addrs, public_networks=[]):
     returns a list of addresses consisting of network prefix followed by the
     cidr prefix (e.g. [ "10.0.0.0/24" ]).  It may return an empty list.
     """
-    self.search = __utils__['deepsea_minions.show']()
+    search = __utils__['deepsea_minions.show']()
 
     local = salt.client.LocalClient()
     # Stores the derived network addresses (in CIDR notation) of all addresses contained in addrs.
