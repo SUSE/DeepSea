@@ -23,6 +23,17 @@ golang-github-prometheus-prometheus:
     - makedirs: True
     - fire_event: True
 
+{% set custom_alerts = salt['pillar.get']('monitoring:custom_alerts', []) %}
+
+{% if custom_alerts is iterable and custom_alerts is not string and custom_alerts != [] %}
+{% for alert_file in custom_alerts %}
+{% set file_name = alert_file.split('/')[-1] %}
+/etc/prometheus/alerts/{{ file_name }}:
+  file.managed:
+    - source: {{ alert_file }}
+{% endfor %}
+{% endif %}
+
 start prometheus:
   service.running:
     - name: prometheus
