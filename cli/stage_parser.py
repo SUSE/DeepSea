@@ -290,8 +290,9 @@ class SLSParser(object):
 
         states_to_render = defaultdict(set)
         for step in [s for s in steps if isinstance(s, SaltState)]:
-            if step.sls:
-                states_to_render[step.target[0]].add(step.sls)
+            logger.debug("will render step: %s", step)
+            for sls in step.sls:
+                states_to_render[step.target[0]].add(sls)
 
         t0 = time.time()
         states_rendering = defaultdict(lambda: defaultdict(
@@ -307,14 +308,18 @@ class SLSParser(object):
                     states_rendering[target][state_name][minion] = state_steps
         t1 = time.time()
         logger.info("parsing stage states sls files took: %ss", t1-t0)
+        logger.debug("states_rendering map = %s", states_rendering)
 
         for step in [s for s in steps if isinstance(s, SaltState)]:
-            for minion, state_steps in states_rendering[step.target[0]][step.sls].items():
-                step.target_expanded.append(minion)
-                for s_step_dict in state_steps:
-                    s_step = cls.parse_step(s_step_dict, minion)
-                    if s_step and (not only_visible_steps or s_step.visible):
-                        step.steps[minion].append(s_step)
+            target = step.target[0]
+            for sls in step.sls:
+                for minion, state_steps in states_rendering[target][sls].items():
+                    if minion not in step.target_expanded:
+                        step.target_expanded.append(minion)
+                    for s_step_dict in state_steps:
+                        s_step = cls.parse_step(s_step_dict, minion)
+                        if s_step and (not only_visible_steps or s_step.visible):
+                            step.steps[minion].append(s_step)
 
         steps = cls._process_states_requisites(stage_name, steps)
         steps = cls._reorder(stage_name, steps)
@@ -448,12 +453,22 @@ class SaltState(SaltStep):
         super(SaltState, self).__init__(step_dict)
         self.target_expanded = []
         self.steps = defaultdict(list)
+        if 'sls' not in self.step_dict:
+            self._sls = []
+            self.sls_str = ""
+        elif not isinstance(self.step_dict['sls'], list):
+            self._sls = [self.step_dict['sls']]
+            self.sls_str = str(self.step_dict['sls'])
+        else:
+            self.sls_str = ",".join(self.step_dict['sls'])
+            self._sls = []
+            for sls in self.step_dict['sls']:
+                if sls not in self._sls:
+                    self._sls.append(sls)
 
     @property
     def sls(self):
-        if 'sls' not in self.step_dict:
-            return None
-        return self.step_dict['sls']
+        return self._sls
 
     @property
     def target(self):
