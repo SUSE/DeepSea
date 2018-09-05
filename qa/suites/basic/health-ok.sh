@@ -46,6 +46,7 @@ function usage {
     echo "    --min-nodes     Minimum number of nodes"
     echo "    --nfs-ganesha   Deploy NFS-Ganesha"
     echo "    --no-update     Use no-update-no-reboot Stage 0 alt default"
+    echo "    --openstack     Pre-create pools for OpenStack functests"
     echo "    --profile       Storage/OSD profile (see below)"
     echo "    --rgw           Deploy RGW"
     echo "    --ssl           Deploy RGW with SSL"
@@ -63,7 +64,7 @@ function usage {
 assert_enhanced_getopt
 
 TEMP=$(getopt -o h \
---long "cli,client-nodes:,help,igw,mds,min-nodes:,nfs-ganesha,no-update,profile:,rgw,ssl" \
+--long "cli,client-nodes:,help,igw,mds,min-nodes:,nfs-ganesha,no-update,openstack,profile:,rgw,ssl" \
 -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -78,6 +79,7 @@ STORAGE_PROFILE="default"
 CUSTOM_STORAGE_PROFILE=""
 MDS=""
 MIN_NODES=1
+OPENSTACK=""
 NFS_GANESHA=""
 NO_UPDATE=""
 RGW=""
@@ -91,6 +93,7 @@ while true ; do
         --min-nodes) shift ; MIN_NODES=$1 ; shift ;;
         --nfs-ganesha) NFS_GANESHA="$1" ; shift ;;
         --no-update) NO_UPDATE="$1" ; shift ;;
+        --openstack) OPENSTACK="$1" ; shift ;;
         --profile) shift ; STORAGE_PROFILE=$1 ; shift ;;
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
