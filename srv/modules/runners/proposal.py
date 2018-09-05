@@ -432,11 +432,11 @@ class ReplaceDiskOn(object):
             log.error("At least one unused disk is needed.")
             return False
         elif num_unused > num_replace:
-            log.error("There are more ({}) unsused disks than disks to replace ({})".format(
+            log.error("There are more ({}) unused disks than disks to replace ({})".format(
             num_unused, num_replace))
             return False
         elif num_unused < num_replace:
-            log.error("There are fewer ({}) unsused disks than disks to replace ({})".format(
+            log.error("There are fewer ({}) unused disks than disks to replace ({})".format(
             num_unused, num_replace))
             return False
 
