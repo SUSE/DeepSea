@@ -6,7 +6,7 @@
     - group: root
     - mode: 644
 
-start tuned:
+start tuned ceph mgr:
   service.running:
     - name: tuned
     - enable: True

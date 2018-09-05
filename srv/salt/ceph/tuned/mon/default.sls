@@ -10,7 +10,7 @@
     - mode: 644
 
 {% if 'mgr' not in roles or 'default-off' not in mgr_off %}
-start tuned:
+start tuned ceph mon:
   service.running:
     - name: tuned
     - enable: True
