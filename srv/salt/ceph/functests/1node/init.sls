@@ -10,3 +10,4 @@ include:
   - .remove
   - .grafana
   - .prometheus
+  - .openstack
