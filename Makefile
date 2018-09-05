@@ -946,7 +946,7 @@ install: pyc install-deps copy-files
 	# deepsea-cli
 	$(PYTHON) setup.py install --root=$(DESTDIR)/
 
-rpm: tarball test
+rpm: tarball
 	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
 	rpmbuild -bb deepsea.spec
 
