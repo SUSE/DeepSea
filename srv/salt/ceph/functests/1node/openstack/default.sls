@@ -1,10 +1,5 @@
 {% set master = salt['pillar.get']('master_minion') %}
 
-clean environment at start:
-  salt.state:
-    - tgt: {{ master }}
-    - sls: ceph.tests.openstack.clean
-
 apply ceph.openstack:
   salt.state:
     - tgt: {{ master }}
