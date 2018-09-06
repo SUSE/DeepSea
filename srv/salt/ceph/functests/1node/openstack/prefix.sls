@@ -1,12 +1,5 @@
 {% set master = salt['pillar.get']('master_minion') %}
 
-clean environment at start (prefix=smoketest):
-  salt.state:
-    - tgt: {{ master }}
-    - sls: ceph.tests.openstack.clean
-    - pillar:
-        "openstack_prefix": "smoketest"
-
 apply ceph.openstack (prefix=smoketest):
   salt.state:
     - tgt: {{ master }}
