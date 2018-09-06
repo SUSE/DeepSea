@@ -167,6 +167,7 @@ function deploy_ceph {
     ceph_conf_small_cluster
     ceph_conf_mon_allow_pool_delete
     ceph_conf_dashboard
+    test "$RBD" && ceph_conf_upstream_rbd_default_features
     run_stage_3 "$CLI"
     pre_create_pools
     ceph_cluster_status
