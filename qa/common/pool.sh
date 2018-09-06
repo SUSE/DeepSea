@@ -57,6 +57,7 @@ function pre_create_pools {
     POOLS="write_test"
     test "$MDS" && POOLS+=" cephfs_data cephfs_metadata"
     test "$OPENSTACK" && POOLS+=" smoketest-cloud-backups smoketest-cloud-volumes smoketest-cloud-images smoketest-cloud-vms cloud-backups cloud-volumes cloud-images cloud-vms"
+    test "$RBD" && POOLS+=" rbd"
     create_all_pools_at_once $POOLS
     ceph osd pool application enable write_test deepsea_qa
     sleep 10
