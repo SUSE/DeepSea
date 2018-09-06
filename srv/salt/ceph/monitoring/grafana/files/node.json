@@ -492,7 +492,8 @@
                 "value": "current"
               }
             ],
-            "editable": true,
+            "datasource": "Prometheus",
+            "editable": false,
             "error": false,
             "filterNull": false,
             "fontSize": "100%",
@@ -509,32 +510,44 @@
             "span": 4,
             "styles": [
               {
-                "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                "pattern": "Time",
-                "type": "date"
-              },
-              {
                 "colorMode": null,
                 "colors": [
                   "rgba(245, 54, 54, 0.9)",
                   "rgba(237, 129, 40, 0.89)",
                   "rgba(50, 172, 45, 0.97)"
                 ],
-                "decimals": 0,
-                "pattern": "/.*/",
+                "decimals": 1,
+                "pattern": "Current",
                 "thresholds": [],
                 "type": "number",
-                "unit": "s"
+                "unit": "s",
+                "alias": "Full in"
+              },
+              {
+                "unit": "short",
+                "type": "string",
+                "alias": "Mount point",
+                "decimals": 2,
+                "colors": [
+                  "rgba(245, 54, 54, 0.9)",
+                  "rgba(237, 129, 40, 0.89)",
+                  "rgba(50, 172, 45, 0.97)"
+                ],
+                "colorMode": null,
+                "pattern": "Metric",
+                "dateFormat": "YYYY-MM-DD HH:mm:ss",
+                "thresholds": []
               }
             ],
             "targets": [
               {
-                "expr": "(node_filesystem_size{job='node-exporter',instance='$instance'} - node_filesystem_free{job='node-exporter',instance='$instance'}) / deriv(node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run).*',mountpoint!=''}[3d]) > 0",
+                "expr": "(node_filesystem_free{job='node-exporter',instance='$instance'} - node_filesystem_size{job='node-exporter',instance='$instance'}) / deriv(node_filesystem_free{job='node-exporter',instance='$instance',fstype!='rootfs',mountpoint!~'/(run|var).*',mountpoint!=''}[2d]) > 0",
+                "format": "time_series",
                 "interval": "",
                 "intervalFactor": 2,
                 "legendFormat": "{{mountpoint}}",
                 "refId": "A",
-                "step": 120
+                "step": 20
               }
             ],
             "timeFrom": "1h",
