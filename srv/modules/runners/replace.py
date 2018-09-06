@@ -46,6 +46,7 @@ def osd(*args, **kwargs):
     supported = ["force", "timeout", "delay"]
     passed = ["{}={}".format(k, v) for k, v in kwargs.items() if k in supported]
     log.debug("Converted kwargs: {}".format(passed))
+    context = kwargs.get('remove', 'replace')
 
     # OSDs to remove
     osds = list(str(arg) for arg in args)
@@ -69,7 +70,7 @@ def osd(*args, **kwargs):
                 continue
 
             # Rename minion profile
-            minion_profile(host, osds, grains)
+            minion_profile(host, osds, grains, context)
 
     if "called" in kwargs and kwargs["called"]:
         # Return for remove.osd
@@ -146,10 +147,11 @@ def _find_host(osd_id, host_osds):
     return ""
 
 
-def minion_profile(minion, osds, grains):
+def minion_profile(minion, osds, grains, context):
     """
     Rename a minion profile to indicate that the minion profile needs to be
-    recreated.
+    recreated if the replace context is given
+    Delete the entry in the minion's profile if the remove context is given
 
     Note: Nobody is required to have profile entries in the policy.cfg.  Some
     might be modifying their pillar data directly.  Also, the file will
@@ -164,16 +166,28 @@ def minion_profile(minion, osds, grains):
     if yaml_file in files:
         for filename in files[yaml_file]:
             if os.path.exists(filename):
-                try:
-                    print("Renaming minion {} profile".format(minion))
-                    os.rename(filename, "{}-replace".format(filename))
-                    _insert_replace_flag(
-                        grains, disks, minion, osds, "{}-replace".format(filename)
-                    )
-                # pylint: disable=bare-except
-                except:
-                    log.error("Failed to rename minion {} profile".format(minion))
-                    os.rename("{}-replace".format(filename), filename)
+                if context == 'replace':
+                    try:
+                        print("Renaming minion {} profile".format(minion))
+                        os.rename(filename, "{}-replace".format(filename))
+                        _insert_replace_flag(
+                            grains, disks, minion, osds, "{}-replace".format(filename)
+                        )
+                    # pylint: disable=bare-except
+                    except:
+                        log.error("Failed to rename minion {} profile".format(minion))
+                        os.rename("{}-replace".format(filename), filename)
+                elif context == 'remove':
+                    try:
+                        print("Removing osd entry from {} profile".format(minion))
+                        _remove_osd_entry(grains, disks, minion, osds, filename)
+                    # pylint: disable=bare-except
+                    except:
+                        # pylint: disable=line-too-long
+                        log.error("Failed to remove osd entry from minion {} profile".format(minion))
+                else:
+                    print('Unknown context {}'.format(context))
+                    return False
 
     return ""
 
@@ -186,7 +200,8 @@ def _map_grains_proposal_disk(grains_disk, disks, content):
     1. iterate over cephdisks.list output
     2. check if the disk that is written in the grain matches the current disk
     3. if it matches, look for the disk-path that is used in the proposal
-    4. add that disk-path the the list of paths that will get the replace flag
+    4. add that disk-path the the list of paths
+    5. return list
     """
 
     for disk in disks:
@@ -203,18 +218,39 @@ def _insert_replace_flag(grains, disks, minion, osds, filename):
     with open(filename, "rb") as proposal_file:
         content = yaml.safe_load(proposal_file)
 
-    paths_to_flag = []
-    for osd_id in osds:
-        if str(osd_id) in grains[minion]:
-            osd_partition = grains[minion][str(osd_id)]["partitions"]["osd"]
-            grains_disk = osd_partition.rstrip("0123456789").replace("-part", "")
-            paths_to_flag.append(_map_grains_proposal_disk(grains_disk, disks, content))
+    paths_to_flag = _get_profile_keys(osds, grains, minion, disks, content)
 
     for path in paths_to_flag:
         content["ceph"]["storage"]["osds"][path]["replace"] = True
 
     with open(filename, "w") as proposal_file:
         yaml.dump(content, proposal_file, default_flow_style=False)
+
+
+def _remove_osd_entry(grains, disks, minion, osds, filename):
+    """ Delete osd entry in proposal for all osds that are passed in """
+
+    with open(filename, "rb") as proposal_file:
+        content = yaml.safe_load(proposal_file)
+
+    paths_to_remove = _get_profile_keys(osds, grains, minion, disks, content)
+
+    for path in paths_to_remove:
+        del content["ceph"]["storage"]["osds"][path]
+
+    with open(filename, "w") as proposal_file:
+        yaml.dump(content, proposal_file, default_flow_style=False)
+
+
+def _get_profile_keys(osds, grains, minion, disks, content):
+    """ Extract keys that match a key in the profile """
+    profile_keys = []
+    for osd_id in osds:
+        if str(osd_id) in grains[minion]:
+            osd_partition = grains[minion][str(osd_id)]["partitions"]["osd"]
+            grains_disk = osd_partition.rstrip("0123456789").replace("-part", "")
+            profile_keys.append(_map_grains_proposal_disk(grains_disk, disks, content))
+    return profile_keys
 
 
 __func_alias__ = {"help_": "help"}
