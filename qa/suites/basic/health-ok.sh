@@ -36,7 +36,7 @@ function usage {
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X]"
     echo "  [--mds] [--min-nodes=X] [--nfs-ganesha] [--no-update]"
-    echo "  [--profile=X] [--rgw] [--ssl]"
+    echo "  [--profile=X] [--rbd] [--rgw] [--ssl]"
     echo
     echo "Options:"
     echo "    --cli           Use DeepSea CLI"
@@ -48,6 +48,7 @@ function usage {
     echo "    --no-update     Use no-update-no-reboot Stage 0 alt default"
     echo "    --openstack     Pre-create pools for OpenStack functests"
     echo "    --profile       Storage/OSD profile (see below)"
+    echo "    --rbd           Modify ceph.conf for rbd integration testing"
     echo "    --rgw           Deploy RGW"
     echo "    --ssl           Deploy RGW with SSL"
     echo "    --tuned=on/off  Deploy tuned in Stage 3 (default: off)"
@@ -65,7 +66,7 @@ function usage {
 assert_enhanced_getopt
 
 TEMP=$(getopt -o h \
---long "cli,client-nodes:,help,igw,mds,min-nodes:,nfs-ganesha,no-update,openstack,profile:,rgw,ssl,tuned:" \
+--long "cli,client-nodes:,help,igw,mds,min-nodes:,nfs-ganesha,no-update,openstack,profile:,rbd,rgw,ssl,tuned:" \
 -n 'health-ok.sh' -- "$@")
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -83,6 +84,7 @@ MIN_NODES=1
 OPENSTACK=""
 NFS_GANESHA=""
 NO_UPDATE=""
+RBD=""
 RGW=""
 SSL=""
 TUNED="off"
@@ -97,6 +99,7 @@ while true ; do
         --no-update) NO_UPDATE="$1" ; shift ;;
         --openstack) OPENSTACK="$1" ; shift ;;
         --profile) shift ; STORAGE_PROFILE=$1 ; shift ;;
+        --rbd) RBD="$1" ; shift ;;
         --rgw) RGW="$1" ; shift ;;
         --ssl) SSL="$1" ; shift ;;
         --tuned) shift ; TUNED=$1 ; shift ;;
@@ -125,6 +128,7 @@ test -n "$MDS" && echo "- MDS"
 test -n "$NFS_GANESHA" && echo "- NFS-Ganesha"
 test -n "$OPENSTACK" && echo "- OpenStack test pools will be pre-created"
 echo "- PROFILE ->$STORAGE_PROFILE<-"
+test -n "$RBD" && echo "- RBD"
 test -n "$RGW" && echo "- RGW"
 test -n "$SSL" && echo "- SSL"
 echo -n "- TUNED: "
