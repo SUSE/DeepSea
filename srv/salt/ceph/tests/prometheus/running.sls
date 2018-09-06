@@ -1,0 +1,2 @@
+prometheus:
+  service.running: []

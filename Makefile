@@ -46,6 +46,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -m 644 srv/salt/ceph/tests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/tests/keyrings
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/prometheus
+	install -m 644 srv/salt/ceph/tests/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/tests/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent/timeout
 	install -m 644 srv/salt/ceph/tests/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/tests/quiescent
@@ -105,6 +107,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
 	install -m 644 srv/salt/ceph/functests/1node/openstack/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/prometheus
+	install -m 644 srv/salt/ceph/functests/1node/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -m 644 srv/salt/ceph/functests/1node/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
@@ -366,6 +370,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/monitoring/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
 	install -m 644 srv/salt/ceph/monitoring/prometheus/files/*.j2 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
+	install -m 644 srv/salt/ceph/monitoring/prometheus/files/*.yml $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters
 	install -m 644 srv/salt/ceph/monitoring/prometheus/exporters/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/exporters/files
