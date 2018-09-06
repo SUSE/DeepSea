@@ -34,9 +34,9 @@ function usage {
     echo "for use in SUSE Enterprise Storage testing"
     echo
     echo "Usage:"
-    echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X] [--igw]"
-    echo "  [--mds] [--min-nodes=X] [--openattic] [--nfs-ganesha]"
-    echo "  [--no-update] [--profile=X] [--rbd] [--rgw] [--ssl]"
+    echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X] [--igw] [--mds]"
+    echo "  [--min-nodes=X] [--openattic] [--openstack] [--nfs-ganesha]"
+    echo "  [--no-update] [--profile=X] [--rbd] [--rgw] [--ssl] [--tuned=X]"
     echo
     echo "Options:"
     echo "    --cli           Use DeepSea CLI"
