@@ -36,7 +36,8 @@ function usage {
     echo "Usage:"
     echo "  $SCRIPTNAME [-h,--help] [--cli] [--client-nodes=X]"
     echo "  [--mds] [--min-nodes=X] [--nfs-ganesha] [--no-update]"
-    echo "  [--profile=X] [--rbd] [--rgw] [--ssl]"
+    echo "  [--openstack] [--profile=X] [--rbd] [--rgw] [--ssl]"
+    echo "  [--tuned=X]"
     echo
     echo "Options:"
     echo "    --cli           Use DeepSea CLI"
