@@ -41,7 +41,10 @@ class Stage(object):
                 step (stage_parse.SaltStep): the parsed step
             """
             self.step = step
-            self.name = name
+            if isinstance(name, list):
+                self.name = ",".join(name)
+            else:
+                self.name = name
             self.order = order
             self.jid = None
             self.finished = False
@@ -134,7 +137,7 @@ class Stage(object):
             if isinstance(step, SaltRunner):
                 wrapper = Stage.Step(step, step.function, len(self._steps)+1)
             elif isinstance(step, SaltState):
-                wrapper = Stage.TargetedStep(step, step.sls, len(self._steps)+1)
+                wrapper = Stage.TargetedStep(step, step.sls_str, len(self._steps)+1)
                 for s_steps in step.steps.values():
                     for s_step in s_steps:
                         wrapper.sub_steps.append(
