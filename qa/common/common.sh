@@ -166,24 +166,6 @@ EOF
 
 
 #
-# functions that create pools
-#
-
-function pgs_per_pool {
-    local TOTALPOOLS=$1
-    test -n "$TOTALPOOLS"
-    local TOTALOSDS=$(json_total_osds)
-    test -n "$TOTALOSDS"
-    # given the total number of pools and OSDs,
-    # assume triple replication and equal number of PGs per pool
-    # and aim for 100 PGs per OSD
-    let "TOTALPGS = $TOTALOSDS * 100"
-    let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
-    echo $PGSPEROSD
-}
-
-
-#
 # functions that print status information
 #
 

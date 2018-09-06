@@ -4,6 +4,20 @@
 # separate file to house the pool creation functions
 #
 
+
+function pgs_per_pool {
+    local TOTALPOOLS=$1
+    test -n "$TOTALPOOLS"
+    local TOTALOSDS=$(json_total_osds)
+    test -n "$TOTALOSDS"
+    # given the total number of pools and OSDs,
+    # assume triple replication and equal number of PGs per pool
+    # and aim for 100 PGs per OSD
+    let "TOTALPGS = $TOTALOSDS * 100"
+    let "PGSPEROSD = $TOTALPGS / $TOTALPOOLS / 3"
+    echo $PGSPEROSD
+}
+
 function create_pool_incrementally {
     # Special-purpose function for creating pools incrementally. For example,
     # if your test case needs 2 pools "foo" and "bar", but you cannot create
