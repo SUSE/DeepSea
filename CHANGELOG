@@ -1,4 +1,30 @@
 -------------------------------------------------------------------
+Fri Sep 07 12:17:03 UTC 2018 - jschmid@suse.com
+
+- Version 0.8.6
+- fix: use safe_dump to assure unicode handling in the proposal runner (bsc#1100136)
+- fix: Adapt salt job cache permissions
+- fix: add jq runtime dependency to spec file
+- fix: passed arg was not changed in sls file after changed in function header
+- fix: Use safe_dump rather than dump (bsc#1100136)
+- fix: Install smartmontools while stage.0 (bsc#1104779)
+- fix: Fix wait.py duplications and wrong class invocation (bsc#1104801)
+- fix: Refactor device detection, allow override (bsc#1097914)
+- fix: Do not create untracked partition
+- fix: populate: don't create role-mon yml line during engulf (bsc#1104781) 
+- fix: Use fqdn for default minion name in template (bsc#1102455)
+- fix: cephinspector: use cephdisks.device in engulf (bsc#1082994)
+- fix: NFS-Ganesha + Cephfs: Add cache config options (bsc#1103418)
+- fix: Reloading igw with separate state (bsc#1106084)
+- fix: fixup man deepsea-minions
+- fix: Stage 5: delete CRUSH host buckets orphaned when storage node is deleted 
+- feature: Reuse OSD ID in migrations, support replace.osds
+- feature: Add tuned profile
+- feature: Added alerting and smoketests for it
+- feature: Adding OpenStack Integration Runner
+- feature: OSD Migration for changed disk slots
+
+-------------------------------------------------------------------
 Tue Jun 12 13:09:11 UTC 2018 - ejackson@suse.com
 
 - Version 0.8.5
