@@ -249,7 +249,10 @@ class SLSParser(object):
         if step_dict['state'] == 'salt' and step_dict['fun'] == 'state':
             return SaltState(step_dict)
         if step_dict['state'] == 'salt' and step_dict['fun'] == 'runner':
-            return SaltRunner(step_dict)
+            if target:
+                return SaltStateFunction(step_dict, target)
+            else:
+                return SaltRunner(step_dict)
         if step_dict['state'] == 'salt' and step_dict['fun'] == 'function':
             return SaltExecutionFunction(step_dict, step_dict['tgt'])
         if step_dict['state'] == 'module' and step_dict['fun'] == 'run':
