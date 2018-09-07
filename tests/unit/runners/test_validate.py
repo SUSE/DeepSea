@@ -244,6 +244,30 @@ class TestValidation():
         assert 'ceph_version' not in validator.errors
 
     @patch('salt.client.LocalClient')
+    def test_rgw_succeeds(self, mock_localclient):
+        fake_data = {'node1': {'roles': 'rgw'}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+
+        validator.rgw()
+        assert 'rgw' not in validator.errors
+
+    @patch('salt.client.LocalClient')
+    def test_rgw_fails(self, mock_localclient):
+        fake_data = {'node1': {'roles': 'rgw-ssl',
+                               'rgw_configurations': 'rgw-ssl',
+                               'rgw_init': 'default-ssl'}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+
+        validator.rgw()
+        assert 'rgw' in validator.errors
+
+    @patch('salt.client.LocalClient')
     def test_check_installed_is_older(self, mock_localclient):
         fake_data = {'admin.ceph': {'ceph-common': {'version': '10.1.1'}},
                      'data.ceph': {'ceph-common': {'version': '13.0.1'}}}

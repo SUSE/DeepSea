@@ -434,6 +434,21 @@ class Validate(Preparation):
             return True
         return False
 
+    def rgw(self):
+        """
+        Prevent a name collision when the admin wishes to push certificates
+        using default-ssl.sls and custom configurations.
+        """
+        for _, data in self.data.items():
+            if 'roles' in data:
+                if ('rgw_configurations' in data and
+                    "rgw-ssl" in data['rgw_configurations']):
+                    if "rgw_init" in data and data['rgw_init'] == "default-ssl":
+                        msg = "Please rename the custom rgw role from rgw-ssl to another name"
+                        self.errors['rgw'] = msg
+                        return
+        self.passed['rgw'] = "valid"
+
     def ganesha(self):
         """
         Nodes may only be assigned one ganesha role.  Ganesha depends on
@@ -1086,6 +1101,7 @@ def pillar(cluster=None, printer=None, **kwargs):
     valid.monitors()
     valid.mgrs()
     valid.storage()
+    valid.rgw()
     valid.ganesha()
     valid.master_role()
     valid.osd_creation()
