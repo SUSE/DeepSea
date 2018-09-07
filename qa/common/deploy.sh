@@ -136,6 +136,13 @@ function initialization_sequence {
     set -x
 }
 
+function salt_api_test {
+    echo "Salt API test: BEGIN"
+    systemctl --no-pager --full status salt-api.service
+    curl http://$(hostname):8000/ | python3 -m json.tool
+    echo "Salt API test: END"
+}
+
 function deploy_ceph {
     initialization_sequence
     if _ceph_cluster_running ; then
