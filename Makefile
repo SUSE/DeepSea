@@ -867,8 +867,8 @@ tarball:
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in > $(TEMPDIR)/deepsea-$(VERSION)/setup.py
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec.in > $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
-	mkdir -p ~/rpmbuild/SOURCES
-	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
+	mkdir -p /usr/src/packages/SOURCES
+	tar -cjf /usr/src/packages/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
 	rm -r $(TEMPDIR)
 
 test: setup.py
