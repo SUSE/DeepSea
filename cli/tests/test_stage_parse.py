@@ -389,3 +389,69 @@ error state:
             self.assertEqual(s_steps[1].function, "cmd.run")
             self.assertEqual(s_steps[1].pretty_string(),
                              "cmd.run(ls -l /srv)")
+
+    def test_parse_stage_single_state_with_runner_not_visible(self):
+        self.write_state_file("test.test-orch103", {
+            'test state': {
+                'salt.state': [{
+                    'sls': 'test.test-state103',
+                    'tgt': '*'
+                }]
+            }
+        })
+
+        self.write_state_file("test.test-state103", {
+            'state {{ grains["id"] }}': {
+                'salt.runner': [{
+                    'name': 'jobs.active'
+                }]
+            }
+        })
+
+        steps, out = SLSParser.parse_stage("test.test-orch103", False, True)
+
+        self.assertEqual(out, "")
+        self.assertEqual(len(steps), 1)
+
+        self.assertIsInstance(steps[0], SaltState)
+        self.assertEqual(len(steps[0].steps), 0)
+        self.assertEqual(steps[0].sls, ["test.test-state103"])
+        self.assertEqual(steps[0].sls_str, "test.test-state103")
+        self.assertEqual(set(steps[0].target), set(self.minions()))
+
+    def test_parse_stage_single_state_with_runner(self):
+        self.write_state_file("test.test-orch103", {
+            'test state': {
+                'salt.state': [{
+                    'sls': 'test.test-state103',
+                    'tgt': '*'
+                }]
+            }
+        })
+
+        self.write_state_file("test.test-state103", {
+            'state {{ grains["id"] }}': {
+                'salt.runner': [{
+                    'name': 'jobs.active'
+                }]
+            }
+        })
+
+        steps, out = SLSParser.parse_stage("test.test-orch103", False, False)
+
+        self.assertEqual(out, "")
+        self.assertEqual(len(steps), 1)
+
+        self.assertIsInstance(steps[0], SaltState)
+        self.assertEqual(len(steps[0].steps), len(self.minions()))
+        self.assertEqual(steps[0].sls, ["test.test-state103"])
+        self.assertEqual(steps[0].sls_str, "test.test-state103")
+        self.assertEqual(set(steps[0].target), set(self.minions()))
+        for minion, s_steps in steps[0].steps.items():
+            self.assertIn(minion, self.minions())
+            self.assertEqual(len(s_steps), 1)
+            self.assertIsInstance(s_steps[0], SaltStateFunction)
+            self.assertEqual(s_steps[0].desc, "state {}".format(minion))
+            self.assertEqual(s_steps[0].function, "salt.runner")
+            self.assertEqual(s_steps[0].pretty_string(),
+                             "salt.runner(jobs.active)")
