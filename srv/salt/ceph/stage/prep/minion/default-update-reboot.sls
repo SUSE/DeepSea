@@ -7,6 +7,7 @@ repo:
 metapackage minions:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt_type: compound
     - sls: ceph.metapackage
 
 common packages:
