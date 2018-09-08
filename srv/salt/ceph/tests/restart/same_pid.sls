@@ -1,7 +1,7 @@
 
-Check pid:
+Check pid {{ service }}:
   cmd.run:
-    - name: "[ `pgrep ceph-{{ service }}` ==  `cat /tmp/restart.pid` ]"
+    - name: "test \"$(pgrep ceph-{{ service }})\" = \"$(cat /tmp/restart.pid)\""
     - failhard: True
 
 /tmp/restart.pid:
