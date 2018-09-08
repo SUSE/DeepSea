@@ -155,6 +155,7 @@ test "$STORAGE_NODES" = "$(number_of_hosts_in_ceph_osd_tree)"
 salt -I roles:storage osd.report 2>/dev/null
 
 # test phase
+REPEAT_STAGE_0=""
 ceph_log_grep_enoent_eaccess
 test_systemd_ceph_osd_target_wants
 rados_write_test
@@ -170,8 +171,7 @@ if [ -n "$IGW" -a "$CLIENT_NODES" -ge 1 ] ; then
     #iscsi_kludge # see bsc#1049669
     igw_info
     iscsi_mount_and_sanity_test
-    # exercise ceph.restart orchestration
-    run_stage_0 "$CLI"
+    REPEAT_STAGE_0="yes, please"
 fi
 if [ "$NFS_GANESHA" ] ; then
     for v in "" "3" "4" ; do
@@ -198,9 +198,9 @@ if [ "$NFS_GANESHA" ] ; then
         nfs_ganesha_umount
         sleep 10
     done
-    # exercise ceph.restart orchestration
-    run_stage_0 "$CLI"
+    REPEAT_STAGE_0="yes, please"
 fi
+test "$REPEAT_STAGE_0" && run_stage_0 "$CLI" # exercise ceph.restart orchestration
 
 echo "YYYY"
 echo "health-ok test result: PASS"
