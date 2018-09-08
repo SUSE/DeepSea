@@ -1,9 +1,9 @@
 
-Changed pid:
+Changed pid of ceph-{{ service }}:
   cmd.run:
-    - name: "[ `pgrep ceph-{{ service }}` !=  `cat /tmp/restart.pid` ]"
-    - shell: /bin/bash
+    - name: "test \"$(pgrep ceph-{{ service }})\" != \"$(cat /tmp/restart.pid)\""
     - failhard: True
+    - shell: /bin/bash
 
 /tmp/restart.pid:
   file.absent

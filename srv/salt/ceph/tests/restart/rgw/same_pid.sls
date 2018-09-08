@@ -1,7 +1,7 @@
 
-Check pid:
+Check pid radosgw:
   cmd.run:
-    - name: "[ `pgrep radosgw` ==  `cat /tmp/restart.pid` ]"
+    - name: "test \"$(pgrep radosgw)\" = \"$(cat /tmp/restart.pid)\""
     - failhard: True
 
 /tmp/restart.pid:
