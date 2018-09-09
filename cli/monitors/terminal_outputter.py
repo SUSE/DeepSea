@@ -31,10 +31,10 @@ class SimplePrinter(MonitorListener):
         self.rewrite_runner_step = False
 
     def stage_started(self, stage_name):
-        PP.println("Starting stage: {}".format(stage_name))
+        PP.println("Starting orchestration: {}".format(stage_name))
 
     def stage_parsing_started(self, stage_name):
-        PP.print("Parsing stage {} steps... ".format(stage_name))
+        PP.print("Parsing orchestration {} steps... ".format(stage_name))
 
     def stage_parsing_finished(self, stage, output, exception):
         if exception:
@@ -620,7 +620,7 @@ class StepListPrinter(MonitorListener):
     def stage_started(self, stage_name):
         if self._clear_screen:
             os.system('clear')
-        PP.p_bold("Starting stage: ")
+        PP.p_bold("Starting orchestration: ")
         PP.println(SP.STAGE(stage_name))
 
         self.stage_name = stage_name
@@ -629,7 +629,7 @@ class StepListPrinter(MonitorListener):
         self.total_steps = None
 
     def stage_parsing_started(self, stage_name):
-        PP.print(SP.INFO("Parsing {} steps... ".format(stage_name)))
+        PP.print(SP.INFO("Parsing orchestration {} steps... ".format(stage_name)))
         PP.println(SP.WAITING)
         PP.println()
 
