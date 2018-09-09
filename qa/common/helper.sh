@@ -6,17 +6,28 @@
 
 STAGE_TIMEOUT_DURATION="60m"
 
+function maybe_dump_lrbd_service_status {
+    local stage_num=$1
+    if [ "$stage_num" = "0" -a "$REPEAT_STAGE_0" ] || [ "$stage_num" = "4" ] ; then
+        if [ "$IGW" ] ; then
+            set -x
+            systemctl --no-pager --full status lrbd.service
+            set +x
+        fi
+    fi
+}
+
 function _report_stage_failure {
     STAGE_SUCCEEDED=""
     local stage_num=$1
-    #local stage_log_path=$2
 
     echo "********** Stage $stage_num failed **********"
-    echo "Here comes the systemd log:"
-    #cat $stage_log_path
-    journalctl -r | head -n 1000
+    maybe_dump_lrbd_service_status "$stage_num"
+    set -x
+    journalctl -r | head -n 2000
+    set +x
     echo "WWWW"
-    echo "There goes the systemd log"
+    echo "Finished dumping up to 2000 lines of journalctl"
 }
 
 function _run_stage {
