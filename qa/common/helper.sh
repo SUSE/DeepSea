@@ -9,14 +9,14 @@ STAGE_TIMEOUT_DURATION="60m"
 function _report_stage_failure {
     STAGE_SUCCEEDED=""
     local stage_num=$1
-    #local stage_log_path=$2
+    local stage_status=$2
 
     echo "********** Stage $stage_num failed **********"
-    echo "Here comes the systemd log:"
-    #cat $stage_log_path
-    journalctl -r | head -n 1000
+    test "$stage_status" = "124" && echo "Stage $stage_num timed out after $STAGE_TIMEOUT_DURATION"
+    set -ex
+    journalctl -r | head -n 2000
     echo "WWWW"
-    echo "There goes the systemd log"
+    echo "Finished dumping up to 2000 lines of journalctl"
 }
 
 function _run_stage {
@@ -35,7 +35,6 @@ function _run_stage {
 function _run_stage_cli {
     local stage_num=$1
     local deepsea_cli_output_path="/tmp/deepsea.${stage_num}.log"
-    local deepsea_exit_status=""
 
     set +e
     set -x
@@ -48,24 +47,19 @@ function _run_stage_cli {
         ceph.stage.${stage_num} \
         --simple-output \
         2>&1 | tee $deepsea_cli_output_path
-    local exit_status="${PIPESTATUS[0]}"
+    local stage_status="${PIPESTATUS[0]}"
     set +x
-    echo "deepsea exit status: $exit_status"
+    echo "deepsea exit status: $stage_status"
     echo "WWWW"
-    if [ "$exit_status" = "124" ] ; then
-        echo "Stage $stage_num timed out after $STAGE_TIMEOUT_DURATION"
-        exit 1
-    fi
-    if [ "$exit_status" != "0" ] ; then
-        _report_stage_failure $stage_num
-        set -ex
+    if [ "$stage_status" != "0" ] ; then
+        _report_stage_failure $stage_num $stage_status
         return 0
     fi
     if grep -q -F "failed=0" $deepsea_cli_output_path ; then
         echo "********** Stage $stage_num completed successfully **********"
     else
         echo "ERROR: deepsea stage returned exit status 0, yet one or more steps failed. Bailing out!"
-        _report_stage_failure $stage_num
+        _report_stage_failure $stage_num $stage_status
     fi
     set -ex
 }
@@ -82,16 +76,11 @@ function _run_stage_non_cli {
         state.orch \
         ceph.stage.${stage_num} \
         2>/dev/null | tee $stage_log_path
-    local exit_status="${PIPESTATUS[0]}"
+    local stage_status="${PIPESTATUS[0]}"
     set +x
     echo "WWWW"
-    if [ "$exit_status" = "124" ] ; then
-        echo "Stage $stage_num timed out after $STAGE_TIMEOUT_DURATION"
-        exit 1
-    fi
-    if [ "$exit_status" != "0" ] ; then
-        _report_stage_failure $stage_num
-        set -ex
+    if [ "$stage_status" != "0" ] ; then
+        _report_stage_failure $stage_num $stage_status
         return 0
     fi
     STAGE_FINISHED=$(grep -F 'Total states run' $stage_log_path)
@@ -99,13 +88,13 @@ function _run_stage_non_cli {
         FAILED=$(grep -F 'Failed: ' $stage_log_path | sed 's/.*Failed:\s*//g' | head -1)
         if [ "$FAILED" -gt "0" ]; then
             echo "ERROR: salt-run returned exit status 0, yet one or more steps failed. Bailing out!"
-            _report_stage_failure $stage_num
+            _report_stage_failure $stage_num $stage_status
         else
             echo "********** Stage $stage_num completed successfully **********"
         fi
     else
         echo "ERROR: salt-run returned exit status 0, yet Stage did not complete. Bailing out!"
-        _report_stage_failure $stage_num
+        _report_stage_failure $stage_num $stage_status
     fi
     set -ex
 }
@@ -153,13 +142,13 @@ function _run_test_script_on_node {
     salt-cp $TESTNODE $TESTSCRIPT $TESTSCRIPT 2>/dev/null
     local LOGFILE=/tmp/test_script.log
     local STDERR_LOGFILE=/tmp/test_script_stderr.log
-    local exit_status=
+    local stage_status=
     if [ -z "$ASUSER" -o "x$ASUSER" = "xroot" ] ; then
       salt $TESTNODE cmd.run "sh $TESTSCRIPT" 2>$STDERR_LOGFILE | tee $LOGFILE
-      exit_status="${PIPESTATUS[0]}"
+      stage_status="${PIPESTATUS[0]}"
     else
       salt $TESTNODE cmd.run "sudo su $ASUSER -c \"bash $TESTSCRIPT\"" 2>$STDERR_LOGFILE | tee $LOGFILE
-      exit_status="${PIPESTATUS[0]}"
+      stage_status="${PIPESTATUS[0]}"
     fi
     local RESULT=$(grep -o -P '(?<=Result: )(OK)$' $LOGFILE) # since the script
                                   # is run by salt, the output appears indented
