@@ -136,6 +136,18 @@ function initialization_sequence {
     set -x
 }
 
+function salt_api_test {
+    local tmpfile=$(mktemp)
+    echo "Salt API test: BEGIN"
+    systemctl --no-pager --full status salt-api.service
+    curl http://$(hostname):8000/ | tee $tmpfile # show curl output in log
+    test -s $tmpfile
+    jq . $tmpfile >/dev/null
+    echo -en "\n" # this is just for log readability
+    rm $tmpfile
+    echo "Salt API test: END"
+}
+
 function deploy_ceph {
     initialization_sequence
     if _ceph_cluster_running ; then
