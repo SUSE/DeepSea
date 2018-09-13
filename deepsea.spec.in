@@ -418,6 +418,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %{_mandir}/man1/deepsea*.1.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 /srv/modules/modules/*.py*
+%exclude /srv/salt/_modules/functest.py
 /srv/modules/runners/*.py*
 %exclude /srv/modules/runners/smoketests.py
 /srv/modules/utils/*.py*
@@ -758,6 +759,7 @@ integration/regression testing. These scripts are "environment-agnostic" - see
 the README for more information.
 
 %files qa
+/srv/salt/_modules/functest.py
 /srv/salt/ceph/functests
 /srv/salt/ceph/tests
 %changelog

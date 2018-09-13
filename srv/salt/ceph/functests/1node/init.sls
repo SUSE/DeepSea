@@ -8,3 +8,4 @@ include:
   - .restart.rgw
   - .apparmor
   - .openstack
+  - .engulf
