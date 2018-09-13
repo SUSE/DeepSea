@@ -318,15 +318,16 @@ def queues(**kwargs):
     with Lock(fq.settings):
         return "\n".join(fq.dirs())
 
-def enqueue(queue = None, **kwargs):
+def enqueue(*args, **kwargs):
     """
     Add item
     """
-    log.debug("enqueue: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
+    log.debug("enqueue: kwargs = {}".format(_skip_dunder(kwargs)))
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
-        if queue:
-            ret = fq.touch(queue)
+        if args:
+            for arg in args:
+                ret = fq.touch(arg)
         elif 'item' in kwargs:
             ret = fq.touch(kwargs['item'])
         else:
@@ -368,6 +369,14 @@ def ls(**kwargs):
     with Lock(fq.settings):
         return "\n".join(fq.ls())
 
+def array(**kwargs):
+    """
+    """
+    log.debug("array: kwargs = {}".format(_skip_dunder(kwargs)))
+    fq = FileQueue(**kwargs)
+    with Lock(fq.settings):
+        return fq.ls()
+
 def items(**kwargs):
     """
     List items in time order
@@ -401,16 +410,20 @@ def check(queue = None, **kwargs):
             help()
             return
 
-def remove(queue = None, **kwargs):
+def remove(*args, **kwargs):
     """
     Remove specific item
     """
-    log.debug("remove: queue = {}, kwargs = {}".format(queue, _skip_dunder(kwargs)))
+    log.debug("remove: kwargs = {}".format(_skip_dunder(kwargs)))
 
     fq = FileQueue(**kwargs)
     with Lock(fq.settings):
-        if queue:
-            return fq.remove(queue)
+        if args:
+            for arg in args:
+                result = fq.remove(arg)
+                if result == False:
+                    return False
+            return True
         elif 'item' in kwargs:
             return fq.remove(kwargs['item'])
         else:
