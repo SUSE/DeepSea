@@ -1021,8 +1021,7 @@ def _replace_cluster_network_with_existing_cluster(osd_addrs, public_networks=[]
     """
     cluster_networks = _get_existing_cluster_networks(osd_addrs, public_networks)
     if not cluster_networks:
-        log.error("Failed to determine cluster's cluster_network.")
-        return { 'ret': False, 'cluster_networks': [] }
+        return { 'ret': True, 'cluster_networks': [] }
     else:
         return { 'ret': _replace_key_in_cluster_yml("cluster_network",
                                                     ", ".join(cluster_networks)),
