@@ -1067,6 +1067,14 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
+
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    master_minion = __salt__['master.minion']()
+
     search = __utils__['deepsea_minions.show']()
     local = salt.client.LocalClient()
     settings = Settings()
@@ -1136,8 +1144,7 @@ def engulf_existing_cluster(**kwargs):
             # We'll talk to this minion later to obtain keyrings
             admin_minion = minion
 
-        is_master = local.cmd(minion, "pillar.get", ["master_minion"],
-                              tgt_type="compound")[minion] == minion
+        is_master = minion == master_minion
 
         if not info["running_services"] and not is_admin and not is_master:
             # No ceph services running, no admin key, not the master_minion,
