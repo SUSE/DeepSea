@@ -1084,6 +1084,8 @@ def engulf_existing_cluster(**kwargs):
     mds_instances = []
     rgw_instances = []
 
+    has_storage_profiles = False
+
     for minion, info in local.cmd(search, "cephinspector.inspect", [], expr_form="compound").items():
 
         if type(info) is not dict:
@@ -1134,6 +1136,8 @@ def engulf_existing_cluster(**kwargs):
             if not ceph_disks:
                 log.error("Failed to get list of Ceph OSD disks.")
                 return [ False ]
+
+            has_storage_profiles = True
 
             for minion, store in ceph_disks.items():
                 minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
@@ -1250,6 +1254,10 @@ def engulf_existing_cluster(**kwargs):
     with open("/srv/pillar/ceph/proposals/policy.cfg", 'w') as policy:
         policy.write("\n".join(policy_cfg) + "\n")
 
+    print("* Wrote /srv/pillar/ceph/proposals/policy.cfg")
+    if has_storage_profiles:
+        print("* Storage profiles are in {}".format(imported_profile_path))
+
     # We've also got a ceph.conf to play with
     cp = configparser.RawConfigParser()
     # This little bit of natiness strips whitespace from all the lines, as
@@ -1283,7 +1291,17 @@ def engulf_existing_cluster(**kwargs):
     with open("/srv/salt/ceph/configuration/files/ceph.conf.import", 'w') as conf:
         conf.write(ceph_conf)
 
+    print("* ceph.conf imported as /srv/salt/ceph/configuration/files/ceph.conf.import")
+
     # ensure the imported config will be used
     _replace_key_in_cluster_yml("configuration_init", "default-import")
+
+    print(("\n"
+           "'configuration_init' is set to 'default-import'.  This means the imported \n"
+           "ceph.conf file will be used as-is.  It is highly recommended you migrate \n"
+           "any necessary settings from this file to individual files in DeepSea's \n"
+           "/srv/salt/ceph/configuration/files/ceph.conf.d directory, then remove \n"
+           "the 'configuration_init' override setting from \n"
+           "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"))
 
     return True
