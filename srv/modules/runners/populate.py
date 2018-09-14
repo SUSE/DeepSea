@@ -1052,7 +1052,7 @@ def engulf_existing_cluster(**kwargs):
     """
     local = salt.client.LocalClient()
     settings = Settings()
-    salt_writer = SaltWriter(**kwargs)
+    salt_writer = SaltWriter(overwrite=True)
     exception = kwargs.get('exception', False)
 
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
