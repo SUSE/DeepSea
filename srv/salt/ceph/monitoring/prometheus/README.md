@@ -53,7 +53,7 @@ the static value of `ses_default` in order to be able to separate default alerts
 from other custom alerts.
 
 ### Custom alerts
-To add custom alerts, either
+To add custom alerts, read the [documentation on alert rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) and then either
 
 * place your yaml file(s) containing the custom alerts in
   `/etc/prometheus/alerts` on the Salt master, or
