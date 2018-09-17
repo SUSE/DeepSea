@@ -22,7 +22,7 @@ The alertmanager package by default installs a configuration file under
 configuration, illustrating the concepts.
 If you prefer to have your alertmanager config managed by DeepSea, add the
 following key to your pillar (e.g. to
-`/srv/pillar/ceph/cluster/<your-salt-master-minion-id.sls`):
+`/srv/pillar/ceph/stack/ceph/minions/<your-salt-master-minion-id.sls`):
 ```
 monitoring:
   alertmanager_config:
