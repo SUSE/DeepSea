@@ -81,11 +81,11 @@ def pairs():
     pairs = []
     with open('/proc/mounts') as mounts:
         for line in mounts:
-            partition, path = line.split()[:2]
-            if path in paths:
-                m = re.match(r'^(.+)\d+$', partition)
-                device = m.group(1)
-                if 'nvme' in device:
+            _partition, path = line.split()[:2]
+            if path in _paths:
+                match = re.match(r'^(.+)\d+$', _partition)
+                device = match.group(1)
+                if device.endswith('p'):
                     device = device[:-1]
                 pairs.append([ device, path ])
 
@@ -95,15 +95,15 @@ def part_pairs():
     """
     Return an array of partitions and paths
     """
-    paths = [ pathname for pathname in glob.glob("/var/lib/ceph/osd/*") ]
+    paths = [pathname for pathname in glob.glob("/var/lib/ceph/osd/*")]
     pairs = []
     with open('/proc/mounts') as mounts:
-	for line in mounts:
-	    partition, path = line.split()[:2]
-	    if path in paths:
-		m = re.match(r'^(.+)\d+$', partition)
-		part = m.group(0)
-		pairs.append([ part, path ])
+        for line in mounts:
+            partition, path = line.split()[:2]
+            if path in paths:
+                m = re.match(r'^(.+)\d+$', partition)
+                part = m.group(0)
+                pairs.append([ part, path])
     return pairs
 
 def _filter_devices(devices, **kwargs):
@@ -564,7 +564,10 @@ def restore_weight(id, **kwargs):
     return True
 
 def _find_paths(device):
-    if 'nvme' in device:
+    """
+    Return matching pathnames, special case devices ending with digits
+    """
+    if re.match(r'.*\d$', device):
         pathnames = glob.glob("{}p[0-9]*".format(device))
     else:
         pathnames = glob.glob("{}[0-9]*".format(device))
@@ -1114,11 +1117,11 @@ class OSDCommands(object):
             for partition in partitions:
                 log.debug("checking partition {} on device {}".format(partition, device))
                 # Not confusing at all - use digit for NVMe too
-                if self.is_partition(partition_type, device, partition):
-                    log.debug("found partition {} on device {}".format(partition, device))
-                    if 'nvme' in device and nvme_partition:
-                        partition = "p{}".format(partition)
-                    return partition
+                if self.is_partition(partition_type, device, _partition):
+                    log.debug("found partition {} on device {}".format(_partition, device))
+                    if re.match(r'.*\d$', device) and nvme_partition:
+                        _partition = "p{}".format(_partition)
+                    return _partition
         self.error = "Partition type {} not found on {}".format(partition_type, device)
         log.error(self.error)
         return 0
@@ -1226,7 +1229,7 @@ class OSDCommands(object):
         # fails if the device is already partitioned but the partitionnumber is not 1
         # should never be partitioned..
         if self.is_partitioned(self.osd.device):
-            if 'nvme' in self.osd.device:
+            if re.match(r'.*\d$', self.osd.device):
                 args += "{}p1".format(self.osd.device)
             else:
                 args += "{}1".format(self.osd.device)
@@ -1296,7 +1299,7 @@ class OSDCommands(object):
                 cmd = "/bin/true activated during prepare"
             else:
                 prefix = ''
-                if 'nvme' in self.osd.device:
+                if re.match(r'.*\d$', self.osd.device):
                     prefix = 'p'
                 cmd = "PYTHONWARNINGS=ignore ceph-disk -v activate --mark-init systemd --mount "
                 cmd += "{}{}{}".format(self.osd.device, prefix, self.osd_partition())
@@ -1404,9 +1407,9 @@ def split_partition(partition):
     part = readlink(partition)
     #if os.path.exists(part):
     log.debug("splitting partition {}".format(part))
-    m = re.match("(.+\D)(\d+)", part)
-    disk = m.group(1)
-    if 'nvme' in disk:
+    match = re.match(r"(.+\D)(\d+)", part)
+    disk = match.group(1)
+    if disk.endswith('p'):
         disk = disk[:-1]
         log.debug("Truncating p {}".format(disk))
     return disk, m.group(2)
@@ -2175,7 +2178,7 @@ def _fsck(device, partition):
     on some broken filesystems.  Not good for automation.
     """
     prefix = ''
-    if 'nvme' in device:
+    if re.match(r'.*\d$', device):
         prefix = 'p'
     #cmd = "/sbin/fsck -t xfs -n {}{}{}".format(device, prefix, partition)
     cmd = "/usr/sbin/xfs_admin -u {}{}{}".format(device, prefix, partition)
