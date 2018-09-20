@@ -2,6 +2,7 @@
 DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
+DEEPSEA_DEPS=salt-api
 PYTHON_DEPS=python3-setuptools python3-click python3-tox
 PYTHON=python3
 PIPCMD=""
@@ -932,6 +933,7 @@ copy-files:
 
 install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
+	$(PKG_INSTALL) $(DEEPSEA_DEPS) || true
 	$(PKG_INSTALL) $(PYTHON_DEPS) || true
 	$(PIPCMD) >/dev/null 2>&1 || true
 
