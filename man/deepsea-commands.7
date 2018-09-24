@@ -198,10 +198,10 @@ salt 'igw*' state.apply ceph.igw.sysconfig
 .RE
 salt 'igw*' state.apply ceph.igw
 .PP
-salt 'master_minion state.apply ceph.osd.auth
+salt 'master_minion' state.apply ceph.osd.auth
 .RS
 .RE
-salt 'master_minion state.apply ceph.osd.key
+salt 'master_minion' state.apply ceph.osd.key
 .RS
 .RE
 salt 'storage*' state.apply ceph.osd.keyring
@@ -229,7 +229,7 @@ salt 'storage*' state.apply ceph.packages.common
 .RE
 salt '*' state.apply ceph.packages
 .PP
-salt 'master_minion state.apply ceph.pool
+salt 'master_minion' state.apply ceph.pool
 .PP
 salt 'master_minion' state.apply ceph.rgw.auth
 .RS
@@ -288,31 +288,31 @@ salt '*' state.apply ceph.configuration
 .PP
 .RS
 .RE
-salt 'master_minion state.apply ceph.wait.1hour.until.OK
+salt 'master_minion' state.apply ceph.wait.1hour.until.OK
 .RS
 .RE
-salt 'master_minion state.apply ceph.wait.2hours.until.OK
+salt 'master_minion' state.apply ceph.wait.2hours.until.OK
 .RS
 .RE
-salt 'master_minion state.apply ceph.wait.4hours.until.OK
+salt 'master_minion' state.apply ceph.wait.4hours.until.OK
 .RS
 .RE
-salt 'master_minion state.apply ceph.wait.until.OK
+salt 'master_minion' state.apply ceph.wait.until.OK
 .RS
 .RE
-salt 'master_minion state.apply ceph.wait
+salt 'master_minion' state.apply ceph.wait
 .PP
 .RS
 .RE
-salt 'master_minion state.apply ceph.admin.key
+salt 'master_minion' state.apply ceph.admin.key
 .RS
 .RE
 salt '*' state.apply ceph.admin
 .PP
-salt 'master_minion state.apply ceph.ganesha.auth
+salt 'master_minion' state.apply ceph.ganesha.auth
 .RS
 .RE
-salt 'master_minion state.apply ceph.ganesha.config
+salt 'master_minion' state.apply ceph.ganesha.config
 .RS
 .RE
 salt 'ganesha*' state.apply ceph.ganesha.configure
@@ -321,7 +321,7 @@ salt 'ganesha*' state.apply ceph.ganesha.configure
 salt 'ganesha*' state.apply ceph.ganesha.install
 .RS
 .RE
-salt 'master_minion state.apply ceph.ganesha.key
+salt 'master_minion' state.apply ceph.ganesha.key
 .RS
 .RE
 salt 'ganesha*' state.apply ceph.ganesha.keyring
@@ -341,12 +341,12 @@ salt 'ganesha*' state.apply ceph.ganesha.service
 .RE
 salt 'ganesha*' state.apply ceph.ganesha
 .PP
-salt 'master_minion state.apply ceph.maintenance.noout
+salt 'master_minion' state.apply ceph.maintenance.noout
 .PP
-salt 'master_minion state.apply ceph.mds.auth
+salt 'master_minion' state.apply ceph.mds.auth
 .RS
 .RE
-salt 'master_minion state.apply ceph.mds.key
+salt 'master_minion' state.apply ceph.mds.key
 .RS
 .RE
 salt 'mds*' state.apply ceph.mds.keyring
@@ -368,10 +368,10 @@ salt 'mds*' state.apply ceph.mds
 .PP
 .RS
 .RE
-salt 'master_minion state.apply ceph.mgr.auth
+salt 'master_minion' state.apply ceph.mgr.auth
 .RS
 .RE
-salt 'master_minion state.apply ceph.mgr.key
+salt 'master_minion' state.apply ceph.mgr.key
 .RS
 .RE
 salt 'mgr*' state.apply ceph.mgr.keyring
@@ -406,17 +406,17 @@ salt 'master_minion' state.apply ceph.monitoring
 .PP
 .RS
 .RE
-salt 'master_minion state.apply ceph.noout.set
+salt 'master_minion' state.apply ceph.noout.set
 .RS
 .RE
-salt 'master_minion state.apply ceph.noout.unset
+salt 'master_minion' state.apply ceph.noout.unset
 .PP
 .RS
 .RE
-salt 'master_minion state.apply ceph.openattic.auth
+salt 'master_minion' state.apply ceph.openattic.auth
 .RS
 .RE
-salt 'master_minion state.apply ceph.openattic.key
+salt 'master_minion' state.apply ceph.openattic.key
 .RS
 .RE
 salt 'openattic*' state.apply ceph.openattic.keyring
@@ -446,28 +446,28 @@ salt '*' state.apply ceph.refresh
 .PP
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.ganesha
+salt 'master_minion' state.apply ceph.remove.ganesha
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.igw.auth
+salt 'master_minion' state.apply ceph.remove.igw.auth
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.mds
+salt 'master_minion' state.apply ceph.remove.mds
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.mon
+salt 'master_minion' state.apply ceph.remove.mon
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.openattic
+salt 'master_minion' state.apply ceph.remove.openattic
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.rgw
+salt 'master_minion' state.apply ceph.remove.rgw
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.storage.drain
+salt 'master_minion' state.apply ceph.remove.storage.drain
 .RS
 .RE
-salt 'master_minion state.apply ceph.remove.storage
+salt 'master_minion' state.apply ceph.remove.storage
 .PP
 .RS
 .RE
@@ -549,9 +549,9 @@ salt '*' state.apply ceph.rescind.storage
 .RE
 salt '*' state.apply ceph.rescind
 .PP
-salt 'master_minion state.apply ceph.reset
+salt 'master_minion' state.apply ceph.reset
 .PP
-salt 'master_minion state.apply ceph.salt-api
+salt 'master_minion' state.apply ceph.salt-api
 .PP
 salt '*' state.apply ceph.sync
 .PP
