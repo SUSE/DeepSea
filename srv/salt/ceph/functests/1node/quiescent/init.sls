@@ -6,7 +6,7 @@
 
 PGs greater than zero:
   salt.state:
-    - tgt: {{ salt['master.minion']() }}
+    - tgt: {{ salt['pillar.get']('master_minion') }}
     - tgt_type: compound
     - sls: ceph.tests.quiescent.check_pgs
     - failhard: True
