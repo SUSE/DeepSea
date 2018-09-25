@@ -149,25 +149,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/openstack/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -m 644 srv/salt/ceph/functests/1node/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/restart
-	install -m 644 srv/salt/ceph/functests/1node/restart/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/restart
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
-	install -m 644 srv/salt/ceph/functests/1node/tuned/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
-	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
-	# functests/1node
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node
-	install -m 644 srv/salt/ceph/functests/1node/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
-	install -m 644 srv/salt/ceph/functests/1node/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
-	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/macros
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/macros/os_switch
-	install -m 644 srv/salt/ceph/functests/1node/macros/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/macros/os_switch
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
-	install -m 644 srv/salt/ceph/functests/1node/openstack/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
-	install -m 644 srv/salt/ceph/functests/1node/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore2
