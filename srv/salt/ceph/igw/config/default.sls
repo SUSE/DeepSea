@@ -16,7 +16,7 @@ demo pool enable application:
 
 demo image:
   cmd.run:
-    - name: "rbd -p iscsi-images create demo --size=1024"
+    - name: "rbd -p iscsi-images create demo --size=1024 --image-feature=layering"
     - unless: "rbd -p iscsi-images ls | grep -q demo$"
     - fire_event: True
 
