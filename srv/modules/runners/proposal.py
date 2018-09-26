@@ -92,33 +92,31 @@ List of recognized parameters and their defaults:
                     gibibytes (G), tebibytes (T), or pebibytes (P).
 '''
 
-target = deepsea_minions.DeepseaMinions()
-
-std_args = {
-    'leftovers': False,
-    'standalone': False,
-    'nvme-ssd-spinner': False,
-    'nvme-ssd': False,
-    'nvme-spinner': False,
-    'ssd-spinner': False,
-    'ratio': 5,
-    'db-ratio': 5,
-    'target': target.deepsea_minions,
-    'data': 0,
-    'journal': 0,
-    'wal': 0,
-    'name': 'default',
-    'format': 'bluestore',
-    'encryption': '',
-    'journal-size': '5g',
-    'db-size': '500m',
-    'wal-size': '500m',
-}
-
 base_dir = '/srv/pillar/ceph/proposals'
 
 
 def _parse_args(kwargs):
+    target = deepsea_minions.DeepseaMinions()
+    std_args = {
+        'leftovers': False,
+        'standalone': False,
+        'nvme-ssd-spinner': False,
+        'nvme-ssd': False,
+        'nvme-spinner': False,
+        'ssd-spinner': False,
+        'ratio': 5,
+        'db-ratio': 5,
+        'target': target.deepsea_minions,
+        'data': 0,
+        'journal': 0,
+        'wal': 0,
+        'name': 'default',
+        'format': 'bluestore',
+        'encryption': '',
+        'journal-size': '5g',
+        'db-size': '500m',
+        'wal-size': '500m',
+    }
     args = std_args.copy()
     args.update(kwargs)
     if 'kwargs' in kwargs:
