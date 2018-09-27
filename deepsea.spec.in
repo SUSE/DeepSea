@@ -62,6 +62,15 @@ make DESTDIR=%{buildroot} DOCDIR=%{_docdir} copy-files VERSION=%{version}
 %__gzip %{buildroot}/%{_mandir}/man?/deepsea*
 python setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
+# RPM can't cope with directories becoming symlinks, so remove the
+# old directory that is now a symlink, if it exists (for more details
+# see https://bugzilla.redhat.com/show_bug.cgi?id=447156)
+%pretrans -p <lua>
+st = posix.stat("/srv/salt/ceph/remove/migrated")
+if st and st.type == "directory" then
+   os.execute("rm -rf /srv/salt/ceph/remove/migrated")
+end
+
 %post
 if [ $1 -eq 1 ] ; then
   # Initialize to most likely value
