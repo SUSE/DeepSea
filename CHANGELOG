@@ -3,6 +3,9 @@ Fri Sep 27 16:16:45 UTC 2018 - jschmid@suse.com
 
 - fix: Remove error condition, empty cluster network is valid (bsc#1107826)
 - build: Add %pretrans script to deal with dir->symlink change
+- fix: Only restart with a running cluster
+- fix: problem in stage.0 with error message no minion found in metapackage
+- fix: stage 0: update salt mines correctly without restarting minion 
 
 -------------------------------------------------------------------
 Fri Sep 07 12:17:03 UTC 2018 - jschmid@suse.com
