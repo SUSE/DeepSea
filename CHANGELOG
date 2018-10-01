@@ -1,4 +1,134 @@
 -------------------------------------------------------------------
+Fri Oct 1 13:13:14 UTC 2018 - jschmid@suse.com
+
+ build: Add %pretrans script to deal with dir->symlink change
+ qa: drop health-ok.sh and associated scripting
+ Specify only support image feature: layering
+ Install salt-api requirement prior to building the package. Trying to fix #1285
+ Remove error condition, empty cluster network is valid
+ man: missing closing quotes
+ build: Remove duplicate functests `install` lines
+ qa/deploy: fix error-reporting issues
+ functests: fix pid comparisons when process not running
+ functests: stop restart test if no pid
+ cli: refer to orchestration instead of stage
+ qa/common: properly report stage timeout when running via cli
+ qa/health-ok: repeat Stage 0 only once
+ qa/deploy: use jq instead of python in salt_api_test
+ qa/common: move salt_api_test to deploy.sh where it is used
+ cli: fix parsing of salt.runner when used inside state files
+ remove/replace interference fixes
+ man: add line break between separate commands.
+ fixed problem in stage.0 with error message no  minion found in metapackage
+ cli: support list of sls ids in salt.state orch function
+ qa/health-ok: add missing options to usage message
+ qa/deploy: create rbd pool if --rbd option passed
+ qa: move pgs_per_pool function to common/pool.sh
+ qa/health-ok: implement --rbd option
+ qa/pool: create non-prefixed openstack pools
+ build/ops: make "make rpm" work in a py3-only environment
+ qa: increase stage timeout duration from 30m to 60m
+ qa/health-ok: add --tuned=on/off option (default: off)
+ qa: add openstack to ceph.functests.1node orchestration
+ qa/health-ok.sh: add --openstack option
+ s/unsused/unused/
+ qa: don't initially delete openstack pools
+ monitoring: fix fs fillup time query
+ tuned: make stanza names unique
+ monitoring: fix rbd_exporter pool parsing for ids > 9
+ Set theme jekyll-theme-cayman
+ Use disks paths closer to real hardware for tests
+ Refactor tests for test_proposal.py
+ Remove codecov from unit tests
+ NFS-Ganesha + Cephfs: Add cache config options
+ Add test for OSD migration (different slots)
+ Add OSD migrations that include disk slot changes
+ Restart is separate state now
+ Add wiki to PULLREQUEST_TEMPLATE
+ qa/policy: MDS on up to 3 storage nodes only
+ qa/health-ok: drop --fsal option (no longer needed)
+ Return devicename if no /dev/disk/by-id path
+ qa/health-ok: implement --no-update option
+ qa: more flexible role assignment in policy.cfg
+ stage/prep: reinstate single quotes around deepsea_minions tgt
+ qa/health-ok: use "echo" instead of "echo -n"
+ qa/health-ok: add NFS-Ganesha deployment/test functionality
+ qa: health-nfs-ganesha.sh fix case statement
+ qa/rgw: restart rsyslog service after installing curl RPM
+ qa: use "systemctl --no-pager --full status"
+ cephinspector: use cephdisks.device in engulf (bsc#1082994)
+ cephinspector: assume filestore OSD if type file not present (bsc#1104773)
+ Remove deprecated test function
+ Moved stage 0 specific man sections to the correct file, as per review comments
+ Make jinja variables quoting consistent
+ Change minion to default update-no-reboot
+ Update man pages of stage 0 and customization to update-no-reboot
+ Change stage 0 default toupdate-no-reboot
+ rescinded.py: tweak runner comments
+ Add unittests for wait.just
+ doc: drop osd.tree command
+ qa: restart ceph-radosgw service after installing curl RPM
+ Stage 5: delete CRUSH host buckets orphaned when storage node is deleted
+ rescinded.py: implement rescinded.delete_orphaned_host_buckets
+ osd.py: refactor osd.tree
+ qa: common/deploy: run "zypper ps -s" on all nodes
+ populate: don't create role-mon yml line during engulf (bsc#1104781)
+ Use host rather than nodename consistently
+ Reuse OSD ID in migrations, support replace.osds
+ common/helper: show output of test.ping in _first_storage_only_node
+ common/helper: storage-only node might be master node
+ Refactor device detection, allow override
+ Do not create untracked partition
+ Use fqdn for default minion name in template
+ qa: run lsblk and ceph-disk on storage node only
+ Explicitly add hwinfo and lshw
+ Install smartmontools while stage.0
+ qa/deploy: handle possibility that deepsea-cli is not installed
+ Add checklist to Pullrequest template
+ qa: add script to test Stage 5
+ Fix indentation for tests/
+ fix readme matrix rendering
+ qa: health-ok.sh: enable testing of OSD configurations
+ rescind: prevent empty rendering of ceph.rescind.tuned state file
+ build/ops: streamline qa %files section
+ cli: filter out test.nop steps and don't report [init] step errors
+ qa/common: create btrfs subvolumes after Stage 0
+ qa/common/helper: unify whitespace
+ qa/health-ok: fix usage message (--encryption was missing)
+ qa/common: unify whitespace
+ qa: Add testing osd-configrations qa: add README to clarify
+ qa/common/deploy.sh: fix redirect of stderr to /dev/null
+ qa: rename ceph.smoketests to ceph.functests.1node
+ qa/health-ok: add --min-nodes and --client-nodes options
+ qa/common/helper.sh: refactor _run_stage
+ qa: health-ok.sh: add a top-secret undocumented navigation code
+ qa: fix ceph_version_test
+ qa: make MDS deploy even without client nodes
+ qa/common/helper.sh: drop workaround for bsc#1087232
+ qa: refactor health-ok.sh, drop health-{mds,rgw}.sh
+ apparmor: install apparmor-utils package on SUSE
+ openstack: add smoketests for ceph.openstack
+ openstack: add openstack.integrate runner (fate#324708)
+ openstack: allow specifying prefix, use generic pool names
+ openstack: enable rbd application on openstack pools
+ openstack: add cinder-backup user and pool
+ openstack: collapse keyring cache directories
+ openstack: don't create separate key for nova service
+ add test for kernel validation
+ add rbd kernel module validation
+ build/ops: add /srv/salt/ceph/smoketests/init.sls to spec file
+ build/ops: add /srv/salt/ceph/smoketests/init.sls to Makefile
+ Rename tuned profiles from ses-* to ceph-*
+ Only remove tuned if a node has no osd, mon or mgr
+ Add tuned smoke tests
+ Add predefined tuned profiles
+ enforce pylint version 1.9.x
+ build/ops: add jq runtime dependency to spec file
+ * fix issue that would make benchmark.baseline fail if an osd is removed. make benchmark.baseline use 'ceph osd ls' instead of 'osd.list' to get the list of the active osd ids.
+ address suggestions & fix typos
+ Adding more information to the man pages
+
+-------------------------------------------------------------------
 Fri Jul  6 19:13:14 UTC 2018 - ejackson@suse.com
 
 - Version 0.9.6
