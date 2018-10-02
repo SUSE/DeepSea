@@ -157,6 +157,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/remove/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/restart
 	install -m 644 srv/salt/ceph/functests/1node/restart/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/restart
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/terminate
+	install -m 644 srv/salt/ceph/functests/1node/terminate/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/terminate
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
 	install -m 644 srv/salt/ceph/functests/1node/tuned/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
 	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
@@ -708,11 +710,49 @@ copy-files:
 	install -m 644 srv/salt/ceph/rgw/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/rgw/restart/controlled
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/cert/
 	install -m 644 srv/salt/ceph/rgw/cert/*.sls $(DESTDIR)/srv/salt/ceph/rgw/cert/
+	# state files - shutdown
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/shutdown
+	install -m 644 srv/salt/ceph/shutdown/*.sls $(DESTDIR)/srv/salt/ceph/shutdown
+	# state files - startup
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/startup
+	install -m 644 srv/salt/ceph/startup/*.sls $(DESTDIR)/srv/salt/ceph/startup
 	# state files - sysctl
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sysctl
 	install -m 644 srv/salt/ceph/sysctl/*.sls $(DESTDIR)/srv/salt/ceph/sysctl
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sysctl/files
 	install -m 644 srv/salt/ceph/sysctl/files/*.conf $(DESTDIR)/srv/salt/ceph/sysctl/files
+	# state files - start
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/ganesha
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/igw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/mds
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/rgw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/start/storage
+	install -m 644 srv/salt/ceph/start/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/start/ganesha
+	install -m 644 srv/salt/ceph/start/igw/*.sls $(DESTDIR)/srv/salt/ceph/start/igw
+	install -m 644 srv/salt/ceph/start/mds/*.sls $(DESTDIR)/srv/salt/ceph/start/mds
+	install -m 644 srv/salt/ceph/start/mgr/*.sls $(DESTDIR)/srv/salt/ceph/start/mgr
+	install -m 644 srv/salt/ceph/start/mon/*.sls $(DESTDIR)/srv/salt/ceph/start/mon
+	install -m 644 srv/salt/ceph/start/rgw/*.sls $(DESTDIR)/srv/salt/ceph/start/rgw
+	install -m 644 srv/salt/ceph/start/storage/*.sls $(DESTDIR)/srv/salt/ceph/start/storage
+	# state files - terminate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/ganesha
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/igw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/mds
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/rgw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/terminate/storage
+	install -m 644 srv/salt/ceph/terminate/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/terminate/ganesha
+	install -m 644 srv/salt/ceph/terminate/igw/*.sls $(DESTDIR)/srv/salt/ceph/terminate/igw
+	install -m 644 srv/salt/ceph/terminate/mds/*.sls $(DESTDIR)/srv/salt/ceph/terminate/mds
+	install -m 644 srv/salt/ceph/terminate/mgr/*.sls $(DESTDIR)/srv/salt/ceph/terminate/mgr
+	install -m 644 srv/salt/ceph/terminate/mon/*.sls $(DESTDIR)/srv/salt/ceph/terminate/mon
+	install -m 644 srv/salt/ceph/terminate/rgw/*.sls $(DESTDIR)/srv/salt/ceph/terminate/rgw
+	install -m 644 srv/salt/ceph/terminate/storage/*.sls $(DESTDIR)/srv/salt/ceph/terminate/storage
 	# state files - tuned
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/osd
