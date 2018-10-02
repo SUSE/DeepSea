@@ -97,6 +97,9 @@ function run_stage_3 {
 
 function run_stage_4 {
     _run_stage 4 "$@"
+    if [ -z "$STAGE_SUCCEEDED" ] ; then
+        test "$IGW" && iscsi_dump_targetcli_debug_logfile
+    fi
     test "$STAGE_SUCCEEDED"
 }
 
@@ -368,6 +371,46 @@ echo "See 3260 there?"
 echo "Result: OK"
 EOF
     _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
+function iscsi_enable_targetcli_debug_logging {
+    #
+    # install targetcli-rbd and enable debug level logging to file
+    #
+    local TESTSCRIPT=/tmp/iscsi_test.sh
+    local CLIENTNODE=$(_client_node)
+    local IGWNODE=$(_first_x_node igw)
+    cat << EOF > $TESTSCRIPT
+set -e
+trap 'echo "Result: NOT_OK"' ERR
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
+zypper --non-interactive install --no-recommends targetcli-rbd
+targetcli / set global loglevel_file=debug
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
+}
+
+function iscsi_dump_targetcli_debug_logfile {
+    #
+    # dump the targetcli logfile
+    #
+    local TESTSCRIPT=/tmp/iscsi_test.sh
+    local CLIENTNODE=$(_client_node)
+    local IGWNODE=$(_first_x_node igw)
+    cat << EOF > $TESTSCRIPT
+set -e
+trap 'echo "Result: NOT_OK"' ERR
+echo "Dumping targetcli logfile..."
+set -x
+cat /root/.targetcli/log.txt
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
 function iscsi_mount_and_sanity_test {

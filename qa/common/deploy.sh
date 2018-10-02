@@ -191,6 +191,7 @@ function deploy_ceph {
         echo "Stages 0-3 OK, no roles requiring Stage 4: deploy phase complete!"
         return 0
     fi
+    test -n "$IGW" && iscsi_enable_targetcli_debug_logging
     test -n "$NFS_GANESHA" && nfs_ganesha_no_root_squash
     run_stage_4 "$CLI"
     if [ -n "$NFS_GANESHA" ] ; then
