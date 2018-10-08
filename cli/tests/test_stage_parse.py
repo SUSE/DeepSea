@@ -455,3 +455,28 @@ error state:
             self.assertEqual(s_steps[0].function, "salt.runner")
             self.assertEqual(s_steps[0].pretty_string(),
                              "salt.runner(jobs.active)")
+
+    def test_parse_stage_unknown_minion(self):
+        self.write_state_file("test.test-orch104", {
+            'test state': {
+                'salt.state': [{
+                    'sls': 'test.test-state104',
+                    'tgt': 'invalidminion'
+                }]
+            }
+        })
+
+        self.write_state_file("test.test-state104", {
+            'nop state': {
+                'test.nop': []
+            }
+        })
+
+        with self.assertRaises(StateRenderingException) as ctx:
+            SLSParser.parse_stage("test.test-orch104", False, False)
+
+        self.assertIn(ctx.exception.minion, "invalidminion")
+        self.assertEqual(ctx.exception.state, "test.test-state104")
+        self.assertIsInstance(ctx.exception.pretty_error_desc_str(), str)
+        self.assertIn("No minions matched the target",
+                      ctx.exception.pretty_error_desc_str())
