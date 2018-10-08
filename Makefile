@@ -644,37 +644,53 @@ copy-files:
 	# state files - restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart
 	install -m 644 srv/salt/ceph/restart/*.sls $(DESTDIR)/srv/salt/ceph/restart/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/force
+	install -m 644 srv/salt/ceph/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/force/
 	# state files - restart - mon
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mon
 	install -m 644 srv/salt/ceph/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/restart/mon
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mon/force
+	install -m 644 srv/salt/ceph/restart/mon/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/mon/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mon/lax
 	install -m 644 srv/salt/ceph/restart/mon/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/mon/lax
 	# state files - restart - mgr
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mgr
 	install -m 644 srv/salt/ceph/restart/mgr/*.sls $(DESTDIR)/srv/salt/ceph/restart/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mgr/force
+	install -m 644 srv/salt/ceph/restart/mgr/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/mgr/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mgr/lax
 	install -m 644 srv/salt/ceph/restart/mgr/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/mgr/lax
 	# state files - restart - osd
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/osd
 	install -m 644 srv/salt/ceph/restart/osd/*.sls $(DESTDIR)/srv/salt/ceph/restart/osd
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/osd/force
+	install -m 644 srv/salt/ceph/restart/osd/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/osd/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/osd/lax
 	install -m 644 srv/salt/ceph/restart/osd/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/osd/lax
 	# state files - restart - rgw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/rgw
 	install -m 644 srv/salt/ceph/restart/rgw/*.sls $(DESTDIR)/srv/salt/ceph/restart/rgw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/rgw/force
+	install -m 644 srv/salt/ceph/restart/rgw/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/rgw/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/rgw/lax
 	install -m 644 srv/salt/ceph/restart/rgw/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/rgw/lax
 	# state files - restart - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mds
 	install -m 644 srv/salt/ceph/restart/mds/*.sls $(DESTDIR)/srv/salt/ceph/restart/mds
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/mds/force
+	install -m 644 srv/salt/ceph/restart/mds/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/mds/force
 	# state files - restart - ganesha
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/ganesha
 	install -m 644 srv/salt/ceph/restart/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/restart/ganesha
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/ganesha/force
+	install -m 644 srv/salt/ceph/restart/ganesha/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/ganesha/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/ganesha/lax
 	install -m 644 srv/salt/ceph/restart/ganesha/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/ganesha/lax
 	# state files - restart - igw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw
 	install -m 644 srv/salt/ceph/restart/igw/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw/force
+	install -m 644 srv/salt/ceph/restart/igw/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw/lax
 	install -m 644 srv/salt/ceph/restart/igw/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/lax
 	# state files - restart - openattic
