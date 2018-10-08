@@ -115,7 +115,7 @@ salt \* test.ping
 
 cd /deepsea/cli
 
-pytest --cov=. -v tests
+python -m pytest --cov=. -v tests
 coverage html
 
 if $INTERACTIVE; then

@@ -85,4 +85,4 @@ def test(**kwargs):
         if self.CLEAN_STATE_FILES:
             for sf in self.STATE_FILES_INDEX:
                 os.remove(sf)
-            self.STATE_FILES_INDEX.clear()
+            del self.STATE_FILES_INDEX[:]
