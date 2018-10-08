@@ -1082,7 +1082,7 @@ def engulf_existing_cluster(**kwargs):
 
     # Our imported hardware profile proposal path
     imported_profile = "profile-import"
-    imported_profile_path = settings.root_dir + "/" + imported_profile
+    imported_profile_path = "{}/{}".format(settings.root_dir, imported_profile)
 
     # Used later on to compute cluster and public networks.
     mon_addrs = {}
@@ -1127,17 +1127,19 @@ def engulf_existing_cluster(**kwargs):
             # don't assign it to the cluster
             continue
 
-        policy_cfg.append("cluster-ceph/cluster/" + minion + ".sls")
+        policy_cfg.append("cluster-ceph/cluster/{}.sls".format(minion))
 
         if is_master:
-            policy_cfg.append("role-master/cluster/" + minion + ".sls")
+            policy_cfg.append("role-master/cluster/{}.sls".format(minion))
         elif is_admin:
-            policy_cfg.append("role-admin/cluster/" + minion + ".sls")
+            policy_cfg.append("role-admin/cluster/{}.sls".format(minion))
 
         if "ceph-mon" in info["running_services"].keys():
             mon_minions.append(minion)
-            policy_cfg.append("role-mon/cluster/" + minion + ".sls")
-            for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_public_networks", [], expr_form="compound").items():
+            policy_cfg.append("role-mon/cluster/{}.sls".format(minion))
+            for minion, ipaddrs in local.cmd(minion,
+                                             "cephinspector.get_minion_public_networks",
+                                             [], expr_form="compound").items():
                 mon_addrs[minion] = ipaddrs
 
         if "ceph-osd" in info["running_services"].keys():
@@ -1151,14 +1153,14 @@ def engulf_existing_cluster(**kwargs):
             has_storage_profiles = True
 
             for minion, store in ceph_disks.items():
-                minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
-                minion_yml_path = minion_yml_dir + "/" + minion + ".yml"
+                minion_yml_dir = "{}/stack/default/ceph/minions".format(imported_profile_path)
+                minion_yml_path = "{}/{}.yml".format(minion_yml_dir, minion)
                 _create_dirs(minion_yml_dir, "")
                 salt_writer.write(minion_yml_path, store)
 
-                minion_sls_data = { "roles": [ "storage" ] }
-                minion_sls_dir = imported_profile_path + "/cluster"
-                minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
+                minion_sls_data = {"roles": ["storage"]}
+                minion_sls_dir = "{}/cluster".format(imported_profile_path)
+                minion_sls_path = "{}/{}.sls".format(minion_sls_dir, minion)
                 _create_dirs(minion_sls_dir, "")
                 salt_writer.write(minion_sls_path, minion_sls_data)
 
@@ -1168,18 +1170,18 @@ def engulf_existing_cluster(**kwargs):
             for minion, ipaddrs in local.cmd(minion, "cephinspector.get_minion_cluster_networks", [], expr_form="compound").items():
                 osd_addrs[minion] = ipaddrs
 
-        if "ceph-mgr" in info["running_services"].keys():
-            policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
+        if "ceph-mgr" in info["running_services"]:
+            policy_cfg.append("role-mgr/cluster/{}.sls".format(minion))
             for i in info["running_services"]["ceph-mgr"]:
                 mgr_instances.append(i)
 
-        if "ceph-mds" in info["running_services"].keys():
-            policy_cfg.append("role-mds/cluster/" + minion + ".sls")
+        if "ceph-mds" in info["running_services"]:
+            policy_cfg.append("role-mds/cluster/{}.sls".format(minion))
             for i in info["running_services"]["ceph-mds"]:
                 mds_instances.append(i)
 
-        if "ceph-radosgw" in info["running_services"].keys():
-            policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
+        if "ceph-radosgw" in info["running_services"]:
+            policy_cfg.append("role-rgw/cluster/{}.sls".format(minion))
             for i in info["running_services"]["ceph-radosgw"]:
                 rgw_instances.append(i)
 
@@ -1208,7 +1210,7 @@ def engulf_existing_cluster(**kwargs):
     if not mgr_instances:
         print("No MGRs detected, automatically assigning role-mgr to MONs")
         for minion in mon_minions:
-            policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mgr/cluster/{}.sls".format(minion))
 
     with open("/srv/salt/ceph/admin/cache/ceph.client.admin.keyring", 'w') as keyring:
         keyring.write(admin_keyring)
@@ -1223,24 +1225,28 @@ def engulf_existing_cluster(**kwargs):
         keyring.write(osd_bootstrap_keyring)
 
     for i in mgr_instances:
-        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mgr." + i ], expr_form="compound")[admin_minion]
+        mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                ["key=mgr.{}".format(i)],
+                                expr_form="compound")[admin_minion]
         if not mgr_keyring:
-            return _runtime_error(exception, "Could not obtain mgr." + i + " keyring")
-        with open("/srv/salt/ceph/mgr/cache/" + i + ".keyring", 'w') as keyring:
+            return _runtime_error(exception, "Could not obtain mgr.{} keyring".format(i))
+        with open("/srv/salt/ceph/mgr/cache/{}.keyring".format(i), 'w') as keyring:
             keyring.write(mgr_keyring)
 
     for i in mds_instances:
-        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=mds." + i ], expr_form="compound")[admin_minion]
+        mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                ["key=mds.{}".format(i)], expr_form="compound")[admin_minion]
         if not mds_keyring:
-            return _runtime_error(exception, "Could not obtain mds." + i + " keyring")
-        with open("/srv/salt/ceph/mds/cache/" + i + ".keyring", 'w') as keyring:
+            return _runtime_error(exception, "Could not obtain mds.{} keyring".format(i))
+        with open("/srv/salt/ceph/mds/cache/{}.keyring".format(i), 'w') as keyring:
             keyring.write(mds_keyring)
 
     for i in rgw_instances:
-        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring", [ "key=client." + i ], expr_form="compound")[admin_minion]
+        rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
+                                ["key=client.{}".format(i)], expr_form="compound")[admin_minion]
         if not rgw_keyring:
-            return _runtime_error(exception, "Could not obtain client." + i + " keyring")
-        with open("/srv/salt/ceph/rgw/cache/client." + i + ".keyring", 'w') as keyring:
+            return _runtime_error(exception, "Could not obtain client.{} keyring".format(i))
+        with open("/srv/salt/ceph/rgw/cache/client.{}.keyring".format(i), 'w') as keyring:
             keyring.write(rgw_keyring)
 
     # Now policy_cfg reflects the current deployment, make it a bit legible...
