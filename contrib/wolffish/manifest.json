@@ -1,7 +1,0 @@
-{
-  "name": "wolffish",
-  "short_name": "wolffish",
-  "description": "A SES Configuration App",
-  "start_url": "/",
-  "display": "standalone"
-}
