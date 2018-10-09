@@ -71,6 +71,8 @@ copy-files:
 	install -m 644 etc/salt/master.d/salt-api.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	# tests
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/engulf
+	install -m 644 srv/salt/ceph/tests/engulf/*.sls $(DESTDIR)/srv/salt/ceph/tests/engulf
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -m 644 srv/salt/ceph/tests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/openstack
@@ -130,6 +132,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
 	install -m 644 srv/salt/ceph/functests/1node/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/engulf
+	install -m 644 srv/salt/ceph/functests/1node/engulf/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/engulf
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/macros

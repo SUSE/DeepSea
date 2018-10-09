@@ -93,7 +93,7 @@ def _get_osd_type(part_dict):
     for use in other modules.
     """
     osd_type = None
-    type_file_path = part_dict["mount"] + "/type" if "mount" in part_dict else ""
+    type_file_path = "{}/type".format(part_dict["mount"]) if "mount" in part_dict else ""
 
     if os.path.exists(type_file_path):
         with open(type_file_path, 'r') as type_file:
@@ -228,7 +228,7 @@ def get_ceph_disks_yml(**kwargs):
         # Grab the path (ie. /dev/foo).
         path = out_dict["path"] if "path" in out_dict else None
         # Paranoia: check to make sure we have a path and a "partitions" entry.
-        if path and "paritions" in out_dict:
+        if path and "partitions" in out_dict:
             for part_dict in out_dict["partitions"]:
                 # We only care to process OSD "data" partitions.
                 if "type" in part_dict and part_dict["type"] == "data":

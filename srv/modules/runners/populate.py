@@ -57,8 +57,6 @@ try:
     import configparser
 except ImportError:
     import six.moves.configparser as configparser
-# notused
-#from cStringIO import StringIO
 
 
 log = logging.getLogger(__name__)
@@ -956,7 +954,7 @@ def _get_existing_cluster_networks(addrs, public_networks=[]):
     returns a list of addresses consisting of network prefix followed by the
     cidr prefix (e.g. [ "10.0.0.0/24" ]).  It may return an empty list.
     """
-    self.search = __utils__['deepsea_minions.show']()
+    search = __utils__['deepsea_minions.show']()
 
     local = salt.client.LocalClient()
     # Stores the derived network addresses (in CIDR notation) of all addresses contained in addrs.
@@ -1047,6 +1045,18 @@ def _replace_cluster_network_with_existing_cluster(osd_addrs, public_networks=[]
                  'cluster_networks': cluster_networks }
 
 
+def _runtime_error(exception, msg=""):
+    """
+    This weird little thing will optionally log an error message, and then
+    either raise a RuntimeError (if exception is True), or just return False.
+    """
+    if msg:
+        log.error(msg)
+    if exception:
+        raise RuntimeError(msg)
+    return False
+
+
 def engulf_existing_cluster(**kwargs):
     """
     Assuming proposals() has already been run to collect hardware profiles and
@@ -1057,10 +1067,19 @@ def engulf_existing_cluster(**kwargs):
 
     This assumes your cluster is named "ceph".  If it's not, things will break.
     """
+
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    master_minion = __salt__['master.minion']()
+
     search = __utils__['deepsea_minions.show']()
     local = salt.client.LocalClient()
     settings = Settings()
-    salt_writer = SaltWriter(**kwargs)
+    salt_writer = SaltWriter(overwrite=True)
+    exception = kwargs.get('exception', False)
 
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
     from . import validate
@@ -1069,13 +1088,13 @@ def engulf_existing_cluster(**kwargs):
     validator.deepsea_minions()
     if validator.errors:
         validator.report()
-        return False
+        return _runtime_error(exception)
 
     policy_cfg = []
 
     # Check for firewall/apparmor.
     if not __utils__['ready.check']("ceph", True, search):
-        return False
+        return _runtime_error(exception)
 
     # First, hand apply select Stage 0 functions
     local.cmd(search, "saltutil.sync_all", [], tgt_type="compound")
@@ -1086,7 +1105,7 @@ def engulf_existing_cluster(**kwargs):
 
     # Our imported hardware profile proposal path
     imported_profile = "profile-import"
-    imported_profile_path = settings.root_dir + "/" + imported_profile
+    imported_profile_path = "{}/{}".format(settings.root_dir, imported_profile)
 
     # Used later on to compute cluster and public networks.
     mon_addrs = {}
@@ -1101,22 +1120,22 @@ def engulf_existing_cluster(**kwargs):
     mds_instances = []
     rgw_instances = []
 
+    has_storage_profiles = False
+
     for minion, info in local.cmd(search, "cephinspector.inspect", [],
                                   tgt_type="compound").items():
 
-        if type(info) is not dict:
-            print("cephinspector.inspect failed on %s: %s" % (minion, info))
-            return False
+        if not isinstance(info, dict):
+            return _runtime_error(exception,
+                                  "cephinspector.inspect failed on %s: %s" % (minion, info))
 
         if info["ceph_conf"] is not None:
             if ceph_conf is None:
                 ceph_conf = info["ceph_conf"]
             else:
                 if info["ceph_conf"] != ceph_conf:
-                    # TODO: what's the best way to report errors from a runner?
-                    print(("ceph.conf on {} doesn't match ceph.conf on "
-                           "{}").format(minion, previous_minion))
-                    return False
+                    return _runtime_error(exception, ("ceph.conf on {} doesn't match ceph.conf on "
+                                                     "{}").format(minion, previous_minion))
             previous_minion = minion
 
         is_admin = info["has_admin_keyring"]
@@ -1125,24 +1144,23 @@ def engulf_existing_cluster(**kwargs):
             # We'll talk to this minion later to obtain keyrings
             admin_minion = minion
 
-        is_master = local.cmd(minion, "pillar.get", ["master_minion"],
-                              tgt_type="compound")[minion] == minion
+        is_master = minion == master_minion
 
         if not info["running_services"] and not is_admin and not is_master:
             # No ceph services running, no admin key, not the master_minion,
             # don't assign it to the cluster
             continue
 
-        policy_cfg.append("cluster-ceph/cluster/" + minion + ".sls")
+        policy_cfg.append("cluster-ceph/cluster/{}.sls".format(minion))
 
         if is_master:
-            policy_cfg.append("role-master/cluster/" + minion + ".sls")
+            policy_cfg.append("role-master/cluster/{}.sls".format(minion))
         elif is_admin:
-            policy_cfg.append("role-admin/cluster/" + minion + ".sls")
+            policy_cfg.append("role-admin/cluster/{}.sls".format(minion))
 
         if "ceph-mon" in info["running_services"]:
             mon_minions.append(minion)
-            policy_cfg.append("role-mon/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mon/cluster/{}.sls".format(minion))
             for minion, ipaddrs in local.cmd(minion,
                                              "cephinspector.get_minion_public_networks",
                                              [], tgt_type="compound").items():
@@ -1155,18 +1173,19 @@ def engulf_existing_cluster(**kwargs):
             ceph_disks = local.cmd(minion, "cephinspector.get_ceph_disks_yml",
                                    [], tgt_type="compound")
             if not ceph_disks:
-                log.error("Failed to get list of Ceph OSD disks.")
-                return [False]
+                return _runtime_error(exception, "Failed to get list of Ceph OSD disks.")
+
+            has_storage_profiles = True
 
             for minion, store in ceph_disks.items():
-                minion_yml_dir = imported_profile_path + "/stack/default/ceph/minions"
-                minion_yml_path = minion_yml_dir + "/" + minion + ".yml"
+                minion_yml_dir = "{}/stack/default/ceph/minions".format(imported_profile_path)
+                minion_yml_path = "{}/{}.yml".format(minion_yml_dir, minion)
                 _create_dirs(minion_yml_dir, "")
                 salt_writer.write(minion_yml_path, store)
 
                 minion_sls_data = {"roles": ["storage"]}
-                minion_sls_dir = imported_profile_path + "/cluster"
-                minion_sls_path = minion_sls_dir + "/" + minion + ".sls"
+                minion_sls_dir = "{}/cluster".format(imported_profile_path)
+                minion_sls_path = "{}/{}.sls".format(minion_sls_dir, minion)
                 _create_dirs(minion_sls_dir, "")
                 salt_writer.write(minion_sls_path, minion_sls_data)
 
@@ -1179,17 +1198,17 @@ def engulf_existing_cluster(**kwargs):
                 osd_addrs[minion] = ipaddrs
 
         if "ceph-mgr" in info["running_services"]:
-            policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mgr/cluster/{}.sls".format(minion))
             for i in info["running_services"]["ceph-mgr"]:
                 mgr_instances.append(i)
 
         if "ceph-mds" in info["running_services"]:
-            policy_cfg.append("role-mds/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mds/cluster/{}.sls".format(minion))
             for i in info["running_services"]["ceph-mds"]:
                 mds_instances.append(i)
 
         if "ceph-radosgw" in info["running_services"]:
-            policy_cfg.append("role-rgw/cluster/" + minion + ".sls")
+            policy_cfg.append("role-rgw/cluster/{}.sls".format(minion))
             for i in info["running_services"]["ceph-radosgw"]:
                 rgw_instances.append(i)
 
@@ -1197,29 +1216,25 @@ def engulf_existing_cluster(**kwargs):
         # populate rgw_configurations in pillar data?
 
     if not admin_minion:
-        print("No nodes found with ceph.client.admin.keyring")
-        return False
+        return _runtime_error(exception, "No nodes found with ceph.client.admin.keyring")
 
     # TODO: this is really not very DRY...
     admin_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
                               ["key=client.admin"],
                               tgt_type="compound")[admin_minion]
     if not admin_keyring:
-        print("Could not obtain client.admin keyring")
-        return False
+        return _runtime_error(exception, "Could not obtain client.admin keyring")
 
     mon_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
                             ["key=mon."], tgt_type="compound")[admin_minion]
     if not mon_keyring:
-        print("Could not obtain mon keyring")
-        return False
+        return _runtime_error(exception, "Could not obtain mon keyring")
 
     osd_bootstrap_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
                                       ["key=client.bootstrap-osd"],
                                       tgt_type="compound")[admin_minion]
     if not osd_bootstrap_keyring:
-        print("Could not obtain osd bootstrap keyring")
-        return False
+        return _runtime_error(exception, "Could not obtain osd bootstrap keyring")
 
     # If there's no MGR instances, add MGR roles automatically to all the MONs
     # (since Luminous, MGR is a requirement, so it seems reasonable to add this
@@ -1227,7 +1242,7 @@ def engulf_existing_cluster(**kwargs):
     if not mgr_instances:
         print("No MGRs detected, automatically assigning role-mgr to MONs")
         for minion in mon_minions:
-            policy_cfg.append("role-mgr/cluster/" + minion + ".sls")
+            policy_cfg.append("role-mgr/cluster/{}.sls".format(minion))
 
     with open("/srv/salt/ceph/admin/cache/ceph.client.admin.keyring", 'w') as keyring:
         keyring.write(admin_keyring)
@@ -1243,30 +1258,27 @@ def engulf_existing_cluster(**kwargs):
 
     for i in mgr_instances:
         mgr_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
-                                ["key=mgr." + i],
+                                ["key=mgr.{}".format(i)],
                                 tgt_type="compound")[admin_minion]
         if not mgr_keyring:
-            print("Could not obtain mgr." + i + " keyring")
-            return False
-        with open("/srv/salt/ceph/mgr/cache/" + i + ".keyring", 'w') as keyring:
+            return _runtime_error(exception, "Could not obtain mgr.{} keyring".format(i))
+        with open("/srv/salt/ceph/mgr/cache/{}.keyring".format(i), 'w') as keyring:
             keyring.write(mgr_keyring)
 
     for i in mds_instances:
         mds_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
-                                ["key=mds." + i], tgt_type="compound")[admin_minion]
+                                ["key=mds.{}".format(i)], tgt_type="compound")[admin_minion]
         if not mds_keyring:
-            print("Could not obtain mds." + i + " keyring")
-            return False
-        with open("/srv/salt/ceph/mds/cache/" + i + ".keyring", 'w') as keyring:
+            return _runtime_error(exception, "Could not obtain mds.{} keyring".format(i))
+        with open("/srv/salt/ceph/mds/cache/{}.keyring".format(i), 'w') as keyring:
             keyring.write(mds_keyring)
 
     for i in rgw_instances:
         rgw_keyring = local.cmd(admin_minion, "cephinspector.get_keyring",
-                                ["key=client." + i], tgt_type="compound")[admin_minion]
+                                ["key=client.{}".format(i)], tgt_type="compound")[admin_minion]
         if not rgw_keyring:
-            print("Could not obtain client." + i + " keyring")
-            return False
-        with open("/srv/salt/ceph/rgw/cache/client." + i + ".keyring", 'w') as keyring:
+            return _runtime_error(exception, "Could not obtain client.{} keyring".format(i))
+        with open("/srv/salt/ceph/rgw/cache/client.{}.keyring".format(i), 'w') as keyring:
             keyring.write(rgw_keyring)
 
     # Now policy_cfg reflects the current deployment, make it a bit legible...
@@ -1283,43 +1295,53 @@ def engulf_existing_cluster(**kwargs):
     with open("/srv/pillar/ceph/proposals/policy.cfg", 'w') as policy:
         policy.write("\n".join(policy_cfg) + "\n")
 
+    print("* Wrote /srv/pillar/ceph/proposals/policy.cfg")
+    if has_storage_profiles:
+        print("* Storage profiles are in {}".format(imported_profile_path))
+
     # We've also got a ceph.conf to play with
     cp = configparser.RawConfigParser()
     # This little bit of natiness strips whitespace from all the lines, as
     # Python's configparser interprets leading whitespace as a line continuation,
     # whereas ceph itself is happy to have leading whitespace.
-    cp.readfp(StringIO("\n".join([line.strip() for line in ceph_conf.split("\n")])))
+    cp.read_string("\n".join([line.strip() for line in ceph_conf.split("\n")]))
 
     if not cp.has_section("global"):
-        print("ceph.conf is missing [global] section")
-        return False
+        return _runtime_error(exception, "ceph.conf is missing [global] section")
     if not cp.has_option("global", "fsid"):
-        print("ceph.conf is missing fsid")
-        return False
+        return _runtime_error(exception, "ceph.conf is missing fsid")
 
     if not _replace_fsid_with_existing_cluster(cp.get("global", "fsid")):
-        log.error("Failed to replace derived fsid with fsid of existing cluster.")
-        return [False]
+        return _runtime_error(exception,
+                              "Failed to replace derived fsid with fsid of existing cluster.")
 
     p_net_dict = _replace_public_network_with_existing_cluster(mon_addrs)
     if not p_net_dict['ret']:
-        log.error(("Failed to replace derived public_network with "
-                   "public_network of existing cluster."))
-        return [False]
+        return _runtime_error(exception, ("Failed to replace derived public_network with "
+                                          "public_network of existing cluster."))
 
     c_net_dict = _replace_cluster_network_with_existing_cluster(osd_addrs,
                                                                 p_net_dict['public_networks'])
     if not c_net_dict['ret']:
-        log.error(("Failed to replace derived cluster_network with "
-                   "cluster_network of existing cluster."))
-        return [False]
+        return _runtime_error(exception, ("Failed to replace derived cluster_network with "
+                                          "cluster_network of existing cluster."))
 
     # write out the imported ceph.conf
     with open("/srv/salt/ceph/configuration/files/ceph.conf.import", 'w') as conf:
         conf.write(ceph_conf)
 
+    print("* ceph.conf imported as /srv/salt/ceph/configuration/files/ceph.conf.import")
+
     # ensure the imported config will be used
     _replace_key_in_cluster_yml("configuration_init", "default-import")
+
+    print(("\n"
+           "'configuration_init' is set to 'default-import'.  This means the imported \n"
+           "ceph.conf file will be used as-is.  It is highly recommended you migrate \n"
+           "any necessary settings from this file to individual files in DeepSea's \n"
+           "/srv/salt/ceph/configuration/files/ceph.conf.d directory, then remove \n"
+           "the 'configuration_init' override setting from \n"
+           "/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml"))
 
     return True
 
