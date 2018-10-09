@@ -27,14 +27,14 @@ wait until all active mds but one have stopped:
 {% for standby in standbys %}
 shutdown standby daemon {{ standby }}:
   salt.state:
-    - tgt: {{ standby }}
+    - tgt: {{ standby }}*
     - sls: ceph.mds.shutdown
 {% endfor %}
 
 {% set active = salt['saltutil.runner']('cmd.run', cmd='ceph --format=json fs dump 2>/dev/null | jq --raw-output "[.filesystems[0].mdsmap.info|.[].name] | .[0]"') %}
 restarting remaing active {{ active }}:
   salt.state:
-    - tgt: '{{ active }}'
+    - tgt: {{ active }}*
     - sls: ceph.mds.restart
     - failhard: True
 
@@ -46,7 +46,7 @@ wait until all active mds are up and active:
 {% for standby in standbys %}
 start standby daemon {{ standby }}:
    salt.state:
-     - tgt: {{ standby }}
+     - tgt: {{ standby }}*
      - sls: ceph.mds
 {% endfor %}
 
