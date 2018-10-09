@@ -822,7 +822,6 @@ class StepListPrinter(MonitorListener):
             elif self.step:
                 self.step.finished = True
                 self.print_step(self.step)
-            if self.step.step.jid == step.jid:
                 self.step = None
 
     def step_runner_skipped(self, step):
