@@ -9,8 +9,10 @@ import logging
 import os
 import pwd
 import time
+import sys
 
 from collections import defaultdict
+from io import BytesIO
 from io import StringIO
 from multiprocessing import Process, Queue
 
@@ -140,8 +142,12 @@ class SLSRenderer(object):
     @classmethod
     def _render_in_minion(cls, state_name, target, retry=True):
         logger.info("Rendering states=%s on=%s", state_name, target)
-        err = StringIO()
-        out = StringIO()
+        if sys.version_info >= (3, 0):
+            err = StringIO()
+            out = StringIO()
+        else:
+            err = BytesIO()
+            out = BytesIO()
 
         out2 = None
         err2 = None
@@ -173,6 +179,13 @@ class SLSRenderer(object):
                     for state, steps in states.items():
                         if steps and isinstance(steps[0], str):
                             res = StateRenderingException(minion, state, steps)
+
+            if not res:
+                # this is the case where there was some problem but salt
+                # hides the problem internally and prints something to stdout
+                res = StateRenderingException(
+                    target, ", ".join(state_name),
+                    ["{}: {}".format(target, out.getvalue())])
 
         if isinstance(res, RenderingException):
             # pylint: disable=E0702
