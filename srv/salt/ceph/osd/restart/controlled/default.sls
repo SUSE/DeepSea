@@ -10,6 +10,8 @@ restart osd {{ id }}:
 wait on processes after processing osd.{{ id }}:
   module.run:
     - name: cephprocesses.wait
+    - kwargs:
+        'roles': ["storage"]
     - fire_event: True
     - failhard: True
 
