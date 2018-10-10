@@ -164,7 +164,7 @@ def minion_profile(minion, osds, grains, context):
                         print("Renaming minion {} profile".format(minion))
                         os.rename(filename, "{}-replace".format(filename))
                         _insert_replace_flag(
-                            grains, disks, minion, osds, "{}-replace".format(filename)
+                            grains, minion, disks, osds, "{}-replace".format(filename)
                         )
                     # pylint: disable=bare-except
                     except:
