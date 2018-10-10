@@ -226,6 +226,8 @@ class PillarData(object):
                     yaml['ceph']['storage']['osds'][osd]['db'] = yaml['ceph']['storage']['osds'][osd]['journal']
                 # get rid of the old journal item
                 yaml['ceph']['storage']['osds'][osd].pop('journal')
+                if 'journal_size' in yml['ceph']['storage']['osds'][osd]:
+                    yml['ceph']['storage']['osds'][osd].pop('journal_size')
         else:
             log.info("No migration for {} - copying".format(filename))
         return yaml
