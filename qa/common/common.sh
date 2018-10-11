@@ -377,7 +377,12 @@ function iscsi_mount_and_sanity_test {
     #
     local TESTSCRIPT=/tmp/iscsi_test.sh
     local CLIENTNODE=$(_client_node)
+    # FIXME: assert there is only one igw node
     local IGWNODE=$(_first_x_node igw)
+    if [ "$CLIENTNODE" = "$IGWNODE" ] ; then
+        echo "This test must run on a dedicated client node. It cannot run on the igw node."
+        exit 1
+    fi
     cat << EOF > $TESTSCRIPT
 set -e
 trap 'echo "Result: NOT_OK"' ERR
@@ -411,7 +416,6 @@ umount /mnt
 iscsiadm -m node --logout
 echo "Result: OK"
 EOF
-    # FIXME: assert script not running on the iSCSI gateway node
     _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
