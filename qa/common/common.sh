@@ -381,31 +381,34 @@ function iscsi_mount_and_sanity_test {
     cat << EOF > $TESTSCRIPT
 set -e
 trap 'echo "Result: NOT_OK"' ERR
+zypper --non-interactive info lrbd
 for delay in 60 60 60 60 ; do
     sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
     sleep $delay
 done
 set -x
-zypper --non-interactive install --no-recommends open-iscsi multipath-tools
+zypper --non-interactive install --no-recommends open-iscsi
 systemctl start iscsid.service
 sleep 5
 systemctl --no-pager --full status iscsid.service
 iscsiadm -m discovery -t st -p $IGWNODE
 iscsiadm -m node -L all
-systemctl start multipathd.service
 sleep 5
-systemctl --no-pager --full status multipathd.service
-ls -lR /dev/mapper
 ls -l /dev/disk/by-path
 ls -l /dev/disk/by-*id
-multipath -ll
-mkfs -t xfs /dev/dm-0
+if ( mkfs -t xfs /dev/disk/by-path/*iscsi* ) ; then
+    :
+else
+    dmesg
+    false
+fi
 test -d /mnt
-mount /dev/dm-0 /mnt
+mount /dev/disk/by-path/*iscsi* /mnt
 df -h /mnt
-touch /mnt/bubba
-test -f /mnt/bubba
+echo hubba > /mnt/bubba
+test -s /mnt/bubba
 umount /mnt
+iscsiadm -m node --logout
 echo "Result: OK"
 EOF
     # FIXME: assert script not running on the iSCSI gateway node
