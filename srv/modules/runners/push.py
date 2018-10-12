@@ -333,6 +333,9 @@ def _migrate(yml, filename):
                 cso[osd]['db'] = cso[osd]['journal']
             # get rid of the old journal item
             yml['ceph']['storage']['osds'][osd].pop('journal')
+            if 'journal_size' in yml['ceph']['storage']['osds'][osd]:
+                yml['ceph']['storage']['osds'][osd].pop('journal_size')
+
     else:
         log.info("No migration for {} - copying".format(filename))
     return yml
