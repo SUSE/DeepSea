@@ -2029,9 +2029,10 @@ def _dump_yaml_to_file(content,
     """
     Write yaml content to file
     """
-    with open(filename, 'w') as _fd:
-        _fd.write(yaml.dump(content, Dumper=dumper,
-                  default_flow_style=default_flow_style))
+    with open(target_file, 'w') as _fd:
+        _fd.write(yaml.dump(content,
+                            Dumper=dumper,
+                            default_flow_style=default_flow_style))
 
 
 def _safe_load_yaml(filename, default={}):
@@ -2047,6 +2048,7 @@ def _safe_load_yaml(filename, default={}):
             return content
         log.debug("{} is empty".format(filename))
         return default
+    return default
 
 
 def is_partitioned(device):

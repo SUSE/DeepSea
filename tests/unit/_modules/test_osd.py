@@ -2,7 +2,7 @@ from pyfakefs import fake_filesystem as fake_fs
 from pyfakefs import fake_filesystem_glob as fake_glob
 import pytest
 from srv.salt._modules import osd
-from mock import MagicMock, patch, mock
+from mock import MagicMock, patch, mock, mock_open
 
 
 fs = fake_fs.FakeFilesystem()
@@ -122,6 +122,75 @@ class TestOSDInstanceMethods():
     @pytest.mark.skip(reason="Low priority: skipped")
     def test_readlink(self):
         pass
+
+    def make_callable_dumper(self):
+        class Callable(object):
+            def __call__(self):
+                return None
+
+        return Callable
+
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @pytest.mark.parametrize("content", ['', 'not_empty'])
+    @pytest.mark.parametrize("fn", ['fn.ym', ['']])
+    def test_dump_yaml_to_file(self, yaml_mock, open_mock, fn, content):
+        content = content
+        fn = fn
+        dumper = self.make_callable_dumper()
+        osd._dump_yaml_to_file(content, fn, dumper)
+        open_mock.assert_called_with(fn, 'w')
+        yaml_mock.dump.assert_called_once_with(content, Dumper=dumper, default_flow_style=False)
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    @pytest.mark.parametrize("default", ['', '{}'])
+    @pytest.mark.parametrize("fn", ['foo.txt', ['bar.yml']])
+    def test_safe_load_yaml_1(self, os_path_mock, yaml_mock, open_mock, fn, default):
+        """
+        path exists
+        there is no content
+        """
+        os_path_mock.return_value = True
+        yaml_mock.safe_load.return_value = {}
+        default = default
+        fn = fn
+        result = osd._safe_load_yaml(fn, default)
+        open_mock.assert_called_with(fn, 'r')
+        assert result == default
+        assert yaml_mock.safe_load.mock_calls
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    @pytest.mark.parametrize("fn", ['foo.txt', ['bar.yml']])
+    def test_safe_load_yaml_2(self, os_path_mock, yaml_mock, open_mock, fn):
+        """
+        path exists
+        there is content
+        """
+        os_path_mock.return_value = True
+        yaml_mock.safe_load.return_value = {'something'}
+        fn = fn
+        result = osd._safe_load_yaml(fn)
+        open_mock.assert_called_with(fn, 'r')
+        assert result == result
+        assert yaml_mock.safe_load.mock_calls
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    @pytest.mark.parametrize("fn", ['foo.txt', 'bar.yml'])
+    @pytest.mark.parametrize("default", ['default1', 'default2'])
+    def test_safe_load_yaml_3(self, os_path_mock, yaml_mock, open_mock, fn, default):
+        """
+        path doesn't exist
+        """
+        os_path_mock.return_value = False
+        result = osd._safe_load_yaml(fn, default)
+        assert result == default
 
 
 @pytest.mark.skip(reason="Low priority: skipped")
@@ -3100,7 +3169,8 @@ class TestOSDGrains():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    def test_delete_no_file(self):
+    @patch('srv.salt._modules.osd.log')
+    def test_delete_no_file(self, log_mock):
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
@@ -3108,7 +3178,7 @@ class TestOSDGrains():
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg.delete(1)
-        assert osdg._update_grains.call_count == 0
+        log_mock.error.assert_called_once_with('Cannot delete osd 1 from grains') 
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
