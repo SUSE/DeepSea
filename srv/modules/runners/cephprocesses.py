@@ -213,10 +213,12 @@ def wait(cluster='ceph', **kwargs):
 
     status = {}
     local = salt.client.LocalClient()
+    timeout = settings['timeout']
+    delay = settings['delay']
     status = local.cmd(search,
                        'cephprocesses.wait',
-                       ['timeout={}'.format(settings['timeout']),
-                        'delay={}'.format(settings['delay'])],
+                       kwarg={'timeout': timeout,
+                              'delay': delay},
                        tgt_type="compound")
 
     sys.stdout = _stdout
