@@ -1266,7 +1266,17 @@ class TestOSDPartitions():
         assert type(ret) is int
 
     @mock.patch('srv.salt._modules.osd.glob')
-    def test__last_partition_no_pathnames(self, glob_mock, osdp_o):
+    def test__last_partition_digits(self, glob_mock):
+        glob_mock.glob.return_value = ['/dev/sdx11']
+        osd_config = OSDConfig()
+        test_module = helper_specs(module=DEFAULT_MODULE)()
+        obj = test_module.OSDPartitions(osd_config)
+        ret = obj._last_partition(osd_config.device)
+        glob_mock.glob.assert_called_with('/dev/sdx[0-9]*')
+        assert ret == 11
+
+    @mock.patch('srv.salt._modules.osd.glob')
+    def test__last_partition_no_pathnames(self, glob_mock):
         glob_mock.glob.return_value = []
         osd_config = OSDConfig()
         obj = osdp_o(osd_config)
