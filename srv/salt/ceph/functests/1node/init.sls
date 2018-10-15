@@ -7,7 +7,8 @@ include:
   - .restart.rgw
   - .apparmor
   - .tuned
-  - .remove
   - .grafana
   - .prometheus
   - .openstack
+  - .engulf
+  - .remove

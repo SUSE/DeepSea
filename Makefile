@@ -42,6 +42,8 @@ copy-files:
 	# tests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/grafana
 	install -m 644 srv/salt/ceph/tests/grafana/*.sls $(DESTDIR)/srv/salt/ceph/tests/grafana
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/engulf
+	install -m 644 srv/salt/ceph/tests/engulf/*.sls $(DESTDIR)/srv/salt/ceph/tests/engulf
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
@@ -103,6 +105,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/apparmor/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/grafana
 	install -m 644 srv/salt/ceph/functests/1node/grafana/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/grafana
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/engulf
+	install -m 644 srv/salt/ceph/functests/1node/engulf/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/engulf
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
