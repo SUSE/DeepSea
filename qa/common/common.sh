@@ -97,6 +97,9 @@ function run_stage_3 {
 
 function run_stage_4 {
     _run_stage 4 "$@"
+    if [ -z "$STAGE_SUCCEEDED" ] ; then
+        test "$IGW" && iscsi_dump_targetcli_debug_logfile
+    fi
     test "$STAGE_SUCCEEDED"
 }
 
@@ -370,13 +373,11 @@ EOF
     _run_test_script_on_node $TESTSCRIPT $IGWNODE
 }
 
-function iscsi_mount_and_sanity_test {
+function iscsi_enable_targetcli_debug_logging {
     #
-    # run iscsi mount test script on the client node
-    # mounts iscsi in /mnt, touches a file, asserts that it exists
+    # install targetcli-rbd and enable debug level logging to file
     #
     local TESTSCRIPT=/tmp/iscsi_test.sh
-    local CLIENTNODE=$(_client_node)
     local IGWNODE=$(_first_x_node igw)
     cat << EOF > $TESTSCRIPT
 set -e
@@ -386,29 +387,76 @@ for delay in 60 60 60 60 ; do
     sleep $delay
 done
 set -x
-zypper --non-interactive install --no-recommends open-iscsi multipath-tools
+zypper --non-interactive install --no-recommends targetcli-rbd
+targetcli / set global loglevel_file=debug
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
+function iscsi_dump_targetcli_debug_logfile {
+    #
+    # dump the targetcli logfile
+    #
+    local TESTSCRIPT=/tmp/iscsi_test.sh
+    local IGWNODE=$(_first_x_node igw)
+    cat << EOF > $TESTSCRIPT
+set -e
+trap 'echo "Result: NOT_OK"' ERR
+echo "Dumping targetcli logfile..."
+set -x
+cat /root/.targetcli/log.txt
+echo "Result: OK"
+EOF
+    _run_test_script_on_node $TESTSCRIPT $IGWNODE
+}
+
+function iscsi_mount_and_sanity_test {
+    #
+    # run iscsi mount test script on the client node
+    # mounts iscsi in /mnt, touches a file, asserts that it exists
+    #
+    local TESTSCRIPT=/tmp/iscsi_test.sh
+    local CLIENTNODE=$(_client_node)
+    # FIXME: assert there is only one igw node
+    local IGWNODE=$(_first_x_node igw)
+    if [ "$CLIENTNODE" = "$IGWNODE" ] ; then
+        echo "This test must run on a dedicated client node. It cannot run on the igw node."
+        exit 1
+    fi
+    cat << EOF > $TESTSCRIPT
+set -e
+trap 'echo "Result: NOT_OK"' ERR
+zypper --non-interactive info lrbd
+for delay in 60 60 60 60 ; do
+    sudo zypper --non-interactive --gpg-auto-import-keys refresh && break
+    sleep $delay
+done
+set -x
+zypper --non-interactive install --no-recommends open-iscsi
 systemctl start iscsid.service
 sleep 5
 systemctl --no-pager --full status iscsid.service
 iscsiadm -m discovery -t st -p $IGWNODE
 iscsiadm -m node -L all
-systemctl start multipathd.service
 sleep 5
-systemctl --no-pager --full status multipathd.service
-ls -lR /dev/mapper
 ls -l /dev/disk/by-path
 ls -l /dev/disk/by-*id
-multipath -ll
-mkfs -t xfs /dev/dm-0
+if ( mkfs -t xfs /dev/disk/by-path/*iscsi* ) ; then
+    :
+else
+    dmesg
+    false
+fi
 test -d /mnt
-mount /dev/dm-0 /mnt
+mount /dev/disk/by-path/*iscsi* /mnt
 df -h /mnt
-touch /mnt/bubba
-test -f /mnt/bubba
+echo hubba > /mnt/bubba
+test -s /mnt/bubba
 umount /mnt
+iscsiadm -m node --logout
 echo "Result: OK"
 EOF
-    # FIXME: assert script not running on the iSCSI gateway node
     _run_test_script_on_node $TESTSCRIPT $CLIENTNODE
 }
 
