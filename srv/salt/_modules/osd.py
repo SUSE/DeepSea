@@ -669,7 +669,8 @@ class OSDConfig(object):
                 if disk['Device File'] == self.device:
                     return int(disk['Bytes'])
 
-        error = "Missing device {} in the Salt mine for cephdisks.list".format(self.device)
+        error = "Missing device {} in the Salt mine for cephdisks.list. \
+            Try updating the mine with salt \* mine.update".format(self.device)
         log.error(error)
         raise RuntimeError(error)
 
@@ -1838,11 +1839,7 @@ class OSDDestroyed(object):
         exist, record current device and issue exception with instructions.
         If forced, record current device.
         """
-        content = {}
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as destroyed:
-                content = yaml.safe_load(destroyed)
-                log.debug("content: {} {}".format(type(content), content))
+        content = _safe_load_yaml(self.filename)
 
         if device in content:
             # Exit early, no by-path equivalent from previous run
@@ -1858,14 +1855,11 @@ class OSDDestroyed(object):
             # device name.  In either case, save the device name with the ID.
             content[device] = osd_id
 
-        with open(self.filename, 'w') as destroyed:
-            destroyed.write(yaml.dump(content, Dumper=self.friendly_dumper,
-                            default_flow_style=False))
+        _dump_yaml_to_file(content, self.filename, self.friendly_dumper)
 
         if by_path or force:
             return ""
 
-        # Hard enough to read without the else indent
         example = '/dev/disk/by-id/new_device_name'
         msg = ("Device {} is missing a /dev/disk/by-path symlink.\n"
                "Device cannot be replaced automatically.\n\n"
@@ -1879,15 +1873,13 @@ class OSDDestroyed(object):
         """
         Return ID
         """
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as destroyed:
-                content = yaml.safe_load(destroyed)
-            by_path = self._by_path(device)
-            if by_path and by_path in content:
-                return content[by_path]
-            if device in content:
-                return content[device]
-        return ""
+        content = _safe_load_yaml(self.filename, default="")
+        by_path = self._by_path(device)
+        if by_path and by_path in content:
+            return content[by_path]
+        if device in content:
+            return content[device]
+        return content
 
     # pylint: disable=no-self-use
     def _by_path(self, device):
@@ -1906,28 +1898,20 @@ class OSDDestroyed(object):
         """
         Remove entry
         """
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as destroyed:
-                content = yaml.safe_load(destroyed)
-            by_path = self._by_path(device)
-            if by_path and by_path in content:
-                del content[by_path]
-            # Normally absent
-            if device in content:
-                del content[device]
-            with open(self.filename, 'w') as destroyed:
-                destroyed.write(yaml.dump(content, Dumper=self.friendly_dumper,
-                                default_flow_style=False))
+        content = _safe_load_yaml(self.filename)
+        by_path = self._by_path(device)
+        if by_path and by_path in content:
+            del content[by_path]
+        # Normally absent
+        if device in content:
+            del content[device]
+        _dump_yaml_to_file(content, self.filename, self.friendly_dumper)
 
     def dump(self):
         """
         Display all devices, IDs
         """
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as destroyed:
-                content = yaml.safe_load(destroyed)
-            return content
-        return ""
+        return _safe_load_yaml(self.filename, default="")
 
 
 def update_destroyed(device, osd_id):
@@ -2001,26 +1985,20 @@ class OSDGrains(object):
         """
         Delete an OSD entry
         """
-        content = {}
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as minion_grains:
-                content = yaml.safe_load(minion_grains)
-                # pylint: disable=bare-except
-                try:
-                    del content['ceph'][str(osd_id)]
-                except:
-                    log.error("Cannot delete osd {} from grains".format(osd_id))
-            if content:
-                self._update_grains(content)
+        content = _safe_load_yaml(self.filename)
+        # pylint: disable=bare-except
+        try:
+            del content['ceph'][str(osd_id)]
+        except:
+            log.error("Cannot delete osd {} from grains".format(osd_id))
+        if content:
+            self._update_grains(content)
 
     def _grains(self, storage):
         """
         Load and save grains when changed
         """
-        content = {}
-        if os.path.exists(self.filename):
-            with open(self.filename, 'r') as minion_grains:
-                content = yaml.safe_load(minion_grains)
+        content = _safe_load_yaml(self.filename)
         if 'ceph' in content and content['ceph'] == storage:
             log.debug("No update for {}".format(self.filename))
         else:
@@ -2038,12 +2016,40 @@ class OSDGrains(object):
         friendly_dumper = yaml.SafeDumper
         friendly_dumper.ignore_aliases = lambda self, data: True
 
-        with open(self.filename, 'w') as minion_grains:
-            minion_grains.write(yaml.dump(content,
-                                          Dumper=friendly_dumper,
-                                          default_flow_style=False))
+        _dump_yaml_to_file(content, self.filename, friendly_dumper)
+
         log.info("Syncing grains")
         __salt__['saltutil.sync_grains']()
+
+
+def _dump_yaml_to_file(content,
+                       target_file,
+                       dumper,
+                       default_flow_style=False):
+    """
+    Write yaml content to file
+    """
+    with open(target_file, 'w') as _fd:
+        _fd.write(yaml.dump(content,
+                            Dumper=dumper,
+                            default_flow_style=default_flow_style))
+
+
+def _safe_load_yaml(filename, default={}):
+    """
+    yaml.safe_load can return 'None' when the file
+    is empty or corrupt.
+    """
+    if os.path.exists(filename):
+        with open(filename, 'r') as _fd:
+            content = yaml.safe_load(_fd)
+        if content:
+            log.debug("Content of {} is: {}".format(filename, content))
+            return content
+        log.debug("{} is empty".format(filename))
+        return default
+    return default
+
 
 def is_partitioned(device):
     """

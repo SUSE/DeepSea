@@ -2,7 +2,14 @@ from pyfakefs import fake_filesystem as fake_fs
 from pyfakefs import fake_filesystem_glob as fake_glob
 import pytest
 from srv.salt._modules import osd
-from mock import MagicMock, patch, mock
+from mock import MagicMock, patch, mock, mock_open
+
+
+fs = fake_fs.FakeFilesystem()
+f_os = fake_fs.FakeOsModule(fs)
+f_open = fake_fs.FakeFileOpen(fs)
+f_glob = fake_glob.FakeGlobModule(fs)
+
 
 class TestOSDInstanceMethods():
     '''
@@ -115,6 +122,75 @@ class TestOSDInstanceMethods():
     @pytest.mark.skip(reason="Low priority: skipped")
     def test_readlink(self):
         pass
+
+    def make_callable_dumper(self):
+        class Callable(object):
+            def __call__(self):
+                return None
+
+        return Callable
+
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @pytest.mark.parametrize("content", ['', 'not_empty'])
+    @pytest.mark.parametrize("fn", ['fn.ym', ['']])
+    def test_dump_yaml_to_file(self, yaml_mock, open_mock, fn, content):
+        content = content
+        fn = fn
+        dumper = self.make_callable_dumper()
+        osd._dump_yaml_to_file(content, fn, dumper)
+        open_mock.assert_called_with(fn, 'w')
+        yaml_mock.dump.assert_called_once_with(content, Dumper=dumper, default_flow_style=False)
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    @pytest.mark.parametrize("default", ['', '{}'])
+    @pytest.mark.parametrize("fn", ['foo.txt', ['bar.yml']])
+    def test_safe_load_yaml_1(self, os_path_mock, yaml_mock, open_mock, fn, default):
+        """
+        path exists
+        there is no content
+        """
+        os_path_mock.return_value = True
+        yaml_mock.safe_load.return_value = {}
+        default = default
+        fn = fn
+        result = osd._safe_load_yaml(fn, default)
+        open_mock.assert_called_with(fn, 'r')
+        assert result == default
+        assert yaml_mock.safe_load.mock_calls
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    @pytest.mark.parametrize("fn", ['foo.txt', ['bar.yml']])
+    def test_safe_load_yaml_2(self, os_path_mock, yaml_mock, open_mock, fn):
+        """
+        path exists
+        there is content
+        """
+        os_path_mock.return_value = True
+        yaml_mock.safe_load.return_value = {'something'}
+        fn = fn
+        result = osd._safe_load_yaml(fn)
+        open_mock.assert_called_with(fn, 'r')
+        assert result == result
+        assert yaml_mock.safe_load.mock_calls
+
+    @patch('__builtin__.open')
+    @patch('srv.salt._modules.osd.yaml')
+    @mock.patch('srv.salt._modules.osd.os.path.exists')
+    @pytest.mark.parametrize("fn", ['foo.txt', 'bar.yml'])
+    @pytest.mark.parametrize("default", ['default1', 'default2'])
+    def test_safe_load_yaml_3(self, os_path_mock, yaml_mock, open_mock, fn, default):
+        """
+        path doesn't exist
+        """
+        os_path_mock.return_value = False
+        result = osd._safe_load_yaml(fn, default)
+        assert result == default
 
 
 @pytest.mark.skip(reason="Low priority: skipped")
@@ -2757,103 +2833,259 @@ class TestOSDRemove():
         result = osdr.mark_destroyed()
         assert result == False
 
+
+
 class TestOSDDestroyed():
 
-    fs = fake_fs.FakeFilesystem()
-    f_os = fake_fs.FakeOsModule(fs)
-    f_open = fake_fs.FakeFileOpen(fs)
+    @pytest.fixture(scope='class')
+    def fn(self):
+        return "/etc/ceph/destroyedOSDs.yml"
 
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_update(self):
+    @pytest.fixture(scope='class')
+    def osdd(self):
+        """
+        """
+        print('Setup')
         filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.f_os.makedirs("/etc/ceph")
+        fs.CreateFile(filename)
+        osd.__grains__ = {'id': 'node_id'}
+        with patch('srv.salt._modules.osd.os', f_os):
+            yield osd.OSDDestroyed()
+        print('Teardown')
+        fs.RemoveObject(filename)
 
-        osdd = osd.OSDDestroyed()
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = '/dev/disk/by-path/virtio-pci-0000:00:04.0'
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @pytest.mark.parametrize("osd_id", [0, 1])
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    def test_update_1(self, dump_yaml_mock, safe_load_mock, osdd, fn, osd_id, device):
+        """
+        Device is in content
+        force is False
+        expected return -> ""
+        """
+        safe_mock_return = {device: osd_id}
+        safe_load_mock.return_value = safe_mock_return
 
-        result = osdd.update('/dev/sda', 1)
-        contents = TestOSDDestroyed.f_open(filename).read()
+        result = osdd.update(device, osd_id)
 
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        TestOSDDestroyed.f_os.rmdir("/etc/ceph")
-        TestOSDDestroyed.f_os.rmdir("/etc")
-        assert result == "" and contents == "/dev/disk/by-path/virtio-pci-0000:00:04.0: 1\n"
+        safe_load_mock.assert_called_once_with(fn)
+        assert result == ""
 
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_update_with_no_by_path(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.f_os.makedirs("/etc/ceph")
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("osd_id", [0, 1])
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    def test_update_2(self, by_path_mock, dump_yaml_mock, safe_load_mock, osdd, fn, osd_id, device):
+        """
+        Device is in not content
+        by_path is populated
+        force is False
+        expected return -> ""
+        expect content -> {by_path: osd_id}
+        """
+        safe_mock_return = {}
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = 'by_path_return'
+        by_path_mock.return_value = by_path_return
 
-        osdd = osd.OSDDestroyed()
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = None
+        result = osdd.update(device, osd_id)
 
-        result = osdd.update('/dev/sda', 1)
-        contents = TestOSDDestroyed.f_open(filename).read()
+        dump_yaml_mock.assert_called_once_with({by_path_return: osd_id}, fn, osdd.friendly_dumper)
+        by_path_mock.assert_called_once_with(device)
+        safe_load_mock.assert_called_once_with(fn)
+        assert result == ""
 
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        TestOSDDestroyed.f_os.rmdir("/etc/ceph")
-        TestOSDDestroyed.f_os.rmdir("/etc")
-        assert "Device /dev/sda is missing" in result and contents == "/dev/sda: 1\n"
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("osd_id", [0, 1])
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    def test_update_3(self, by_path_mock, dump_yaml_mock, safe_load_mock, osdd, fn, osd_id, device):
+        """
+        Device is in not content
+        by_path is not populated
+        force is False
+        expected return -> msg
+        expect content -> {device: osd_id}
+        """
+        safe_mock_return = {}
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = ""
+        by_path_mock.return_value = by_path_return
 
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_update_entry_exists(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/sdz1: '1'""")
+        result = osdd.update(device, osd_id)
 
-        osdd = osd.OSDDestroyed()
-        result = osdd.update('/dev/sdz', 1)
+        dump_yaml_mock.assert_called_once_with({device: osd_id}, fn, osdd.friendly_dumper)
+        by_path_mock.assert_called_once_with(device)
+        safe_load_mock.assert_called_once_with(fn)
+        assert "Device {} is missing a /dev/".format(device) in result
 
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert result.startswith("Device /dev/sdz")
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("osd_id", [0, 1])
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    def test_update_4(self, by_path_mock, dump_yaml_mock, safe_load_mock, osdd, fn, osd_id, device):
+        """
+        Device is in not content
+        by_path is populated
+        force is True
+        expected return -> ""
+        expect content -> {device: osd_id}
+        """
+        safe_mock_return = {}
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = ""
+        by_path_mock.return_value = by_path_return
 
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_update_force(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
+        result = osdd.update(device, osd_id, force=True)
 
-        osdd = osd.OSDDestroyed()
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = None
+        dump_yaml_mock.assert_called_once_with({device: osd_id}, fn, osdd.friendly_dumper)
+        by_path_mock.assert_called_once_with(device)
+        safe_load_mock.assert_called_once_with(fn)
+        assert result == ""
 
-        result = osdd.update('/dev/sda', 1, force=True)
-        contents = TestOSDDestroyed.f_open(filename).read()
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", ['', 'something'])
+    def test_get_1(self, by_path_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        file doesn't match
+        by_path is not populated
+        by_path not in content
+        device not in content
+        expect ""
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = ""
+        by_path_mock.return_value = by_path_return
+        result = osdd.get(device)
+        by_path_mock.assert_called_once_with(device)
+        assert result == content
 
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert result == "" and contents == "/dev/sda: 1\n"
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", ['', 'something'])
+    def test_get_2(self, by_path_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        file doesn't match
+        by_path is populated
+        by_path not in content
+        device not in content
+        expect {}
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = '/dev/disk/by-path/virtio-pci-0000:00:04.0'
+        by_path_mock.return_value = by_path_return
+        result = osdd.get(device)
+        by_path_mock.assert_called_once_with(device)
+        assert result == content
 
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_get(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/disk/by-path/virtio-pci-0000:00:04.0: '1'""")
-        osdd = osd.OSDDestroyed()
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", [{'/dev/disk/by-path/virtio-pci-0000:00:04.0': 1}])
+    def test_get_3(self, by_path_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        by_path is populated
+        by_path in content
+        device not in content
+        expect content[by_path] -> osd_id
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = '/dev/disk/by-path/virtio-pci-0000:00:04.0'
+        by_path_mock.return_value = by_path_return
+        result = osdd.get(device)
+        by_path_mock.assert_called_once_with(device)
+        assert result == 1
 
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = '/dev/disk/by-path/virtio-pci-0000:00:04.0'
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", [{'/dev/sdaa': 1, '/dev/sdz': 1}])
+    def test_get_4(self, by_path_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        by_path is populated
+        by_path not in content
+        device in content
+        expect content[by_path] -> osd_id
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = 'different_than_content'
+        by_path_mock.return_value = by_path_return
+        result = osdd.get(device)
+        by_path_mock.assert_called_once_with(device)
+        assert result == 1
 
-        result = osdd.get('/dev/disk/by-path/virtio-pci-0000:00:04.0')
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert result == '1'
-    
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_get_no_match(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/disk/by-path/virtio-pci-0000:00:04.0: '1'""")
-        osdd = osd.OSDDestroyed()
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", [{'/dev/sdaa': 1, '/dev/sdz': 1}])
+    def test_remove_1(self, by_path_mock, dump_yaml_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        file doesn't match
+        by_path is not populated
+        by_path not in content
+        device not in content
+        expect content -> content
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = 'different_than_content'
+        by_path_mock.return_value = by_path_return
+        osdd.remove(device)
+        by_path_mock.assert_called_once_with(device)
+        dump_yaml_mock.assert_called_once_with(content, fn, osdd.friendly_dumper)
 
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = '/dev/disk/by-path/virtio-pci-0000:00:10.0'
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", [{'/dev/disk/by-path/virtio-pci-0000:00:04.0': 1}])
+    def test_remove_2(self, by_path_mock, dump_yaml_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        by_path is populated
+        by_path in content
+        device not in content
+        expect content -> content - content[by_path] (empty in this case)
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = '/dev/disk/by-path/virtio-pci-0000:00:04.0'
+        by_path_mock.return_value = by_path_return
+        osdd.remove(device)
+        by_path_mock.assert_called_once_with(device)
+        dump_yaml_mock.assert_called_once_with({}, fn, osdd.friendly_dumper)
 
-        result = osdd.get('/dev/disk/by-path/virtio-pci-0000:00:10.0')
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert result is ""
-    
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
+    @pytest.mark.parametrize("device", ['/dev/sdaa', '/dev/sdz'])
+    @pytest.mark.parametrize("content", [{'/dev/sdaa': 1}])
+    def test_remove_3(self, by_path_mock, dump_yaml_mock, safe_load_mock, osdd, fn, device, content):
+        """
+        by_path is populated
+        by_path not in content
+        device in content
+        expect content -> content - content[device] (empty in this case)
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        by_path_return = '/dev/disk/by-path/virtio-pci-0000:00:04.0'
+        by_path_mock.return_value = by_path_return
+        osdd.remove(device)
+        by_path_mock.assert_called_once_with(device)
+        dump_yaml_mock.assert_called_once_with({}, fn, osdd.friendly_dumper)
+
     @patch('srv.salt._modules.osd._run')
     def test_by_path(self, mr):
         osdd = osd.OSDDestroyed()
@@ -2878,71 +3110,33 @@ class TestOSDDestroyed():
         result = osdd._by_path("/dev/sda")
         assert result is ""
 
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_remove(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/disk/by-path/virtio-pci-0000:00:04.0: '1'""")
+    @pytest.mark.parametrize("content", [{'/dev/sdaa': 1, 'foo': 'bar'}, {'foo': 'bar'}])
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    def test_dump_1(self, safe_load_mock, osdd, fn, content):
+	"""
+        File is populated
+        Expect to return content
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        result = osdd.dump()
+        safe_load_mock.assert_called_once_with(fn, default="")
+        assert result == content
 
-        osdd = osd.OSDDestroyed()
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = "/dev/disk/by-path/virtio-pci-0000:00:04.0"
-
-        osdd.remove('/dev/sda')
-
-        contents = TestOSDDestroyed.f_open(filename).read()
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert contents == "{}\n"
-
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_remove_original_device(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/sda: '1'""")
-
-        osdd = osd.OSDDestroyed()
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = "/dev/disk/by-path/virtio-pci-0000:00:04.0"
-
-        osdd.remove('/dev/sda')
-
-        contents = TestOSDDestroyed.f_open(filename).read()
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert contents == "{}\n"
-
-    @patch('os.path.exists', new=f_os.path.exists)
-    def test_remove_missing_file(self):
-        osdd = osd.OSDDestroyed()
-        osdd._by_path = mock.Mock()
-        osdd._by_path.return_value = "/dev/disk/by-path/virtio-pci-0000:00:04.0"
-
-        result = osdd.remove('/dev/sda')
-        assert result is None
-
-    @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
-    def test_dump(self):
-        filename = "/etc/ceph/destroyedOSDs.yml"
-        contents = "/dev/sda: '1'"
-        TestOSDDestroyed.fs.CreateFile(filename, contents=contents)
-
-        osdd = osd.OSDDestroyed()
-        results = osdd.dump()
-        TestOSDDestroyed.fs.RemoveFile(filename)
-        assert results == {'/dev/sda': '1'}
-
-    @patch('os.path.exists', new=f_os.path.exists)
-    def test_dump_missing_file(self):
-        osdd = osd.OSDDestroyed()
-        results = osdd.dump()
-        assert results is ""
+    @pytest.mark.parametrize("content", [""])
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    def test_dump_2(self, safe_load_mock, osdd, fn, content):
+	"""
+        File is empty
+        Expect to return content
+        """
+        safe_mock_return = content
+        safe_load_mock.return_value = safe_mock_return
+        result = osdd.dump()
+        safe_load_mock.assert_called_once_with(fn, default="")
+        assert result == content
 
 class TestOSDGrains():
-
-    fs = fake_fs.FakeFilesystem()
-    f_os = fake_fs.FakeOsModule(fs)
-    f_open = fake_fs.FakeFileOpen(fs)
-    f_glob = fake_glob.FakeGlobModule(fs)
 
     @patch('glob.glob', new=f_glob.glob)
     def test_retain(self):
@@ -2951,13 +3145,13 @@ class TestOSDGrains():
                                                'osd': '/dev/vdb1'}
         mock_device.osd_fsid.return_value = '66758302-deb5-4078-b871-988c54f0eb57'
         filename = "/var/lib/ceph/osd/ceph-0/type"
-        TestOSDGrains.fs.CreateFile(filename)
+        fs.CreateFile(filename)
 
         osdg = osd.OSDGrains(mock_device)
         osdg._grains = mock.Mock()
         osdg.retain()
-        TestOSDGrains.fs.RemoveFile(filename)
-        TestOSDGrains.f_os.rmdir("/var/lib/ceph/osd/ceph-0")
+        fs.RemoveFile(filename)
+        f_os.rmdir("/var/lib/ceph/osd/ceph-0")
         assert osdg._grains.call_count == 1
         osdg._grains.assert_called_with({'0': {'fsid': '66758302-deb5-4078-b871-988c54f0eb57', 'partitions': {'block': '/dev/vdb2', 'osd': '/dev/vdb1'}}})
 
@@ -2975,7 +3169,8 @@ class TestOSDGrains():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    def test_delete_no_file(self):
+    @patch('srv.salt._modules.osd.log')
+    def test_delete_no_file(self, log_mock):
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
@@ -2983,13 +3178,13 @@ class TestOSDGrains():
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg.delete(1)
-        assert osdg._update_grains.call_count == 0
+        log_mock.error.assert_called_once_with('Cannot delete osd 1 from grains') 
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
     def test_delete_empty_file(self):
         filename = "/etc/salt/grains"
-        TestOSDGrains.fs.CreateFile(filename)
+        fs.CreateFile(filename)
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
@@ -2997,7 +3192,7 @@ class TestOSDGrains():
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg.delete(1)
-        TestOSDGrains.fs.RemoveFile(filename)
+        fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 0
 
     @patch('os.path.exists', new=f_os.path.exists)
@@ -3018,7 +3213,7 @@ class TestOSDGrains():
                   osd: /dev/vdd1
             """
 
-        TestOSDGrains.fs.CreateFile(filename, contents=contents)
+        fs.CreateFile(filename, contents=contents)
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
@@ -3026,7 +3221,7 @@ class TestOSDGrains():
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg.delete(10)
-        TestOSDGrains.fs.RemoveFile(filename)
+        fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 1
         expected = {'ceph': 
                        {'17': {'fsid': '28e231cd-cd01-40f9-aa47-e332ccf73e35',
@@ -3036,11 +3231,13 @@ class TestOSDGrains():
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
-    def test_grains_no_file(self):
+    @patch('srv.salt._modules.osd._safe_load_yaml')
+    def test_grains_no_file(self, safe_load_mock):
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
         mock_device.osd_fsid.return_value = '66758302-deb5-4078-b871-988c54f0eb57'
+        safe_load_mock.return_value = {}
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg._grains("data")
@@ -3056,7 +3253,7 @@ class TestOSDGrains():
             deepsea:
               - default
             """
-        TestOSDGrains.fs.CreateFile(filename, contents=contents)
+        fs.CreateFile(filename, contents=contents)
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
@@ -3064,7 +3261,7 @@ class TestOSDGrains():
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg._grains("data")
-        TestOSDGrains.fs.RemoveFile(filename)
+        fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 1
         expected = {'ceph': 'data', 'deepsea': ['default']}
         osdg._update_grains.assert_called_with(expected)
@@ -3082,7 +3279,7 @@ class TestOSDGrains():
                   osd: /dev/vdd1
             """
 
-        TestOSDGrains.fs.CreateFile(filename, contents=contents)
+        fs.CreateFile(filename, contents=contents)
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
                                                'osd': '/dev/vdb1'}
@@ -3093,11 +3290,12 @@ class TestOSDGrains():
                                'partitions': {'block': '/dev/vdd2',
                                               'osd': '/dev/vdd1'}}}
         osdg._grains(storage)
-        TestOSDGrains.fs.RemoveFile(filename)
+        fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 0
 
     @patch('__builtin__.open', new=f_open)
-    def test_update_grains(self):
+    @patch('srv.salt._modules.osd._dump_yaml_to_file')
+    def test_update_grains(self, dump_yaml_mock):
         filename = "/etc/salt/grains"
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
@@ -3108,9 +3306,8 @@ class TestOSDGrains():
         osd.__salt__['saltutil.sync_grains'] = mock.Mock()
 
         osdg._update_grains(content)
-        contents = TestOSDGrains.f_open(filename).read()
-        expected = "deepsea:\n- default\n"
-        assert contents == expected
+        from yaml import SafeDumper
+        dump_yaml_mock.assert_called_once_with(content, '/etc/salt/grains', SafeDumper)
 
 
 class Test_is_incorrect():
