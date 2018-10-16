@@ -1,4 +1,35 @@
 -------------------------------------------------------------------
+Tue Oct 16 14:25:45 UTC 2018 - jschmid@suse.com
+
+- Version 0.8.7
+- qa/igw: enable targetcli debug logging
+- qa/iscsi: assert test script not running on the igw node
+- qa/iscsi: refactor iscsi_mount_and_sanity_test
+- Remove journal_size, if present
+- fix _insert_replace_flag func header (bsc#1110939)
+- fix: only check OSDs after restarting an OSD (bsc#1110759)
+- qa: add baseline engulf functional test
+- populate/engulf: overwrite profile-import during engulf (#bsc1108495)
+- populate/engulf: use .format for string manipulation
+- populate/engulf: unify returns and error messages
+- populate/engulf: print info about engulfed config
+- mds/restart: fix restarts when minion_id is fqdn (bsc#1110852)
+- Use FQDN hostname also for MASTER_MINION
+- cli: terminal_outputter: don't dereference a runner step that already finished (bsc#1110936)
+- cli: stage_parser: fix state rendering when no minions match the target (bsc#1110767)
+- cli: tests: use salt 2016 (Carbon) with leap 42.3 to test this branch
+- qa: always report completion of deploy phase
+- proposal: remove target and std_args globals (bsc#1100609)
+- qa/deploy: fix error-reporting issues
+- alerting: add link to alert rule doc
+- alerting: use appropriate path to minion pillar
+- qa/common: properly report stage timeout when running via cli
+- qa/common: dump lrbd.service status in certain failure cases
+- qa/health-ok: repeat Stage 0 only once
+- functests: fix pid comparisons when process not running
+- functests: stop restart test if no pid
+
+-------------------------------------------------------------------
 Fri Sep 27 16:16:45 UTC 2018 - jschmid@suse.com
 
 - fix: Remove error condition, empty cluster network is valid (bsc#1107826)
