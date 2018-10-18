@@ -970,12 +970,171 @@ class Validate(Preparation):
             self.passed['kernel_module'] = 'valid'
         self._set_pass_status('kernel_module')
 
+    def config_check(self):
+        """
+        Verify if config does not contain any deprecated config k:v pairs
+        """
+        issue_map = ConfigCheck().run()
+        for conf_obj in issue_map:
+            key = conf_obj.key
+            values = conf_obj.values
+            filename = conf_obj.filename
+            release = conf_obj.release
+            if not values:
+                msg = "Key {} is deprecated. Please remove it from your config".format(key)
+            else:
+                values = '/'.join(values)
+                # pylint: disable=line-too-long
+                msg = "Key {} with value(s) {} was found (deprecated since {})".format(key, values, release)
+
+            self.errors["{}::{}".format(filename, key)] = msg
+
     def report(self):
         """
         Print the validation report
         """
         self.printer.add(self.name, self.skipped, self.passed, self.errors, self.warnings)
         self.printer.print_result()
+
+
+class ConfigCheck(object):
+    """Class to detect deprecated config values in files.
+
+    Attributes:
+        base_path (str): Base path
+        map_file (str): Map file path
+        conf_path (str): Conf file path
+        suffix (str): Suffix for config files
+        files (list): List of files from glob
+        map (dict): Map of deprecated k:v
+        issues (list): List of found incidents
+    """
+    def __init__(self):
+
+        self.base_path = '/srv/salt/ceph/configuration/files'
+        self.map_file = '{}/deprecated_map.yml'.format(self.base_path)
+        self.conf_path = '{}/ceph.conf.d'.format(self.base_path)
+        self.suffix = '.conf'
+        self.files = glob.glob("{path}/*{suffix}".format(path=self.conf_path,
+                                                         suffix=self.suffix))
+        self.map = self.load_map()
+        self.issues = []
+
+    def load_map(self):
+        """
+        Loads k:v map from disk
+
+        Returns:
+            YAML map
+        Raises:
+            YAMLError
+        """
+        with open(self.map_file, 'r') as _fd:
+            try:
+                return yaml.load(_fd)
+            except yaml.YAMLError:
+                log.error('Could not read {}'.format(self.map_file))
+
+    def read_lines(self, filename):
+        """ Reads lines from an open file and returns a generator
+        Args:
+            fn (str): filename
+        Yields:
+            str: line from file
+        """
+        with open(filename, 'r') as _fd:
+            for line in _fd.readlines():
+                yield line
+
+    def extract_k_v(self, line):
+        """ Extracts key and value from line
+        Args:
+            line (str): line from file
+        Returns:
+            tuple: stripped key and value
+        """
+        _key, _value = line.split('=')
+        return _key.strip(), _value.strip()
+
+    def check_line(self, line):
+        """ Checks a line for deprecated keys/values
+        Args:
+            line (str): line from file
+        Returns:
+            DeprecatedConf: instance of obj
+        """
+        _key, _value = self.extract_k_v(line)
+        return self.compare_k_v_to_map(_key, _value)
+
+    def compare_k_v_to_map(self, key, value):
+        """ Compares k:v against a map of k:v that are know to be deprecated
+        Args:
+            k (str): key from config
+            v (str): value from config
+        Returns:
+            DeprecatedConf: instance of obj or None
+        """
+        obj = None
+        for release, kv_map in self.map.items():
+            if key not in kv_map:
+                continue
+            if isinstance(kv_map[key], list):
+                obj = DeprecatedConf(key=key,
+                                     release=release)
+                for depr_val in kv_map[key]:
+                    if value == depr_val:
+                        obj.add_value(depr_val)
+            if isinstance(kv_map[key], str):
+                if kv_map[key] == value:
+                    obj = DeprecatedConf(key=key,
+                                         release=release,
+                                         values=[value])
+        return obj
+
+    def run(self):
+        """
+        Returns:
+            list: contains objects of DeprecatedConf
+        """
+        for filename in self.files:
+            for line in self.read_lines(filename):
+                conf_object = self.check_line(line)
+                if not conf_object:
+                    continue
+                conf_object.set_filename(filename)
+                self.issues.append(conf_object)
+        return self.issues
+
+
+class DeprecatedConf(object):
+    """Simple class to store and access information conveniently.
+
+    Attributes:
+        filename (str): Filename the k:v is associated with
+        release (str): Release the k:v is deprecated in
+        key (str): Name of the key
+        value (list): List of found deprecated values
+    """
+
+    def __init__(self, **kwargs):
+        self.filename = kwargs.get('filename', None)
+        self.release = kwargs.get('release', None)
+        self.key = kwargs.get('key', None)
+        self.values = kwargs.get('values', [])
+
+    def add_value(self, value):
+        """ Adds value to values attribute
+        Args:
+            value (str): Deprecated config value
+        """
+        self.values.append(value)
+
+    def set_filename(self, filename):
+        """ Sets filename
+        Args:
+            fn (str): Filename the object is associated with
+        """
+        self.filename = filename
 
 
 def help_():
@@ -1055,6 +1214,28 @@ def discovery(cluster=None, printer=None, **kwargs):
         valid.profiles_populated()
     valid.report()
 
+    if valid.errors:
+        return False
+
+    return True
+
+
+def config_check(cluster=None, printer=None, **kwargs):
+    """
+    Config Check user facing call
+    """
+    if not cluster:
+        usage(func='pillar')
+        exit(1)
+
+    # Restrict search to this cluster
+    search = "I@cluster:{}".format(cluster)
+
+    printer = get_printer(**kwargs)
+    valid = Validate(cluster, search_pillar=True, search_grains=True,
+                     printer=printer, search=search)
+    valid.config_check()
+    valid.report()
     if valid.errors:
         return False
 
