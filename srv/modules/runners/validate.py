@@ -976,7 +976,7 @@ class Validate(Preparation):
         """
         Salt Updates available?
         Adds ~3 seconds to the setup validation
-        indipendent of the cluster size
+        independent of the cluster size
         I tried using a mine(.get) here but it turns
         out that I _very_ often get stale results..
         Refreshing the mine everytime before running
