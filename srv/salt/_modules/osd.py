@@ -82,7 +82,7 @@ def pairs():
     with open('/proc/mounts') as mounts:
         for line in mounts:
             _partition, path = line.split()[:2]
-            if path in _paths:
+            if path in paths:
                 match = re.match(r'^(.+)\d+$', _partition)
                 device = match.group(1)
                 if device.endswith('p'):
@@ -1114,7 +1114,7 @@ class OSDCommands(object):
             partitions = sorted([ re.sub(r"{}p?".format(device), '', p) for p in pathnames ], key=int, reverse=True)
             # best strategy? remove key=int and do checks before conversion ourselves?
             log.debug("partitions: {}".format(partitions))
-            for partition in partitions:
+            for _partition in partitions:
                 log.debug("checking partition {} on device {}".format(partition, device))
                 # Not confusing at all - use digit for NVMe too
                 if self.is_partition(partition_type, device, _partition):
@@ -1412,7 +1412,7 @@ def split_partition(partition):
     if disk.endswith('p'):
         disk = disk[:-1]
         log.debug("Truncating p {}".format(disk))
-    return disk, m.group(2)
+    return disk, match.group(2)
     #return None, None
 
 class OSDRemove(object):
