@@ -177,7 +177,6 @@ class Zypper(PackageManager):
     def _refresh(self):
         """
         Refresh Zypper before updating
-        Raise RefreshFailed when returncode != 1
         """
         log.info("Refreshing Repositories..")
 

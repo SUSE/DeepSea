@@ -1020,14 +1020,15 @@ class Validate(Preparation):
         status = [x['status'] for x in updates_list]
         packages = [x['packages'] for x in updates_list]
         if False in status:
-            self.warnings['refresh_repos'] = ["Experienced trouble refreshing the repositories."]
+            # pylint: disable=line-too-long
+            self.warnings['refresh_repos'] = ["Experienced trouble refreshing the repositories. Please find more information in the minion logs"]
         # flatten the packages list to avoid iterating over all minion['packages']
         updates = [item for sublist in packages for item in sublist]
         if not updates:
             self.passed['ceph_updates'] = "valid"
         else:
             # pylint: disable=line-too-long
-            msg = ("On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size.")
+            msg = ("On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size. If you want to find out which packages will be updated, you can get the full list with salt -I 'cluster:ceph' packagemanager.list_ceph_updates")
             self.warnings['ceph_updates'] = [msg]
 
     def report(self):
