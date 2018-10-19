@@ -177,6 +177,7 @@ class Zypper(PackageManager):
     def _refresh(self):
         """
         Refresh Zypper before updating
+        Raise RefreshFailed when returncode != 1
         """
         log.info("Refreshing Repositories..")
 
@@ -189,10 +190,10 @@ class Zypper(PackageManager):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         proc.wait()
         if proc.returncode != 0:
-            log.error('Refreshing failed. Check the repos')
-            log.debug('Executing {}'.format(cmd))
+            log.error('Refreshing failed. There might be an issue resolving the repos')
+            log.debug('Executed {}'.format(cmd))
             return False
-        return None
+        return True
 
     # pylint: disable=no-self-use
     def _upgrades_needed(self):
@@ -233,16 +234,21 @@ class Zypper(PackageManager):
         """
         List all pending updates (transformed from XML)
         """
-        self._refresh()
+        ret = {'status': True, 'packages': []}
+        ret_refresh = self._refresh()
+        if ret_refresh is False:
+            log.error("Error while refreshing the repos.")
+            ret['status'] = ret_refresh
         cmd = "zypper -x lu"
         log.debug('Executing {}'.format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, _ = proc.communicate()
         stdout = __salt__['helper.convert_out'](stdout)
-        update_list = self._parse_xml(stdout)
+        ret['packages'] = self._parse_xml(stdout)
         if _filter:
-            return [x for x in update_list if any(w in x['name'] for w in _filter)]
-        return update_list
+            ret['packages'] = [x for x in ret['packages'] if any(w in x['name'] for w in _filter)]
+            return ret
+        return ret
 
     def _patches_needed(self):
         """

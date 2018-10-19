@@ -987,7 +987,13 @@ class Validate(Preparation):
         updates = self.local.cmd(self.matches,
                                  'packagemanager.list_salt_updates',
                                  tgt_type='list')
-        updates = [item for sublist in list(updates.values()) for item in sublist]
+        updates_list = list(updates.values())
+        status = [x['status'] for x in updates_list]
+        packages = [x['packages'] for x in updates_list]
+        if False in status:
+            self.warnings['refresh_repos'] = ["Experienced trouble refreshing repositories."]
+        # flatten the packages list to avoid iterating over all minion['packages']
+        updates = [item for sublist in packages for item in sublist]
         if not updates:
             self.passed['salt_updates'] = "valid"
         else:
@@ -1009,7 +1015,14 @@ class Validate(Preparation):
         updates = self.local.cmd(self.matches,
                                  'packagemanager.list_ceph_updates',
                                  tgt_type='list')
-        updates = [item for sublist in list(updates.values()) for item in sublist]
+
+        updates_list = list(updates.values())
+        status = [x['status'] for x in updates_list]
+        packages = [x['packages'] for x in updates_list]
+        if False in status:
+            self.warnings['refresh_repos'] = ["Experienced trouble refreshing the repositories."]
+        # flatten the packages list to avoid iterating over all minion['packages']
+        updates = [item for sublist in packages for item in sublist]
         if not updates:
             self.passed['ceph_updates'] = "valid"
         else:

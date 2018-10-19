@@ -107,49 +107,57 @@ class TestZypper():
         ret = zypp._parse_xml('test')
         et_mock.fromstring.assert_called_once_with('test')
 
+    @pytest.mark.parametrize("refresh_return", [True, False])
+    @pytest.mark.parametrize("_parse_xml_return", [[{'name': 'ceph', 'arch': 'x86_64'}],
+                                                   [{'name': 'ceph-mds', 'arch': 'x86_64'}]])
     @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
     @mock.patch('srv.salt._modules.packagemanager.log')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
-    def test_list_updates(self, po, parse_mock, log_mock, refresh_mock, zypp):
+    def test_list_updates(self, po, parse_mock, log_mock, refresh_mock, refresh_return, _parse_xml_return, zypp):
         """
         no filter
         """
-        inp =  [{'name': 'ceph', 'arch': 'x86_64'}]
         po.return_value.communicate.return_value = ("packages out", "error")
-        parse_mock.return_value = inp
+        parse_mock.return_value = _parse_xml_return
+        refresh_mock.return_value = refresh_return
         ret = zypp.list_updates()
-        assert ret == inp
+        assert ret == {'status': refresh_return, 'packages': _parse_xml_return}
 
+    @pytest.mark.parametrize("refresh_return", [True, False])
+    @pytest.mark.parametrize("_parse_xml_return", [[{'name': 'ceph', 'arch': 'x86_64'}],
+                                                   [{'name': 'ceph-mds', 'arch': 'x86_64'}]])
     @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
     @mock.patch('srv.salt._modules.packagemanager.log')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
-    def test_list_updates_1(self, po, parse_mock, log_mock, refresh_mock, zypp):
+    def test_list_updates_1(self, po, parse_mock, log_mock, refresh_mock, refresh_return, _parse_xml_return, zypp):
         """
         with filter
         empty result
         """
-        inp =  [{'name': 'ceph', 'arch': 'x86_64'}]
         po.return_value.communicate.return_value = ("packages out", "error")
-        parse_mock.return_value = inp
+        parse_mock.return_value = _parse_xml_return
+        refresh_mock.return_value = refresh_return
         ret = zypp.list_updates(_filter=['no_match'])
-        assert ret == []
+        assert ret == {'status': refresh_return, 'packages': []}
 
+    @pytest.mark.parametrize("refresh_return", [True, False])
+    @pytest.mark.parametrize("_parse_xml_return", [[{'name': 'ceph', 'arch': 'x86_64'}, {'name': 'no_match', 'arch': 'x86_64'}]])
     @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
     @mock.patch('srv.salt._modules.packagemanager.log')
     @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
     @mock.patch('srv.salt._modules.packagemanager.Popen')
-    def test_list_updates_3(self, po, parse_mock, log_mock, refresh_mock, zypp):
+    def test_list_updates_3(self, po, parse_mock, log_mock, refresh_mock, refresh_return, _parse_xml_return, zypp):
         """
         with filter
         diff returns
         """
-        inp = [{'name': 'ceph', 'arch': 'x86_64'}, {'name': 'no-match', 'arch': 'x86_64'}]
         po.return_value.communicate.return_value = ("packages out", "error")
-        parse_mock.return_value = inp
+        parse_mock.return_value = _parse_xml_return
+        refresh_mock.return_value = refresh_return
         ret = zypp.list_updates(_filter=['ceph'])
-        assert ret == [{'name': 'ceph', 'arch': 'x86_64'}]
+        assert ret == {'status': refresh_return, 'packages': [{'name': 'ceph', 'arch': 'x86_64'}]}
 
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
