@@ -63,6 +63,10 @@ class TestZypper():
         """
         pm.__grains__ = {'os': 'suse'}
         args = {'debug': False, 'kernel': False, 'reboot': False}
+        def pass_through(*args, **kwargs):
+            return args[0]
+        mock_func = create_autospec(lambda x: x, side_effect=pass_through)
+        pm.__salt__ = {'helper.convert_out': mock_func}
         yield PackageManager(**args).pm
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
@@ -94,6 +98,67 @@ class TestZypper():
         ret = zypp._updates_needed()
         assert po.called is True
         assert ret is True
+
+    @mock.patch('srv.salt._modules.packagemanager.ET')
+    def test_parse_xml(self, et_mock, zypp):
+        """
+        I think it's only mildly neccessary to test the xml lib
+        """
+        ret = zypp._parse_xml('test')
+        et_mock.fromstring.assert_called_once_with('test')
+
+    @pytest.mark.parametrize("refresh_return", [True, False])
+    @pytest.mark.parametrize("_parse_xml_return", [[{'name': 'ceph', 'arch': 'x86_64'}],
+                                                   [{'name': 'ceph-mds', 'arch': 'x86_64'}]])
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
+    @mock.patch('srv.salt._modules.packagemanager.log')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test_list_updates(self, po, parse_mock, log_mock, refresh_mock, refresh_return, _parse_xml_return, zypp):
+        """
+        no filter
+        """
+        po.return_value.communicate.return_value = ("packages out", "error")
+        parse_mock.return_value = _parse_xml_return
+        refresh_mock.return_value = refresh_return
+        ret = zypp.list_updates()
+        assert ret == {'status': refresh_return, 'packages': _parse_xml_return}
+
+    @pytest.mark.parametrize("refresh_return", [True, False])
+    @pytest.mark.parametrize("_parse_xml_return", [[{'name': 'ceph', 'arch': 'x86_64'}],
+                                                   [{'name': 'ceph-mds', 'arch': 'x86_64'}]])
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
+    @mock.patch('srv.salt._modules.packagemanager.log')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test_list_updates_1(self, po, parse_mock, log_mock, refresh_mock, refresh_return, _parse_xml_return, zypp):
+        """
+        with filter
+        empty result
+        """
+        po.return_value.communicate.return_value = ("packages out", "error")
+        parse_mock.return_value = _parse_xml_return
+        refresh_mock.return_value = refresh_return
+        ret = zypp.list_updates(_filter=['no_match'])
+        assert ret == {'status': refresh_return, 'packages': []}
+
+    @pytest.mark.parametrize("refresh_return", [True, False])
+    @pytest.mark.parametrize("_parse_xml_return", [[{'name': 'ceph', 'arch': 'x86_64'}, {'name': 'no_match', 'arch': 'x86_64'}]])
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._refresh')
+    @mock.patch('srv.salt._modules.packagemanager.log')
+    @mock.patch('srv.salt._modules.packagemanager.Zypper._parse_xml')
+    @mock.patch('srv.salt._modules.packagemanager.Popen')
+    def test_list_updates_3(self, po, parse_mock, log_mock, refresh_mock, refresh_return, _parse_xml_return, zypp):
+        """
+        with filter
+        diff returns
+        """
+        po.return_value.communicate.return_value = ("packages out", "error")
+        parse_mock.return_value = _parse_xml_return
+        refresh_mock.return_value = refresh_return
+        ret = zypp.list_updates(_filter=['ceph'])
+        assert ret == {'status': refresh_return, 'packages': [{'name': 'ceph', 'arch': 'x86_64'}]}
+
 
     @mock.patch('srv.salt._modules.packagemanager.Popen')
     def test__patches_needed(self, po, zypp):

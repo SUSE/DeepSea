@@ -182,6 +182,223 @@ class TestValidation():
         assert "Too few mgrs" in validator.errors['mgrs'][0]
 
     @patch('salt.client.LocalClient', autospec=True)
+    def test_ceph_updates(self, mock_localclient):
+        """
+        Refresh works for both minions
+        and there are new packages
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+
+        fake_data = {'admin.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'python3-cephfs'}],
+                                    'status': 'True'},
+                     'data1.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'python3-cephfs'}],
+                                    'status': 'True'}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.ceph_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 1
+        assert "On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_ceph_updates_1(self, mock_localclient):
+        """
+        Refresh fails for one of the minions
+        and there are new packages
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+
+        fake_data = {'admin.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'python3-cephfs'}],
+                                    'status': False},
+                     'data1.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'edition': '13.2.1.427+g6cd01d4dd2-1.10',
+                                                  'edition-old': '13.2.1.427+g6cd01d4dd2-1.8',
+                                                  'kind': 'package',
+                                                  'name': 'python3-cephfs'}],
+                                    'status': True}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.ceph_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 2
+        assert "On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
+        assert "Experienced trouble refreshing the repositories" in validator.warnings['refresh_repos'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_no_ceph_updates(self, mock_localclient):
+        """
+        no updates
+        repos refresh works
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'admin.ceph': {'packages': [],
+                                    'status': True},
+                     'data1.ceph': {'packages': [],
+                                    'status': True}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.ceph_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 0
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_no_ceph_updates_1(self, mock_localclient):
+        """
+        no updates
+        repos refresh doesn't work for one node
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'admin.ceph': {'packages': [],
+                                    'status': False},
+                     'data1.ceph': {'packages': [],
+                                    'status': True}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.ceph_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 1
+        assert "Experienced trouble refreshing the repositories" in validator.warnings['refresh_repos'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_salt_updates(self, mock_localclient):
+        """
+        updates
+        repo refresh works
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'admin.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'name': 'salt-minion'}],
+                                    'status': True},
+                     'data1.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'name': 'salt-master'}],
+                                    'status': True}}
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.salt_updates()
+        assert len(validator.errors) == 1
+        assert len(validator.warnings) == 0
+        assert "You have a salt update pending" in validator.errors['salt_updates'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_salt_updates_1(self, mock_localclient):
+        """
+        updates
+        repo refresh works on one node
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'admin.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'name': 'salt-minion'}],
+                                    'status': False},
+                     'data1.ceph': {'packages': [{'arch': 'x86_64',
+                                                  'name': 'ceph'},
+                                                  {'arch': 'x86_64',
+                                                  'name': 'salt-master'}],
+                                    'status': True}}
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.salt_updates()
+        assert len(validator.errors) == 1
+        assert len(validator.warnings) == 1
+        assert "You have a salt update pending" in validator.errors['salt_updates'][0]
+        assert "Experienced trouble refreshing repositories" in validator.warnings['refresh_repos'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_no_salt_updates(self, mock_localclient):
+        """
+        updates present
+        refresh works
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'admin.ceph': {'packages': [],
+                                    'status': True},
+                     'data1.ceph': {'packages': [],
+                                    'status': True}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.salt_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 0
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_no_salt_updates_1(self, mock_localclient):
+        """
+        updates present
+        refresh failed on one node
+        """
+        validate.__utils__ = {'deepsea_minions.show': lambda: '*'}
+        validate.__utils__.update({'deepsea_minions.matches': lambda: ['node1', 'node2']})
+        fake_data = {'admin.ceph': {'packages': [],
+                                    'status': False},
+                     'data1.ceph': {'packages': [],
+                                    'status': True}}
+
+        local = mock_localclient.return_value
+        local.cmd.return_value = fake_data
+        validator = validate.Validate("setup", search_pillar=True)
+        validator.salt_updates()
+        assert len(validator.errors) == 0
+        assert len(validator.warnings) == 1
+        assert "Experienced trouble refreshing repositories" in validator.warnings['refresh_repos'][0]
+
+
+    @patch('salt.client.LocalClient', autospec=True)
     def test_storage(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',
                                'ceph': {'storage': 'dummy_osds'}},
@@ -399,7 +616,7 @@ class TestValidation():
         assert len(validator.passed) == 0
         validator.kernel()
         assert validator.passed['kernel_module'] == 'valid'
-    
+
 
     @patch('salt.client.LocalClient')
     def test_kernel_wrong(self, mock_localclient):

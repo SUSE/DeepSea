@@ -73,24 +73,6 @@ def _cmp(x, y):
 
     return (x > y) - (x < y)
 
-class Settings(object):
-    """
-    Common settings
-    """
-
-    def __init__(self):
-        """
-        Assign root_dir, salt __opts__ and stack configuration.  (Stack
-        configuration is not used currently.)
-        """
-        __opts__ = salt.config.client_config('/etc/salt/master')
-        self.__opts__ = __opts__
-
-        for ext in __opts__['ext_pillar']:
-            if 'stack' in ext:
-                self.stack = ext['stack']
-        self.root_dir = "/srv/pillar/ceph/proposals"
-
 
 class SaltWriter(object):
     """
@@ -847,7 +829,7 @@ def show(**kwargs):
     print ("DEPRECATION WARNING: the generation of storage profiles is now"
            " handled by the proposal runner. This function will go away in the"
            " future.")
-    settings = Settings()
+    settings = __utils__['settings.self_']()
 
     salt_writer = SaltWriter(**kwargs)
 
@@ -894,7 +876,7 @@ def proposals(**kwargs):
     Collect the hardware profiles, all possible role assignments and common
     configuration under /srv/pillar/ceph/proposals
     """
-    settings = Settings()
+    settings = __utils__['settings.self_']()
 
     salt_writer = SaltWriter(**kwargs)
 
@@ -1077,9 +1059,9 @@ def engulf_existing_cluster(**kwargs):
 
     search = __utils__['deepsea_minions.show']()
     local = salt.client.LocalClient()
-    settings = Settings()
-    salt_writer = SaltWriter(overwrite=True)
     exception = kwargs.get('exception', False)
+    settings = __utils__['settings.self_']()
+    salt_writer = SaltWriter(overwrite=True)
 
     # Make sure deepsea_minions contains valid minions before proceeding with engulf.
     from . import validate
