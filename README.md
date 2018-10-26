@@ -35,6 +35,10 @@ For those interested in learning about some of the uses of Salt in DeepSea, see 
 ## Usage
 You need at least a minimum of 4 nodes to be able to test and use DeepSea properly.
 
+For automating the deployment of ceph and Deepsea, you can use: https://github.com/MalloZup/ceph-open-terrarium/.
+You will be able to easy create, deploy VMs and disks in configurable manner, and pre-configure/provisioning your vms for running `Deepsea`.
+
+
 To be able to use less than 4 nodes during the deployment stages (e.g. in a
 development/testing environment), you could set the option `DEV_ENV=true` as an
 environment variable or globally as a pillar variable in
