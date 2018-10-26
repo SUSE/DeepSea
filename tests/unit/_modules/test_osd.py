@@ -3187,7 +3187,7 @@ class Test_is_incorrect():
         Test_is_incorrect.proc_mount.SetContents(
             '''/dev/sdb /var/lib/ceph/osd/ceph-1 rest\n''')
         ret = obj.is_incorrect()
-        assert ret == False
+        assert ret is False
 
     @pytest.mark.skip(reason="disabled until found out why pyfakefs is failing")
     @patch('os.path.exists', new=f_os.path.exists)
