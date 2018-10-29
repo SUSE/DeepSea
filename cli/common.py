@@ -235,6 +235,7 @@ class PrettyPrinter(object):
         Prints text formatted as bold
         """
         sys.stdout.write(PrettyPrinter.bold(text))
+        sys.stdout.flush()
 
     @staticmethod
     def pl_bold(text):
@@ -242,6 +243,7 @@ class PrettyPrinter(object):
         Prints text formatted as bold with newline in the end
         """
         sys.stdout.write(u"{}\n".format(PrettyPrinter.bold(text)))
+        sys.stdout.flush()
 
     @classmethod
     def print(cls, text):
@@ -249,6 +251,7 @@ class PrettyPrinter(object):
         Prints text as is
         """
         sys.stdout.write(text)
+        sys.stdout.flush()
 
     @classmethod
     def println(cls, text=None):
@@ -257,8 +260,10 @@ class PrettyPrinter(object):
         """
         if text:
             sys.stdout.write(u"{}\n".format(text))
+            sys.stdout.flush()
         else:
             sys.stdout.write(u"\n")
+            sys.stdout.flush()
 
     @classmethod
     def p_blue(cls, text):
