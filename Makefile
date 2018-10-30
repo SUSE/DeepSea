@@ -5,7 +5,6 @@ VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' 
 DEEPSEA_DEPS=salt-api
 PYTHON_DEPS=python3-setuptools python3-click python3-tox
 PYTHON=python3
-PIPCMD=""
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 ifeq ($(OS), opensuse)
@@ -967,7 +966,6 @@ install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
 	$(PKG_INSTALL) $(DEEPSEA_DEPS) || true
 	$(PKG_INSTALL) $(PYTHON_DEPS) || true
-	$(PIPCMD) >/dev/null 2>&1 || true
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
