@@ -4,10 +4,10 @@
 {% set timeout=salt['pillar.get']('minions_ready_timeout', 30) %}
 {% if salt.saltutil.runner('minions.ready', timeout=timeout) %}
 
-update salt:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - sls: ceph.updates.salt
+#update salt:
+#  salt.state:
+#    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+#    - sls: ceph.updates.salt
 
 mines:
   salt.state:
@@ -154,7 +154,7 @@ unset noout after final iteration:
     - tgt: {{ master }}
     - failhard: True
 
-set luminous osds: 
+set nautilus osds: 
   salt.state:
     - sls: ceph.setosdflags.requireosdrelease
     - tgt: {{ master }}
