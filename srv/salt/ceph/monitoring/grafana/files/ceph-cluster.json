@@ -1950,7 +1950,7 @@
       ]
     },
     "time": {
-      "from": "now-30m",
+      "from": "now-12h",
       "to": "now"
     },
     "timepicker": {
