@@ -372,7 +372,7 @@ def _deploy_in_minions(minions):
         target = 'L@{}'.format(','.join(minions))
     else:
         target = 'I@roles:igw'
-    state_res = local.cmd(target, 'state.apply', ['ceph.igw.restart'], tgt_type="compound")
+    state_res = local.cmd(target, 'state.apply', ['ceph.igw.restart.force'], tgt_type="compound")
     for minion, states in state_res.items():
         result['minions'][minion] = _check_state_result(states)
         if not result['minions'][minion]:
