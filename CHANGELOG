@@ -1,4 +1,39 @@
 -------------------------------------------------------------------
+Fri Nov 11 13:15:19 UTC 2018 - jschmid@suse.com
+
+- Version 0.9.8
+- dummy lvm: add basic ceph-volume implementation and use it
+- Pin the linter to a pre-change version
+- lrbd service restart instead of reload on `ui_iscsi.deploy`
+- Correct conditional check for custom configurations
+- Makefile: Check for correct ID in /etc/os-release
+- Add more info in the warning/error validators
+- Add repo refresh check
+- Add validation for pending updates
+- cli: prettyprint: force stdout flush in all stdout writes
+- Makefile: drop redundant PIPCMD
+- Add documentation to manpage and trim whitespaces in existing pages
+- Refactor cephprocesses module and add tests for it
+- fix: only check OSDs after restarting an OSD
+- Add cluster shutdown, startup functionality
+- Remove hardcoded nvme devices, support generic convention
+- Support forced restart
+- mds/restart: fix restarts when minion_id is fqdn
+- cli: terminal_outputter: don't dereference a runner step that already finished
+- cli: stage_parser: fix state rendering when no minions match the target
+- qa: add baseline engulf functional test
+- remove: wolffish from master
+- populate/engulf: support optional master_minion
+- cephinspector: Fix typo preventing OSD detection
+- populate/engulf: fix local variable in _get_existing_cluster_networks()
+- populate/engulf: use ConfigParser.read_string() instead of StringIO
+- populate/engulf: overwrite profile-import during engulf
+- populate/engulf: use .format for string manipulation
+- populate/engulf: unify returns and error messages
+- populate/engulf: print info about engulfed config
+- Remove journal_size if present
+
+-------------------------------------------------------------------
 Fri Oct 1 13:13:14 UTC 2018 - jschmid@suse.com
 
 - Version 0.9.7
