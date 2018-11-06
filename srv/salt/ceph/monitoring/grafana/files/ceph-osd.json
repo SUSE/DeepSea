@@ -688,8 +688,8 @@
       ]
     },
     "time": {
-      "from": "2018-06-12T11:40:18.710Z",
-      "to": "2018-06-13T11:40:18.712Z"
+      "from": "now-12h",
+      "to": "now"
     },
     "timepicker": {
       "refresh_intervals": [
