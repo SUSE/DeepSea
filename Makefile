@@ -7,17 +7,14 @@ PYTHON_DEPS=python3-setuptools python3-click python3-tox
 PYTHON=python3
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
-ifeq ($(OS), opensuse-leap)
-USER=salt
-GROUP=salt
-PKG_INSTALL=zypper -n install
-else
-ifeq ($(OS), opensuse-tumbleweed)
-USER=salt
-GROUP=salt
-PKG_INSTALL=zypper -n install
-else
+suse=
+ifneq (,$(findstring opensuse,$(OS)))
+suse=yes
+endif
 ifeq ($(OS), sles)
+suse=yes
+endif
+ifeq ($(suse), yes)
 USER=salt
 GROUP=salt
 PKG_INSTALL=zypper -n install
@@ -35,8 +32,6 @@ else
 debian := $(wildcard /etc/debian_version)
 ifneq ($(strip $(debian)),)
 PKG_INSTALL=apt-get install -y
-endif
-endif
 endif
 endif
 endif
