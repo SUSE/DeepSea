@@ -1,4 +1,4 @@
-{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') or salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha_configurations') %}
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') or salt.saltutil.runner('select.minions', cluster='ceph', ganesha_configurations='*') %}
 
 ganesha auth:
   salt.state:
