@@ -970,8 +970,8 @@ install-deps:
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
-	echo "deepsea_minions: '*'" > /srv/pillar/ceph/deepsea_minions.sls
-	chown -R $(USER) /srv/pillar/ceph
+	echo "deepsea_minions: '*'" > $(DESTDIR)/srv/pillar/ceph/deepsea_minions.sls
+	chown -R $(USER) $(DESTDIR)/srv/pillar/ceph
 	# Use '|| true' to suppress some error output in corner cases
 	systemctl restart salt-master
 	systemctl restart salt-api
