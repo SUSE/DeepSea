@@ -498,6 +498,7 @@ class HardwareDetections(object):
                 hardware['rotational'] = self._is_rotational(base)
 
             hardware['device'] = device
+            hardware['blank'] = not partitions
             self._preflight_check(hardware)
             log.debug('Adding {} to the list of cephdisks.'.format(device))
             drives.append(hardware)
