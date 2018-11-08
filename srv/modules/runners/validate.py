@@ -336,6 +336,20 @@ class Validate(object):
             return True
         return False
 
+    def rgw(self):
+        """
+        Prevent a name collision when the admin wishes to push certificates
+        using default-ssl.sls and custom configurations.
+        """
+        for _, data in self.data.items():
+            if 'roles' in data:
+                if ('rgw_configurations' in data and
+                    "rgw-ssl" in data['rgw_configurations']):
+                    if "rgw_init" in data and data['rgw_init'] == "default-ssl":
+                        msg = "Please rename the custom rgw role from rgw-ssl to another name"
+                        self.errors['rgw'] = msg
+                        return
+        self.passed['rgw'] = "valid"
 
     def ganesha(self):
         """
@@ -901,7 +915,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
 
     printer = get_printer(**kwargs)
-    v = Validate(cluster, pillar_data, grains_data, printer)
+    v = Validate(cluster, data=pillar_data, printer=printer)
     v.dev_env()
     v.fsid()
     v.public_network()
@@ -911,6 +925,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.monitors()
     v.mgrs()
     v.storage()
+    v.rgw()
     v.ganesha()
     v.master_role()
     v.osd_creation()
@@ -919,7 +934,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.fqdn()
     v.report()
 
-    if v.errors:
+    if valid.errors:
         return False
 
     return True
