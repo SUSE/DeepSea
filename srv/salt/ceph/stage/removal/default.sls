@@ -51,12 +51,6 @@ rescind roles:
     - tgt_type: compound
     - sls: ceph.rescind
 
-remove openattic:
-  salt.state:
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - sls: ceph.remove.openattic
-
 remove tuned:
   salt.state:
     - tgt: 'I@cluster:ceph'

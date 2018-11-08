@@ -1,3 +1,4 @@
+{% set master = salt['master.minion']() %} 
 
 {% if salt['saltutil.runner']('validate.deploy', cluster='ceph') == False %}
 
@@ -14,4 +15,3 @@ include:
   - ..cephfs
   - ..radosgw
   - ..ganesha
-  - ..openattic

@@ -109,8 +109,8 @@ def _ceph_is_down():
     retries = 6
     delay = 2
     down = False
-    # Processes that don't impede migration (httpd-prefork == openattic, rest are ganesha related).
-    omit_list = ['httpd-prefork', 'ganesha.nfsd', 'rpcbind', 'rpc.statd']
+    # Processes that don't impede migration (ganesha related).
+    omit_list = ['ganesha.nfsd', 'rpcbind', 'rpc.statd']
 
     while retries and not down:
         running_procs = list(__salt__['cephprocesses.check'](results=True, quiet=True)['up'].keys())

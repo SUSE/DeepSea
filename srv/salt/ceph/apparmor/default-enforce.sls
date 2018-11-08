@@ -17,9 +17,3 @@ aa-enforce /etc/apparmor.d/usr.bin.ceph-osd:
 
 aa-enforce /etc/apparmor.d/usr.bin.radosgw:
   cmd.run
-
-aa-enforce /etc/apparmor.d/usr.sbin.httpd-prefork:
-  cmd.run
-
-aa-enforce /etc/apparmor.d/usr.sbin.oaconfig:
-  cmd.run

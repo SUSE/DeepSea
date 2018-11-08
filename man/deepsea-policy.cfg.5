@@ -39,7 +39,7 @@ The *.sls will match all minions constrained by
 .B deepsea-minions (7)
 but each minion could be explicitly listed.
 .SS Role Assignment
-In a Ceph cluster, a minion can perform one or more roles.  The roles are master, admin, mon, storage, mgr, mds, igw, rgw, ganesha and openattic.  All must be defined explicitly except storage.  Storage is addressed in the Profile section.
+In a Ceph cluster, a minion can perform one or more roles.  The roles are master, admin, mon, storage, mgr, mds, igw, rgw and ganesha.  All must be defined explicitly except storage.  Storage is addressed in the Profile section.
 .PP
 The roles have the following meanings:
 .RS 4
@@ -62,8 +62,6 @@ the iSCSI GateWay
 the Rados GateWay
 .IP ganesha 15
 the NFS gateway for RGW or CephFS
-.IP openattic 15
-the openATTIC graphical interface
 .PD
 .RE
 .PP

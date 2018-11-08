@@ -7,8 +7,6 @@ include:
   - .mds
   - .igw
   - .ganesha
-# disabled due to https://github.com/SUSE/DeepSea/issues/816
-#  - .openattic 
 {% else %}
 
 No Ceph cluster:

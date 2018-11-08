@@ -17,9 +17,3 @@ aa-disable /etc/apparmor.d/usr.bin.ceph-osd:
 
 aa-disable /etc/apparmor.d/usr.bin.radosgw:
   cmd.run
-
-aa-disable /etc/apparmor.d/usr.sbin.httpd-prefork:
-  cmd.run
-
-aa-disable /etc/apparmor.d/usr.sbin.oaconfig:
-  cmd.run

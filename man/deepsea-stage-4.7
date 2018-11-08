@@ -9,17 +9,12 @@ is a Salt orchestration that deploys the non-core services of ceph.
 .SH Preface
 .PP
 After deploying the core services you are presented with a running ceph cluster. From here on you might 
-want to install and configure services like rgw, mds, nfs-ganesha, iscsi or openattic.
+want to install and configure services like rgw, mds, nfs-ganesha or iscsi
 
 .B Validation:
 .RS
 DeepSea performs a set of system validation tests before running the ramainder of the stage.
 
-
-* openattic
-  Checks for incompatible issues for openaATTIC.
-
-.RE
 
 .B Iscsi:
 .RS
@@ -41,11 +36,6 @@ Sets up RGW if configured
 Sets up NFS-G if configured
 .RE
 
-.B openATTIC:
-.RS
-Sets up oA if configured
-.RE
-
 .RE
 .SS Restart
 As we installed updates on the cluster, the services might be pointing to old and/or deleted files still. In order to 
@@ -62,7 +52,7 @@ The process of restarting services also happens in a non-disruptive manner by on
 followed by checking if it's up again and only then continue. Here again, the orchestration exits if an error 
 is detected to prevent harm. The restart happens automatically and will not impact your ability to read/write 
 data to the cluster via any interface. After stage.3 only 
-.B non-core services (igw, cephfs, rgw, nfs-ganesha, openattic)
+.B non-core services (igw, cephfs, rgw, nfs-ganesha)
 are being restarted.
 
 .SH Example

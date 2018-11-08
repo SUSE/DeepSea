@@ -197,8 +197,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/noout
 %dir /srv/salt/ceph/noout/set
 %dir /srv/salt/ceph/noout/unset
-%dir /srv/salt/ceph/openattic
-%dir /srv/salt/ceph/openattic/auth
 %dir /srv/salt/ceph/openstack
 %dir %attr(0700, salt, salt) /srv/salt/ceph/openstack/cache
 %dir /srv/salt/ceph/openstack/cinder
@@ -218,14 +216,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/openstack/glance/pool
 %dir /srv/salt/ceph/openstack/nova
 %dir /srv/salt/ceph/openstack/nova/pool
-%dir %attr(0700, salt, salt) /srv/salt/ceph/openattic/cache
-%dir /srv/salt/ceph/openattic/files
-%dir /srv/salt/ceph/openattic/key
-%dir /srv/salt/ceph/openattic/keyring
-%dir /srv/salt/ceph/openattic/oaconfig
-%dir /srv/salt/ceph/openattic/restart
-%dir /srv/salt/ceph/openattic/restart/force
-%dir /srv/salt/ceph/openattic/restart/controlled
 %dir /srv/salt/ceph/osd
 %dir %attr(0700, salt, salt) /srv/salt/ceph/osd/cache
 %dir /srv/salt/ceph/osd/files
@@ -295,9 +285,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/time
 %dir /srv/salt/ceph/rescind/time/chrony
 %dir /srv/salt/ceph/rescind/time/ntp
-%dir /srv/salt/ceph/rescind/openattic
-%dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/rescind/tuned
+%dir /srv/salt/ceph/rescind/openattic	
+%dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/force
 %dir /srv/salt/ceph/restart/osd
@@ -320,8 +310,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/restart/ganesha
 %dir /srv/salt/ceph/restart/ganesha/force
 %dir /srv/salt/ceph/restart/ganesha/lax
-%dir /srv/salt/ceph/restart/openattic
-%dir /srv/salt/ceph/restart/openattic/lax
 %dir /srv/salt/ceph/rgw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/rgw/cache
 %dir /srv/salt/ceph/rgw/files
@@ -349,8 +337,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/stage/iscsi/core
 %dir /srv/salt/ceph/stage/ganesha
 %dir /srv/salt/ceph/stage/ganesha/core
-%dir /srv/salt/ceph/stage/openattic
-%dir /srv/salt/ceph/stage/openattic/core
 %dir /srv/salt/ceph/stage/prep
 %dir /srv/salt/ceph/stage/prep/master
 %dir /srv/salt/ceph/stage/prep/minion
@@ -436,7 +422,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/processes/mds
 %dir /srv/salt/ceph/processes/mgr
 %dir /srv/salt/ceph/processes/mon
-%dir /srv/salt/ceph/processes/openattic
 %dir /srv/salt/ceph/processes/osd
 %dir /srv/salt/ceph/processes/rgw
 %{_mandir}/man7/deepsea*.7.gz
@@ -553,15 +538,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/monitoring/prometheus/files/*.j2
 %config /srv/salt/ceph/noout/set/*.sls
 %config /srv/salt/ceph/noout/unset/*.sls
-%config /srv/salt/ceph/openattic/*.sls
-%config /srv/salt/ceph/openattic/auth/*.sls
-%config /srv/salt/ceph/openattic/key/*.sls
-%config /srv/salt/ceph/openattic/keyring/*.sls
-%config /srv/salt/ceph/openattic/oaconfig/*.sls
-%config /srv/salt/ceph/openattic/files/*.j2
-%config /srv/salt/ceph/openattic/restart/*.sls
-%config /srv/salt/ceph/openattic/restart/force/*.sls
-%config /srv/salt/ceph/openattic/restart/controlled/*.sls
 %config /srv/salt/ceph/openstack/*.sls
 %config /srv/salt/ceph/openstack/cinder/*.sls
 %config /srv/salt/ceph/openstack/cinder/auth/*.sls
@@ -610,10 +586,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/remove/destroyed/*.sls
 %config /srv/salt/ceph/remove/migrated
 %config /srv/salt/ceph/remove/mgr/*.sls
-%config /srv/salt/ceph/remove/openattic/*.sls
 %config /srv/salt/ceph/remove/rgw/*.sls
 %config /srv/salt/ceph/remove/storage/*.sls
 %config /srv/salt/ceph/remove/storage/drain/*.sls
+%config /srv/salt/ceph/remove/openattic/*.sls
 %config /srv/salt/ceph/rescind/*.sls
 %config /srv/salt/ceph/rescind/admin/*.sls
 %config /srv/salt/ceph/rescind/configuration/*.sls
@@ -646,8 +622,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/tuned/*.sls
 %config /srv/salt/ceph/rescind/openattic/*.sls
 %config /srv/salt/ceph/rescind/openattic/keyring/*.sls
-%config /srv/salt/ceph/reset/*.sls
 %config /srv/salt/ceph/rescind/storage/terminate/*.sls
+%config /srv/salt/ceph/reset/*.sls
 %config /srv/salt/ceph/restart/*.sls
 %config /srv/salt/ceph/restart/force/*.sls
 %config /srv/salt/ceph/restart/osd/*.sls
@@ -670,8 +646,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/restart/ganesha/*.sls
 %config /srv/salt/ceph/restart/ganesha/force/*.sls
 %config /srv/salt/ceph/restart/ganesha/lax/*.sls
-%config /srv/salt/ceph/restart/openattic/*.sls
-%config /srv/salt/ceph/restart/openattic/lax/*.sls
 %config /srv/salt/ceph/rgw/*.sls
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/files/*.yml
@@ -704,8 +678,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/iscsi/core/*.sls
 %config /srv/salt/ceph/stage/ganesha/*.sls
 %config /srv/salt/ceph/stage/ganesha/core/*.sls
-%config /srv/salt/ceph/stage/openattic/*.sls
-%config /srv/salt/ceph/stage/openattic/core/*.sls
 %config /srv/salt/ceph/stage/prep/*.sls
 %config /srv/salt/ceph/stage/prep/master/*.sls
 %config /srv/salt/ceph/stage/prep/minion/*.sls
@@ -774,7 +746,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/processes/mds/*.sls
 %config /srv/salt/ceph/processes/mgr/*.sls
 %config /srv/salt/ceph/processes/mon/*.sls
-%config /srv/salt/ceph/processes/openattic/*.sls
 %config /srv/salt/ceph/processes/osd/*.sls
 %config /srv/salt/ceph/processes/rgw/*.sls
 %dir %attr(-, root, root) %{_docdir}/%{name}

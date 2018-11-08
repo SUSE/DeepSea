@@ -220,12 +220,9 @@ class MetaCheck(object):
         """
         Add a role to the self.up list if it's process is found
         in the process dict.
-        Also do a special check for oA
         """
         if prc.exe in processes[role] or prc.name in processes[role]:
-            # Verify httpd-worker pid belongs to openattic.
-            if (role != 'openattic') or (role == 'openattic' and prc.uid_name == 'openattic'):
-                self.up.append(prc)
+            self.up.append(prc)
 
     def check_inverts(self, role):
         """
@@ -409,9 +406,6 @@ def _process_map():
         proc_info = {}
         if proc[0] and proc[1] and proc[2]:
             proc_info['name'] = proc[0]
-            if proc_info['name'] == 'httpd-pre':
-                # lsof 'nicely' abbreviates httpd-prefork to httpd-pre
-                proc_info['name'] = 'httpd-prefork'
             proc_info['pid'] = proc[1]
             proc_info['user'] = proc[2]
             procs.append(proc_info)
@@ -451,8 +445,6 @@ def need_restart_lsof(role=None):
     proc_map = zypper_ps(role, lsof_proc_map)
     for proc in proc_map:
         if proc['name'] in processes[role]:
-            if role == 'openattic' and proc['user'] != 'openattic':
-                continue
             log.info("Found deleted file for ceph service: {} -> Queuing a restart".format(role))
             return True
     return False

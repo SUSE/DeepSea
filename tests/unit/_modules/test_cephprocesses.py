@@ -222,28 +222,6 @@ class TestMetaCheck():
         assert mc.up[1].name == proc_name2
         assert mc.up[2].name == proc_name3
 
-    @pytest.mark.skip(reason="openattic will be replaced by ceph-dashboard")
-    def test_add_openattic(self, mc):
-        mc.up = []
-        role_name = 'openattic'
-        proc_name = 'httpd-prefork'
-        proc = self.build_proc(role_name, proc_name)
-        proc.uid_name = 'openattic'
-        mc.add(proc, role_name)
-        assert len(mc.up) == 1
-        assert mc.up[0].name == proc_name
-
-    @pytest.mark.skip(reason="openattic will be replaced by ceph-dashboard")
-    def test_add_openattic_negative(self, mc):
-        mc.up = []
-        role_name = 'openattic'
-        proc_name = 'httpd-prefork'
-        proc = self.build_proc(role_name, proc_name)
-        # not fulfilled the if branch
-        proc.uid_name = 'openatticNOTNOT'
-        mc.add(proc, role_name)
-        assert len(mc.up) == 0
-
     def test_check_inverts_positive(self, mc):
         mc.up = []
         role_name = 'igw'
@@ -464,7 +442,6 @@ class TestInstanceMethods():
         ("mgr", 'mgr'),
         ("mon", 'mon'),
         ("mds", 'mds'),
-        ("openattic", 'openattic'),
         ("rgw", 'rgw'),
         ("benchmark-rbd", 'benchmark-rbd'),
         ("storage", 'storage'),

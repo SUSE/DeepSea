@@ -24,9 +24,6 @@ role-rgw/cluster/rgw*.sls
 # NFS
 role-ganesha/cluster/ganesha*.sls
 
-# openATTIC
-role-openattic/cluster/openattic*.sls
-
 # COMMON
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml

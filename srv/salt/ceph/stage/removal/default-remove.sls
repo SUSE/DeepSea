@@ -62,12 +62,6 @@ remove rgw:
     - tgt_type: compound
     - sls: ceph.remove.rgw
 
-remove openattic:
-  salt.state:
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - sls: ceph.remove.openattic
-
 {% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw') == []) and
       (salt.saltutil.runner('select.minions', cluster='ceph', roles='rgw_configurations') == []) %}
 
