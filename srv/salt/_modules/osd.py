@@ -432,7 +432,7 @@ class CephPGs(object):
         cmd = json.dumps({"prefix": "pg stat", "format": "json"})
         _, output, _ = self.cluster.mon_command(cmd, b'', timeout=6)
         # log.debug(json.dumps((json.loads(output)['nodes']), indent=4))
-        return json.loads(output)['num_pg_by_state']
+        return json.loads(output)['pg_summary']['num_pg_by_state']
 
 
 def _settings(**kwargs):
