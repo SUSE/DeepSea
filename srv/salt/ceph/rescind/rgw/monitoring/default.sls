@@ -8,7 +8,7 @@ remove_rgw_exporter:
       - /var/lib/prometheus/node-exporter/ceph_rgw.py
       - /var/lib/prometheus/node-exporter/ceph_rgw.prom
 
-{% if 'python-prometheus-client' in salt['pkg.list_pkgs']() %}
+{% if 'python3-prometheus-client' in salt['pkg.list_pkgs']() %}
 
 uninstall_package:
   pkg.removed:

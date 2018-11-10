@@ -35,6 +35,7 @@ obsolete packages:
       - python-execnet
       - python-gevent
       - python-greenlet
+      - python-prometheus-client
       - python-psycogreen
       - python-pushy
       - python-python-editor
