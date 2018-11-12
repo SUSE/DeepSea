@@ -1,5 +1,5 @@
 install_package:
   pkg.installed:
-    - name: python-prometheus-client
+    - name: python3-prometheus-client
     - refresh: True
 
