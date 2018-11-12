@@ -668,26 +668,27 @@ class Validate(Preparation):
 
         self._set_pass_status('fqdn')
 
+    # pylint: disable=line-too-long
     def openattic(self):
         """
         Check for incompatible issues for openATTIC
 
-        The rgw role (or any custom rgw role) may be configured to use
-        port 80.  With all the configuration allowed in the pillar, checking the
-        final ceph.conf seems the most reliable.
+        openattic deprecated and is replaced by the ceph
+        dashboard. This validation checks if there
+        is a role in the policy and errors out.
         """
-        local = salt.client.LocalClient()
         for node in self.data.keys():
             if ('roles' in self.data[node] and
-                'openattic' in self.data[node]['roles'] and
-                'rgw' in self.data[node]['roles']):
-                # Would use file.contains if it supported '='
-                result = local.cmd(node, 'file.search',
-                                   ['/etc/ceph/ceph.conf', r'port\=80\b'],
-                                   tgt_type="glob")
-                if result[node]:
-                    msg = "rgw port conflicts with openATTIC on {} - check ceph.conf".format(node)
-                    self.errors.setdefault('openattic', []).append(msg)
+                    'openattic' in self.data[node]['roles']):
+                msg = ("openATTIC is replaced with the ceph-dashboard. "
+                       "Please remove openattic from your cluster with "
+                       "salt -I 'roles:openattic' state.apply ceph.rescind.openattic "
+                       "and "
+                       "salt -I 'roles:openattic' state.apply ceph.remove.openattic "
+                       "and finally remove the role-openattic line from your "
+                       "policy.cfg. To enable the ceph-dashboard please follow "
+                       "the documentation.")
+                self.errors.setdefault('openattic', []).append(msg)
 
         self._set_pass_status('openattic')
 
@@ -1185,8 +1186,8 @@ def deploy(**kwargs):
 
     valid = Validate("deploy", search_pillar=True, search_grains=True,
                      printer=printer)
-    valid.openattic()
     valid.kernel()
+    valid.openattic()
     valid.report()
 
     if valid.errors:
@@ -1240,6 +1241,7 @@ def setup(**kwargs):
     valid.deepsea_minions()
     valid.master_minion()
     valid.ceph_version()
+    valid.openattic()
     valid.salt_version()
     valid.ceph_updates()
     valid.salt_updates()

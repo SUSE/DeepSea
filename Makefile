@@ -421,25 +421,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/noout/set/*.sls $(DESTDIR)/srv/salt/ceph/noout/set
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/unset
 	install -m 644 srv/salt/ceph/noout/unset/*.sls $(DESTDIR)/srv/salt/ceph/noout/unset
-	# state files - openattic
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic
-	install -m 644 srv/salt/ceph/openattic/*.sls $(DESTDIR)/srv/salt/ceph/openattic/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/auth
-	install -m 644 srv/salt/ceph/openattic/auth/*.sls $(DESTDIR)/srv/salt/ceph/openattic/auth/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/files
-	install -m 644 srv/salt/ceph/openattic/files/*.j2 $(DESTDIR)/srv/salt/ceph/openattic/files/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/key
-	install -m 644 srv/salt/ceph/openattic/key/*.sls $(DESTDIR)/srv/salt/ceph/openattic/key/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/keyring
-	install -m 644 srv/salt/ceph/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/openattic/keyring/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/oaconfig
-	install -m 644 srv/salt/ceph/openattic/oaconfig/*.sls $(DESTDIR)/srv/salt/ceph/openattic/oaconfig/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart
-	install -m 644 srv/salt/ceph/openattic/restart/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart/force
-	install -m 644 srv/salt/ceph/openattic/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/force
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
-	install -m 644 srv/salt/ceph/openattic/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/openattic/restart/controlled
 	# state files - openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openstack
 	install -m 644 srv/salt/ceph/openstack/*.sls $(DESTDIR)/srv/salt/ceph/openstack/
@@ -562,10 +543,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/remove/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/remove/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage
 	install -m 644 srv/salt/ceph/remove/storage/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/openattic
-	install -m 644 srv/salt/ceph/remove/openattic/*.sls $(DESTDIR)/srv/salt/ceph/remove/openattic/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage/drain
 	install -m 644 srv/salt/ceph/remove/storage/drain/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/drain
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/openattic	
+	install -m 644 srv/salt/ceph/remove/openattic/*.sls $(DESTDIR)/srv/salt/ceph/remove/openattic/	
 	# state files - rescind
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
@@ -621,10 +602,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/storage/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage/keyring
 	install -m 644 srv/salt/ceph/rescind/storage/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/keyring/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic
-	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring
-	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/storage/terminate
 	install -m 644 srv/salt/ceph/rescind/storage/terminate/*.sls $(DESTDIR)/srv/salt/ceph/rescind/storage/terminate/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/time
@@ -635,6 +612,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/tuned
 	install -m 644 srv/salt/ceph/rescind/tuned/*.sls $(DESTDIR)/srv/salt/ceph/rescind/tuned/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic	
+	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/	
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring	
+	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
@@ -690,11 +671,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/restart/igw/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw/lax
 	install -m 644 srv/salt/ceph/restart/igw/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/lax
-	# state files - restart - openattic
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/openattic
-	install -m 644 srv/salt/ceph/restart/openattic/*.sls $(DESTDIR)/srv/salt/ceph/restart/openattic
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/openattic/lax
-	install -m 644 srv/salt/ceph/restart/openattic/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/openattic/lax
 	# state files - reset
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reset
 	install -m 644 srv/salt/ceph/reset/*.sls $(DESTDIR)/srv/salt/ceph/reset/
@@ -835,10 +811,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/stage/iscsi/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/iscsi/core
 	install -m 644 srv/salt/ceph/stage/iscsi/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/iscsi/core
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic
-	install -m 644 srv/salt/ceph/stage/openattic/*.sls $(DESTDIR)/srv/salt/ceph/stage/openattic/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/openattic/core
-	install -m 644 srv/salt/ceph/stage/openattic/core/*.sls $(DESTDIR)/srv/salt/ceph/stage/openattic/core
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/prep
 	install -m 644 srv/salt/ceph/stage/prep/*.sls $(DESTDIR)/srv/salt/ceph/stage/prep/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/stage/prep/master
@@ -901,8 +873,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/processes/rgw/*.sls $(DESTDIR)/srv/salt/ceph/processes/rgw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/osd
 	install -m 644 srv/salt/ceph/processes/osd/*.sls $(DESTDIR)/srv/salt/ceph/processes/osd
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/openattic
-	install -m 644 srv/salt/ceph/processes/openattic/*.sls $(DESTDIR)/srv/salt/ceph/processes/openattic
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/mon
 	install -m 644 srv/salt/ceph/processes/mon/*.sls $(DESTDIR)/srv/salt/ceph/processes/mon
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/processes/mgr
@@ -935,7 +905,6 @@ copy-files:
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mds/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mgr/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/mon/cache
-	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openattic/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/openstack/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/rgw/cache
@@ -951,7 +920,6 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/mds/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/mgr/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/mon/cache || true
-	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/openattic/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/openstack/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/osd/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/rgw/cache || true

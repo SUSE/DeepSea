@@ -26,11 +26,6 @@ def verify_engulf():
         raise RuntimeError("configuration_init is {}".format(
                            new_pillar['local']['configuration_init']))
 
-    # engulf doesn't understand openattic, so remove it if it was presesent,
-    # else the later comparison will fail
-    if 'openattic' in old_pillar['local']['roles']:
-        old_pillar['local']['roles'].remove('openattic')
-
     # if both master and admin roles are assigned to the same node, the engulf
     # will only detect the master role (it's redundant to specify both), so
     # remove the admin role if it was present else the later comparison will fail

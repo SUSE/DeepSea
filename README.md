@@ -16,7 +16,6 @@ DeepSea currently supports the following functionality:
 - Sharing CephFS or S3 buckets via [NFS Ganesha](http://nfs-ganesha.github.io/)
 - iSCSI target management via [lrbd](https://github.com/SUSE/lrbd/)
 - Deployment and configuration of [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/) for monitoring / performance data visualization
-- Deployment and configuration of [openATTIC](https://openattic.org/) for web-based management and monitoring of Ceph resources
 
 ## Get Involved
 To learn more about DeepSea, take a look at the [Wiki](https://github.com/SUSE/DeepSea/wiki).
@@ -317,7 +316,7 @@ congratulations - you're done. Otherwise you have to continue with Stage 4.
 #### Stage 4
 The last step of the Ceph cluster deployment is the services stage. Here you
 instantiate any of the currently supported services: iSCSI Gateway, CephFS,
-RADOS Gateway, openATTIC, and NFS Ganesha. In this stage, the necessary pools,
+RADOS Gateway, and NFS Ganesha. In this stage, the necessary pools,
 authorizing keyrings and starting services are created.
 
 To start the stage, run the following:
@@ -330,13 +329,6 @@ or
 ```
 salt-run state.orch ceph.stage.services
 ```
-
-Depending on the setup, the command may run several minutes. If you specified
-the openATTIC role it will be installed on the master node by default. If you
-need to install openATTIC on a different node, please take a look at the
-upstream [openATTIC
-documentation](http://docs.openattic.org/en/latest/install_guides/). If you do
-not need to install openATTIC at all remove the role from your `policy.cfg`.
 
 ## Test intial deployment and generating load
 Once a cluster is deployed one might want to verify functionality or run

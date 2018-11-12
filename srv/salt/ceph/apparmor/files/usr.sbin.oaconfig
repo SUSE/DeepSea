@@ -31,12 +31,10 @@
   /etc/environment r,
   /etc/libnl/classid r,
   /etc/manpath.config r,
-  /etc/openattic/database.ini r,
   /etc/ r,
   /etc/opt/ r,
   /etc/ssl/openssl.cnf r,
   /etc/sysconfig/console r,
-  /etc/sysconfig/openattic r,
   /opt/ r,
   /proc/*/cgroup r,
   /proc/*/cmdline r,
@@ -58,7 +56,6 @@
   /sbin/ldconfig rix,
   /sys/fs/cgroup/systemd/system.slice/postgresql.service/ r,
   /sys/fs/cgroup/systemd/system.slice/postgresql.service/cgroup.procs r,
-  /tmp/openattic-upgrade-backup-data w,
   /usr/bin/gawk rix,
   /usr/bin/grep rix,
   /usr/bin/manpath rix,
@@ -74,7 +71,5 @@
   /usr/lib{,32,64}/** mr,
   /usr/sbin/oaconfig rix,
   /usr/sbin/service rix,
-  /usr/share/openattic/** rw,
-  /var/log/openattic/openattic.log w,
 
 }

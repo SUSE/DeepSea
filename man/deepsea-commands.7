@@ -66,9 +66,6 @@ salt-run state.orch ceph.stage.ganesha
 salt-run state.orch ceph.stage.iscsi
 .RS
 .RE
-salt-run state.orch ceph.stage.openattic
-.RS
-.RE
 salt-run state.orch ceph.stage.radosgw
 .PP
 salt-run state.orch ceph.stage.5
@@ -443,31 +440,6 @@ salt 'master_minion' state.apply ceph.noout.unset
 .PP
 .RS
 .RE
-salt 'master_minion' state.apply ceph.openattic.auth
-.RS
-.RE
-salt 'master_minion' state.apply ceph.openattic.key
-.RS
-.RE
-salt 'openattic*' state.apply ceph.openattic.keyring
-.RS
-.RE
-salt 'openattic*' state.apply ceph.openattic.oaconfig
-.RS
-.RE
-salt 'openattic*' state.apply ceph.openattic.restart
-.RS
-.RE
-salt 'openattic*' state.apply ceph.openattic.restart.controlled
-.RS
-.RE
-salt 'openattic*' state.apply ceph.openattic.restart.force
-.RS
-.RE
-salt 'openattic*' state.apply ceph.openattic
-.PP
-.RS
-.RE
 salt '*' state.apply ceph.processes
 .PP
 .RS
@@ -486,9 +458,6 @@ salt 'master_minion' state.apply ceph.remove.mds
 .RS
 .RE
 salt 'master_minion' state.apply ceph.remove.mon
-.RS
-.RE
-salt 'master_minion' state.apply ceph.remove.openattic
 .RS
 .RE
 salt 'master_minion' state.apply ceph.remove.rgw
@@ -554,12 +523,6 @@ salt '*' state.apply ceph.rescind.mgr
 .RS
 .RE
 salt '*' state.apply ceph.rescind.mon
-.RS
-.RE
-salt '*' state.apply ceph.rescind.openattic.keyring
-.RS
-.RE
-salt '*' state.apply ceph.rescind.openattic
 .RS
 .RE
 salt '*' state.apply ceph.rescind.rgw.keyring
