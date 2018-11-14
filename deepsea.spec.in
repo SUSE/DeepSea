@@ -450,6 +450,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/templates/*.j2
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/deepsea_minions.sls
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/blacklist.sls
+%config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/disk_led.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 /srv/salt/_modules/*.py*
 /srv/salt/_states/*.py*

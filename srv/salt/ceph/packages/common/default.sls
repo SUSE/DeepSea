@@ -27,6 +27,7 @@ stage prep dependencies suse:
       - tuned
       - libgio-2_0-0
       - polkit
+      - libstoragemgmt
     - fire_event: True
     - refresh: True
 
@@ -72,6 +73,7 @@ stage prep dependencies CentOS:
       - hwinfo
       - python-netaddr
       - jq
+      - libstoragemgmt
     - fire_event: True
     - refresh: True
 
