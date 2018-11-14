@@ -1,11 +1,11 @@
 import pytest
 import salt.client
 import sys
-sys.path.insert(0, 'srv/salt/_modules')
+import types
 sys.path.insert(0, 'srv/modules/runners')
 sys.path.insert(0, 'srv/modules/runners/utils')
 
-from mock import patch, mock, MagicMock
+from mock import patch, MagicMock, mock_open
 from srv.modules.runners import validate
 
 
@@ -626,7 +626,6 @@ class TestValidation():
             self.data = {'admin.ceph': {'roles': 'admin'},
                          'igw1.ceph': {'roles': 'igw'}}
 
-
     @patch('salt.client.LocalClient')
     def test_kernel(self, mock_localclient):
         fake_data = {'admin.ceph': True,
@@ -655,3 +654,90 @@ class TestValidation():
         assert len(validator.passed) == 0
         validator.kernel()
         assert 'igw1.ceph:' in validator.errors['kernel_module'][0]
+
+    class MockedValidate(validate.Validate):
+        """ This Class just exists to use a defined pillar """
+        def set_pillar(self):
+            self.data = {'admin.ceph': {'roles': 'admin'},
+                         'igw1.ceph': {'roles': 'igw'}}
+
+
+class TestConfigCheck():
+
+    @pytest.fixture(scope='class')
+    def fxtr(self):
+        """
+        Fixture to prepopulate the 'map' attr.
+        Avoid loading that from a file
+        """
+        with patch.object(validate.ConfigCheck, "__init__", lambda slf: None):
+            cc = validate.ConfigCheck()
+            cc.map = {'release1':
+                        {'k1': 'v1'},
+                      'release2':
+                        {'k2': ['v2', 'v2.1']},
+                      'release3':
+                        {'k3': 'any'}}
+            cc.files = ['file1', 'file2']
+            cc.issues = []
+            yield cc
+
+    def test_extract_k_v(self, fxtr):
+        """
+        Test if ConfigObj yields a generator-type
+        """
+        out = fxtr.extract_k_v('dummy_filename')
+        assert isinstance(out, types.GeneratorType)
+
+    def test_compare_k_v_to_map_str(self, fxtr):
+        """
+        Matching k1,v1 in isinstance(map, str)
+        """
+        ret = fxtr.compare_k_v_to_map('k1', 'v1')
+        assert ret.key == 'k1'
+        assert ret.values == ['v1']
+        assert ret.release == 'release1'
+
+    def test_compare_k_v_to_map_list(self, fxtr):
+        """
+        Matching k2,v2 in isinstance(map, list)
+        """
+        ret = fxtr.compare_k_v_to_map('k2', 'v2')
+        assert ret.key == 'k2'
+        assert ret.values == ['v2']
+        assert ret.release == 'release2'
+
+    def test_compare_k_v_to_map_list_missmatch(self, fxtr):
+        """
+        Not Matching v2 in isinstance(map, list)
+        """
+        ret = fxtr.compare_k_v_to_map('k2', 'v3')
+        assert ret.key == 'k2'
+        assert ret.values == []
+        assert ret.release == 'release2'
+
+    @pytest.mark.parametrize('key', ['any_key', 'random_key', 'foo'])
+    def test_compare_k_v_to_map_any(self, fxtr, key):
+        """
+        Any key is set in the map
+        """
+        ret = fxtr.compare_k_v_to_map('k3', key)
+        assert ret.key == 'k3'
+        assert ret.values == []
+        assert ret.release == 'release3'
+
+    def test_compare_k_v_to_map_list_missmatch_key(self, fxtr):
+        """
+        Not Matching k2 in 'not in kv_map'
+        """
+        ret = fxtr.compare_k_v_to_map('k4', 'v2')
+        assert ret is None
+
+    @pytest.mark.parametrize("test_input, expected", [
+                            ('foo_bar', 'foo bar'),
+                            ('bar_baz', 'bar baz'),
+                            ('bar baz', 'bar baz'),
+                            ('foo ', 'foo ')])
+    def test_normalize_config_key(self, fxtr, test_input, expected):
+        ret = fxtr.normalize_config_key(test_input)
+        assert ret == expected

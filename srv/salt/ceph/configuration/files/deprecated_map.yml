@@ -1,0 +1,37 @@
+# This file maintains data about deprecated config values
+# There are several options to define deprecated keys and values
+# First is to form a yaml dict that defines a single know to be
+# deprecated value for a known key
+#
+# named_release_a:
+#   deprecated_config_key: deprecated_config_value
+#
+# You can also define a list of deprecated values for that key
+#
+# named_release_b:
+#   deprecated_config_key:
+#     - deprecated_config_value_a
+#     - deprecated_config_value_b
+#     - deprecated_config_value_c
+#
+# If a key is deprecated alltogether assign a value of 'any'
+#
+# named_release_a:
+#   deprecated_config_key: any
+#
+# This list is maintained by the deepsea team but can be adapted to
+# manually if needed
+
+
+bobtail:
+    paxos max join drift: any
+    mock tick internal: any
+
+cuttlefish:
+    filestore flusher max fds: any
+    filestore sync flush: any
+    filestore fsync flushes journal data: any
+    filestore journal trailing: any
+
+dumpling:
+    rgw cluster root pool: any
