@@ -232,7 +232,7 @@
             "tableColumn": "",
             "targets": [
               {
-                "expr": "ceph_pool_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter',pool='$pool'} / ceph_pool_available_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter',pool='$pool'}",
+                "expr": "ceph_pool_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter',pool='$pool'} / (ceph_pool_available_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter',pool='$pool'} + ceph_pool_used_bytes{cluster='$cluster',instance='$instance',job='ceph-exporter',pool='$pool'})",
                 "format": "time_series",
                 "intervalFactor": 2,
                 "refId": "B",
