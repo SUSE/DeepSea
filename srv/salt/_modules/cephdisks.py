@@ -601,7 +601,7 @@ def version():
     """
     Displays version
     """
-    print(VERSION)
+    return VERSION
 
 
 __func_alias__ = {

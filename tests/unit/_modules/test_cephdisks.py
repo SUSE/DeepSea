@@ -510,3 +510,7 @@ class TestCephDiskDevice():
 
         ret = cephdisks._prefer_underscores(devices)
         assert ret == -1
+
+    def test_version(self):
+        ret = cephdisks.version()
+        assert ret == cephdisks.VERSION
