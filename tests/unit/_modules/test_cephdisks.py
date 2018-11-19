@@ -13,7 +13,7 @@ class TestHardwareDetections():
     This class contains a set of functions that test srv.salt._modules
     '''
     @pytest.fixture(scope='class')
-    def hwd(self):
+    def hwd(self, helper_specs):
         """
         Patching hw_detection_method in the __init__ function
         of HardwareDetections to allow sudoless test execution
@@ -26,7 +26,7 @@ class TestHardwareDetections():
         self.hw_detection_method = patch('srv.salt._modules.cephdisks.HardwareDetections._find_detection_tool')
         self.hw_dtctr = self.hw_detection_method.start()
         self.hw_dtctr.return_value = '/a/valid/path'
-        cephdisks = helper_specs(module=DEFAULT_MODULE)()
+        cephdisks = helper_specs(module=DEFAULT_MODULE)
         yield cephdisks
         self.hw_detection_method.stop()
 
