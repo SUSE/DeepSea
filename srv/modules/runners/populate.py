@@ -1255,7 +1255,6 @@ def engulf_existing_cluster(**kwargs):
     # ...but inject the unassigned line first so it takes precendence,
     # along with the global config bits (because they're prettier early)...
     policy_cfg = [
-        "cluster-unassigned/cluster/*.sls",
         "config/stack/default/ceph/cluster.yml",
         "config/stack/default/global.yml" ] + policy_cfg
 
