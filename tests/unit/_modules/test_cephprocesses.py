@@ -497,7 +497,7 @@ class TestSystemdUnit():
     def test_service_names_with_grains_non_default(self, proc_name):
         cephprocesses.__grains__ = {'host': 'a_host'}
         obj = cephprocesses.SystemdUnit(proc_name)
-        assert obj.service_names == ['{}@{}'.format('ceph-radosgw', 'a_host')]
+        assert obj.service_names == ['{}@rgw.{}'.format('ceph-radosgw', 'a_host')]
 
     @pytest.mark.parametrize('proc_name', ['ganesha.nfsd'])
     def test_service_names_ganesha(self, proc_name):
@@ -511,7 +511,18 @@ class TestSystemdUnit():
 
     @patch('srv.salt._modules.cephprocesses.Popen')
     def test_is_disabled_no_service_names(self, popen_mock):
+        """
+        empty
+        """
         ret = cephprocesses.SystemdUnit().is_disabled
+        assert ret is False
+
+    @patch('srv.salt._modules.cephprocesses.Popen')
+    def test_is_failed_no_service_names(self, popen_mock):
+        """
+        empty
+        """
+        ret = cephprocesses.SystemdUnit().is_failed
         assert ret is False
 
     @patch('srv.salt._modules.cephprocesses.log')
@@ -530,6 +541,20 @@ class TestSystemdUnit():
 
     @patch('srv.salt._modules.cephprocesses.log')
     @patch('srv.salt._modules.cephprocesses.Popen')
+    def test_is_failed_1(self, po, log):
+        """
+        po returns 'active\n'
+        log should be called. (once)
+
+        """
+        cephprocesses.__grains__ = {'host': 'a_host'}
+        po.return_value.communicate.return_value = (b"active\n ", "")
+        ret = cephprocesses.SystemdUnit('ceph-mon').is_failed
+        assert ret is False
+        log.info.assert_called_once_with('Found ceph-mon@a_host to be active')
+
+    @patch('srv.salt._modules.cephprocesses.log')
+    @patch('srv.salt._modules.cephprocesses.Popen')
     def test_is_disabled_2(self, po, log):
         """
         po returns 'disabled\n'
@@ -540,6 +565,19 @@ class TestSystemdUnit():
         ret = cephprocesses.SystemdUnit('ceph-mon').is_disabled
         assert ret is True
         log.info.assert_called_once_with('Found ceph-mon@a_host to be disabled')
+
+    @patch('srv.salt._modules.cephprocesses.log')
+    @patch('srv.salt._modules.cephprocesses.Popen')
+    def test_is_failed_2(self, po, log):
+        """
+        po returns 'disabled\n'
+        log should be called. (once)
+        """
+        cephprocesses.__grains__ = {'host': 'a_host'}
+        po.return_value.communicate.return_value = (b"failed\n ", "")
+        ret = cephprocesses.SystemdUnit('ceph-mon').is_failed
+        assert ret is True
+        log.info.assert_called_once_with('Found ceph-mon@a_host to be failed')
 
     @patch('srv.salt._modules.cephprocesses.log')
     @patch('srv.salt._modules.cephprocesses.Popen')
@@ -556,6 +594,19 @@ class TestSystemdUnit():
 
     @patch('srv.salt._modules.cephprocesses.log')
     @patch('srv.salt._modules.cephprocesses.Popen')
+    def test_is_failed_3(self, po, log):
+        """
+        po returns 'undefinded\n'
+        log should be called. (once)
+        """
+        cephprocesses.__grains__ = {'host': 'a_host'}
+        po.return_value.communicate.return_value = (b"undefined\n ", "")
+        ret = cephprocesses.SystemdUnit('ceph-mon').is_failed
+        assert ret is False
+        log.info.assert_called_once_with('Expected to get failed/active but got undefined instead')
+
+    @patch('srv.salt._modules.cephprocesses.log')
+    @patch('srv.salt._modules.cephprocesses.Popen')
     def test_is_disabled_4(self, po, log):
         """
         multiple entries in self.service_names
@@ -568,6 +619,21 @@ class TestSystemdUnit():
         ret = cephprocesses.SystemdUnit('ganesha.nfsd').is_disabled
         assert ret is True
         log.info.assert_called_with('Found rpcbind to be disabled')
+
+    @patch('srv.salt._modules.cephprocesses.log')
+    @patch('srv.salt._modules.cephprocesses.Popen')
+    def test_is_failed_4(self, po, log):
+        """
+        multiple entries in self.service_names
+        one is enabled, one is disabled.
+        expect to get True
+        log should be called. (twice)
+        """
+        cephprocesses.__grains__ = {'host': 'a_host'}
+        po.return_value.communicate.side_effect = [(b"active\n ", ""), (b"failed\n ", "")]
+        ret = cephprocesses.SystemdUnit('ganesha.nfsd').is_failed
+        assert ret is True
+        log.info.assert_called_with('Found rpcbind to be failed')
 
     @pytest.mark.skip(reason='Cant reproduce it in the tests, but can in the shell..')
     @patch('srv.salt._modules.cephprocesses.log')
@@ -594,3 +660,15 @@ class TestSystemdUnit():
         ret = cephprocesses.SystemdUnit('ceph-mon').is_disabled
         assert ret is False
         log.error.assert_called_once_with('Requesting the is-enabled flag from ceph-mon@a_host has resulted in stderr')
+
+    @patch('srv.salt._modules.cephprocesses.log')
+    @patch('srv.salt._modules.cephprocesses.Popen')
+    def test_is_failed_6(self, po, log):
+        """
+        stderr
+        """
+        cephprocesses.__grains__ = {'host': 'a_host'}
+        po.return_value.communicate.return_value = ("", "stderr")
+        ret = cephprocesses.SystemdUnit('ceph-mon').is_failed
+        assert ret is False
+        log.error.assert_called_once_with('Requesting the is-failed flag from ceph-mon@a_host has resulted in stderr')

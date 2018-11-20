@@ -10,6 +10,7 @@ import time
 import os
 import pwd
 import shlex
+
 # pylint: disable=import-error,3rd-party-module-not-gated
 from subprocess import Popen, PIPE
 import psutil
@@ -25,27 +26,29 @@ A secondary purpose is a utility to check the current state of all services.
 """
 
 # pylint: disable=invalid-name
-processes = {'mon': ['ceph-mon'],
-             'mgr': ['ceph-mgr'],
-             'storage': ['ceph-osd'],
-             'mds': ['ceph-mds'],
-             'igw': ['lrbd'],
-             'rgw': ['radosgw'],
-             'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
-             'admin': [],
-             'client-cephfs': [],
-             'client-iscsi': [],
-             'client-nfs': [],
-             'client-radosgw': [],
-             'benchmark-blockdev': [],
-             'benchmark-rbd': [],
-             'benchmark-fs': [],
-             'master': []}
+processes = {
+    "mon": ["ceph-mon"],
+    "mgr": ["ceph-mgr"],
+    "storage": ["ceph-osd"],
+    "mds": ["ceph-mds"],
+    "igw": ["lrbd"],
+    "rgw": ["radosgw"],
+    "ganesha": ["ganesha.nfsd", "rpcbind", "rpc.statd"],
+    "admin": [],
+    "client-cephfs": [],
+    "client-iscsi": [],
+    "client-nfs": [],
+    "client-radosgw": [],
+    "benchmark-blockdev": [],
+    "benchmark-rbd": [],
+    "benchmark-fs": [],
+    "master": [],
+}
 
 # Processes like lrbd have an inverted logic
 # if they are running it means that the service is _NOT_ ready
 # as opposed to the the services in the 'processes' map.
-absent_processes = {'igw': ['lrbd']}
+absent_processes = {"igw": ["lrbd"]}
 
 
 # pylint: disable=too-few-public-methods
@@ -60,36 +63,58 @@ class SystemdUnit(object):
         self.osd_id = osd_id
         self.service_names = self._service_names()
 
-    @property
-    def is_disabled(self):
+    def _status(self, status_call, positive, negative):
         """
-        Reach out to systemctl and call is-enabled.
-        Property for this state
+        Parameterized systemd status checks
         """
         if not self.service_names:
             return False
 
         for fsn in self.service_names:
-            proc = Popen(shlex.split('systemctl is-enabled {}'.format(fsn)), stdout=PIPE)
+            proc = Popen(
+                shlex.split("systemctl {} {}".format(status_call, fsn)), stdout=PIPE
+            )
             stdout, stderr = proc.communicate()
             if stderr:
                 # pylint: disable=line-too-long
-                log.error('Requesting the is-enabled flag from {} has resulted in {}'.format(fsn, stderr))
+                log.error(
+                    "Requesting the {} flag from {} has resulted in {}".format(
+                        status_call, fsn, stderr
+                    )
+                )
                 return False
             try:
-                status = stdout.decode('utf-8').strip()
+                status = stdout.decode("utf-8").strip()
             except AttributeError:
                 log.error("Could not decode type-> {}".format(type(stdout)))
-                status = ''
-            if status == 'disabled':
-                log.info("Found {} to be disabled".format(fsn))
+                status = ""
+            if status == negative:
+                log.info("Found {} to be {}".format(fsn, negative))
                 return True
-            if status == 'enabled':
-                log.info("Found {} to be enabled".format(fsn))
+            elif status == positive:
+                log.info("Found {} to be {}".format(fsn, positive))
             else:
-                log.info("Expected to get disabled/enabled but got {} instead".format(status))
-        # Return False when no unit is 'disabled'
+                log.info(
+                    "Expected to get {}/{} but got {} instead".format(
+                        negative, positive, status
+                    )
+                )
+        # Return False when no unit is '$negative'
         return False
+
+    @property
+    def is_disabled(self):
+        """
+        Is the service disabled?
+        """
+        return self._status("is-enabled", "enabled", "disabled")
+
+    @property
+    def is_failed(self):
+        """
+        Has the serivce failed?
+        """
+        return self._status("is-failed", "active", "failed")
 
     def _service_names(self):
         """
@@ -97,16 +122,16 @@ class SystemdUnit(object):
         from service to service
         """
         service_names = []
-        if self.osd_id and self.proc_name == 'ceph-osd':
+        if self.osd_id and self.proc_name == "ceph-osd":
             service_names = ["{}@{}".format(self.proc_name, self.osd_id)]
-        if self.proc_name in ['ceph-mon', 'ceph-mgr', 'ceph-mds']:
-            service_names = ["{}@{}".format(self.proc_name, __grains__['host'])]
-        if self.proc_name == 'lrbd':
-            service_names = ['lrbd']
-        if self.proc_name == 'radosgw':
-            service_names = ["{}@{}".format('ceph-radosgw', __grains__['host'])]
-        if self.proc_name == 'ganesha.nfsd':
-            service_names = ['nfs-ganesha', 'rpcbind']
+        if self.proc_name in ["ceph-mon", "ceph-mgr", "ceph-mds"]:
+            service_names = ["{}@{}".format(self.proc_name, __grains__["host"])]
+        if self.proc_name == "lrbd":
+            service_names = ["lrbd"]
+        if self.proc_name == "radosgw":
+            service_names = ["{}@rgw.{}".format("ceph-radosgw", __grains__["host"])]
+        if self.proc_name == "ganesha.nfsd":
+            service_names = ["nfs-ganesha", "rpcbind"]
         return service_names
 
 
@@ -130,15 +155,14 @@ class ProcInfo(object):
         self.uid = proc.uids().real
         # uid to name. (root, salt.. etc)
         self.uid_name = pwd.getpwuid(self.uid).pw_name
-        if self.name == 'ceph-osd':
+        if self.name == "ceph-osd":
             self.osd_id = self._map_osd_proc_to_osd_id()
         else:
             self.osd_id = None
-        if 'python' in self.exe:
+        if "python" in self.exe:
             self.exe = self.name
-        if self.proc.status() == 'running':
+        if self.proc.status() == "running":
             self.up = False
-        self._is_disabled = False
 
     def __repr__(self):
         """
@@ -151,7 +175,7 @@ class ProcInfo(object):
         Look into the commandline the process has been called
         with and extract the --id portion.
         """
-        _id = self.proc.cmdline()[self.proc.cmdline().index('--id') + 1]
+        _id = self.proc.cmdline()[self.proc.cmdline().index("--id") + 1]
         if _id:
             return _id
         else:
@@ -162,6 +186,7 @@ class NoOSDIDFound(Exception):
     """
     Custom Exception to raise when no OSD ID is found.
     """
+
     pass
 
 
@@ -174,9 +199,9 @@ class MetaCheck(object):
         self.up = list()
         self.down = list()
         self.running = True
-        self.quiet = kwargs.get('quiet', False)
+        self.quiet = kwargs.get("quiet", False)
         self.insufficient_osd_count = False
-        self.__blacklist = kwargs.get('blacklist', dict())
+        self.__blacklist = kwargs.get("blacklist", dict())
 
     @property
     def blacklist(self):
@@ -188,7 +213,7 @@ class MetaCheck(object):
         """
         if self.__blacklist:
             return self.__blacklist
-        return __salt__['pillar.get']('blacklist')
+        return __salt__["pillar.get"]("blacklist")
 
     @blacklist.setter
     def blacklist(self, bl):
@@ -204,11 +229,13 @@ class MetaCheck(object):
         """
         blacklisted_osds = []
         blacklist = self.blacklist
-        if 'ceph-osd' in blacklist:
-            if blacklist['ceph-osd']:
-                blacklisted_osds = [str(x) for x in blacklist['ceph-osd']]
-                log.warning("You configured OSDs to be blacklisted. {}".format(blacklisted_osds))
-        return list(set(__salt__['osd.list']()) - set(blacklisted_osds))
+        if "ceph-osd" in blacklist:
+            if blacklist["ceph-osd"]:
+                blacklisted_osds = [str(x) for x in blacklist["ceph-osd"]]
+                log.warning(
+                    "You configured OSDs to be blacklisted. {}".format(blacklisted_osds)
+                )
+        return list(set(__salt__["osd.list"]()) - set(blacklisted_osds))
 
     def filter_for(self, prc_name):
         """
@@ -236,7 +263,11 @@ class MetaCheck(object):
                 if proc in [prc.name for prc in self.up]:
                     self.running = False
                     # pylint: disable=line-too-long
-                    log.error("ERROR: process {} for role {} is pending(working)".format(proc, role))
+                    log.error(
+                        "ERROR: process {} for role {} is pending(working)".format(
+                            proc, role
+                        )
+                    )
 
     def check_absents(self, role):
         """
@@ -247,7 +278,11 @@ class MetaCheck(object):
             if proc not in [prc.name for prc in self.up]:
                 if not self.quiet:
                     # pylint: disable=line-too-long
-                    log.error("ERROR: process {} for role {} is not running".format(proc, role))
+                    log.error(
+                        "ERROR: process {} for role {} is not running".format(
+                            proc, role
+                        )
+                    )
                 self.running = False
                 self.down.append(proc)
 
@@ -256,7 +291,7 @@ class MetaCheck(object):
         """
         Property that returns a str(osd_id) of filtered ceph-osd processes
         """
-        return [str(x.osd_id) for x in self.filter_for('ceph-osd')]
+        return [str(x.osd_id) for x in self.filter_for("ceph-osd")]
 
     @property
     def _missing_osds(self):
@@ -272,8 +307,16 @@ class MetaCheck(object):
         if len(self.expected_osds) > len(self._up_osds):
             if not self.quiet:
                 # pylint: disable=line-too-long
-                log.error("{} OSDs not running: {}".format(len(self._missing_osds), self._missing_osds))
-                log.error("Found less OSDs then expected. Expected {} | Found {}".format(len(self.expected_osds), len(self._up_osds)))
+                log.error(
+                    "{} OSDs not running: {}".format(
+                        len(self._missing_osds), self._missing_osds
+                    )
+                )
+                log.error(
+                    "Found less OSDs then expected. Expected {} | Found {}".format(
+                        len(self.expected_osds), len(self._up_osds)
+                    )
+                )
             self.insufficient_osd_count = True
         else:
             self.insufficient_osd_count = False
@@ -283,7 +326,7 @@ class MetaCheck(object):
         Check the count of OSDs
         """
         self._insufficient_osd_count()
-        if self.filter_for('ceph-osd'):
+        if self.filter_for("ceph-osd"):
             if self.insufficient_osd_count:
                 self.running = False
 
@@ -302,23 +345,25 @@ class MetaCheck(object):
         osd_id which is down as opposed to the up->ceph-osd
         where the key describes the process id.
         """
-        res = {'up': {}, 'down': {}}
+        res = {"up": {}, "down": {}}
         # initialize
         for proc in self.up:
-            res['up'][proc.exe] = list()
+            res["up"][proc.exe] = list()
         for proc in self.down:
             # We only consider down/enabled as abort condition
             if not SystemdUnit(proc_name=proc).is_disabled:
-                res['down'][proc] = proc
+                res["down"][proc] = proc
 
         for proc in self.up:
             # We are checking if a systemd-unit is up,
             # but not if it is disabled. maybe we should?
-            res['up'][proc.exe].append(proc.pid)
+            res["up"][proc.exe].append(proc.pid)
         if self.insufficient_osd_count:
             for missing_osd in self._missing_osds:
-                if not SystemdUnit(proc_name='ceph-osd', osd_id=missing_osd).is_disabled:
-                    res['down']['ceph-osd'] = self._missing_osds
+                if not SystemdUnit(
+                    proc_name="ceph-osd", osd_id=missing_osd
+                ).is_disabled:
+                    res["down"]["ceph-osd"] = self._missing_osds
         return res
 
 
@@ -326,9 +371,9 @@ def _extend_processes():
     """
     Extend the processes by rgw_configurations
     """
-    if 'rgw_configurations' in __pillar__:
-        for rgw_config in __pillar__['rgw_configurations']:
-            processes[rgw_config] = ['radosgw']
+    if "rgw_configurations" in __pillar__:
+        for rgw_config in __pillar__["rgw_configurations"]:
+            processes[rgw_config] = ["radosgw"]
 
 
 def check(results=False, **kwargs):
@@ -341,15 +386,15 @@ def check(results=False, **kwargs):
     _extend_processes()
     res = MetaCheck(**kwargs)
 
-    if 'roles' not in __pillar__:
+    if "roles" not in __pillar__:
         log.error("Did not find _roles_ in pillar. Aborting")
         return False
-    for role in kwargs.get('roles', __pillar__['roles']):
+    for role in kwargs.get("roles", __pillar__["roles"]):
         for running_proc in psutil.process_iter():
             res.add(ProcInfo(running_proc), role)
         res.check_inverts(role)
         res.check_absents(role)
-        if role == 'storage':
+        if role == "storage":
             res.check_osds()
 
     return res.report() if results else res.running
@@ -360,7 +405,7 @@ def down():
     Based on check(), return True/False if all Ceph processes that are meant
     to be running on a node are down.
     """
-    return True if not list(check(True)['up'].values()) else False
+    return True if not list(check(True)["up"].values()) else False
 
 
 def wait(**kwargs):
@@ -368,21 +413,18 @@ def wait(**kwargs):
     Periodically check until all services are up or until the timeout is
     reached.  Use a backoff for the delay to avoid filling logs.
     """
-    settings = {
-        'timeout': _timeout(),
-        'delay': 3
-    }
+    settings = {"timeout": _timeout(), "delay": 3}
     settings.update(kwargs)
 
-    end_time = time.time() + settings['timeout']
-    current_delay = settings['delay']
+    end_time = time.time() + settings["timeout"]
+    current_delay = settings["delay"]
     while end_time > time.time():
         if check(**kwargs):
             log.debug("Services are up")
             return True
         time.sleep(current_delay)
         if current_delay < 60:
-            current_delay += settings['delay']
+            current_delay += settings["delay"]
         else:
             current_delay = 60
     log.error("Timeout expired")
@@ -394,15 +436,21 @@ def _process_map():
     Create a map of processes that have deleted files.
     """
     procs = []
-    proc1 = Popen(shlex.split('lsof '), stdout=PIPE)
+    proc1 = Popen(shlex.split("lsof "), stdout=PIPE)
     # pylint: disable=line-too-long
-    proc2 = Popen(shlex.split("awk 'BEGIN {IGNORECASE = 1} /deleted/ {print $1 \" \" $2 \" \" $4}'"),
-                  stdin=proc1.stdout, stdout=PIPE, stderr=PIPE)
+    proc2 = Popen(
+        shlex.split(
+            'awk \'BEGIN {IGNORECASE = 1} /deleted/ {print $1 " " $2 " " $4}\''
+        ),
+        stdin=proc1.stdout,
+        stdout=PIPE,
+        stderr=PIPE,
+    )
     proc1.stdout.close()
     stdout, _ = proc2.communicate()
-    stdout = __salt__['helper.convert_out'](stdout)
-    for proc_l in stdout.split('\n'):
-        proc = proc_l.split(' ')
+    stdout = __salt__["helper.convert_out"](stdout)
+    for proc_l in stdout.split("\n"):
+        proc = proc_l.split(" ")
         proc_info = {}
         if proc[0] and proc[1] and proc[2]:
             proc_info['name'] = proc[0]
@@ -419,20 +467,20 @@ def zypper_ps(role, lsof_map):
     Gets services that need a restart from zypper
     """
     assert role
-    proc1 = Popen(shlex.split('zypper ps -sss'), stdout=PIPE)
+    proc1 = Popen(shlex.split("zypper ps -sss"), stdout=PIPE)
     stdout, _ = proc1.communicate()
-    stdout = __salt__['helper.convert_out'](stdout)
+    stdout = __salt__["helper.convert_out"](stdout)
     processes_ = processes
     # adding instead of overwriting, eh?
     # radosgw is ceph-radosgw in zypper ps.
-    processes_['rgw'] = ['ceph-radosgw', 'radosgw', 'rgw']
+    processes_["rgw"] = ["ceph-radosgw", "radosgw", "rgw"]
     # ganesha is called nfs-ganesha
-    processes_['ganesha'] = ['ganesha.nfsd', 'rpcbind', 'rpc.statd', 'nfs-ganesha']
-    for proc_l in stdout.split('\n'):
-        if '@' in proc_l:
-            proc_l = proc_l.split('@')[0]
+    processes_["ganesha"] = ["ganesha.nfsd", "rpcbind", "rpc.statd", "nfs-ganesha"]
+    for proc_l in stdout.split("\n"):
+        if "@" in proc_l:
+            proc_l = proc_l.split("@")[0]
         if proc_l in processes_[role]:
-            lsof_map.append({'name': proc_l})
+            lsof_map.append({"name": proc_l})
     return lsof_map
 
 
@@ -481,6 +529,6 @@ def _timeout():
     Assume 15 minutes for physical hardware since some hardware has long
     shutdown/reboot times.  Assume 2 minutes for complete virtual environments.
     """
-    if __grains__['virtual'] == 'physical':
+    if __grains__["virtual"] == "physical":
         return 900
     return 120
