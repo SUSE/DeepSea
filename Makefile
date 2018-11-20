@@ -3,7 +3,7 @@ DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
 DEEPSEA_DEPS=salt-api
-PYTHON_DEPS=python3-setuptools python3-click python3-tox
+PYTHON_DEPS=python3-setuptools python3-click python3-tox python3-configobj
 PYTHON=python3
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
@@ -23,7 +23,7 @@ USER=root
 GROUP=root
 ifeq ($(OS), centos)
 PKG_INSTALL=yum install -y
-PYTHON_DEPS=python-setuptools python-click python-tox
+PYTHON_DEPS=python-setuptools python-click python-tox python-configobj
 PYTHON=python
 else
 ifeq ($(OS), fedora)
