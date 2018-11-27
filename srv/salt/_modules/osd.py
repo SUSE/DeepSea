@@ -1399,6 +1399,8 @@ def split_partition(_partition):
     # if os.path.exists(part):
     log.debug("splitting partition {}".format(part))
     match = re.match(r"(.+\D)(\d+)", part)
+    if not match:
+        return None, None
     disk = match.group(1)
     if disk.endswith('p'):
         disk = disk[:-1]
@@ -2340,14 +2342,16 @@ def _report_grains():
         for _id in __grains__['ceph']:
             _partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
             disk, _ = split_partition(_partition)
-            active.append(disk)
+            if disk:
+                active.append(disk)
             log.debug("checking /var/lib/ceph/osd/ceph-{}/fsid".format(_id))
             if not os.path.exists("/var/lib/ceph/osd/ceph-{}/fsid".format(_id)):
                 unmounted.append(disk)
             if 'lockbox' in __grains__['ceph'][_id]['partitions']:
                 _partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
                 disk, _ = split_partition(_partition)
-                active.append(disk)
+                if disk:
+                    active.append(disk)
     return active, unmounted
 
 
