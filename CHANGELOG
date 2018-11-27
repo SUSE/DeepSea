@@ -110,6 +110,7 @@ Thu Apr 17 16:50:50 UTC 2018 - jschmid@suse.de
 - qa: test script fixes needed to revive pynfs.sh 
 - Refactor Prometheus RGW exporter #847 
 - stage 3: don't update ceph packages, only install 
+- populate: support multiple public, cluster networks in engulf (bsc#1076010)
 
 -------------------------------------------------------------------
 Fri Mar 23 14:34:50 UTC 2018 - ejackson@suse.com
