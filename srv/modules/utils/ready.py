@@ -53,20 +53,27 @@ class Checks(object):
         Scan all minions for the default firewall settings.  Set warnings
         for any differences.
         """
-        contents = self.local.cmd(self.search, 'cmd.shell',
+        contents = self.local.cmd(self.search, 'cmd.run_all',
                                   ['/usr/sbin/iptables -S'],
                                   tgt_type="compound")
+
         for minion in contents:
+            if contents[minion]['retcode'] == 127:
+                self.passed['firewall'] = "not installed"
+                continue
+            if 'firewall' in self.passed:
+                del self.passed['firewall']
+
             # Accept custom named chains
-            if not contents[minion].startswith(("-P INPUT ACCEPT\n"
-                                                "-P FORWARD ACCEPT\n"
-                                                "-P OUTPUT ACCEPT")):
+            if not contents[minion]['stdout'].startswith(("-P INPUT ACCEPT\n"
+                                                          "-P FORWARD ACCEPT\n"
+                                                          "-P OUTPUT ACCEPT")):
                 msg = "enabled on minion {}".format(minion)
                 if 'firewall' in self.warnings:
                     self.warnings['firewall'].append(msg)
                 else:
                     self.warnings['firewall'] = [msg]
-        if 'firewall' not in self.warnings:
+        if 'firewall' not in self.warnings and 'firewall' not in self.passed:
             self.passed['firewall'] = "disabled"
 
     def apparmor(self):
