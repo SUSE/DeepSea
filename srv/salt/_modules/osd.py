@@ -460,7 +460,7 @@ class CephPGs(object):
     def quiescent(self):
         """
         Wait until PGs are active+clean or timeout is reached.  Default is a
-        2 minute sliding window.
+        2 minute sliding window.  Return if no PGs are present.
         """
         i = 0
         last = []
@@ -468,6 +468,9 @@ class CephPGs(object):
             raise ValueError("The delay cannot be 0")
         while i < self.settings['timeout']/self.settings['delay']:
             current = self.pg_states()
+            if not current:
+                log.warning("PGs are not present")
+                return
             if len(current) == 1 and current[0]['name'] == 'active+clean':
                 log.warning("PGs are active+clean")
                 return

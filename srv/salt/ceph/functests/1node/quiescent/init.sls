@@ -4,6 +4,13 @@
 {{ node }}:
   test.nop
 
+PGs greater than zero:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.tests.quiescent.check_pgs
+    - failhard: True
+
 check active+clean:
   salt.state:
     - tgt: {{ node }}
