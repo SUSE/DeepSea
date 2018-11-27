@@ -1,4 +1,23 @@
 -------------------------------------------------------------------
+Fri Nov 27 13:00:19 UTC 2018 - jschmid@suse.com
+
+- Version 0.9.9
+- Makefile: Install python-configobj
+- Add mgr_orch runner to support ceph-mgr deepsea orchestrator module
+- tests: don't call helper_specs fixture directly
+- populate/engulf: don't add cluster-unassigned line
+- Return version in cephdisk.version() instead of printing it. So ``salt '*' cephdisks.version`` will output correct values instead of None.
+- Consider iptables not installed as passing
+- Check configs for deprecated k:v pairs and report
+- build/ops: install python3-prometheus-client
+- osd.py: adjust pg_states() method to Nautilus
+- remove traces of oA
+- qa: disable engulf functional test (not working with LVM)
+- Makefile: Fix two missing $DESTDIRs
+- Makefile: clean up suse conditional blocks
+- Prevent rgw-ssl name collision when pushing certificates and using custom rgw roles
+
+-------------------------------------------------------------------
 Fri Nov 11 13:15:19 UTC 2018 - jschmid@suse.com
 
 - Version 0.9.8
