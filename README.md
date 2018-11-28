@@ -34,6 +34,8 @@ For those interested in learning about some of the uses of Salt in DeepSea, see 
 ## Usage
 You need at least a minimum of 4 nodes to be able to test and use DeepSea properly.
 
+[Developer setups that can spawn and provision VMs for you.](#developer-setups)
+
 To be able to use less than 4 nodes during the deployment stages (e.g. in a
 development/testing environment), you could set the option `DEV_ENV=true` as an
 environment variable or globally as a pillar variable in
@@ -42,6 +44,14 @@ environment variable or globally as a pillar variable in
 - Deploy monitors without the presence of a `profile` directory
 - Deply a cluster with at least _one_ (instead of 3/4/3) storage/monitor/mgr
   nodes
+
+## Developer Setups
+
+There are a couple of ways to spawn and provision VMs, but most people currently use
+a `Vagrant` based solution called [vagrant-ceph](https://github.com/opensuse/vagrant-ceph)
+
+There is also a terraform based solution called [ceph-open-terrarium](https://github.com/mallozup/ceph-open-terrarium)
+
 
 ### Add DeepSea repo to your admin host
 
@@ -364,3 +374,4 @@ readme](srv/pillar/ceph/benchmarks/README.md) for further details.
 This runs fio using the RBD backend against the cluster as a whole. This
 requires at least one minion with the `benchmark-rbd` role. See the
 [benchmark readme](srv/pillar/ceph/benchmarks/README.md) for further details.
+
