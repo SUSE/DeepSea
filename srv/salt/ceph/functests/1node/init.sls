@@ -8,5 +8,3 @@ include:
   - .restart.rgw
   - .apparmor
   - .openstack
-  # Engulf is presently broken for LVM, so don't test it
-  # - .engulf
