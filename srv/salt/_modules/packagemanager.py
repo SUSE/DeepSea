@@ -8,6 +8,7 @@ from subprocess import Popen, PIPE
 import xml.etree.ElementTree as ET
 import logging
 import os
+
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 
 
@@ -24,11 +25,11 @@ class PackageManager(object):
     """
 
     def __init__(self, **kwargs):
-        self.debug = kwargs.get('debug', False)
-        self.kernel = kwargs.get('kernel', False)
-        self.reboot = kwargs.get('reboot', True)
+        self.debug = kwargs.get("debug", False)
+        self.kernel = kwargs.get("kernel", False)
+        self.reboot = kwargs.get("reboot", True)
 
-        self.platform = __grains__['os'].lower()
+        self.platform = __grains__["os"].lower()
         if "suse" in self.platform or "opensuse" in self.platform:
             log.info("Found {}. Using {}".format(self.platform, Zypper.__name__))
             # pylint: disable=invalid-name
@@ -37,8 +38,10 @@ class PackageManager(object):
             log.info("Found {}. Using {}".format(self.platform, Apt.__name__))
             self.pm = Apt(**kwargs)
         else:
-            raise ValueError("Failed to detect PackageManager for OS."
-                             "Open an issue on github.com/SUSE/DeepSea")
+            raise ValueError(
+                "Failed to detect PackageManager for OS."
+                "Open an issue on github.com/SUSE/DeepSea"
+            )
 
     def _reboot(self):
         """
@@ -49,7 +52,7 @@ class PackageManager(object):
             log.debug("Faking Reboot")
         else:
             log.debug("Initializing Reboot.")
-            __salt__['event.fire_master'](None, 'salt/ceph/set/noout')
+            __salt__["event.fire_master"](None, "salt/ceph/set/noout")
             cmd = "shutdown -r"
             Popen(cmd, stdout=PIPE, shell=True)
         return None
@@ -69,10 +72,10 @@ class Apt(PackageManager):
         the child get kwargs passed as arguments to
         have the possibility to handle those differently.
         """
-        self.kernel = kwargs.get('kernel', False)
-        self.debug = kwargs.get('debug', False)
-        self.reboot = kwargs.get('reboot', True)
-        self.base_flags = ['--yes']
+        self.kernel = kwargs.get("kernel", False)
+        self.debug = kwargs.get("debug", False)
+        self.reboot = kwargs.get("reboot", True)
+        self.base_flags = ["--yes"]
 
     def _updates_needed(self):
         """
@@ -86,31 +89,34 @@ class Apt(PackageManager):
         # pylint: disable=unused-variable
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         _, stderr = proc.communicate()
-        stderr = __salt__['helper.convert_out'](stderr)
+        stderr = __salt__["helper.convert_out"](stderr)
         for cn_err in stderr.split(";"):
             if int(cn_err) > 0:
-                log.info('Update Needed')
+                log.info("Update Needed")
                 return True
-            log.info('No Update Needed')
+            log.info("No Update Needed")
         return False
 
     def _refresh(self):
         """
         Resynchronize the package index files from their sources
         """
-        cmd = 'apt-get {} update'.format(self.base_flags)
+        cmd = "apt-get {} update".format(self.base_flags)
         Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
-    def _handle(self, strat='up'):
+    def _handle(self, strat="up"):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
-        if strat == 'up':
-            strat = 'upgrade'
+        if strat == "up":
+            strat = "upgrade"
         if self._updates_needed():
-            base_command = ['apt-get']
-            strategy_flags = ["-o Dpkg::Options::=",
-                              "--allow-change-held-packages", "-fuy"]
+            base_command = ["apt-get"]
+            strategy_flags = [
+                "-o Dpkg::Options::=",
+                "--allow-change-held-packages",
+                "-fuy",
+            ]
             if self.debug:
                 strategy_flags.append("--dry-run")
             base_command.extend(self.base_flags)
@@ -124,12 +130,12 @@ class Apt(PackageManager):
                 log.info(line)
             log.info("returncode: {}".format(proc.returncode))
             if proc.returncode == 0:
-                if os.path.isfile('/var/run/reboot-required'):
+                if os.path.isfile("/var/run/reboot-required"):
                     self._reboot()
             elif proc.returncode != 0:
                 raise Exception("Apt exited with non-0 returncode")
         else:
-            log.info('System up to date')
+            log.info("System up to date")
 
 
 class Zypper(PackageManager):
@@ -148,16 +154,18 @@ class Zypper(PackageManager):
     flag.
     """
 
-    RETCODES = {102: 'ZYPPER_EXIT_INF_REBOOT_NEEDED',
-                100: 'ZYPPER_EXIT_INF_UPDATE_NEEDED',
-                1: 'ZYPPER_EXIT_ERR_BUG',
-                2: 'ZYPPER_EXIT_ERR_SYNTAX',
-                3: 'ZYPPER_EXIT_ERR_INVALID_ARGS',
-                4: 'ZYPPER_EXIT_ERR_ZYPP',
-                5: 'ZYPPER_EXIT_ERR_PRIVILEGES',
-                6: 'ZYPPER_EXIT_NO_REPOS',
-                7: 'ZYPPER_EXIT_ZYPP_LOCKED',
-                8: 'ZYPPER_EXIT_ERR_COMMIT'}
+    RETCODES = {
+        102: "ZYPPER_EXIT_INF_REBOOT_NEEDED",
+        100: "ZYPPER_EXIT_INF_UPDATE_NEEDED",
+        1: "ZYPPER_EXIT_ERR_BUG",
+        2: "ZYPPER_EXIT_ERR_SYNTAX",
+        3: "ZYPPER_EXIT_ERR_INVALID_ARGS",
+        4: "ZYPPER_EXIT_ERR_ZYPP",
+        5: "ZYPPER_EXIT_ERR_PRIVILEGES",
+        6: "ZYPPER_EXIT_NO_REPOS",
+        7: "ZYPPER_EXIT_ZYPP_LOCKED",
+        8: "ZYPPER_EXIT_ERR_COMMIT",
+    }
 
     VERSION = 0.1
 
@@ -168,11 +176,11 @@ class Zypper(PackageManager):
         the child get kwargs passed as arguments to
         have the possibility to handle those differently.
         """
-        self.base_command = ['zypper']
-        self.zypper_flags = ['--non-interactive']
-        self.kernel = kwargs.get('kernel', False)
-        self.reboot = kwargs.get('reboot', True)
-        self.debug = kwargs.get('debug', False)
+        self.base_command = ["zypper"]
+        self.zypper_flags = ["--non-interactive"]
+        self.kernel = kwargs.get("kernel", False)
+        self.reboot = kwargs.get("reboot", True)
+        self.debug = kwargs.get("debug", False)
 
     def _refresh(self):
         """
@@ -189,8 +197,8 @@ class Zypper(PackageManager):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         proc.wait()
         if proc.returncode != 0:
-            log.error('Refreshing failed. There might be an issue resolving the repos')
-            log.debug('Executed {}'.format(cmd))
+            log.error("Refreshing failed. There might be an issue resolving the repos")
+            log.debug("Executed {}".format(cmd))
             return False
         return True
 
@@ -209,16 +217,16 @@ class Zypper(PackageManager):
         """
         self._refresh()
         cmd = "zypper lu | grep -sq 'No updates found'"
-        log.debug('Executing {}'.format(cmd))
+        log.debug("Executing {}".format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         proc.wait()
         if proc.returncode != 0:
-            log.info('Update Needed')
+            log.info("Update Needed")
             return True
-        log.info('No Update Needed')
+        log.info("No Update Needed")
         return False
 
-    def _parse_xml(self, xml, find_str='.//update'):
+    def _parse_xml(self, xml, find_str=".//update"):
         """
         utils method to parse xml from a str
         """
@@ -233,19 +241,21 @@ class Zypper(PackageManager):
         """
         List all pending updates (transformed from XML)
         """
-        ret = {'status': True, 'packages': []}
+        ret = {"status": True, "packages": []}
         ret_refresh = self._refresh()
         if ret_refresh is False:
             log.error("Error while refreshing the repos.")
-            ret['status'] = ret_refresh
+            ret["status"] = ret_refresh
         cmd = "zypper -x lu"
-        log.debug('Executing {}'.format(cmd))
+        log.debug("Executing {}".format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         stdout, _ = proc.communicate()
-        stdout = __salt__['helper.convert_out'](stdout)
-        ret['packages'] = self._parse_xml(stdout)
+        stdout = __salt__["helper.convert_out"](stdout)
+        ret["packages"] = self._parse_xml(stdout)
         if _filter:
-            ret['packages'] = [x for x in ret['packages'] if any(w in x['name'] for w in _filter)]
+            ret["packages"] = [
+                x for x in ret["packages"] if any(w in x["name"] for w in _filter)
+            ]
             return ret
         return ret
 
@@ -263,12 +273,12 @@ class Zypper(PackageManager):
 
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         proc.wait()
-        log.debug('Executing {}'.format(cmd))
+        log.debug("Executing {}".format(cmd))
         if proc.returncode == 100:
             log.info(self.RETCODES[proc.returncode])
-            log.info('Patches Needed')
+            log.info("Patches Needed")
             return True
-        log.info('No Patches Needed')
+        log.info("No Patches Needed")
         return False
 
     def _check_for_reboots(self, returncode):
@@ -290,36 +300,44 @@ class Zypper(PackageManager):
         if int(returncode) > 0 and int(returncode) < 100:
             if int(returncode) in self.RETCODES:
                 log.debug("Zypper Error: {}".format(self.RETCODES[returncode]))
-            log.info('Zyppers returncode < 100 indicates a failure. Check man zypper')
-            raise Exception('Zypper failed with code: {}. Look at the logs'.format(returncode))
+            log.info("Zyppers returncode < 100 indicates a failure. Check man zypper")
+            raise Exception(
+                "Zypper failed with code: {}. Look at the logs".format(returncode)
+            )
 
-    def _handle(self, strat='up'):
+    def _handle(self, strat="up"):
         """
         Conbines up and dup and executes the constructed zypper command.
         """
 
         cmd = []
 
-        if strat == 'dup':
+        if strat == "dup":
             check_method = self._upgrades_needed
-        elif strat == 'up':
+        elif strat == "up":
             check_method = self._updates_needed
-        elif strat == 'patch':
+        elif strat == "patch":
             check_method = self._patches_needed
         else:
             raise ValueError("Don't know what to do with strategy: {}".format(strat))
 
         if check_method():
-            strategy_flags = ['--replacefiles', '--auto-agree-with-licenses']
+            strategy_flags = [
+                "--replacefiles",
+                "--auto-agree-with-licenses",
+                # TODO: not sure if this is the right path(more of a tmp solution)
+                "--force-resolution",
+                "--allow-vendor-change",
+            ]
             if self.debug:
                 strategy_flags.append("--dry-run")
-            if self.kernel and strat != 'dup':
+            if self.kernel and strat != "dup":
                 strategy_flags.append("--with-interactive")
             cmd.extend(self.base_command)
             cmd.extend(self.zypper_flags)
             cmd.extend(strat.split())
             cmd.extend(strategy_flags)
-            log.debug('Executing {}'.format(cmd))
+            log.debug("Executing {}".format(cmd))
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
             stdout, stderr = proc.communicate()
             for line in stdout:
@@ -336,15 +354,19 @@ class Zypper(PackageManager):
         Handle zypper migration
         """
         # There is no dryrun
-        strategy_flags = ['--auto-agree-with-licenses', '--replacefiles', '--allow-vendor-change']
+        strategy_flags = [
+            "--auto-agree-with-licenses",
+            "--replacefiles",
+            "--allow-vendor-change",
+        ]
         # Passing allow-vendor-change because the issue you get when not using it
         # is so well hidden its gonna be a nightmare to debug
         cmd = []
         cmd.extend(self.base_command)
-        cmd.extend(['migration'])
+        cmd.extend(["migration"])
         cmd.extend(self.zypper_flags)
         cmd.extend(strategy_flags)
-        log.debug('Executing {}'.format(cmd))
+        log.debug("Executing {}".format(cmd))
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = proc.communicate()
         for line in stdout:
@@ -418,7 +440,7 @@ def list_ceph_updates(**kwargs):
     List updates (only ceph)
     """
     obj = PackageManager(**kwargs)
-    return obj.pm.list_updates(_filter=['ceph'])
+    return obj.pm.list_updates(_filter=["ceph"])
 
 
 def list_salt_updates(**kwargs):
@@ -427,4 +449,4 @@ def list_salt_updates(**kwargs):
     List updates (only salt)
     """
     obj = PackageManager(**kwargs)
-    return obj.pm.list_updates(_filter=['salt-minion', 'salt-master'])
+    return obj.pm.list_updates(_filter=["salt-minion", "salt-master"])
