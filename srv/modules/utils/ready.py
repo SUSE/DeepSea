@@ -142,7 +142,7 @@ def help_():
     return ""
 
 
-def check(cluster, fail_on_warning=True, search=None, **kwargs):
+def check(cluster, fail_on_warning=True, **kwargs):
     """
     Check a cluster for runtime configurations that may cause issues for an
     installation.
@@ -150,11 +150,7 @@ def check(cluster, fail_on_warning=True, search=None, **kwargs):
     if cluster is None:
         cluster = kwargs['cluster']
 
-    # Restrict search to this cluster, but allow caller to set search directly.
-    # Setting search by caller is needed when DeepSea is engulfing a cluster it
-    # did not deploy.  At that point, "I@cluster:ceph" does not contain any
-    # minions.
-    search = "I@cluster:{}".format(cluster) if not search else search
+    search = "I@cluster:{}".format(cluster)
 
     _check = Checks(search)
     _check.firewall()

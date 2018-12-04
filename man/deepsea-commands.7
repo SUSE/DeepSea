@@ -622,20 +622,6 @@ salt '*' cephdisks.list
 .PP
 salt 'master_minion' cephimages.list
 .PP
-salt '*' cephinspector.get_minion_public_network
-.RS
-.RE
-salt '*' cephinspector.get_minion_cluster_network
-.RS
-.RE
-salt '*' cephinspector.get_ceph_disks_yml
-.RS
-.RE
-salt '*' cephinspector.get_keyring
-.RS
-.RE
-salt '*' cephinspector.inspect
-.PP
 salt '*' cephprocesses.check
 .RS
 .RE
@@ -982,9 +968,6 @@ salt-run net.iperf
 salt-run orderednodes.unique
 .PP
 salt-run populate.proposals
-.RS
-.RE
-salt-run populate.engulf_existing_cluster
 .PP
 salt-run proposal.test
 .RS
