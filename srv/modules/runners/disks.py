@@ -66,64 +66,71 @@ class SizeMatcher(Matcher):
         self.key = "human_readable_size"
         # Inconsistency in ceph-volume? Sometimes there is no human_readable_size
         self.fallback_key = "size"
-        self.high = None
-        self.low = None
-        self.exact = None
-        self.suffix = None
+        self._high = None
+        self._low = None
+        self._exact = None
         self._parse_filter()
-        self._adjust_suffix()
 
-    def _adjust_suffix(self):
-        if self.suffix == "G":
-            self.suffix = "GB"
-        if self.suffix == "T":
-            self.suffix = "TB"
-        if self.suffix == "M":
-            self.suffix = "MB"
+    def _adjust_suffix(self, suffix):
+        if suffix == "G":
+            return "GB"
+        if suffix == "T":
+            return "TB"
+        if suffix == "M":
+            return "MB"
+        return suffix
 
     def _parse_suffix(self, obj):
-        # Needs adaption when 1G:10G
-        return re.findall("[a-zA-Z]+", obj)[0]
+        return self._adjust_suffix(re.findall("[a-zA-Z]+", obj)[0])
 
-    def set_low_high(self):
+    def _get_k_v(self, data):
+        return (re.findall("\d+", data)[0], self._parse_suffix(data))
+
+    @property
+    def low(self):
+        return float(self._low), self._low_suffix
+
+    @low.setter
+    def low(self, low):
+        self._low, self._low_suffix = low
+
+    @property
+    def high(self):
+        return float(self._high), self._high_suffix
+
+    @high.setter
+    def high(self, high):
+        self._high, self._high_suffix = high
+
+    @property
+    def exact(self):
+        return float(self._exact), self._exact_suffix
+
+    @exact.setter
+    def exact(self, exact):
+        self._exact, self._exact_suffix = exact
+
+    def _parse_filter(self):
         low_high = re.match("\d+[A-Z]:\d+[A-Z]", self.attr)
         if low_high:
             low, high = low_high.group().split(":")
-            __import__('pdb').set_trace()
+            self.low = self._get_k_v(low)
+            self.high = self._get_k_v(high)
 
-
-
-    def _parse_filter(self):
-        # This is obviously a bad implementation
-        # Alternatives:
-        # 1. write 3 regexes that match
-        # :int, int:, #int:int, #int
-        # 2. endswitch and startwith + extra case int:int
-        # 3. something bettter :/
-        # TODO!
-        sizes = re.findall("\d+", self.attr)
-        self.suffix = self._parse_suffix(self.attr)
-
-        self.set_low_high()
         low = re.match("\d+[A-Z]:$", self.attr)
+        if low:
+            self.low = self._get_k_v(low)
+
         high = re.match("^:\d+[A-Z]", self.attr)
+        if high:
+            self.high = self._get_k_v(high)
+
         exact = re.match("^\d+[A-Z]$", self.attr)
-
-
-
-
-        if len(sizes) == 1:
-            # and no delim
-            self.exact = float(sizes[0])
-        elif len(sizes) == 2:
-            # and split with : delim
-            self.high = float(sizes[0])
-            self.low = float(sizes[1])
-        else:
-            raise
+        if exact:
+            self.exact = self._get_k_v(exact)
 
     def _compare(self, disk):
-        """ That entire Matcher sucks and needs to be redesigned
+        """
         """
         disk_key = self._get_disk_key(disk)
         disk_size = float(re.findall("\d+\.\d+", disk_key)[0])
@@ -131,32 +138,46 @@ class SizeMatcher(Matcher):
 
         if self.high and self.low:
             if (
-                disk_size <= self.high
-                and disk_size >= self.low
-                and disk_suffix == self.suffix
+                # When suffixes are not equal, we have to
+                # convert units .. postponed
+                # TODO!
+                disk_size <= self.high[0]
+                and disk_suffix == self.high[1]
+                and disk_size >= self.low[0]
+                and disk_suffix == self.low[1]
             ):
                 return True
             print("Nothing matched in high/low mode")
             return False
 
+        elif self.low and not self.high:
+            if disk_size >= self.low[0] and disk_suffix == self.low[1]:
+                return True
+            print("Nothing matched in low")
+            return False
+
+        elif self.high and not self.low:
+            if disk_size <= self.high[0] and disk_suffix == self.high[1]:
+                return True
+            print("Nothing matched in low")
+            return False
+
         elif self.exact:
-            if disk_size == self.exact and disk_suffix == self.suffix:
+            if disk_size == self.exact[0] and disk_suffix == self.exact[1]:
                 return True
             print("Nothing matched in exact")
             return False
         else:
             print("Neither high, low, nor exact was given")
             # TODO
-            raise
+            raise Exception("No filters applied")
 
 
 class DriveGroup(Base):
     def __init__(self, target) -> None:
         Base.__init__(self)
         self.raw: list = list(
-            self.local_client.cmd(target,
-                                  "pillar.get",
-                                  ["drive_group"]).values()
+            self.local_client.cmd(target, "pillar.get", ["drive_group"]).values()
         )[0]
         self.target: str = self.raw.get("target")
         self.data_device_attrs: dict = self.raw.get("data_devices", dict())
