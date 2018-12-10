@@ -4,6 +4,10 @@ import re
 import pprint
 
 
+class FilterNotSupported(Exception):
+    pass
+
+
 class Base(object):
     def __init__(self, **kwargs):
         self.local_client = salt.client.LocalClient()
@@ -20,44 +24,45 @@ class Inventory(Base):
 
 
 class Matcher(object):
-    def __init__(self, attr):
+    def __init__(self, attr, key):
         self.attr = attr
-        self.key = ""
+        self.key = key
+        self.fallback_key = None
 
-    def _compare(self, disk):
-        if disk.get(self.key, "") == disk.get(self.key, "!"):
-            return True
-        return False
+    def _get_disk_key(self, disk):
+        disk_key = disk.get(self.key)
+        if not disk_key and self.fallback_key:
+            disk_key = disk.get(self.fallback_key)
+        if disk_key:
+            return disk_key
+        raise Exception("No disk_key found")
 
 
 class SubstringMatcher(Matcher):
-    def __init__(self, attr):
-        super().__init__(self)
-        self.key = "model"
+    def __init__(self, attr, key):
+        Matcher.__init__(self, attr, key)
 
     def _compare(self, disk):
-        if disk.get(self.key, "") == disk.get(self.key, "!"):
+        disk_key = self._get_disk_key(disk)
+        if str(self.attr) in str(disk_key):
             return True
         return False
 
 
 class RotatesMatcher(Matcher):
-    def __init__(self, attr):
-        super().__init__(self)
-        self.attr = attr
-        self.key = "rotates"
+    def __init__(self, attr, key):
+        Matcher.__init__(self, attr, key)
 
     def _compare(self, disk):
-        __import__("pdb").set_trace()
-        if disk.get(self.key, "") == self.attr:
+        disk_key = self._get_disk_key(disk)
+        if int(disk_key) == int(self.attr):
             return True
         return False
 
 
 class SizeMatcher(Matcher):
-    def __init__(self, attr):
-        super().__init__(self)
-        self.attr = attr  # should not be neccessary, due to MatcherBase
+    def __init__(self, attr, key):
+        Matcher.__init__(self, attr, key)
         self.key = "human_readable_size"
         # Inconsistency in ceph-volume? Sometimes there is no human_readable_size
         self.fallback_key = "size"
@@ -77,7 +82,16 @@ class SizeMatcher(Matcher):
             self.suffix = "MB"
 
     def _parse_suffix(self, obj):
+        # Needs adaption when 1G:10G
         return re.findall("[a-zA-Z]+", obj)[0]
+
+    def set_low_high(self):
+        low_high = re.match("\d+[A-Z]:\d+[A-Z]", self.attr)
+        if low_high:
+            low, high = low_high.group().split(":")
+            __import__('pdb').set_trace()
+
+
 
     def _parse_filter(self):
         # This is obviously a bad implementation
@@ -85,10 +99,19 @@ class SizeMatcher(Matcher):
         # 1. write 3 regexes that match
         # :int, int:, #int:int, #int
         # 2. endswitch and startwith + extra case int:int
-        # 3. ?
+        # 3. something bettter :/
         # TODO!
         sizes = re.findall("\d+", self.attr)
         self.suffix = self._parse_suffix(self.attr)
+
+        self.set_low_high()
+        low = re.match("\d+[A-Z]:$", self.attr)
+        high = re.match("^:\d+[A-Z]", self.attr)
+        exact = re.match("^\d+[A-Z]$", self.attr)
+
+
+
+
         if len(sizes) == 1:
             # and no delim
             self.exact = float(sizes[0])
@@ -102,25 +125,21 @@ class SizeMatcher(Matcher):
     def _compare(self, disk):
         """ That entire Matcher sucks and needs to be redesigned
         """
-        disk_key = disk.get(self.key)
-        if not disk_key:
-            disk_key = disk.get(self.fallback_key)
-
+        disk_key = self._get_disk_key(disk)
         disk_size = float(re.findall("\d+\.\d+", disk_key)[0])
         disk_suffix = self._parse_suffix(disk_key)
 
         if self.high and self.low:
             if (
-                disk_size < self.high
-                and disk_size < self.low
+                disk_size <= self.high
+                and disk_size >= self.low
                 and disk_suffix == self.suffix
             ):
                 return True
-            print("Nothing matched in hihg/low")
+            print("Nothing matched in high/low mode")
             return False
 
         elif self.exact:
-            __import__("pdb").set_trace()
             if disk_size == self.exact and disk_suffix == self.suffix:
                 return True
             print("Nothing matched in exact")
@@ -135,63 +154,76 @@ class DriveGroup(Base):
     def __init__(self, target) -> None:
         Base.__init__(self)
         self.raw: list = list(
-            self.local_client.cmd(target, "pillar.get", ["drive_group"]).values()
+            self.local_client.cmd(target,
+                                  "pillar.get",
+                                  ["drive_group"]).values()
         )[0]
         self.target: str = self.raw.get("target")
         self.data_device_attrs: dict = self.raw.get("data_devices", dict())
         self.shared_device_attrs: dict = self.raw.get("shared_devices", dict())
+        self._check_filter_support()
         self.encryption: bool = self.raw.get("encryption", False)
         self.wal_slots: int = self.raw.get("wal_slots", None)
         self.db_slots: int = self.raw.get("db_slots", None)
-        # harden this
         self.matchers = self._assign_matchers()
+        # harden this
         self.inventory = json.loads((list(Inventory(target).raw.values()))[0])
 
     @property
-    def data_devices(self) -> list:
-        data_devices: list = list()
-        for name, val in self.data_device_attrs.items():
-            print(name, val)
-            for disk in self._reduced_disks:
-                if not self.__match(disk):
-                    continue
-                data_devices.append(disk)
-                # Currently prints the stripped down/reduced disks
-                # actually we only need the path..
-        return data_devices
+    def data_devices(self) -> set:
+        return self._filter_devices(self.data_device_attrs)
 
     @property
-    def _supported_filters(self):
+    def shared_devices(self) -> set:
+        return self._filter_devices(self.shared_device_attrs)
+
+    def _filter_devices(self, device_filter) -> set:
+        devices: set = set()
+        for name, val in device_filter.items():
+            print("scanning for {}:{}".format(name, val))
+            for disk in self.inventory:
+                if not self.__match(self._reduce_inventory(disk)):
+                    continue
+                devices.add(disk["path"])
+        return devices
+
+    @property
+    def _supported_filters(self) -> list:
         return ["size", "vendor", "model", "rotates"]
+
+    def _check_filter_support(self):
+        for applied_filter in list(self.data_device_attrs.keys()):
+            if applied_filter not in self._supported_filters:
+                raise FilterNotSupported(
+                    "Filter {} is not supported".format(applied_filter)
+                )
+        for applied_filter in list(self.shared_device_attrs.keys()):
+            if applied_filter not in self._supported_filters:
+                raise FilterNotSupported(
+                    "Filter {} is not supported".format(applied_filter)
+                )
 
     def _assign_matchers(self):
         matchers = list()
         for k, v in self.data_device_attrs.items():
             if k == "size":
-                matchers.append(SizeMatcher(v))
+                matchers.append(SizeMatcher(v, k))
             elif k == "model":
-                matchers.append(SubstringMatcher(v))
+                matchers.append(SubstringMatcher(v, k))
             elif k == "vendor":
-                matchers.append(SubstringMatcher(v))
+                matchers.append(SubstringMatcher(v, k))
             elif k == "rotates":
-                matchers.append(RotatesMatcher(v))
+                matchers.append(RotatesMatcher(v, k))
         return matchers
 
     def __match(self, disk):
         for matcher in self.matchers:
             return matcher._compare(disk)
 
-    @property
-    def _reduced_disks(self) -> list:
-        disks = list()
-        for disk in self.inventory:
-            reduced_disk = self._reduce_inventory(disk)
-            if reduced_disk:
-                disks.append(reduced_disk)
-        return disks
-
     def _reduce_inventory(self, disk) -> dict:
-        # FIXME: Temp disable this check
+        """ Wrapper to check ceph-volume inventory output
+        """
+        # FIXME: Temp disable this check, only for testing purposes
         if disk["available"] is False:  # True
             reduced_disk = {"path": disk.get("path")}
             reduced_disk["size"] = disk["sys_api"].get("human_readable_size", None)
@@ -204,3 +236,4 @@ class DriveGroup(Base):
 def test():
     drive_group = DriveGroup("data1*")
     pprint.pprint(drive_group.data_devices)
+    pprint.pprint(drive_group.shared_devices)
