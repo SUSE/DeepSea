@@ -71,7 +71,15 @@ class SizeMatcher(Matcher):
         self._exact = None
         self._parse_filter()
 
-    def _adjust_suffix(self, suffix):
+    @property
+    def supported_suffixes(self):
+        """ Only power of 10 notation is supported
+        """
+        return ['MB', 'GB', 'TB', 'M', 'G', 'T']
+
+    def _normalize_suffix(self, suffix):
+        if suffix not in self.supported_suffixes:
+            raise Exception("Unit {} not supported".format(suffix))
         if suffix == "G":
             return "GB"
         if suffix == "T":
@@ -81,7 +89,7 @@ class SizeMatcher(Matcher):
         return suffix
 
     def _parse_suffix(self, obj):
-        return self._adjust_suffix(re.findall("[a-zA-Z]+", obj)[0])
+        return self._normalize_suffix(re.findall("[a-zA-Z]+", obj)[0])
 
     def _get_k_v(self, data):
         return (re.findall("\d+", data)[0], self._parse_suffix(data))
@@ -126,8 +134,21 @@ class SizeMatcher(Matcher):
             self.high = self._get_k_v(high)
 
         exact = re.match("^\d+[A-Z]$", self.attr)
+        __import__('pdb').set_trace()
         if exact:
             self.exact = self._get_k_v(exact)
+
+    def to_byte(self, tpl):
+        """
+        """
+        value = tpl[0]
+        suffix = tpl[1]
+        if suffix == 'MB':
+            return value * 1e+6
+        if suffix == 'GB':
+            return value * 1e+9
+        if suffix == 'TB':
+            return value * 1e+12
 
     def _compare(self, disk):
         """
@@ -135,35 +156,34 @@ class SizeMatcher(Matcher):
         disk_key = self._get_disk_key(disk)
         disk_size = float(re.findall("\d+\.\d+", disk_key)[0])
         disk_suffix = self._parse_suffix(disk_key)
+        disk_size_in_byte = self.to_byte((disk_size, disk_suffix))
+
+        # Convert MB/GB etc down to bytes and compare
+        # avoids suffixes comparisons
 
         if self.high and self.low:
             if (
-                # When suffixes are not equal, we have to
-                # convert units .. postponed
-                # TODO!
-                disk_size <= self.high[0]
-                and disk_suffix == self.high[1]
-                and disk_size >= self.low[0]
-                and disk_suffix == self.low[1]
+                disk_size_in_byte <= self.to_byte(self.high)
+                and disk_size_in_byte >= self.to_byte(self.low)
             ):
                 return True
             print("Nothing matched in high/low mode")
             return False
 
         elif self.low and not self.high:
-            if disk_size >= self.low[0] and disk_suffix == self.low[1]:
+            if disk_size_in_byte >= self.to_byte(self.low):
                 return True
             print("Nothing matched in low")
             return False
 
         elif self.high and not self.low:
-            if disk_size <= self.high[0] and disk_suffix == self.high[1]:
+            if disk_size_in_byte <= self.to_byte(self.high):
                 return True
             print("Nothing matched in low")
             return False
 
         elif self.exact:
-            if disk_size == self.exact[0] and disk_suffix == self.exact[1]:
+            if disk_size_in_byte == self.to_byte(self.exact):
                 return True
             print("Nothing matched in exact")
             return False
@@ -182,13 +202,13 @@ class DriveGroup(Base):
         self.target: str = self.raw.get("target")
         self.data_device_attrs: dict = self.raw.get("data_devices", dict())
         self.shared_device_attrs: dict = self.raw.get("shared_devices", dict())
-        self._check_filter_support()
         self.encryption: bool = self.raw.get("encryption", False)
         self.wal_slots: int = self.raw.get("wal_slots", None)
         self.db_slots: int = self.raw.get("db_slots", None)
         self.matchers = self._assign_matchers()
-        # harden this
+        # harder this
         self.inventory = json.loads((list(Inventory(target).raw.values()))[0])
+        self._check_filter_support()
 
     @property
     def data_devices(self) -> set:
