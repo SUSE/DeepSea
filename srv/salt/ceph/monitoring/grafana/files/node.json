@@ -1025,7 +1025,7 @@
           "name": "instance",
           "options": [],
           "query": "up{job='node-exporter'}",
-          "refresh": 1,
+          "refresh": 2,
           "regex": ".*instance=\"(.*?)\".*",
           "sort": 0,
           "tagValuesQuery": "",
