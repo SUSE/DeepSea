@@ -1,4 +1,21 @@
 -------------------------------------------------------------------
+Tue Dec 13 16:33:45 UTC 2018 - jschmid@suse.com
+
+- Version: 0.8.8
+- tuned: disable dynamic tuning for all profiles (bsc#1119260)
+- Add missing bit to v0.8.4 release notes
+- populate/engulf: don't add cluster-unassigned line
+- monitoring: fix pool usage gauge (bsc#1116114)
+- Prevent rgw-ssl name collision when pushing certificates and using custom rgw roles (bsc#1105478)
+- grafana: use the same time period in every dashboard (bsc#1114795)
+- Correct conditional check for custom configurations (bsc#1109973)
+- lrbd service restart instead of reload on `ui_iscsi.deploy` (bsc#1113594)
+- cli: prettyprint: force stdout flush in all stdout writes
+- Remove hardcoded nvme devices, support generic convention (bsc#1107925)
+- Adapt to SES5 way of detecting the master
+- Support active+clean checks on empty clusters
+
+-------------------------------------------------------------------
 Tue Oct 16 14:25:45 UTC 2018 - jschmid@suse.com
 
 - Version 0.8.7
