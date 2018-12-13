@@ -2086,14 +2086,20 @@ def deploy_lvm():
     Dummy implementation to deplioy a ceph-volume OSD on an existing lv
     """
     for device in configured():
-        _rc, _out, _err = __salt__['helper.run'](
-            ['ceph-volume',
-             'lvm',
-             'prepare',
-             '--bluestore',
-             '--data',
-             '{}1'.format(device)]
-        )
+        cmd = (r"find -L /dev/ -maxdepth 1 -samefile {}".format(device))
+        _rc, stdout, _stderr = __salt__['helper.run'](cmd)
+        if stdout:
+            log.info("using {} to deploy OSD".format(stdout))
+            _rc, _out, _err = __salt__['helper.run'](
+                ['ceph-volume',
+                 'lvm',
+                 'prepare',
+                 '--bluestore',
+                 '--data',
+                 '{}1'.format(stdout)]
+            )
+        else:
+            log.error("could not find short device for {}".format(device))
     _rc, _out, _err = __salt__['helper.run'](['ceph-volume',
                                               'lvm',
                                               'activate',
