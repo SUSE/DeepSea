@@ -233,7 +233,7 @@ class TestHardwareDetections():
         """ Assume ret_bus_id returns True"""
         wm.return_value = '/valid/path'
         ret_bus_id.return_value = True
-        po.side_effect = StandardError
+        po.side_effect = Exception
         hwd.HardwareDetections()._query_disktype('sdn', {'controller_name': 'megaraid'}, 'base')
         assert ir.called is True
 
@@ -334,6 +334,7 @@ class TestHardwareDetections():
         out = hwd.HardwareDetections()._hw_raid_ctrl_detection()
         assert expect == out
 
+    @pytest.mark.skip(reason="Soon to be removed")
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._which')
     @mock.patch('srv.salt._modules.cephdisks.Popen')
     @mock.patch('srv.salt._modules.cephdisks.HardwareDetections._udevadm')

@@ -19,7 +19,7 @@ class TestSharedSecret(object):
         assert sharedsecret.show() is None
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_valid_sharedsecret_file(self):
         fs.CreateFile('/etc/salt/master.d/sharedsecret.conf',
                       contents='sharedsecret: my-precious-key')
@@ -28,7 +28,7 @@ class TestSharedSecret(object):
         assert key == 'my-precious-key'
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_invalid_sharedsecret_file(self):
         fs.CreateFile('/etc/salt/master.d/sharedsecret.conf',
                       contents='sharedsecret = my-precious-key')

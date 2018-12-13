@@ -960,7 +960,7 @@ tarball:
 	rm -r $(TEMPDIR)
 
 test: setup.py
-	tox -e py27
+	tox -e py36
 
 lint: setup.py
 	tox -e lint

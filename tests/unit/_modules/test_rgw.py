@@ -19,7 +19,7 @@ class TestRadosgw():
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
     def test_urls_dedicated_node(self, masterpillarutil, config, localclient):
         expected = {'url': "http://rgw1:7480/admin",
@@ -42,14 +42,14 @@ class TestRadosgw():
         fs.RemoveFile('cache/client.rgw.rgw1.json')
         fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
-        assert cmp(expected, result) == 0
+        assert expected == result
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('os.path.isfile', new=f_os.path.isfile)
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
     def test_urls_dedicated_node_with_ssl(self, masterpillarutil, config, localclient):
         expected = {'url': "https://rgw1:443/admin",
@@ -71,14 +71,14 @@ class TestRadosgw():
         fs.RemoveFile('cache/client.rgw.rgw1.json')
         fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
-        assert cmp(expected, result) == 0
+        assert expected == result
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('os.path.isfile', new=f_os.path.isfile)
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
     def test_urls_dedicated_node_with_admin_entry(self, masterpillarutil, config, localclient):
         expected = {'url': "https://rgw1:443/sys",
@@ -100,14 +100,14 @@ class TestRadosgw():
         fs.RemoveFile('cache/client.rgw.rgw1.json')
         fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
-        assert cmp(expected, result) == 0
+        assert expected == result
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('os.path.isfile', new=f_os.path.isfile)
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
     def test_urls_shared_node(self, masterpillarutil, config, localclient):
         expected = {'url': "http://rgw:7480/admin",
@@ -130,14 +130,14 @@ class TestRadosgw():
         fs.RemoveFile('cache/client.rgw.json')
         fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
-        assert cmp(expected, result) == 0
+        assert expected == result
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('os.path.isfile', new=f_os.path.isfile)
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
     def test_urls_shared_node_with_ssl(self, masterpillarutil, config, localclient):
         expected = {'url': "https://rgw:443/admin",
@@ -159,13 +159,13 @@ class TestRadosgw():
         fs.RemoveFile('cache/client.rgw.json')
         fs.RemoveFile('/srv/salt/ceph/configuration/files/rgw.conf')
 
-        assert cmp(expected, result) == 0
+        assert expected == result
 
 
     @patch('salt.client.LocalClient', autospec=True)
     @patch('salt.config.client_config', autospec=True)
     @patch('salt.utils.master.MasterPillarUtil', autospec=True)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('glob.glob', new=f_glob.glob)
     def test_urls_endpoint_defined(self, masterpillarutil, config, localclient):
         expected = {'url': "http://abc.def/admin",
@@ -177,5 +177,4 @@ class TestRadosgw():
         mpu.get_minion_pillar.return_value = { "minionA": { "rgw_endpoint": "http://abc.def/admin" }}
         result = rgw.endpoints()[0]
 
-        assert cmp(expected, result) == 0
-
+        assert expected == result

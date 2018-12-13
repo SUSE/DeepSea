@@ -66,15 +66,15 @@ class TestPush():
         parsed = push._parse('{}/*.sls slice=[2:5]'.format(proposal_dir))
         assert len(parsed) == 3
 
-        parsed = push._parse('{}/*.sls re=.*1\.sls$'.format(proposal_dir))
+        parsed = push._parse(r'{}/*.sls re=.*1\.sls$'.format(proposal_dir))
         assert len(parsed) == len([n for n in nodes if '1' in n])
 
-        parsed = push._parse('{}/*.sls FOO=.*1\.sls$'.format(proposal_dir))
+        parsed = push._parse(r'{}/*.sls FOO=.*1\.sls$'.format(proposal_dir))
         assert len(parsed) == len(nodes)
 
     @patch('glob.glob', new=f_glob.glob)
     @patch('os.path.isfile', new=f_os.path.isfile)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('os.stat')
     def test_organize(self, mock_stat):
         # make sure all out faked files have content
@@ -114,7 +114,7 @@ class TestPush():
         assert result == ""
 
     @patch('os.path.isfile', new=f_os.path.isfile)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_organize_function(self):
         result = push.organize('policy.cfg')
         assert result == {}
