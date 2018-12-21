@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Fri Dec 21 11:26:19 UTC 2018 - jschmid@suse.com
+
+- Version 0.9.10
+- tuned: disable dynamic tuning for all profiles                                                                                                                                                                                                                                   │············································
+- ceph-volume dummy: translate by-id device paths to short device paths                                                                                                                                                                                                            │············································
+- Change default timeout to 1 hour for redeploying OSDs                                                                                                                                                                                                                            │············································
+- Remove populate.engulf_existing_cluster                                                                                                                                                                                                                                          │············································
+- Harden split_partition function to do not fail in such case:
+
+-------------------------------------------------------------------
 Fri Nov 27 13:00:19 UTC 2018 - jschmid@suse.com
 
 - Version 0.9.9
