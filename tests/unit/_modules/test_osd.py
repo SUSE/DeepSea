@@ -1,6 +1,8 @@
 from pyfakefs import fake_filesystem as fake_fs
 from pyfakefs import fake_filesystem_glob as fake_glob
+import os
 import pytest
+import tempfile
 from srv.salt._modules import osd
 from mock import MagicMock, patch, mock, mock_open
 
@@ -119,9 +121,56 @@ class TestOSDInstanceMethods():
         ret = osd._find_paths('/dev/nvme100n1')
         assert ret == ['/dev/nvme100n1p1']
 
-    @pytest.mark.skip(reason="Low priority: skipped")
-    def test_readlink(self):
-        pass
+    @mock.patch('srv.salt._modules.osd.Popen')
+    @mock.patch('srv.salt._modules.osd.time')
+    def test_readlink_shortname(self, mock_time, mock_popen):
+        mock_stdout = tempfile.NamedTemporaryFile(delete=False)
+        mock_stdout.write(b'/dev/vdb')
+        mock_stdout.seek(0)
+
+        mock_popen.return_value.stdout = mock_stdout
+        result = osd.readlink("/dev/vdb")
+
+        mock_stdout.close()
+        os.remove(mock_stdout.name)
+        assert mock_popen.call_count == 1
+        assert result == "/dev/vdb"
+
+    @mock.patch('srv.salt._modules.osd.Popen')
+    @mock.patch('srv.salt._modules.osd.time')
+    def test_readlink_longname(self, mock_time, mock_popen):
+        mock_stdout = tempfile.NamedTemporaryFile(delete=False)
+        mock_stdout.write(b'/dev/sdb1')
+        mock_stdout.seek(0)
+
+        mock_popen.return_value.stdout = mock_stdout
+        result = osd.readlink("/dev/disk/by-id/wwn-0x12345-part1")
+
+        mock_stdout.close()
+        os.remove(mock_stdout.name)
+        assert mock_popen.call_count == 1
+        assert result == "/dev/sdb1"
+
+    @mock.patch('srv.salt._modules.osd.Popen')
+    @mock.patch('srv.salt._modules.osd.time')
+    def test_readlink_samename(self, mock_time, mock_popen):
+        # This test cannot perfectly simulate all the Popen calls.  This
+        # is primarily testing that the loop is working when the condition
+        # does not trigger.  After the first stdout is consumed, the 
+        # conditional does cause a break for an empty value from the second 
+        # read.
+        mock_stdout = tempfile.NamedTemporaryFile(delete=False)
+        mock_stdout.write(b'/dev/disk/by-id/wwn-0x12345-part1')
+        mock_stdout.seek(0)
+
+        mock_popen.return_value.stdout = mock_stdout
+        result = osd.readlink("/dev/disk/by-id/wwn-0x12345-part1")
+
+        mock_stdout.close()
+        os.remove(mock_stdout.name)
+        assert mock_popen.call_count == 2
+        assert result == ""
+
 
     def make_callable_dumper(self):
         class Callable(object):
