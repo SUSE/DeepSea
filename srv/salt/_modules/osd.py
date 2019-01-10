@@ -579,18 +579,27 @@ def _find_paths(device):
 
 def readlink(device, follow=True):
     """
-    Return the short name for a symlink device
+    Return the short name for a symlink device.  On some systems, readlink
+    fails to return the short name intermittently.  Retry as necessary, but
+    ultimately return the result.
     """
     option = ''
     if follow:
         option = '-f'
     cmd = "readlink {} {}".format(option, device)
     log.info(cmd)
-    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-    proc.wait()
-    result = proc.stdout.read().rstrip()
-    log.debug(pprint.pformat(result))
-    log.debug(pprint.pformat(proc.stderr.read()))
+    for attempt in range(1, 11):
+        if attempt > 1:
+            log.info("retry {}".format(attempt))
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        proc.wait()
+        result = proc.stdout.read().rstrip()
+        log.debug(pprint.pformat(result))
+        log.debug(pprint.pformat(proc.stderr.read()))
+        if not result.startswith("/dev/disk"):
+            # Short name returned
+            break
+        time.sleep(0.1)
     return result
 
 class OSDConfig(object):
