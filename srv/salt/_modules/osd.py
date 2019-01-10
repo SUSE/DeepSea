@@ -504,13 +504,23 @@ def _find_paths(device):
 
 def readlink(device, follow=True):
     """
-    Return the short name for a symlink device
+    Return the short name for a symlink device.  On some systems, readlink
+    fails to return the short name intermittently.  Retry as necessary, but
+    ultimately return the result.
     """
     option = ''
     if follow:
         option = '-f'
     cmd = "readlink {} {}".format(option, device)
-    _, stdout, _ = __salt__['helper.run'](cmd)
+    log.info(cmd)
+    for attempt in range(1, 11):
+        if attempt > 1:
+            log.info("retry {}".format(attempt))
+        _, stdout, _ = __salt__['helper.run'](cmd)
+        if not stdout.startswith("/dev/disk"):
+            # Short name returned
+            break
+        time.sleep(0.1)
     return stdout
 
 

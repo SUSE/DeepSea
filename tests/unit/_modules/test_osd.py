@@ -1,8 +1,10 @@
 from pyfakefs import fake_filesystem as fake_fs
 from pyfakefs import fake_filesystem_glob as fake_glob
+import os
 import pytest
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
+import tempfile
 from srv.salt._modules import osd
 from tests.unit.helper.fixtures import helper_specs
 from mock import MagicMock, patch, mock, create_autospec
@@ -119,9 +121,33 @@ class TestOSDInstanceMethods():
         ret = osd._find_paths('/dev/nvme100n1')
         assert ret == ['/dev/nvme100n1p1']
 
-    @pytest.mark.skip(reason="Low priority: skipped")
-    def test_readlink(self):
-        pass
+    @mock.patch('srv.salt._modules.osd.time')
+    def test_readlink_shortname(self, mock_time):
+        osd.__salt__ = {}
+        osd.__salt__['helper.run'] = mock.Mock()
+        osd.__salt__['helper.run'].return_value = ('', '/dev/vdb', '')
+        result = osd.readlink("/dev/vdb")
+
+        assert result == "/dev/vdb"
+
+    @mock.patch('srv.salt._modules.osd.time')
+    def test_readlink_longname(self, mock_time):
+        osd.__salt__ = {}
+        osd.__salt__['helper.run'] = mock.Mock()
+        osd.__salt__['helper.run'].return_value = ('', '/dev/sdb1', '')
+        result = osd.readlink("/dev/disk/by-id/wwn-0x12345-part1")
+
+        assert result == "/dev/sdb1"
+
+    @mock.patch('srv.salt._modules.osd.time')
+    def test_readlink_samename(self, mock_time):
+        osd.__salt__ = {}
+        osd.__salt__['helper.run'] = mock.Mock()
+        osd.__salt__['helper.run'].return_value = ('', '/dev/disk/by-id/wwn-0x12345-part1', '')
+        result = osd.readlink("/dev/disk/by-id/wwn-0x12345-part1")
+
+        assert result == "/dev/disk/by-id/wwn-0x12345-part1"
+
 
 
 @pytest.mark.skip(reason="Low priority: skipped")
