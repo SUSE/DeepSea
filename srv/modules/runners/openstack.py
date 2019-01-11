@@ -111,7 +111,7 @@ def integrate(**kwargs):
                               'pillar={"openstack_prefix": "' + kwargs['prefix'] + '"}'])
         # Set up prefix for subsequent string concatenation to match what's done
         # in the SLS files for keyring and pool names.
-        prefix = kwargs['prefix'] + "-"
+        prefix = "{}-".format(kwargs['prefix'])
     else:
         state_res = local.cmd(master_minion, 'state.apply', ['ceph.openstack'])
 
