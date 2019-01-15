@@ -111,3 +111,18 @@ tags
 
 # backup
 *.bak
+
+# tag files
+GPATH
+GRTAGS
+GTAGS
+TAGS
+
+# org files
+*.org
+
+# mypy cache dirs
+.mypy_cache/
+
+# projectile files
+.projectile

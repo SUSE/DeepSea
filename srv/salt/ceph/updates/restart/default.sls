@@ -1,4 +1,3 @@
-
 {% set kernel = grains['kernelrelease'] | replace('-default', '')  %}
 {% set installed = salt['kernel.installed_kernel_version']() %}
 
@@ -9,11 +8,11 @@ warning:
     - installed: {{ installed }}
     - unless: "echo {{ installed }} | grep -q {{ kernel }}"
 
-reboot:
+rebootj:
   cmd.run:
-    - name: "shutdown -r now"
+    # This one is nasty! Please see (https://github.com/SUSE/DeepSea/issues/1508) for an explanation
+    - name: "/usr/bin/nohup /bin/bash -c 'set -x && systemctl reboot' >> /var/log/salt/minion 2>&1 &"
     - shell: /bin/bash
     - unless: "echo {{ installed }} | grep -q {{ kernel }}"
-    - failhard: True
+    - failhard: False
     - fire_event: True
-

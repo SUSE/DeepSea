@@ -6,4 +6,5 @@ packagemanager dup:
         'reboot': False
         'kernel': True
     - fire_event: True
-    - failhard: True
+      # testing, revert later FIXME
+    - failhard: False
