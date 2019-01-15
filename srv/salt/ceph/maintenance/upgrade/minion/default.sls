@@ -134,6 +134,12 @@ set noout {{ host }}:
     - tgt: {{ master }}
     - failhard: True
 
+let ceph-volume take over osds on {{ host }}:
+  salt.state:
+    - sls: ceph.osd.takeover
+    - tgt: {{ host }}
+    - failhard: True
+
 restart {{ host }} if updates require:
   salt.state:
     - tgt: {{ host }}
