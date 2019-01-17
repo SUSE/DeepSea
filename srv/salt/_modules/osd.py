@@ -318,6 +318,7 @@ class OSDWeight(object):
         self.settings = {
             'conf': "/etc/ceph/ceph.conf" ,
             'filename': '/var/run/ceph/osd.{}-weight'.format(self.osd_id),
+            'rfilename': '/var/run/ceph/osd.{}-reweight'.format(_id),
             'timeout': 60,
             'keyring': '/etc/ceph/ceph.client.admin.keyring',
             'client': 'client.admin',
@@ -335,16 +336,21 @@ class OSDWeight(object):
 
     def save(self):
         """
-        Capture the current weight allowing the admin to undo simple mistakes.
+        Capture the current weight and reweight allowing the admin to undo
+        simple mistakes.
 
         The weight file defaults to the /var/run directory and will not
         survive a reboot.
         """
         entry = self.osd_df()
+        log.debug("osd df: {}".format(pprint.pformat(entry)))
         if 'crush_weight' in entry and entry['crush_weight'] != 0:
             with open(self.settings['filename'], 'w') as weightfile:
                 weightfile.write("{}\n".format(entry['crush_weight']))
 
+        if 'reweight' in entry and entry['reweight'] != 1.0:
+            with open(self.settings['rfilename'], 'w') as reweightfile:
+                reweightfile.write("{}\n".format(entry['reweight']))
 
     def restore(self):
         """
@@ -354,17 +360,31 @@ class OSDWeight(object):
             with open(self.settings['filename']) as weightfile:
                 saved_weight = weightfile.read().rstrip('\n')
                 log.info("Restoring weight {} to osd.{}".format(saved_weight, self.osd_id))
-                self.reweight(saved_weight)
+                self.update_weight(saved_weight)
 
+        if os.path.isfile(self.settings['rfilename']):
+            with open(self.settings['rfilename']) as reweightfile:
+                saved_reweight = reweightfile.read().rstrip('\n')
+                log.info("Restoring reweight {} to osd.{}".format(saved_reweight, self.osd_id))
+                self.update_reweight(saved_reweight)
 
-    def reweight(self, weight):
+    def update_weight(self, weight):
         """
         Set the weight for the OSD
         Note: haven't found the equivalent api call for reweight
         """
-        stdout = []
-        stderr = []
-        cmd = "ceph --keyring={} --name={} osd crush reweight osd.{} {}".format(self.settings['keyring'], self.settings['client'], self.osd_id, weight)
+        cmd = ("ceph --keyring={} --name={} osd crush reweight osd.{} "
+               "{}".format(self.settings['keyring'], self.settings['client'],
+                           self.osd_id, weight))
+        return _run(cmd)
+
+    def update_reweight(self, reweight):
+        """
+        Set the reweight for the OSD
+        """
+        cmd = ("ceph --keyring={} --name={} osd reweight osd.{} "
+               "{}".format(self.settings['keyring'], self.settings['client'],
+                           self.osd_id, reweight))
         return _run(cmd)
 
     def osd_df(self):
@@ -546,7 +566,7 @@ def zero_weight(osd_id, wait=True, **kwargs):
 
     o = OSDWeight(osd_id, **settings)
     o.save()
-    rc, _stdout, _stderr = o.reweight('0.0')
+    rc, _stdout, _stderr = o.update_weight('0.0')
     if rc != 0:
         return "Reweight failed"
     if wait:
@@ -1508,7 +1528,7 @@ class OSDRemove(object):
         """
         """
         self._weight.save()
-        rc, _stdout, _stderr = self._weight.reweight('0.0')
+        rc, _stdout, _stderr = self._weight.update_weight('0.0')
         if rc != 0:
             msg = "Reweight failed"
             log.error(msg)
