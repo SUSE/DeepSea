@@ -68,7 +68,7 @@ def ready(**kwargs):
             print(client_error)
             return ret
 
-        actual = set(results.keys())
+        actual = set([k for k, v in results.items() if v])
 
         if settings['search']:
             pillar_util = salt.utils.master.MasterPillarUtil(
