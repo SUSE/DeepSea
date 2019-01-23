@@ -252,6 +252,114 @@ class TestOSDWeight():
     avoid the rados logic.  Set osd_id and settings directly.
     """
 
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd.OSDWeight.osd_df')
+    def test_save_defaults(self, osd_df):
+        """
+        No files created with default values
+        """
+        osd_df.return_value = {'crush_weight': 0,
+                               'reweight': 1.0}
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'filename': '/weight', 'rfilename': '/reweight'}
+            osdw.save()
+            assert f_os.path.exists('/weight') == False
+            assert f_os.path.exists('/reweight') == False
+
+    @patch('__builtin__.open', new=f_open)
+    @patch('srv.salt._modules.osd.OSDWeight.osd_df')
+    def test_save_custom_values(self, osd_df):
+        """
+        Files created with custom values
+        """
+        osd_df.return_value = {'crush_weight': 0.9,
+                               'reweight': 1.1}
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'filename': '/weight', 'rfilename': '/reweight'}
+            osdw.save()
+            assert f_os.path.exists('/weight')
+            assert f_os.path.exists('/reweight')
+            with open("/weight") as weight:
+                contents = weight.read().rstrip('\n')
+                assert contents == "0.9"
+            with open("/reweight") as reweight:
+                contents = reweight.read().rstrip('\n')
+                assert contents == "1.1"
+
+        fs.RemoveFile('/weight')
+        fs.RemoveFile('/reweight')
+
+    @patch('__builtin__.open', new=f_open)
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('srv.salt._modules.osd.OSDWeight.update_weight')
+    @patch('srv.salt._modules.osd.OSDWeight.update_reweight')
+    def test_restore_no_files(self, ur, uw):
+        """
+        Restore does nothing if files are absent
+        """
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'filename': '/weight', 'rfilename': '/reweight'}
+            osdw.restore()
+            assert uw.call_count == 0
+            assert ur.call_count == 0
+
+    @patch('__builtin__.open', new=f_open)
+    @patch('os.path.isfile', new=f_os.path.isfile)
+    @patch('srv.salt._modules.osd.OSDWeight.update_weight')
+    @patch('srv.salt._modules.osd.OSDWeight.update_reweight')
+    def test_restore(self, ur, uw):
+        """
+        Restore calls routines with custom values
+        """
+        with open("/weight", 'w') as weight:
+            weight.write("0.9")
+        with open("/reweight", 'w') as reweight:
+            reweight.write("1.1")
+
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'filename': '/weight', 'rfilename': '/reweight'}
+            osdw.restore()
+            uw.assert_called_with('0.9')
+            ur.assert_called_with('1.1')
+
+        fs.RemoveFile('/weight')
+        fs.RemoveFile('/reweight')
+
+    @patch('srv.salt._modules.osd._run')
+    def test_update_weight(self, run):
+        """
+        Check that the weight command is built correctly
+        """
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'keyring': 'admin.keyring', 'client': 'client.admin'}
+            osdw.update_weight('0.9')
+            cmd = "ceph --keyring=admin.keyring --name=client.admin osd crush reweight osd.0 0.9"
+            run.assert_called_with(cmd)
+
+    @patch('srv.salt._modules.osd._run')
+    def test_update_reweight(self, run):
+        """
+        Check that the reweight command is built correctly
+        """
+        with patch.object(osd.OSDWeight, "__init__", lambda self, _id: None):
+            osdw = osd.OSDWeight(0)
+            osdw.osd_id = 0
+            osdw.settings = {'keyring': 'admin.keyring', 'client': 'client.admin'}
+            osdw.update_reweight('1.1')
+            cmd = "ceph --keyring=admin.keyring --name=client.admin osd reweight osd.0 1.1"
+            run.assert_called_with(cmd)
+
+
     @patch('srv.salt._modules.osd.OSDWeight.osd_safe_to_destroy')
     def test_wait(self, ostd):
         """
@@ -2507,7 +2615,7 @@ class TestOSDRemove():
 
         mock_weight = mock.Mock()
         mock_weight.save.return_value = ""
-        mock_weight.reweight.return_value = (0, "out", "err")
+        mock_weight.update_weight.return_value = (0, "out", "err")
         mock_weight.wait.return_value = ""
 
         osdr = osd.OSDRemove(1, mock_device, mock_weight, None)
@@ -2521,7 +2629,7 @@ class TestOSDRemove():
 
         mock_weight = mock.Mock()
         mock_weight.save.return_value = ""
-        mock_weight.reweight.return_value = (1, "out", "err")
+        mock_weight.update_weight.return_value = (1, "out", "err")
         mock_weight.wait.return_value = "Reweight failed"
 
         osdr = osd.OSDRemove(1, mock_device, mock_weight, None)
