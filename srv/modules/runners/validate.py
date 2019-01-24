@@ -883,7 +883,7 @@ def discovery(cluster=None, printer=None, **kwargs):
     grains_data = local.cmd(search , 'grains.items', [], expr_form="compound")
 
     printer = get_printer(**kwargs)
-    v = Validate(cluster, data=pillar_data, printer=printer)
+    v = Validate(cluster, data=pillar_data, grains=grains_data, printer=printer)
 
     v.deepsea_minions(target)
     v._lint_yaml_files()
@@ -915,7 +915,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     grains_data = local.cmd(search, 'grains.items', [], expr_form="compound")
 
     printer = get_printer(**kwargs)
-    v = Validate(cluster, data=pillar_data, printer=printer)
+    v = Validate(cluster, data=pillar_data, grains=grains_data, printer=printer)
     v.dev_env()
     v.fsid()
     v.public_network()
@@ -934,7 +934,7 @@ def pillar(cluster = None, printer=None, **kwargs):
     v.fqdn()
     v.report()
 
-    if valid.errors:
+    if v.errors:
         return False
 
     return True
