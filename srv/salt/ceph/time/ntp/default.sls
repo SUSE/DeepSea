@@ -9,6 +9,10 @@ ntp:
 sync time:
   cmd.run:
     - name: "sntp -S -c {{ salt['pillar.get']('time_server') }}"
+
+sync hardware clock:
+  cmd.run:
+    - name: "hwclock --systohc"
 {% endif %}
 
 {% if grains['id'] != salt['pillar.get']('time_server') %}
