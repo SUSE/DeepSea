@@ -7,6 +7,7 @@ Internally this will be called 'DriveGroups'
 
 from __future__ import absolute_import
 import logging
+import json
 import yaml
 import salt.client
 
@@ -132,15 +133,20 @@ class DriveGroups(object):
 
         return ret
 
-    def call_out(self, command: str, alias: str = None) -> list:
-        """ Call minion modules to get matching disks"""
+    def call_out(self, command: str, module: str = 'dg',
+                 alias: str = None) -> list:
+        """ Call minion modules to get matching disks """
         ret: list = list()
         for dg_name, dg_values in self.drive_groups.items():
             print("Found DriveGroup <{}>".format(dg_name))
             dgo = DriveGroup(dg_name, dg_values)
             ret.append(
                 self.call(
-                    dgo.target(), dgo.filter_args(), command, alias=alias))
+                    dgo.target(),
+                    dgo.filter_args(),
+                    command,
+                    module=module,
+                    alias=alias))
         # There is a __context__ variable which allow you to pass
         # rcs and stuff to the orchestration
         return ret
@@ -149,21 +155,23 @@ class DriveGroups(object):
              target: str,
              filter_args: dict,
              command: str,
+             module: str = 'dg',
              alias: str = None):
         """ Calls out to the minion"""
         command_name: str = command
         if alias:
             command_name = alias
-        log.debug("Calling dg.{} on compound target {}".format(
-            command_name, target))
-        print("Calling dg.{} on compound target {}".format(
-            command_name, target))
+        log.debug("Calling {}.{} on compound target {}".format(
+            module, command_name, target))
+        print("Calling {}.{} on compound target {}".format(
+            module, command_name, target))
         ret: str = self.local_client.cmd(
             target,
-            'dg.{}'.format(command),
+            '{}.{}'.format(module, command),
             kwarg={
                 'filter_args': filter_args,
-                'dry_run': self.dry_run
+                'dry_run': self.dry_run,
+                'destroyed_osds': destroyed()
             },
             expr_form='compound')
         return ret
@@ -182,6 +190,37 @@ def c_v_commands(**kwargs):
 def deploy(**kwargs):
     """ Execute the ceph-volume command to deploy OSDs"""
     return DriveGroups(**kwargs).call_out('deploy')
+
+
+def details(**kwargs):
+    """ List details about drives on each node """
+    return DriveGroups(**kwargs).call_out('attr_list', module='cephdisks')
+
+
+def destroyed():
+    """ List destroyed (about to be replaced) disks
+    """
+    # This can't be solved with Popen since the salt-master is running as salt:salt
+    local_client = salt.client.LocalClient()
+    ret: str = local_client.cmd(
+        "roles:master",
+        'cmd.shell', ['ceph osd tree destroyed --format json'],
+        tgt_type='pillar')
+
+    ret = list(ret.values())[0]
+    tree = json.loads(ret).get('nodes')
+
+    # what is stray? # probably destroyed osds that are not listed nder
+    # a certain bucket/host. This may be useful later
+    # stray = json.loads(ret).get('stray')
+
+    report_map = dict()
+    for item in tree:
+        # only looking for type host
+        if item.get('type', '') == 'host':
+            report_map.update({item.get('name', ''): item.get('children', list())})
+
+    return report_map
 
 
 def report(**kwargs):

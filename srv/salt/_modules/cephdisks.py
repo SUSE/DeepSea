@@ -1,612 +1,162 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=fixme,modernize-parse-error
-
 """
-Operations for finding blank drives or Ceph disks
+Query ceph-volume's API for devices on the node
 """
 
 from __future__ import absolute_import
-from __future__ import print_function
-import os
-import re
-import xml.etree.ElementTree as et
-from glob import glob
-from subprocess import Popen, PIPE
 import logging
-# pylint: disable=import-error
-
-
+# pytest: disable=import-error
 log = logging.getLogger(__name__)
-
 try:
-    import salt.ext.six as six
+    from ceph_volume.util.device import Devices, Device
+except ModuleNotFoundError:
+    log.debug("Could not load ceph_volume. Make sure to install ceph")
 except ImportError:
-    log.error("Could not import salt.ext.six")
+    log.debug("Could not load ceph_volume. Make sure to install ceph")
 
 
-VERSION = 0.2
+class Inventory(object):
+    """ Inventory wrapper class for ceph-volume's device api """
 
+    def __init__(self, **kwargs) -> None:
+        self.kwargs: dict = kwargs
+        self.devices = Devices()
 
-# pylint: disable=too-few-public-methods
-class HardwareDetections(object):
-    """
-    Custom Salt module to detect suitable disks for the ceph deployment
-    """
+    @property
+    def available_filter(self) -> bool:
+        """ The available filter """
+        return self.kwargs.get('available', None)
 
-    def __init__(self, **kwargs):
+    @property
+    def used_by_ceph_filter(self) -> bool:
+        """ The used_by_ceph filter """
+        # This also returns disks that are marked as
+        # 'destroyed' is that valid?
+        return self.kwargs.get('used_by_ceph', True)
+
+    def osd_list(self) -> list:
         """
-        kwargs adds the possibility to pass custom raidcontroller
-        names to the class.
-        args:
-            hw_raid(bool): Manually set hw_raid True if this class can't detect it
-            hw_raid_name(str): Manually set the hw_raid_ctrls name
-            software_raid(bool): Manually set if you have sw raid and the class
-                                            fails to detect it.
-        REQUIREMENTS FOR THE PROGRAMM TO WORK:
-        gptfdisk, pciutils, smartmontools
+        Can and should probably be offloaded to ceph-volume upstream
         """
-        self.detection_method = self._find_detection_tool(kwargs.get('detection_method', None))
-        self.hw_raid = kwargs.get('hw_raid', None)
-        self.hw_raid_name = kwargs.get('raid_controller_name', None)
-        self.software_raid = kwargs.get('sw_raid', None)
+        osd_ids: list = list()
+        lvs: list = [x.lvs for x in self.devices.devices]
+        # list of all lvs of all disks
+        for _lv in lvs:
+            # each lv can have multiple volumes
+            for _vol in _lv:
+                # search volume's tags for ceph.osd_id
+                osd_id: str = _vol.tags.get('ceph.osd_id', '')
+                if osd_id:
+                    osd_ids.append(osd_id)
+        return osd_ids
 
-    # pylint: disable=no-self-use
-    def _is_removable(self, base):
+    def filter_(self) -> list:
         """
-        Ask the kernel if device is a removable
-
-        args:
-            base (str): base sys path of device
-        returns:
-            bool: True if is removable
+        Apply set filters and return list of devices
         """
-        filename = base + "/removable"
-        with open(filename, 'r') as _fd:
-            removable = _fd.readline().rstrip('\n')
-            if int(removable) == 1:
-                log.debug("{} is a removable. Skipping..".format(base))
-                return True
-        return False
-
-    # pylint: disable=no-self-use
-    def _is_rotational(self, base):
-        """
-        Ask the kernel for the disk's rotational value
-
-        args:
-            base (str): base sys path of device
-        return:
-            str: 1 if rotational 0 if nonrotational
-        """
-        filename = base + "/queue/rotational"
-        with open(filename, 'r') as _fd:
-            rotational = _fd.readline().rstrip('\n')
-        if rotational != "1":
-            rotational = "0"
-        return rotational
-
-    def _return_device_bus_id(self, device):
-        """
-        Tries to get the BUS_ID for a device. Used to query
-        S.M.A.R.T with -d <raidctrl>,<busid>
-        args:
-            device(str): shortname for device(sda, sdb)
-        return:
-            str: bus_id of device
-        """
-        lsscsi_path = self._which('lsscsi')
-        cmd = lsscsi_path
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        for line in proc.stdout:
-            line = __salt__['helper.convert_out'](line)
-            if device in line:
-                match = re.match(r'\[(.*?)\]', line)
-                if len(match.group(1).split(":")) >= 2:
-                    # try to be less stupid here
-                    return match.group(1).split(":")[-2]
-                    # is [0:0:ID:0] a fixed format?
-                    # check on other machines
-                log.warning("Could not retrieve bus_id for {}").format(device)
-                return None
-        return None
-
-    def _query_disktype(self, device, raid_ctrl, base):
-        """
-        Query smartctl for a more concise information on it's type.
-
-        args:
-            device (str): short form of device (sda, sdb)
-            raid_ctrl (dict): dict with raidctrl info
-            id (str): position in disk array? don't know how to fix that TODO:
-        return:
-            bool: 0 if SSD else 1
-        """
-        smartctl_path = self._which('smartctl')
-        bus_id = self._return_device_bus_id(device)
-        if not bus_id:
-            log.warning(('Could not find bus_id for {}. Falling back to legacy '
-                         'detection mode'.format(device)))
-            return self._is_rotational(base)
-        try:
-            cmd = "{} -i /dev/{} -d {},{}".format(smartctl_path,
-                                                  device,
-                                                  raid_ctrl['controller_name'],
-                                                  bus_id)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-            proc.wait()
-            if proc.returncode != 0:
-                log.info("{}\nrc: {} - {}".format(cmd, proc.returncode, proc.stderr.read()))
-                raise RuntimeError("Smartctl failure")
-            for line in proc.stdout:
-                line = __salt__['helper.convert_out'](line)
-                # ADD PARSING HERE TO DETECT FAILURE
-                if "A mandatory SMART command failed" in line:
-                    log.warning("Something went wrong during smartctl query")
-                match = re.match("([^:]+): (.*)", line)
-                if match:
-                    if match.group(1) == "Rotation Rate":
-                        found = re.match(r"^\s+ Solid State Device",
-                                         match.group(2))
-                        if found:
-                            return '0'
-            return '1'
-        # pylint: disable=bare-except
-        except:
-            # If something fails, fall back to the default detection mode
-            log.warning(('Something went wrong during smartctl query for '
-                         'device {}. Falling back to legacy detection '
-                         'mode'.format(device)))
-            return self._is_rotational(base)
-
-    def _detect_raidctrl(self):
-        """
-        Detect raidcontroller type and name
-
-        return:
-            (dict): Information about raid
-        """
-
-        info = {}
-
-        if self.hw_raid:
-            info['raidtype'] = 'hardware'
-            if self.hw_raid_name:
-                info['controller_name'] = self.hw_raid_name
-                log.info("Using user-provided options for raidname and raidtype")
-                return info
-            return self._hw_raid_ctrl_detection()
-        elif self.software_raid:
-            log.info('Found a software raid setup')
-            info['raidtype'] = 'software'
-            return info
-        else:
-            return self._hw_raid_ctrl_detection()
-
-    def _hw_raid_ctrl_detection(self):
-        """
-        Calls out for lspci to retrieve information
-        about the underlying RAID-Controller
-        return:
-           (dict): Information about RAID
-        """
-        info = {}
-        info['controller_name'] = None
-        available_controllers = {
-            'megaraid': 'megaraid',
-            'areca': 'areca',
-            'arcmsr': 'areca',
-            '3ware': '3ware',
-            'hprr': 'hprr',
-            'hpt': 'hpt',
-            'cciss': 'cciss',
-            'aacraid': 'aacraid'
-        }
-        lspci_path = self._which('lspci')
-        cmd = "{} -vv | grep -i raid".format(lspci_path)
-        # Verify that proc.stdout actually gives something
-        # Or set default to None.
-        # TODO: See if other places are also infected
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        for line in proc.stdout:
-            line = __salt__['helper.convert_out'](line)
-            for controller in available_controllers:
-                if controller in line.lower():
-                    info['controller_name'] = available_controllers[controller]
-                    info['raidtype'] = 'hardware'
-                    msg = 'Found raidctrl: {}'.format(info['controller_name'])
-                    log.info(msg)
-                    return info
-        # no controller was found
-        info['raidtype'] = None
-        log.info("No raidctrl found")
-        return info
-
-    def _which(self, program, failhard=True):
-        """
-        Instead of using python's built-in _platform_ we rely
-        on the tools presence.
-
-        Sidenote for testing: smartctl, hwinfo and lshw resides in /sbin/
-        Detection will only work in privileged environments
-        args:
-            programm(str): name of programm you want to retrieve the path from
-        return:
-            str: the full path of the programm
-        """
-        def _is_exe(fpath):
-            """
-            Check if file is executable
-            """
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-        fpath, _ = os.path.split(program)
-        if fpath:
-            if _is_exe(program):
-                return program
-        else:
-            for path in os.environ["PATH"].split(os.pathsep):
-                path = path.strip('"')
-                exe_file = os.path.join(path, program)
-                if _is_exe(exe_file):
-                    return exe_file
-        if failhard is False:
-            return None
-        elif failhard is True:
-            msg = "Can't find the tool: {}. Please Install it in order to resume.".format(program)
-            log.info(msg)
-            raise Exception(msg)
-        else:
-            msg = ("Parameter <failhard> needs to be bool(True) or bool(False) "
-                   "but was: {}".format(str(failhard)))
-            log.info(msg)
-            raise Exception(msg)
-
-    def _find_detection_tool(self, overwrite_method=None):
-        """
-        Finds the right tool to identify the underlying hardware.
-        return:
-            fnc: the corresponding function based on the presence of tools
-        """
-        # add checking for sudo
-        if overwrite_method == 'lshw':
-            return self._lshw
-        if overwrite_method == 'hwinfo':
-            return self._hwinfo
-        if overwrite_method:
-            err_msg = """ The tool: {} you specified for hardware detection
-            is not implemented in cephdisks. Use lshw or hwinfo, please.""".format(overwrite_method)
-            log.error(err_msg)
-            raise Exception(err_msg)
-
-        if self._which('hwinfo', failhard=False):
-            # SUSE, openSUSE
-            return self._hwinfo
-        elif self._which('lshw', failhard=False):
-            # Ubuntu, Fedora, CentOS
-            return self._lshw
-        else:
-            err_msg = """Can not find a proper hardware detection tool.
-            Install lshw or hwinfo in order to retrive hardware information"""
-            log.error(err_msg)
-            raise Exception(err_msg)
-
-    def _hwinfo(self, device=None):
-        """
-        Parse hwinfo output into dictionary
-
-        args:
-            device (str): short name of device(sda, sdb..)
-        return:
-            dict: hwinfo output as dict
-        """
-        results = {}
-        hwinfo_path = self._which('hwinfo')
-        cmd = "{} --disk --only /dev/{}".format(hwinfo_path, device)
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        for line in proc.stdout:
-            line = __salt__['helper.convert_out'](line)
-            match = re.match("  ([^:]+): (.*)", line)
-            if match:
-                if match.group(1) == "Capacity":
-                    found = re.match(r"(\d+ \w+) \((\d+) bytes\)",
-                                     match.group(2))
-                    if found:
-                        results[match.group(1)] = found.group(1)
-                        results['Bytes'] = found.group(2)
-                elif match.group(1) == 'Device File':
-                    if ' ' in match.group(2):
-                        results[match.group(1)] = re.sub(r'"', '',
-                                                         match.group(2).split(' ')[0])
-                    else:
-                        results[match.group(1)] = re.sub(r'"', '',
-                                                         match.group(2))
-                else:
-                    results[match.group(1)] = re.sub(r'"', '', match.group(2))
-        return results
-
-    def _udevadm(self, device):
-        """
-        Return the path provided by udevadm
-
-        TODO: would `readlink -f` have been simpler here?
-        """
-        cmd = "udevadm info {}".format(device)
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        stdout, stderr = proc.communicate()
-        if stdout:
-            for line in stdout:
-                line = __salt__['helper.convert_out'](line)
-                if 'by-id' in line:
-                    return "/dev/" + line.split()[1]
-        elif stderr:
-            err_msg = "Something went wrong during 'udevadm' execution"
-            log.info(err_msg)
-            raise Exception(err_msg)
-        return device
-
-    def _osd(self, device, ids):
-        """
-        Search for Ceph Data and Journal partitions
-        """
-        log.debug("Checking partitions {} on device {}".format(ids, device))
-        guuid_table = {'data': "45B0969E-9B03-4F30-B4C6-B4B80CEFF106",
-                       'journal': "4FBD7E29-9D25-41B8-AFD0-062C0CEFF05D",
-                       'db': "30CD0809-C2B2-499C-8879-2D6B78529876",
-                       'wal': "5CE17FCE-4087-4169-B7FF-056CC58473F9",
-                       'osd_lockbox': "FB3AABF9-D25F-47CC-BF5E-721D1816496B",
-                       'luks_journal': "45B0969E-9B03-4F30-B4C6-35865CEFF106",
-                       'luks_wal': "86A32090-3647-40B9-BBBD-38D8C573AA86",
-                       'luks_db': "166418DA-C469-4022-ADF4-B30AFD37F176",
-                       'plain_wal': "306E8683-4FE2-4330-B7C0-00A917C16966",
-                       'plain_db': "93B0052D-02D9-4D8A-A43B-33A3EE4DFBC3"}
-        sgdisk_path = self._which('sgdisk')
-        for partition_id in ids:
-            cmd = "{} -i {} {}".format(sgdisk_path, partition_id, device)
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-            for line in proc.stdout:
-                line = __salt__['helper.convert_out'](line)
-                if line.startswith("Partition GUID code:"):
-                    for guuid_code in guuid_table.values():
-                        if guuid_code in line:
-                            log.debug('Found signs that {} belongs to ceph'.format(device))
-                            return True
-            for line in proc.stderr:
-                log.error(line)
-        log.debug("No signs of ceph found on {}. Skipping..".format(device))
-        return False
-
-    def _lshw(self):
-        """
-        Parse lshw output into dictionary
-
-        return:
-            list: lshw output as list of dicts
-        """
-
-        results = {}
-        lshw_path = self._which('lshw')
-        cmd = "{} -class disk -xml".format(lshw_path)
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-        stdout, stderr = proc.communicate()
-        if stdout:
-            stdout = __salt__['helper.convert_out'](stdout)
-            data = et.fromstring(stdout)
-        elif stderr:
-            err_msg = "Something went wrong during 'lshw' execution"
-            log.info(err_msg)
-            raise Exception(err_msg)
-        attributes = {
-                      'size': 'Capacity',
-                      'product': 'Model',
-                      'serial': 'Serial ID'
-                     }
-        # If find('node')? could this potentially go wrong?
-        for node in data.findall('node'):
-            disk_description = {}
-            if node.find('logicalname') is not None:
-                if node.find('logicalname').text == '/dev/cdrom':
+        devs: list = list()
+        for dev in self.devices.devices:
+            # Apply known filters
+            if self.available_filter:
+                if dev.available is self.available_filter:
+                    devs.append(dev)
                     continue
-                ident = node.find('logicalname').text
-                if isinstance(ident, list):
-                    ident = ident[0]
-                results[ident] = {}
-                for key, attr in six.iteritems(attributes):
-                    if node.find(key) is not None:
-                        if key == 'size':
-                            # Is the MB/GB/TB suffix important enough to add checking for it?
-                            disk_description[attr] = str(int(node.find(key).text) / 1000000000)
-                        else:
-                            disk_description[attr] = node.find(key).text
-                disk_description['Device File'] = self._udevadm(ident)
-                disk_description['Driver'] = self._find_driver()
-                results[ident].update(disk_description)
-            else:
-                log.info('No logicalname found. Cannot identiy that disk.')
-        return results
-
-    def _find_driver(self):
-        """
-        lshw can't detect the driver used. proposal.py relies on
-        this information to determine the journal distribution.
-        #TODO#
-        """
-        return 'None'
-
-    def _preflight_check(self, hardware_dict):
-        """
-        Check if lshw or hwinfo actually returned the
-        needed fields of 'Capacity', 'Model', 'Device File',
-        'device', 'rotational' and 'Driver'.
-        If they don't exist and hwdict gets passed to populate.py
-        it will fail silently and cause havoc.
-        """
-        required_fields = ['Driver', 'Model', 'Device File', 'Capacity', 'device', 'rotational']
-        for _rf in required_fields:
-            if _rf not in hardware_dict or not hardware_dict[_rf]:
-                raise ValueError("{} is not included in the hardware dict.".format(_rf))
-
-    def assemble_device_list(self):
-        """
-        Find all unpartitioned and allocated osds.  Return unified dict.
-
-        If there is the indication for a involved RAIDController, rely on
-        smartctl rather than on lshw/hwinfo. The kernel might have wrong
-        information here.
-
-        return:
-            (list): list of dicts containing information about usable devices
-        """
-
-        drives = []
-        raid_ctrl = self._detect_raidctrl()
-        _hw = self.detection_method()
-        for path in glob('/sys/block/*/device'):
-            log.debug("Checking path: {}".format(path))
-            base = os.path.dirname(path)
-            device = os.path.basename(base)
-            # Check this on a per disk basis
-            # Skip partitioned, non-osd drives
-            partitions = glob(base + "/" + device + "*")
-            if partitions:
-                # pylint: disable=unused-variable
-                for partition in partitions:
-                    if 'nvme' in device:
-                        ids = [re.sub(r'.+p(\d+)', r'\1', partition)
-                               for partition in partitions]
-                    else:
-                        ids = [re.sub(r'\D+', '', partition)
-                               for partition in partitions]
-                if not self._osd("/dev/" + device, ids):
+            elif self.used_by_ceph_filter:
+                if dev.used_by_ceph is self.used_by_ceph_filter:
+                    devs.append(dev)
                     continue
             else:
-                log.debug('No partitions detected on {}'.format(device))
+                devs.append(dev)
+        return devs
 
-            if self._is_removable(base):
-                continue
-
-            if _hw:
-                hardware = _hw['/dev/'+device]
-            else:
-                hardware = self.detection_method(device)
-
-            if raid_ctrl['raidtype'] and self._which('smartctl'):
-                # Trying to correct the kernel's assumption here
-                log.info("Requirements met to utilize S.M.A.R.T on {}".format(device))
-                rotational = self._query_disktype(device, raid_ctrl, base)
-                hardware['rotational'] = rotational
-            else:
-                hardware['rotational'] = self._is_rotational(base)
-
-            hardware['device'] = device
-            hardware['blank'] = not partitions
-            self._preflight_check(hardware)
-            log.debug('Adding {} to the list of cephdisks.'.format(device))
-            drives.append(hardware)
-        return drives
-
-
-def device_(devicename, pathname=None, match=None):
-    """
-    Find all matching symlinks for devicename.
-    """
-    pathname = _pathname_setting(pathname)
-    match = _match_setting(match)
-
-    cmd = (r"find -L {} -samefile {} \( {} \)".format(pathname, devicename, match))
-    _, _stdout, _stderr = __salt__['helper.run'](cmd)
-    if _stdout:
-        _devices = _stdout.split()
-        index = _prefer_underscores(_devices)
-        return _devices[index]
-    return devicename
+    def find_by_osd_id(self, osd_id_search: str) -> list:
+        """
+        Search through logical volumes to find matching
+        osd_ids. This may also be offloaded to c-v in the future.
+        """
+        devs = list()
+        for dev in self.devices.devices:
+            for _lv in dev.lvs:
+                # each lv can have multiple volumes
+                if not isinstance(_lv, list):
+                    osd_id = _lv.tags.get('ceph.osd_id', '')
+                    if str(osd_id_search) == str(osd_id):
+                        devs.append(dev)
+                if isinstance(_lv, list):
+                    for _vol in _lv:
+                        # search volume's tags for ceph.osd_id
+                        osd_id = _vol.tags.get('ceph.osd_id', '')
+                        if str(osd_id_search) == str(osd_id):
+                            devs.append(dev)
+        return devs
 
 
-def _match_setting(match):
-    """
-    Predence is command line, pillar, then default
-    """
-    if match:
-        log.warning("Using argument {} for match".format(match))
-    else:
-        match = _seek('ceph:modules:cephdisks:device:match'.split(':'), __pillar__)
-        if match:
-            log.warning("Using pillar value {} for match".format(match))
-        else:
-            match = "-name ata* -o -name scsi* -o -name nvme*"
-    return match
+def get_(disk_path) -> dict:
+    """ Get a json report for a given device """
+    return Device(disk_path).json_report()
 
 
-def _pathname_setting(pathname):
-    """
-    Predence is command line, pillar, then default
-    """
-    if pathname:
-        log.warning("Using argument {} for pathname".format(pathname))
-    else:
-        pathname = _seek('ceph:modules:cephdisks:device:pathname'.split(':'), __pillar__)
-        if pathname:
-            log.warning("Using pillar value {} for pathname".format(pathname))
-        else:
-            pathname = "/dev/disk/by-id"
-    return pathname
+def find_by_osd_id(osd_id, **kwargs):
+    """ Find OSD by it's osd id """
+    return [
+        x.json_report() for x in Inventory(**kwargs).find_by_osd_id(osd_id)
+    ]
 
 
-def _seek(keys, saltdict):
-    """
-    Recursively check for nested keys
-    """
-    if keys and keys[0] in saltdict:
-        if keys[1:]:
-            return _seek(keys[1:], saltdict[keys[0]])
-        return saltdict[keys[0]]
-    return None
+def attr_list(**kwargs):
+    """ List supported attributes of drives """
+    report = list()
+    default = "Not available"
+    for device in Inventory(**kwargs).filter_():
+        dev = device.json_report()
+        if device.path:
+            model = dev.get('sys_api', {}).get('model', default)
+            vendor = dev.get('sys_api', {}).get('vendor', default)
+            size = dev.get('sys_api', {}).get('human_readable_size', default)
+            rotational = dev.get('sys_api', {}).get('rotational', default)
+            path = dev.get('path')
+            report.append({
+                path:
+                dict(
+                    model=model,
+                    vendor=vendor,
+                    size=size,
+                    rotational=rotational)
+            })
+    return report
 
 
-def _prefer_underscores(devicenames):
-    """
-    Many symlinks in /dev/disk/by-id refer to the same device.  The
-    most descriptive names have the most underscores.  These are likely
-    the most useful to the admin.
+def devices(**kwargs):
+    """ List device paths"""
+    return [x.path for x in Inventory(**kwargs).filter_() if x.path]
 
-    In the worst case, return the last device
-    """
-    index = -1
-    count = 0
-    for _idx, device in enumerate(devicenames):
-        underscores = device.count('_')
-        if underscores > count:
-            count = underscores
-            index = _idx
-    return index
+
+def all_(**kwargs):
+    """ List all devices regardless of used or not """
+    return [x.json_report() for x in Inventory(**kwargs).devices.devices]
 
 
 def list_(**kwargs):
-    """
-    List the disks
-    """
-    hwd = HardwareDetections(**kwargs)
-    return hwd.assemble_device_list()
+    """ List only devices that are used by ceph """
+    kwargs.update(dict(used_by_ceph=True))
+    return [x.json_report() for x in Inventory(**kwargs).filter_()]
 
 
-def filter_(key="Device File", **kwargs):
-    """
-    Return list of specified key
-    """
-    hwd = HardwareDetections(**kwargs)
-    result = hwd.assemble_device_list()
-    results = [device[key] for device in result]
-    return sorted(results)
+def osd_list(**kwargs):
+    """ Get a list of osds for that node """
+    return Inventory(**kwargs).osd_list()
 
 
-def version():
-    """
-    Displays version
-    """
-    return VERSION
+def help_():
+    """ Helper dummy """
+    print("HELP DUMMY")
 
 
 __func_alias__ = {
-                'list_': 'list',
-                'device_': 'device',
-                'filter_': 'filter',
-                 }
+    'all_': 'all',
+    'list_': 'list',
+    'help_': 'help',
+    'filter_': 'filter',
+    'get_': 'get',
+}

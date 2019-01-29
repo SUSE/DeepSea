@@ -1,4 +1,3 @@
-
 {% set master = salt['master.minion']() %}
 
 include:
@@ -17,12 +16,5 @@ refresh_pillar0:
 discover roles:
   salt.runner:
     - name: populate.proposals
-    - require:
-        - salt: refresh_pillar0
-
-
-discover storage profiles:
-  salt.runner:
-    - name: proposal.populate
     - require:
         - salt: refresh_pillar0

@@ -1,4 +1,3 @@
-
 redeploy:
   module.run:
     - name: osd.redeploy
@@ -10,4 +9,3 @@ redeploy:
 save grains:
   module.run:
     - name: osd.retain
-

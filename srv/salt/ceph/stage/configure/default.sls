@@ -1,4 +1,3 @@
-
 {% set master = salt['master.minion']() %}
 
 {% if salt['saltutil.runner']('validate.discovery', cluster='ceph') == False %}
@@ -24,6 +23,14 @@ refresh_pillar1:
 show networks:
   salt.runner:
     - name: advise.networks
+
+# We need ceph-volume to use dg.py and disks.py
+install ceph packages:
+  salt.state:
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt_type: compound
+    - sls: ceph.packages
+    - failhard: True
 
 {% for role in [ 'admin', 'osd', 'mon', 'mgr', 'igw', 'mds', 'rgw', 'ganesha'] %}
 {{ role }} key:

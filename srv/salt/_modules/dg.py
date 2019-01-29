@@ -766,16 +766,27 @@ def c_v_commands(**kwargs):
     """
     Construct the ceph-volume command based on the
     matching disks
+    Provide the --no-auto switch to avoid unwanted
+    wal/db setups.
     """
     filter_args = kwargs.get('filter_args', dict())
     if not filter_args:
         Exception("No filter_args provided")
     dgo = DriveGroup(filter_args)
-    log.debug("Received call for ceph-volume command generation")
-    log.error(kwargs)
+
+    destroyed_osds_map = kwargs.get('destroyed_osds', {})
+    my_destroyed_osds = destroyed_osds_map.get(
+        __grains__.get('id', ''), list())
+
+    appendix = ""
+    if my_destroyed_osds:
+        appendix = " --osd-ids {}".format(" ".join(
+            ([str(x) for x in my_destroyed_osds])))
+
     if not dgo.data_devices:
         return ""
-    cmd = "ceph-volume lvm batch {}".format(' '.join(dgo.data_devices))
+    cmd = "ceph-volume lvm batch --no-auto {}".format(' '.join(
+        dgo.data_devices))
 
     # Compute difference between two lists
 
@@ -803,6 +814,10 @@ def c_v_commands(**kwargs):
         cmd += " --report"
     else:
         cmd += " --yes"
+    if appendix:
+        cmd += appendix
+    if dgo.encryption:
+        cmd += " --dmcrypt"
     return cmd
 
 

@@ -397,44 +397,6 @@ class TestValidation():
         assert len(validator.warnings) == 1
         assert "Experienced trouble refreshing repositories" in validator.warnings['refresh_repos'][0]
 
-
-    @patch('salt.client.LocalClient', autospec=True)
-    def test_storage(self, mock_localclient):
-        fake_data = {'node1': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}},
-                     'node2': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}},
-                     'node3': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}},
-                     'node4': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}}}
-
-        local = mock_localclient.return_value
-        local.cmd.return_value = fake_data
-        validator = validate.Validate("setup", search_pillar=True)
-
-        assert len(validator.passed) == 0
-        validator.storage()
-        assert validator.passed['storage'] == 'valid'
-
-    @patch('salt.client.LocalClient', autospec=True)
-    def test_storage_missing_attribute(self, mock_localclient):
-        fake_data = {'node1': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}},
-                     'node2': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}},
-                     'node3': {'roles': 'storage',
-                               'ceph': {'storage': 'dummy_osds'}},
-                     'node4': {'roles': 'storage'}}
-
-        local = mock_localclient.return_value
-        local.cmd.return_value = fake_data
-        validator = validate.Validate("setup", search_pillar=True)
-
-        assert len(validator.errors) == 0
-        validator.storage()
-        assert "missing storage attribute" in validator.errors['storage'][0]
-
     @patch('salt.client.LocalClient', autospec=True)
     def test_storage_too_few(self, mock_localclient):
         fake_data = {'node1': {'roles': 'storage',

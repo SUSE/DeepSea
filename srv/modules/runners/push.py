@@ -27,10 +27,6 @@ Cluster assignment:
 Role assignment:
     any role-* directories contain sls files and stack related yaml files.
     One or more roles can be included for any minion.
-Hardware profile:
-    any profile-* directories represent a specific OSD
-    assignment for a particular chassis.  All sls and yaml files are
-    included for a given hardware profile.
 
 For automation, an optional fifth part is
 
@@ -59,7 +55,6 @@ import sys
 import yaml
 sys.path.append('/srv/modules/pillar')
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin,wrong-import-position
-import salt.ext.six as six
 from stack import _merge_dict
 
 
@@ -72,9 +67,6 @@ def help_():
     """
     usage = ('salt-run push.proposal:\n\n'
              '    Reads the policy.cfg and generates the Salt configuration\n'
-             '\n\n'
-             'salt-run push.convert:\n\n'
-             '    Converts the hardware profiles from filestore to bluestore\n'
              '\n\n')
     print(usage)
     return ""
@@ -104,29 +96,6 @@ def organize(filename="/srv/pillar/ceph/proposals/policy.cfg"):
     pillar_data = PillarData()
     common = pillar_data.organize(filename)
     return common
-
-
-def convert(filename="/srv/pillar/ceph/proposals/policy.cfg"):
-    """
-    Convert the hardware profiles that policy.cfg is using and update
-    the policy.cfg.
-
-    Note: While the call "push.convert" does not make much sense, this
-    runner contained most of the necessary logic
-    """
-    if not os.path.isfile(filename):
-        log.warning("{} is missing - nothing to migrate".format(filename))
-        return ""
-    if os.path.isfile("{}-original".format(filename)):
-        log.error("Already migrated - remove {}-original before rerunning".format(filename))
-        return ""
-    pillar_data = PillarData()
-    common = pillar_data.organize(filename)
-    pillar_data.convert(common)
-    rename(filename)
-
-    proposal(filename=filename)
-    return ""
 
 
 def _create_dirs(path, root):
@@ -191,24 +160,6 @@ class PillarData(object):
                 default_path = re.sub(r'stack/default', "stack", pathname)
                 custom = self.pillar_dir + "/" + default_path
                 self._custom(custom)
-
-    def convert(self, common):
-        """
-        Process all hardware profiles
-        """
-        for pathname in common.keys():
-            for filename in common[pathname]:
-                if 'profile-' in filename:
-                    with open(filename, "r") as yml:
-                        content = yaml.safe_load(yml)
-                    migrated = _migrate(content, filename)
-                    newfilename = re.sub('profile-', 'migrated-profile-', filename)
-                    path_dir = os.path.dirname(newfilename)
-                    _create_dirs(path_dir, self.pillar_dir)
-                    with open(newfilename, "w") as yml:
-                        yml.write(yaml.dump(migrated,
-                                  Dumper=self.friendly_dumper,
-                                  default_flow_style=False))
 
     def _clean(self):
         """
@@ -299,61 +250,6 @@ class PillarData(object):
             for filename in common[pathname]:
                 log.debug("    {}".format(filename))
         return common
-
-
-def _migrate(yml, filename):
-    """
-    Migrate the original data structure to the ceph namespace data
-    structure
-    """
-    if 'storage' in yml and 'osds' in yml['storage']:
-        yml['ceph'] = {}
-        yml['ceph']['storage'] = {}
-        yml['ceph']['storage']['osds'] = {}
-        for osd in yml['storage']['osds']:
-            yml['ceph']['storage']['osds'][osd] = {'format': 'bluestore'}
-        for entry in yml['storage']['data+journals']:
-            for osd, journal in six.iteritems(entry):
-                yml['ceph']['storage']['osds'][osd] = {'format': 'bluestore',
-                                                       'wal': journal,
-                                                       'db': journal}
-        yml.pop('storage')
-    elif 'ceph' in yml and 'storage' in yml['ceph'] and 'osds' in yml['ceph']['storage']:
-        # if the profile is already in the new ceph namespace, just flip it to bluestore
-        for osd in yml['ceph']['storage']['osds']:
-            if yml['ceph']['storage']['osds'][osd]['format'] != 'filestore':
-                continue
-            yml['ceph']['storage']['osds'][osd]['format'] = 'bluestore'
-            if 'journal' not in yml['ceph']['storage']['osds'][osd]:
-                continue
-            if yml['ceph']['storage']['osds'][osd]['journal'] != osd:
-                # journal on separate device, set up wal and db to point to it
-                cso = yml['ceph']['storage']['osds']
-                cso[osd]['wal'] = cso[osd]['journal']
-                cso[osd]['db'] = cso[osd]['journal']
-            # get rid of the old journal item
-            yml['ceph']['storage']['osds'][osd].pop('journal')
-            if 'journal_size' in yml['ceph']['storage']['osds'][osd]:
-                yml['ceph']['storage']['osds'][osd].pop('journal_size')
-
-    else:
-        log.info("No migration for {} - copying".format(filename))
-    return yml
-
-
-def rename(filename):
-    """
-    Copy the policy.cfg and update the existing file
-    """
-    shutil.copyfile(filename, "{}-original".format(filename))
-    lines = []
-    with open(filename, "r") as policy:
-        for line in policy:
-            if line.startswith('profile-'):
-                line = "migrated-{}".format(line)
-            lines.append(line)
-    with open(filename, "w") as policy:
-        policy.write("".join(lines))
 
 
 def _examples(custom, yml):

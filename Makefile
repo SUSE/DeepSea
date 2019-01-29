@@ -216,10 +216,6 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
 	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
 	# state modules
-	install -d -m 755 $(DESTDIR)/srv/salt/_states
-	install -d -m 755 $(DESTDIR)/srv/salt/_states/__pycache__
-	install -m 644 srv/salt/_states/__pycache__/*.pyc $(DESTDIR)/srv/salt/_states/__pycache__
-	install -m 644 srv/salt/_states/*.py* $(DESTDIR)/srv/salt/_states/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
 	install -m 644 srv/salt/ceph/admin/*.sls $(DESTDIR)/srv/salt/ceph/admin/
@@ -475,8 +471,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/osd/key/*.sls $(DESTDIR)/srv/salt/ceph/osd/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/auth
 	install -m 644 srv/salt/ceph/osd/auth/*.sls $(DESTDIR)/srv/salt/ceph/osd/auth/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/grains
-	install -m 644 srv/salt/ceph/osd/grains/*.sls $(DESTDIR)/srv/salt/ceph/osd/grains/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/keyring
 	install -m 644 srv/salt/ceph/osd/keyring/*.sls $(DESTDIR)/srv/salt/ceph/osd/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/osd/scheduler

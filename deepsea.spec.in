@@ -91,8 +91,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/fio
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
 %dir /srv/salt/_modules
-%dir /srv/salt/_states
-%dir /srv/salt/_states/__pycache__
 %dir /srv/modules
 %dir /srv/modules/modules
 %dir /srv/modules/runners
@@ -222,7 +220,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/osd/files
 %dir /srv/salt/ceph/osd/key
 %dir /srv/salt/ceph/osd/auth
-%dir /srv/salt/ceph/osd/grains
 %dir /srv/salt/ceph/osd/keyring
 %dir /srv/salt/ceph/osd/restart
 %dir /srv/salt/ceph/osd/restart/force
@@ -452,8 +449,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/disk_led.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 /srv/salt/_modules/*.py*
-/srv/salt/_states/*.py*
-/srv/salt/_states/__pycache__/*.py*
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
@@ -571,7 +566,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/osd/files/*.j2
 %config /srv/salt/ceph/osd/key/*.sls
 %config /srv/salt/ceph/osd/auth/*.sls
-%config /srv/salt/ceph/osd/grains/*.sls
 %config /srv/salt/ceph/osd/keyring/*.sls
 %config /srv/salt/ceph/osd/restart/*.sls
 %config /srv/salt/ceph/osd/restart/force/*.sls

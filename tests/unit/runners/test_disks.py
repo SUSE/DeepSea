@@ -95,10 +95,13 @@ class TestDriveGroup_Disks(object):
         with pytest.raises(RuntimeError):
             drive_groups_fixture(drive_groups=str('not a dict'))
 
+    @patch('srv.modules.runners.disks.destroyed')
     @patch('srv.modules.runners.disks.DriveGroup')
-    def test_call_out(self, drive_group, drive_groups_fixture):
+    def test_call_out(self, drive_group, destroyed_mock, drive_groups_fixture):
         dgo = drive_groups_fixture()
         ret = dgo.call_out('test')
+
+        destroyed_mock.return_value = {'data1': [1, 2, 3]}
 
         call0 = (call('default', {
             'target': 'data*',
@@ -126,8 +129,10 @@ class TestDriveGroup_Disks(object):
         assert len(self.default_spec) == len(drive_group.call_args_list)
         assert isinstance(ret, list)
 
-    def test_call(self, drive_groups_fixture):
+    @patch('srv.modules.runners.disks.destroyed')
+    def test_call(self, destroyed_mock, drive_groups_fixture):
         dgo = drive_groups_fixture()
+        destroyed_mock.return_value = {'data1': [1, 2, 3]}
         dgo.call('target*', {'args'}, 'test_command')
         dgo.local_client.cmd.assert_called_with(
             'target*',
@@ -135,11 +140,16 @@ class TestDriveGroup_Disks(object):
             expr_form='compound',
             kwarg={
                 'filter_args': {'args'},
-                'dry_run': False
+                'dry_run': False,
+                'destroyed_osds': {
+                    'data1': [1, 2, 3]
+                }
             })
 
-    def test_call_dry(self, drive_groups_fixture):
+    @patch('srv.modules.runners.disks.destroyed')
+    def test_call_dry(self, destroyed_mock, drive_groups_fixture):
         dgo = drive_groups_fixture(dry_run=True)
+        destroyed_mock.return_value = {'data1': [1, 2, 3]}
         dgo.call('target*', {'args'}, 'test_command')
         dgo.local_client.cmd.assert_called_with(
             'target*',
@@ -147,5 +157,8 @@ class TestDriveGroup_Disks(object):
             expr_form='compound',
             kwarg={
                 'filter_args': {'args'},
-                'dry_run': True
+                'dry_run': True,
+                'destroyed_osds': {
+                    'data1': [1, 2, 3]
+                }
             })

@@ -1,4 +1,3 @@
-
 {% set label = "force" %}
 
 Disengage {{ label }}:
@@ -7,7 +6,7 @@ Disengage {{ label }}:
 
 forced removal:
   salt.runner:
-    - name: replace.osd
+    - name: osd.replace
     - arg:
       - 0
     - kwarg:
@@ -19,13 +18,10 @@ Check OSDs {{ label }}:
     - sls: ceph.tests.replace.check_0
 
 Restore OSDs {{ label }}:
-  salt.state:
-    - tgt: I@roles:storage
-    - sls: ceph.tests.replace.restore_osds
-    - tgt_type: compound
+  salt.runner:
+    - name: disks.deploy
 
 Wait for Ceph {{ label }}:
   salt.state:
     - tgt: {{ salt['master.minion']() }}
     - sls: ceph.wait.until.OK
-
