@@ -2232,6 +2232,32 @@ class TestOSDCommands():
     def test_detect(self):
         pass
 
+class Testsplit_partition():
+
+    @patch('srv.salt._modules.osd.readlink')
+    def test_split_partition(self, readlink):
+        readlink.return_value = "/dev/sda1"
+        disk, part = osd.split_partition("/dev/sda1")
+        assert disk == "/dev/sda"
+        assert part == "1"
+
+    @patch('srv.salt._modules.osd.readlink')
+    def test_split_partition_on_nvme(self, readlink):
+        readlink.return_value = "/dev/nvme0n1p1"
+        disk, part = osd.split_partition("/dev/nvme0n1p1")
+        assert disk == "/dev/nvme0n1"
+        assert part == "1"
+
+    @patch('srv.salt._modules.osd.readlink')
+    def test_split_partition_on_sdp(self, readlink):
+        """
+        Verify that the 'p' never gets truncated with /dev/sdp
+        """
+        readlink.return_value = "/dev/sdp1"
+        disk, part = osd.split_partition("/dev/sdp1")
+        assert disk == "/dev/sdp"
+        assert part == "1"
+
 class TestOSDRemove():
 
     @patch('osd.OSDRemove.set_partitions')
