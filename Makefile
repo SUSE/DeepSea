@@ -48,6 +48,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -m 644 srv/salt/ceph/tests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/tests/keyrings
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/iperf3
+	install -m 644 srv/salt/ceph/tests/iperf3/*.sls $(DESTDIR)/srv/salt/ceph/tests/iperf3
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/prometheus
 	install -m 644 srv/salt/ceph/tests/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/tests/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent
@@ -111,6 +113,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
 	install -m 644 srv/salt/ceph/functests/1node/openstack/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/multi
+	install -m 644 srv/salt/ceph/functests/1node/multi/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/multi
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/prometheus
 	install -m 644 srv/salt/ceph/functests/1node/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent

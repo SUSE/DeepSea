@@ -113,6 +113,9 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         c_sort = _add_unit(sorted(c_result.items(),
                                   key=operator.itemgetter(1), reverse=True))
 
+        # Stop iperf processes
+        local.cmd(search, 'multi.kill_iperf_cmd', expr_form="compound")
+
         if output:
             result.update({'Public Network': p_sort})
             result.update({'Cluster Network': c_sort})
@@ -149,6 +152,9 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         sort_result = _add_unit(sorted(result.items(),
                                        key=operator.itemgetter(1),
                                        reverse=True))
+        # Stop iperf processes
+        local.cmd(search, 'multi.kill_iperf_cmd', expr_form="compound")
+
         if output:
             return sort_result
         else:

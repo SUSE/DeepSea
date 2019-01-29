@@ -12,3 +12,4 @@ include:
   - .openstack
   - .engulf
   - .remove
+  - .multi
