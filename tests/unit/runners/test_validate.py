@@ -128,6 +128,120 @@ class TestValidation():
         assert "characters, not 36" in validator.errors['fsid'][0]
 
     @patch('salt.client.LocalClient', autospec=True)
+    def test_public_interface_for_ipv4(self, mock_localclient):
+        data = {'mon.ceph': {'public_network': '192.168.0.0/24'},
+                'mgr.ceph': {'public_network': '192.168.0.0/24'}}
+        grains = {'mon.ceph': {'ipv4': ['192.168.0.100'], 'ipv6': ['fd00::1']},
+                  'mgr.ceph': {'ipv4': ['192.168.0.101'], 'ipv6': ['fd00::2']}}
+
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = grains
+
+            validator.public_interface()
+            assert validator.passed['public_interface'] == "valid"
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_public_interface_for_ipv4_only(self, mock_localclient):
+        data = {'mon.ceph': {'public_network': '192.168.0.0/24'},
+                'mgr.ceph': {'public_network': '192.168.0.0/24'}}
+        grains = {'mon.ceph': {'ipv4': ['192.168.0.100']},
+                  'mgr.ceph': {'ipv4': ['192.168.0.101']}}
+
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = grains
+
+            validator.public_interface()
+            assert validator.passed['public_interface'] == "valid"
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_public_interface_for_ipv4_errors(self, mock_localclient):
+        data = {'mon.ceph': {'public_network': '192.168.1.0/24'},
+                'mgr.ceph': {'public_network': '192.168.1.0/24'}}
+        grains = {'mon.ceph': {'ipv4': ['192.168.0.100'], 'ipv6': ['fd00::1']},
+                  'mgr.ceph': {'ipv4': ['192.168.0.101'], 'ipv6': ['fd00::2']}}
+
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = grains
+
+            validator.public_interface()
+            assert "missing address" in validator.errors['public_interface'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_public_interface_for_ipv6(self, mock_localclient):
+        data = {'mon.ceph': {'public_network': 'fd00::/64'},
+                'mgr.ceph': {'public_network': 'fd00::/64'}}
+        grains = {'mon.ceph': {'ipv4': ['192.168.0.100'], 'ipv6': ['fd00::1']},
+                  'mgr.ceph': {'ipv4': ['192.168.0.101'], 'ipv6': ['fd00::2']}}
+
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = grains
+
+            validator.public_interface()
+            assert validator.passed['public_interface'] == "valid"
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_public_interface_for_ipv6_errors(self, mock_localclient):
+        data = {'mon.ceph': {'public_network': 'fd01::/64'},
+                'mgr.ceph': {'public_network': 'fd01::/64'}}
+        grains = {'mon.ceph': {'ipv4': ['192.168.0.100'], 'ipv6': ['fd00::1']},
+                  'mgr.ceph': {'ipv4': ['192.168.0.101'], 'ipv6': ['fd00::2']}}
+
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = grains
+
+            validator.public_interface()
+            assert "missing address" in validator.errors['public_interface'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_check_ipversion(self, mock_localclient):
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.ipversion = set([4])
+
+            validator.check_ipversion()
+            assert validator.passed['ip_version'] == "valid"
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_check_ipversion_fails(self, mock_localclient):
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.ipversion = set([4, 6])
+
+            validator.check_ipversion()
+            assert "Networks must be" in validator.errors['ip_version'][0]
+
+    @patch('salt.client.LocalClient', autospec=True)
     def test_monitors(self, mock_localclient):
         fake_data = {'mon1': { 'roles': 'mon'},
                      'mon2': { 'roles': 'mon'},

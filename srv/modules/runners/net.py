@@ -14,6 +14,8 @@ import operator
 import re
 # pylint: disable=import-error,3rd-party-module-not-gated
 from netaddr import IPNetwork, IPAddress
+import ipaddress
+import pprint
 # pylint: disable=relative-import
 # pylint: disable=import-error,3rd-party-module-not-gated,blacklisted-external-import,blacklisted-module
 from six.moves import range
@@ -107,11 +109,19 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
 
         public_networks = local.cmd(search, 'pillar.item',
                                     ['public_network'], tgt_type="compound")
+
+        ipversion = 'ipv4'
+        log.info("public networks:\n{}".format(pprint.pformat(public_networks)))
+        for host in public_networks:
+            if 'public_network' in public_networks[host]:
+                ipversion = _ipversion(public_networks[host]['public_network'])
+                break
+
         log.debug("iperf: public_network {} ".format(public_networks))
         cluster_networks = local.cmd(search, 'pillar.item',
                                      ['cluster_network'], tgt_type="compound")
         log.debug("iperf: cluster_network {} ".format(cluster_networks))
-        total = local.cmd(search, 'grains.get', ['ipv4'], tgt_type="compound")
+        total = local.cmd(search, 'grains.get', [ipversion], tgt_type="compound")
         log.debug("iperf: total grains.get {} ".format(total))
         public_addresses = []
         cluster_addresses = []
@@ -154,13 +164,27 @@ def iperf(cluster=None, exclude=None, output=None, **kwargs):
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))
+
+        public_networks = local.cmd(search, 'pillar.item',
+                                    ['public_network'], tgt_type="compound")
+
+        ipversion = 'ipv4'
+        log.info("public networks:\n{}".format(pprint.pformat(public_networks)))
+        for host in public_networks:
+            if 'public_network' in public_networks[host]:
+                ipversion = _ipversion(public_networks[host]['public_network'])
+                break
+
         addresses = local.cmd(search, 'grains.get',
-                              ['ipv4'], tgt_type="compound")
+                              [ipversion], tgt_type="compound")
         addresses = _flatten(list(addresses.values()))
         # Lazy loopback removal - use ipaddress when adding IPv6
         try:
-            if addresses:
+            if ipversion == 'ipv4':
                 addresses.remove('127.0.0.1')
+            elif ipversion == 'ipv6':
+                addresses.remove('::1')
+                addresses = [addr for addr in addresses if not addr.startswith("fe80")]
             if exclude_iplist:
                 for ex_ip in exclude_iplist:
                     log.debug("ping: removing {} ip ".format(ex_ip))
@@ -331,7 +355,15 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
         networks = local.cmd(search, 'pillar.item',
                              ['cluster_network', 'public_network'],
                              tgt_type="compound")
-        total = local.cmd(search, 'grains.get', ['ipv4'], tgt_type="compound")
+
+        ipversion = 'ipv4'
+        log.info("networks:\n{}".format(pprint.pformat(networks)))
+        for host in networks:
+            if 'public_network' in networks[host]:
+                ipversion = _ipversion(networks[host]['public_network'])
+                break
+
+        total = local.cmd(search, 'grains.get', [ipversion], tgt_type="compound")
         addresses = []
         for host in sorted(six.iterkeys(total)):
             if 'cluster_network' in networks[host]:
@@ -344,17 +376,34 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
         # pylint: disable=redefined-variable-type
         search = __utils__['deepsea_minions.show']()
 
+        hosts = local.cmd(search, 'pillar.item',
+                             ['public_network'],
+                             tgt_type="compound")
+
+        ipversion = 'ipv4'
+        for host in hosts:
+            if 'public_network' in hosts[host]:
+                ipversion = _ipversion(hosts[host]['public_network'])
+                break
+
         if exclude_string:
             search += " and not ( " + exclude_string + " )"
             log.debug("ping: search {} ".format(search))
         addresses = local.cmd(search, 'grains.get',
-                              ['ipv4'], tgt_type="compound")
+                              [ipversion], tgt_type="compound")
 
         addresses = _flatten(list(addresses.values()))
         # Lazy loopback removal - use ipaddress when adding IPv6
         try:
             if addresses:
-                addresses.remove('127.0.0.1')
+                if ipversion == 'ipv4':
+                    addresses.remove('127.0.0.1')
+                elif ipversion == 'ipv6':
+                    addresses.remove('::1')
+                    addresses = [addr for addr in addresses if not addr.startswith("fe80")]
+                else:
+                    raise RuntimeError("Neither IPv4 nor IPv6")
+                log.info("addresses:\n{}".format(pprint.pformat(addresses)))
             if exclude_iplist:
                 for ex_ip in exclude_iplist:
                     log.debug("ping: removing {} ip ".format(ex_ip))
@@ -369,6 +418,20 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
                             addresses, tgt_type="compound")
     _summarize(len(addresses), results)
     return ""
+
+
+def _ipversion(_network):
+    """
+    Return the address version
+    """
+    try:
+        network = ipaddress.ip_network(u'{}'.format(_network))
+    except ValueError as err:
+        log.error("Invalid network {}".format(err))
+        return 'ipv4'
+    if network.version == 6:
+        return 'ipv6'
+    return 'ipv4'
 
 
 def _address(addresses, network):
