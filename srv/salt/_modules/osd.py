@@ -1441,7 +1441,7 @@ def split_partition(partition):
     log.debug("splitting partition {}".format(part))
     match = re.match(r"(.+\D)(\d+)", part)
     disk = match.group(1)
-    if disk.endswith('p'):
+    if re.match(r".+\dp$", disk):
         disk = disk[:-1]
         log.debug("Truncating p {}".format(disk))
     return disk, match.group(2)
