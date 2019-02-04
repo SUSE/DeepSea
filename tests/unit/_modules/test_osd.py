@@ -2264,7 +2264,7 @@ class TestOSDRemove():
                           'id': 'data1.ceph'}
         osdr = osd.OSDRemove(1, mock_device, None, mock_grains)
         result = osdr.remove()
-        print result
+        print(result)
         assert "OSD 1 is not present" in result
 
     def test_remove_when_empty_fails(self):
@@ -2551,7 +2551,7 @@ class TestOSDRemove():
     f_open = fake_fs.FakeFileOpen(fs)
 
     @patch('os.rmdir')
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_unmount(self, mock_rmdir):
         TestOSDRemove.fs.CreateFile('/proc/mounts',
             contents='''/dev/sda1 /var/lib/ceph/osd/ceph-1 rest\n''')
@@ -2572,7 +2572,7 @@ class TestOSDRemove():
         TestOSDRemove.fs.RemoveFile('/proc/mounts')
         assert result == "" and mock_rmdir.call_count == 1
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_unmount_fails(self):
         TestOSDRemove.fs.CreateFile('/proc/mounts',
             contents='''/dev/sda1 /var/lib/ceph/osd/ceph-1 rest\n''')
@@ -2593,7 +2593,7 @@ class TestOSDRemove():
         TestOSDRemove.fs.RemoveFile('/proc/mounts')
         assert "Unmount failed" in result
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_unmount_finds_no_match(self):
         TestOSDRemove.fs.CreateFile('/proc/mounts',
             contents='''/dev/sdb1 /var/lib/ceph/osd/ceph-1 rest\n''')
@@ -2891,7 +2891,7 @@ class TestOSDDestroyed():
     f_open = fake_fs.FakeFileOpen(fs)
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_update(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.f_os.makedirs("/etc/ceph")
@@ -2909,7 +2909,7 @@ class TestOSDDestroyed():
         assert result == "" and contents == "/dev/disk/by-path/virtio-pci-0000:00:04.0: 1\n"
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_update_with_no_by_path(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.f_os.makedirs("/etc/ceph")
@@ -2927,7 +2927,7 @@ class TestOSDDestroyed():
         assert "Device /dev/sda is missing" in result and contents == "/dev/sda: 1\n"
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_update_entry_exists(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/sda1: '1'""")
@@ -2939,7 +2939,7 @@ class TestOSDDestroyed():
         assert result == ""
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_update_force(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
 
@@ -2954,7 +2954,7 @@ class TestOSDDestroyed():
         assert result == "" and contents == "/dev/sda: 1\n"
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_get(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/disk/by-path/virtio-pci-0000:00:04.0: '1'""")
@@ -2968,7 +2968,7 @@ class TestOSDDestroyed():
         assert result == '1'
     
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_get_no_match(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/disk/by-path/virtio-pci-0000:00:04.0: '1'""")
@@ -3006,7 +3006,7 @@ class TestOSDDestroyed():
         assert result is ""
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_remove(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/disk/by-path/virtio-pci-0000:00:04.0: '1'""")
@@ -3022,7 +3022,7 @@ class TestOSDDestroyed():
         assert contents == "{}\n"
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_remove_original_device(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         TestOSDDestroyed.fs.CreateFile(filename, contents="""/dev/sda: '1'""")
@@ -3047,7 +3047,7 @@ class TestOSDDestroyed():
         assert result is None
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_dump(self):
         filename = "/etc/ceph/destroyedOSDs.yml"
         contents = "/dev/sda: '1'"
@@ -3101,7 +3101,7 @@ class TestOSDGrains():
         osdg._grains.assert_called_with({})
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_delete_no_file(self):
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
@@ -3113,7 +3113,7 @@ class TestOSDGrains():
         assert osdg._update_grains.call_count == 0
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_delete_empty_file(self):
         filename = "/etc/salt/grains"
         TestOSDGrains.fs.CreateFile(filename)
@@ -3128,7 +3128,7 @@ class TestOSDGrains():
         assert osdg._update_grains.call_count == 0
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_delete(self):
         filename = "/etc/salt/grains"
         contents = """
@@ -3162,7 +3162,7 @@ class TestOSDGrains():
         osdg._update_grains.assert_called_with(expected)
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_grains_no_file(self):
         mock_device = mock.Mock()
         mock_device.partitions.return_value = {'block': '/dev/vdb2',
@@ -3176,7 +3176,7 @@ class TestOSDGrains():
         osdg._update_grains.assert_called_with(expected)
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_grains(self):
         filename = "/etc/salt/grains"
         contents = """
@@ -3197,7 +3197,7 @@ class TestOSDGrains():
         osdg._update_grains.assert_called_with(expected)
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_grains_no_update(self):
         filename = "/etc/salt/grains"
         contents = """
@@ -3223,7 +3223,7 @@ class TestOSDGrains():
         TestOSDGrains.fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 0
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_update_grains(self):
         filename = "/etc/salt/grains"
         mock_device = mock.Mock()
@@ -3583,7 +3583,7 @@ class Test_is_incorrect():
         assert ret == False
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     def test_is_incorrect_filestore_mismatch_format(self, osdc_o):
         """
         Check independent filestore OSD with bluestore format
@@ -3601,7 +3601,7 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal(self, readlink, osdc_o, helper_specs):
         """
@@ -3623,7 +3623,7 @@ class Test_is_incorrect():
         assert ret == False
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal_no_device(self, readlink, osdc_o, helper_specs):
         """
@@ -3645,7 +3645,7 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal_wrong_device(self, readlink, osdc_o, helper_specs):
         """
@@ -3667,7 +3667,7 @@ class Test_is_incorrect():
         assert ret == True
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.salt._modules.osd.readlink')
     def test_is_incorrect_filestore_journal_wrong_size(self, readlink, osdc_o, helper_specs):
         """

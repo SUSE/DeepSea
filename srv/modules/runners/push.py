@@ -390,7 +390,7 @@ def _parse(line):
     Return globbed files constrained by optional slices or regexes.
     """
     if " " in line:
-        parts = re.split('\s+', line)
+        parts = re.split(r'\s+', line)
         files = sorted(glob.glob(parts[0]))
         for optional in parts[1:]:
             filter_type, value = optional.split('=')

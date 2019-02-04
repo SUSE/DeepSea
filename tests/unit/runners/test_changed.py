@@ -28,7 +28,7 @@ class TestChanged():
             yield changed.Role
 
     @patch('os.path.exists', new=f_os.path.exists)
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.modules.runners.changed.hashlib')
     def test_create_checksum(self, hashlib_mock, cfg, role):
         fs.CreateFile("{}/{}".format(conf_dir, 'rgw.conf'), contents="foo=bar")
@@ -47,7 +47,7 @@ class TestChanged():
         fs.CreateFile("{}/{}".format(checksum_dir, 'rgw.conf'), contents="foo=bar")
         cfg = cfg(role=role(role_name='rgw'))
         m = mock_open()
-        with patch('__builtin__.open', m, create=True):
+        with patch('builtins.open', m, create=True):
             ret = cfg.write_checksum('0b0b0b0b0b0b0b0b0b0b0')
             log_mock.debug.assert_called()
             m.assert_called_once_with('/srv/salt/ceph/configuration/files/ceph.conf.checksum/rgw.conf', 'w')
