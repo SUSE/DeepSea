@@ -201,9 +201,9 @@ class TestOSDWeight():
     @patch('srv.salt._modules.osd.OSDWeight.update_weight')
     @patch('srv.salt._modules.osd.OSDWeight.update_reweight')
     def test_restore(self, ur, uw):
-       """
-       Restore calls routines with custom values
-       """
+        """
+        Restore calls routines with custom values
+        """
         with open("/weight", 'w') as weight:
             weight.write("0.9")
         with open("/reweight", 'w') as reweight:
@@ -235,7 +235,7 @@ class TestOSDWeight():
             osd.__salt__['helper.run'].assert_called_with(cmd)
 
     def test_update_reweight(self):
-       """
+        """
         Check that the reweight command is built correctly
         """
         osd.__salt__ = {}
