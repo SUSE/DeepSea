@@ -1,6 +1,6 @@
 # Override this to install docs somewhere else
 DOCDIR = /usr/share/doc/packages
-VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
+VERSION ?= $(shell (git describe --long 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
 DEEPSEA_DEPS=salt-api
 PYTHON_DEPS=python3-setuptools python3-click python3-tox python3-configobj
