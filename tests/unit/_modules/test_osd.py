@@ -165,7 +165,7 @@ class TestOSDWeight():
     avoid the rados logic.  Set osd_id and settings directly.
     """
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.salt._modules.osd.OSDWeight.osd_df')
     def test_save_defaults(self, osd_df):
         """
@@ -181,7 +181,7 @@ class TestOSDWeight():
             assert f_os.path.exists('/weight') == False
             assert f_os.path.exists('/reweight') == False
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('srv.salt._modules.osd.OSDWeight.osd_df')
     def test_save_custom_values(self, osd_df):
         """
@@ -206,7 +206,7 @@ class TestOSDWeight():
         fs.RemoveFile('/weight')
         fs.RemoveFile('/reweight')
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('os.path.isfile', new=f_os.path.isfile)
     @patch('srv.salt._modules.osd.OSDWeight.update_weight')
     @patch('srv.salt._modules.osd.OSDWeight.update_reweight')
@@ -222,7 +222,7 @@ class TestOSDWeight():
             assert uw.call_count == 0
             assert ur.call_count == 0
 
-    @patch('__builtin__.open', new=f_open)
+    @patch('builtins.open', new=f_open)
     @patch('os.path.isfile', new=f_os.path.isfile)
     @patch('srv.salt._modules.osd.OSDWeight.update_weight')
     @patch('srv.salt._modules.osd.OSDWeight.update_reweight')
@@ -2485,7 +2485,7 @@ class TestOSDRemove():
 
         result = osdr.remove()
         assert result == ""
-    
+
     @patch('srv.salt._modules.osd.update_destroyed')
     def test_remove_force_works(self, mock_ud):
         partitions = {'osd': '/dev/sda1'}
@@ -2519,7 +2519,7 @@ class TestOSDRemove():
 
         result = osdr.remove()
         assert result == ""
-    
+
     def test_empty(self):
         partitions = {'osd': '/dev/sda1'}
         mock_device = mock.Mock()
@@ -2649,7 +2649,7 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
-        
+
     @patch('srv.salt._modules.osd.readlink')
     def test_mounted_lockbox(self, mock_rl):
         partitions = {'lockbox': '/dev/sda1'}
@@ -2660,7 +2660,7 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
-        
+
     def test_mounted_none(self):
         partitions = {}
         mock_device = mock.Mock()
@@ -2669,7 +2669,7 @@ class TestOSDRemove():
         osdr = osd.OSDRemove(1, mock_device, None, None)
         result = osdr._mounted()
         assert result == []
-        
+
     def test_wipe_with_no_partitions(self):
         partitions = {}
         mock_device = mock.Mock()
@@ -2717,7 +2717,7 @@ class TestOSDRemove():
         result = osdr.wipe()
         TestOSDRemove.fs.RemoveFile('/dev/sda1')
         assert "Failed to wipe partition" in result
-    
+
     def test_destroy(self):
         partitions = {'osd': '/dev/sda1'}
         mock_device = mock.Mock()
@@ -2992,7 +2992,7 @@ class TestOSDDestroyed():
         result = osdd.get('/dev/disk/by-path/virtio-pci-0000:00:04.0')
         TestOSDDestroyed.fs.RemoveFile(filename)
         assert result == '1'
-    
+
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('builtins.open', new=f_open)
     def test_get_no_match(self):
@@ -3006,7 +3006,7 @@ class TestOSDDestroyed():
         result = osdd.get('/dev/disk/by-path/virtio-pci-0000:00:10.0')
         TestOSDDestroyed.fs.RemoveFile(filename)
         assert result is ""
-    
+
     def test_by_path(self):
         osdd = osd.OSDDestroyed()
 
@@ -3181,7 +3181,7 @@ class TestOSDGrains():
         osdg.delete(10)
         TestOSDGrains.fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 1
-        expected = {'ceph': 
+        expected = {'ceph':
                        {'17': {'fsid': '28e231cd-cd01-40f9-aa47-e332ccf73e35',
                                'partitions': {'block': '/dev/vdd2',
                                               'osd': '/dev/vdd1'}}}}
@@ -3967,4 +3967,3 @@ class Test_report():
         unconfigured, changed = osd._report_original_pillar(["/dev/sda"])
         assert unconfigured == []
         assert changed == ["/dev/sda"]
-
