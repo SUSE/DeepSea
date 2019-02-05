@@ -2,7 +2,7 @@
 
 {% if grains.get('osfullname', '') == 'SLES' %}
 
-install ses-realease package:
+install ses-release package:
   pkg.installed:
     - pkgs:
       - ses-release
