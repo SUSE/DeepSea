@@ -6,6 +6,9 @@ Tue Jan 29 13:33:45 UTC 2019 - jschmid@suse.com
 - Save and restore reweight in addition to weight (bsc#1121629)
 - Add retry logic to readlink for seemingly stubborn systems (bsc#1116160)
 - monitoring/dashboard: always refresh templates on time picker change. (bsc#1113824)
+- Fixes auth caps for openstack.integrate
+- Fix unicode output error in openstack.py
+- Check for digit before 'p' (split_partition)
 
 -------------------------------------------------------------------
 Tue Dec 13 16:33:45 UTC 2018 - jschmid@suse.com
