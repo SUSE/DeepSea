@@ -1,6 +1,6 @@
 # Override this to install docs somewhere else
 DOCDIR = /usr/share/doc/packages
-VERSION ?= $(shell (git describe 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
+VERSION ?= $(shell (git describe --long 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
 usage:
 	@echo "Usage:"
