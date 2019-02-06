@@ -162,5 +162,142 @@ class TestFileQueue():
         shutil.rmtree(dirpath)
         assert checked == False
 
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_enqueue_args(self, fq, lock):
+        '''
+        '''
+        args = ['abc']
+        mock_fq = fq.return_value
+        mock_fq.touch.return_value = True
+        mock_fq.settings = {}
 
+        result = filequeue.enqueue(args)
+        assert result == True
 
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_enqueue_args_fail(self, fq, lock):
+        '''
+        '''
+        args = ['abc']
+        mock_fq = fq.return_value
+        mock_fq.touch.return_value = False
+        mock_fq.settings = {}
+
+        result = filequeue.enqueue(args)
+        assert result == False
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_enqueue_kwargs(self, fq, lock):
+        '''
+        '''
+        kwargs = {'item': 'abc'}
+        mock_fq = fq.return_value
+        mock_fq.touch.return_value = True
+        mock_fq.settings = {}
+
+        result = filequeue.enqueue(kwargs)
+        assert result == True
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_enqueue_kwargs_fail(self, fq, lock):
+        '''
+        '''
+        kwargs = {'item': 'abc'}
+        mock_fq = fq.return_value
+        mock_fq.touch.return_value = False
+        mock_fq.settings = {}
+
+        result = filequeue.enqueue(kwargs)
+        assert result == False
+
+    @patch('srv.modules.runners.filequeue.help', autospec=True)
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_enqueue_help(self, fq, lock, mock_help):
+        '''
+        '''
+        mock_fq = fq.return_value
+        mock_fq.settings = {}
+
+        result = filequeue.enqueue()
+        assert result == None
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_remove_args(self, fq, lock):
+        '''
+        '''
+        args = ['abc']
+        mock_fq = fq.return_value
+        mock_fq.remove.return_value = True
+        mock_fq.settings = {}
+
+        result = filequeue.remove(args)
+        assert result == True
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_remove_args_fails(self, fq, lock):
+        '''
+        '''
+        args = ['abc']
+        mock_fq = fq.return_value
+        mock_fq.remove.return_value = False
+        mock_fq.settings = {}
+
+        result = filequeue.remove(args)
+        assert result == False
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_remove_kwargs(self, fq, lock):
+        '''
+        '''
+        kwargs = {'item': 'abc'}
+        mock_fq = fq.return_value
+        mock_fq.remove.return_value = True
+        mock_fq.settings = {}
+
+        result = filequeue.remove(kwargs)
+        assert result == True
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_remove_kwargs_fails(self, fq, lock):
+        '''
+        '''
+        kwargs = {'item': 'abc'}
+        mock_fq = fq.return_value
+        mock_fq.remove.return_value = False
+        mock_fq.settings = {}
+
+        result = filequeue.remove(kwargs)
+        assert result == False
+
+    @patch('srv.modules.runners.filequeue.help', autospec=True)
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_remove_help(self, fq, lock, mock_help):
+        '''
+        '''
+        mock_fq = fq.return_value
+        mock_fq.settings = {}
+
+        result = filequeue.remove()
+        assert result == None
+
+    @patch('srv.modules.runners.filequeue.Lock', autospec=True)
+    @patch('srv.modules.runners.filequeue.FileQueue', autospec=True)
+    def test_array(self, fq, lock):
+        '''
+        '''
+        mock_fq = fq.return_value
+        mock_fq.ls.return_value = ['abc']
+        mock_fq.settings = {}
+
+        result = filequeue.array()
+        assert result == ['abc']

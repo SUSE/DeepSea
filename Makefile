@@ -391,6 +391,13 @@ copy-files:
 	install -m 644 srv/salt/ceph/noout/set/*.sls $(DESTDIR)/srv/salt/ceph/noout/set
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/noout/unset
 	install -m 644 srv/salt/ceph/noout/unset/*.sls $(DESTDIR)/srv/salt/ceph/noout/unset
+	# state files - obliterate
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/obliterate
+	install -m 644 srv/salt/ceph/obliterate/*.sls $(DESTDIR)/srv/salt/ceph/obliterate/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/obliterate/lock
+	install -m 644 srv/salt/ceph/obliterate/lock/*.sls $(DESTDIR)/srv/salt/ceph/obliterate/lock
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/obliterate/unlock
+	install -m 644 srv/salt/ceph/obliterate/unlock/*.sls $(DESTDIR)/srv/salt/ceph/obliterate/unlock
 	# state files - openattic
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/openattic
 	install -m 644 srv/salt/ceph/openattic/*.sls $(DESTDIR)/srv/salt/ceph/openattic/
@@ -496,6 +503,9 @@ copy-files:
 	# state files - reactor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reactor
 	install -m 644 srv/salt/ceph/reactor/*.sls $(DESTDIR)/srv/salt/ceph/reactor/
+	# state files - rebuild
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rebuild
+	install -m 644 srv/salt/ceph/rebuild/*.sls $(DESTDIR)/srv/salt/ceph/rebuild/
 	# state files - refresh
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/refresh
 	install -m 644 srv/salt/ceph/refresh/*.sls $(DESTDIR)/srv/salt/ceph/refresh/

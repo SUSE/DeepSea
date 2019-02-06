@@ -33,6 +33,32 @@ def help():
     print usage
     return ""
 
+def rebuild():
+    """
+    """
+    message = '''
+All the storage nodes have been added to the rebuild queue.  View the list with
+# salt-run filequeue.ls queue=rebuild
+
+To remove any of the nodes from the queue, run
+# salt-run filequeue.remove queue=rebuild MINION
+
+Otherwise, rerun the orchestration again to start the rebuild
+# salt-run state.orch ceph.stage.rebuild
+
+In case of failures during the removal, resolve the issue and run
+# salt 'minionX*' state.apply ceph.obliterate.unlock
+
+Failures during the creation of an OSD may be restarted by running the rebuild
+command above.
+    '''
+    bold = '\033[1m'
+    endc = '\033[0m'
+    print "{}************* REBUILD INSTRUCTIONS *******************{}".format(bold, endc)
+    print message
+    return ""
+
+
 def salt_run():
     """
     The salt-run commands report when complete.  This can be unnerving to

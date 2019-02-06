@@ -199,6 +199,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/noout
 %dir /srv/salt/ceph/noout/set
 %dir /srv/salt/ceph/noout/unset
+%dir /srv/salt/ceph/obliterate
+%dir /srv/salt/ceph/obliterate/lock
+%dir /srv/salt/ceph/obliterate/unlock
 %dir /srv/salt/ceph/openattic
 %dir /srv/salt/ceph/openattic/auth
 %dir /srv/salt/ceph/openstack
@@ -249,6 +252,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rbd/benchmarks
 %dir /srv/salt/ceph/rbd/benchmarks/files
 %dir /srv/salt/ceph/reactor
+%dir /srv/salt/ceph/rebuild
 %dir /srv/salt/ceph/refresh
 %dir /srv/salt/ceph/repo
 %dir /srv/salt/ceph/redeploy
@@ -516,6 +520,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/monitoring/prometheus/files/*.yml
 %config /srv/salt/ceph/noout/set/*.sls
 %config /srv/salt/ceph/noout/unset/*.sls
+%config /srv/salt/ceph/obliterate/*.sls
+%config /srv/salt/ceph/obliterate/lock/*.sls
+%config /srv/salt/ceph/obliterate/unlock/*.sls
 %config /srv/salt/ceph/openattic/*.sls
 %config /srv/salt/ceph/openattic/auth/*.sls
 %config /srv/salt/ceph/openattic/key/*.sls
@@ -562,6 +569,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rbd/benchmarks/*.sls
 %config /srv/salt/ceph/rbd/benchmarks/files/keyring.j2
 %config /srv/salt/ceph/reactor/*.sls
+%config /srv/salt/ceph/rebuild/*.sls
 %config /srv/salt/ceph/refresh/*.sls
 %config /srv/salt/ceph/repo/*.sls
 %config /srv/salt/ceph/redeploy/nodes/*.sls
