@@ -321,12 +321,12 @@ class Zypper(PackageManager):
             cmd.extend(strategy_flags)
             log.debug('Executing {}'.format(cmd))
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = proc.communicate()
-            for line in stdout:
-                log.info(line)
-            for line in stderr:
-                log.info(line)
-            log.info("returncode: {}".format(proc.returncode))
+            _, _ = proc.communicate()
+            # for line in stdout:
+            #     log.info(line)
+            # for line in stderr:
+            #     log.info(line)
+            log.info("returncode for {} : {}".format(cmd, proc.returncode))
             self._check_for_reboots(proc.returncode)
         else:
             log.info("No updates available.")

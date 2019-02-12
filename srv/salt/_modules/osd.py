@@ -2445,6 +2445,36 @@ def _report_original_pillar(active):
     return unconfigured, changed
 
 
+def takeover():
+    """ This is horrible and should be implemented in ceph-volume """
+    # picking osd.list here as it lists osd_ids by looking at mountpoints
+    for osd_id in __salt__['osd.list']():
+        # Use the mountpoint to identify the disk
+        # another option is to use the partition but
+        # if a osd is not mounted there might be a bigger problem
+        cmd = "ceph-volume simple scan /var/lib/ceph/osd/ceph-{} --force".format(
+            osd_id)
+        return_code, _, stderr = __salt__['helper.run'](cmd)
+        if int(return_code) != 0:
+            log.error(stderr)
+            return False  # rc? or raise?
+    osd_ident_path = "/etc/ceph/osd/"
+    osd_files = list()
+    if os.path.exists(osd_ident_path):
+        osd_files = [
+            f for f in os.listdir(osd_ident_path)
+            if os.path.isfile(os.path.join(osd_ident_path, f))
+        ]
+    for osd_file in osd_files:
+        cmd = "ceph-volume simple activate --file {}".format(osd_ident_path +
+                                                             osd_file)
+        return_code, _, stderr = __salt__['helper.run'](cmd)
+        if int(return_code) != 0:
+            log.error(stderr)
+            return False  # rc? or raise?
+    return True
+
+
 __func_alias__ = {
                 'list_': 'list',
                 'empty': 'zero_weight',

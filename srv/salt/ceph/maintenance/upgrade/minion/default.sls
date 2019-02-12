@@ -1,13 +1,13 @@
-
 {% set master = salt['master.minion']() %}
 
 {% set timeout=salt['pillar.get']('minions_ready_timeout', 30) %}
 {% if salt.saltutil.runner('minions.ready', timeout=timeout) %}
 
-update salt:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - sls: ceph.updates.salt
+# This needs to happen _before_ the upgrade
+# update salt:
+#   salt.state:
+#     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+#     - sls: ceph.updates.salt
 
 mines:
   salt.state:
@@ -62,7 +62,7 @@ check if all processes are still running after processing mon on {{ host }}:
     - sls: ceph.processes
     - failhard: True
 
-updating mon {{ host }}:
+dist upgrading mon {{ host }}:
   salt.state:
     - tgt: {{ host }}
     - tgt_type: compound
@@ -128,10 +128,16 @@ updating {{ host }}:
     - sls: ceph.upgrade
     - failhard: True
 
-set noout {{ host }}: 
+set noout {{ host }}:
   salt.state:
     - sls: ceph.noout.set
     - tgt: {{ master }}
+    - failhard: True
+
+try to take-over osds on with ceph-volume on {{ host }}:
+  salt.state:
+    - sls: ceph.osd.takeover
+    - tgt: {{ host }}
     - failhard: True
 
 restart {{ host }} if updates require:
@@ -148,17 +154,30 @@ upgraded {{ host }}:
 
 {% endfor %}
 
-unset noout after final iteration: 
+readycheck before finishing upgrade:
+  salt.runner:
+    - name: minions.ready
+    - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
+    - exception: True
+    - failhard: True
+
+check if all processes are still running after last iteration:
+  salt.state:
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - sls: ceph.processes
+    - failhard: True
+
+unset noout after final iteration:
   salt.state:
     - sls: ceph.noout.unset
     - tgt: {{ master }}
     - failhard: True
 
-set luminous osds: 
-  salt.state:
-    - sls: ceph.setosdflags.requireosdrelease
-    - tgt: {{ master }}
-    - failhard: True
+# set luminous osds:
+#   salt.state:
+#     - sls: ceph.setosdflags.requireosdrelease
+#     - tgt: {{ master }}
+#     - failhard: True
 
 {% else %}
 
@@ -171,4 +190,3 @@ set luminous osds:
 minions not ready:
   test.nop
 {% endif %}
-

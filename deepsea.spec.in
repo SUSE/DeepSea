@@ -228,6 +228,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/osd/restart/controlled
 %dir /srv/salt/ceph/osd/restart/parallel
 %dir /srv/salt/ceph/osd/scheduler
+%dir /srv/salt/ceph/osd/takeover
 %dir /srv/salt/ceph/packages
 %dir /srv/salt/ceph/packages/common
 %dir /srv/salt/ceph/packages/remove
@@ -567,6 +568,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/osd/restart/controlled/*.sls
 %config /srv/salt/ceph/osd/restart/parallel/*.sls
 %config /srv/salt/ceph/osd/scheduler/*.sls
+%config /srv/salt/ceph/osd/takeover/*.sls
 %config /srv/salt/ceph/packages/*.sls
 %config /srv/salt/ceph/packages/common/*.sls
 %config /srv/salt/ceph/packages/remove/*.sls

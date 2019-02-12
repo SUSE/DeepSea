@@ -847,7 +847,7 @@ class Validate(Preparation):
             warning_str = '{node}: {year}.{month}.{release} not supported' \
                           .format(node=node, year=year, month=month,
                                   release=release)
-            if int(year) < 2017 or int(year) > 2018:
+            if int(year) < 2017 or int(year) > 2019:
                 if 'salt_version' not in self.warnings:
                     self.warnings['salt_version'] = [warning_str]
                 else:
@@ -1445,6 +1445,7 @@ def setup(**kwargs):
         return False
 
     return True
+
 
 __func_alias__ = {
                  'help_': 'help',
