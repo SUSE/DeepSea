@@ -8,5 +8,6 @@ include:
   - .restart.rgw
   - .apparmor
   - .openstack
+  - .symlink
   - .tuned
   - .terminate.all

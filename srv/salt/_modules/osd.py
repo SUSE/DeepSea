@@ -64,6 +64,16 @@ def devices():
     return _devices
 
 
+def osd_device(osd_id):
+    """
+    Return the device for the OSD ID
+    """
+    for device, path in pairs():
+        if path == "/var/lib/ceph/osd/ceph-{}".format(osd_id):
+            return device
+    return ""
+
+
 def pairs():
     """
     Return an array of devices and paths
@@ -1428,7 +1438,12 @@ def split_partition(_partition):
     Return the device and partition
     """
     part = readlink(_partition)
-    # if os.path.exists(part):
+    if not os.path.exists(part):
+        if _partition == part:
+            log.error("Broken symlink {}".format(_partition))
+        else:
+            log.error("Broken symlink {} -> {}".format(_partition, part))
+        return None, None
     log.debug("splitting partition {}".format(part))
     match = re.match(r"(.+\D)(\d+)", part)
     if not match:
@@ -1438,7 +1453,6 @@ def split_partition(_partition):
         disk = disk[:-1]
         log.debug("Truncating p {}".format(disk))
     return disk, match.group(2)
-    # return None, None
 
 
 class OSDRemove(object):
@@ -1622,17 +1636,19 @@ class OSDRemove(object):
         """
         # pylint: disable=attribute-defined-outside-init
         self.osd_disk = self._osd_disk()
-        msg = self._delete_partitions()
-        if msg:
-            return msg
-        self._wipe_gpt_backups()
+        if self.osd_disk:
+            msg = self._delete_partitions()
+            if msg:
+                return msg
+            self._wipe_gpt_backups()
 
-        msg = self._delete_osd()
-        if msg:
-            return msg
+            msg = self._delete_osd()
+            if msg:
+                return msg
 
-        self._settle()
-        return ""
+            self._settle()
+            return ""
+        return "Cannot destroy disk for OSD {}".format(self.osd_id)
 
     def _osd_disk(self):
         """
@@ -1642,8 +1658,13 @@ class OSDRemove(object):
             _partition = self.partitions['lockbox']
         else:
             _partition = self.partitions['osd']
-        disk, _ = split_partition(_partition)
-        return disk
+        disk = _find_disk(_partition, self.osd_id)
+        if disk:
+            return disk
+
+        log.error(("Device {} is broken and OSD {}".format(_partition, self.osd_id),
+                   "is not mounted..."))
+        return None
 
     def _delete_partitions(self):
         """
@@ -1675,6 +1696,8 @@ class OSDRemove(object):
                         _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
                         if _rc != 0:
                             return "Failed to delete partition {} on {}".format(_partition, disk)
+                    else:
+                        log.info("Cannot delete {}".format(self.partitions[attr]))
             else:
                 log.error("Partition {} does not exist".format(short_name))
         return ""
@@ -1895,6 +1918,9 @@ class OSDDestroyed(object):
         exist, record current device and issue exception with instructions.
         If forced, record current device.
         """
+        if device is None:
+            return "No device provided... use force=True to override"
+
         content = {}
         if os.path.exists(self.filename):
             with open(self.filename, 'r') as destroyed:
@@ -2179,6 +2205,23 @@ def deploy():
                 restore_weight(previous_id)
 
 
+def _find_disk(_partition, osd_id):
+    """
+    Return the disk portion of a successful split partition of a short device
+    name.  If that fails, return device of mounted OSD.  If that fails, log
+    error.
+    """
+    disk, _ = split_partition(_partition)
+    if disk:
+        return disk
+
+    disk = osd_device(osd_id)
+    if disk:
+        return disk
+
+    return None
+
+
 def redeploy(simultaneous=False, **kwargs):
     """
     Empty all PGs in parallel initially if necessary.  Then remove and
@@ -2188,7 +2231,11 @@ def redeploy(simultaneous=False, **kwargs):
         for _id in __grains__['ceph']:
             _part = _partition(_id)
             log.info("Partition: {}".format(_part))
-            disk, _ = split_partition(_part)
+            disk = _find_disk(_part, _id)
+            if disk is None:
+                log.error(("Device {} is broken and OSD {}".format(disk, _id),
+                           "is not mounted... skip emptying"))
+                continue
             log.info("ID: {}".format(_id))
             log.info("Disk: {}".format(disk))
             if is_incorrect(disk):
@@ -2198,7 +2245,11 @@ def redeploy(simultaneous=False, **kwargs):
     for _id in __grains__['ceph']:
         _part = _partition(_id)
         log.info("Partition: {}".format(_part))
-        disk, _ = split_partition(_part)
+        disk = _find_disk(_part, _id)
+        if disk is None:
+            log.error(("Device {} is broken and OSD {}".format(disk, _id),
+                       "is not mounted... skip deploying"))
+            continue
         log.info("ID: {}".format(_id))
         log.info("Disk: {}".format(disk))
         if not os.path.exists(_part) or is_incorrect(disk):
@@ -2380,17 +2431,21 @@ def _report_grains():
     if 'ceph' in __grains__:
         for _id in __grains__['ceph']:
             _partition = readlink(__grains__['ceph'][_id]['partitions']['osd'])
-            disk, _ = split_partition(_partition)
-            if disk:
-                active.append(disk)
+            disk = _find_disk(_partition, _id)
+            if disk is None:
+                log.error("OSD {} is not mounted... skip grain entry".format(_id))
+                continue
+            active.append(disk)
             log.debug("checking /var/lib/ceph/osd/ceph-{}/fsid".format(_id))
             if not os.path.exists("/var/lib/ceph/osd/ceph-{}/fsid".format(_id)):
                 unmounted.append(disk)
             if 'lockbox' in __grains__['ceph'][_id]['partitions']:
                 _partition = readlink(__grains__['ceph'][_id]['partitions']['lockbox'])
-                disk, _ = split_partition(_partition)
-                if disk:
-                    active.append(disk)
+                disk = _find_disk(_partition, _id)
+                if disk is None:
+                    log.error("OSD {} is not mounted... skip lockbox entry".format(_id))
+                    continue
+                active.append(disk)
     return active, unmounted
 
 
