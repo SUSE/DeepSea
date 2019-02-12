@@ -50,7 +50,7 @@ version:
 setup.py:
 	sed "s/DEVVERSION/"$(VERSION)"/" setup.py.in > setup.py
 
-pyc: setup.py 
+pyc: setup.py
 	#make sure to create bytecode with the correct version
 	find srv/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
 	find cli/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
@@ -531,7 +531,7 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/destroyed
 	install -m 644 srv/salt/ceph/remove/destroyed/*.sls $(DESTDIR)/srv/salt/ceph/remove/destroyed/
 	# Renamed for deprecation
-	ln -sf destroyed	$(DESTDIR)/srv/salt/ceph/remove/migrated 
+	ln -sf destroyed	$(DESTDIR)/srv/salt/ceph/remove/migrated
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mgr
 	install -m 644 srv/salt/ceph/remove/mgr/*.sls $(DESTDIR)/srv/salt/ceph/remove/mgr/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mon
@@ -544,8 +544,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/remove/storage/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/storage/drain
 	install -m 644 srv/salt/ceph/remove/storage/drain/*.sls $(DESTDIR)/srv/salt/ceph/remove/storage/drain
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/openattic	
-	install -m 644 srv/salt/ceph/remove/openattic/*.sls $(DESTDIR)/srv/salt/ceph/remove/openattic/	
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/openattic
+	install -m 644 srv/salt/ceph/remove/openattic/*.sls $(DESTDIR)/srv/salt/ceph/remove/openattic/
 	# state files - rescind
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
@@ -611,9 +611,9 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/time/ntp/*.sls $(DESTDIR)/srv/salt/ceph/rescind/time/ntp
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/tuned
 	install -m 644 srv/salt/ceph/rescind/tuned/*.sls $(DESTDIR)/srv/salt/ceph/rescind/tuned/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic	
-	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/	
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring	
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic
+	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring
 	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
@@ -888,6 +888,9 @@ copy-files:
 	# state files - warning/noout
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/warning/noout
 	install -m 644 srv/salt/ceph/warning/noout/*.sls $(DESTDIR)/srv/salt/ceph/warning/noout/
+	# state files - salt
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt
+	install -m 644 srv/salt/ceph/salt/*.sls $(DESTDIR)/srv/salt/ceph/salt/
 
 	# state files - orchestrate stage symlinks
 	ln -sf prep		$(DESTDIR)/srv/salt/ceph/stage/0

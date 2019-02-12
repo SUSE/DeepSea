@@ -287,7 +287,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/time/chrony
 %dir /srv/salt/ceph/rescind/time/ntp
 %dir /srv/salt/ceph/rescind/tuned
-%dir /srv/salt/ceph/rescind/openattic	
+%dir /srv/salt/ceph/rescind/openattic
 %dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/force
@@ -425,6 +425,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/processes/mon
 %dir /srv/salt/ceph/processes/osd
 %dir /srv/salt/ceph/processes/rgw
+%dir /srv/salt/ceph/salt
 %{_mandir}/man7/deepsea*.7.gz
 %{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
@@ -750,6 +751,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/processes/mon/*.sls
 %config /srv/salt/ceph/processes/osd/*.sls
 %config /srv/salt/ceph/processes/rgw/*.sls
+%config /srv/salt/ceph/salt/*.sls
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 
