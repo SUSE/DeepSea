@@ -2320,31 +2320,74 @@ class TestOSDCommands():
     def test_detect(self):
         pass
 
+class Test_find_disk():
+
+    @patch('srv.salt._modules.osd.split_partition')
+    def test_find_disk_uses_split_partition(self, mock_sp):
+        mock_sp.return_value = ("/dev/sda", "1")
+        #mock_d.return_value = ("/dev/sda", "1")
+        result = osd._find_disk("/dev/sda1", 0)
+        assert result == "/dev/sda"
+
+    @patch('srv.salt._modules.osd.device')
+    @patch('srv.salt._modules.osd.split_partition')
+    def test_find_disk_uses_device(self, mock_sp, mock_d):
+        mock_sp.return_value = (None, None)
+        mock_d.return_value = "/dev/sda"
+        result = osd._find_disk("/dev/sda1", 0)
+        assert result == "/dev/sda"
+
+    @patch('srv.salt._modules.osd.device')
+    @patch('srv.salt._modules.osd.split_partition')
+    def test_find_disk_fails(self, mock_sp, mock_d):
+        mock_sp.return_value = (None, None)
+        mock_d.return_value = None
+        result = osd._find_disk("/dev/sda1", 0)
+        assert result == None
+
 class Testsplit_partition():
 
+    @patch('os.path.exists')
     @patch('srv.salt._modules.osd.readlink')
-    def test_split_partition(self, readlink):
+    def test_split_partition(self, readlink, exists):
         readlink.return_value = "/dev/sda1"
+        exists.return_value = True
         disk, part = osd.split_partition("/dev/sda1")
         assert disk == "/dev/sda"
         assert part == "1"
 
+    @patch('os.path.exists')
     @patch('srv.salt._modules.osd.readlink')
-    def test_split_partition_on_nvme(self, readlink):
+    def test_split_partition_on_nvme(self, readlink, exists):
         readlink.return_value = "/dev/nvme0n1p1"
+        exists.return_value = True
         disk, part = osd.split_partition("/dev/nvme0n1p1")
         assert disk == "/dev/nvme0n1"
         assert part == "1"
 
+    @patch('os.path.exists')
     @patch('srv.salt._modules.osd.readlink')
-    def test_split_partition_on_sdp(self, readlink):
+    def test_split_partition_on_sdp(self, readlink, exists):
         """
         Verify that the 'p' never gets truncated with /dev/sdp
         """
         readlink.return_value = "/dev/sdp1"
+        exists.return_value = True
         disk, part = osd.split_partition("/dev/sdp1")
         assert disk == "/dev/sdp"
         assert part == "1"
+
+    @patch('os.path.exists')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_split_partition_broken(self, readlink, exists):
+        """
+        Verify that the 'p' never gets truncated with /dev/sdp
+        """
+        readlink.return_value = "/dev/sda1"
+        exists.return_value = False
+        disk, part = osd.split_partition("/dev/sda1")
+        assert disk == None
+        assert part == None
 
 class TestOSDRemove():
 
@@ -2852,6 +2895,18 @@ class TestOSDRemove():
         result = osdr.destroy()
         assert result == ""
 
+    def test_destroy_fails_osd_disk(self):
+        partitions = {'osd': '/dev/sda1'}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        osdr._osd_disk = mock.Mock()
+        osdr._osd_disk.return_value = None
+
+        result = osdr.destroy()
+        assert "Cannot destroy disk" in result
+
     def test_destroy_fails_partition_delete(self):
         partitions = {'osd': '/dev/sda1'}
         mock_device = mock.Mock()
@@ -2894,6 +2949,17 @@ class TestOSDRemove():
         osdr = osd.OSDRemove(1, mock_device, None, None)
         result = osdr._osd_disk()
         assert result == "/dev/sda"
+
+    @patch('srv.salt._modules.osd._find_disk')
+    def test_osd_disk_fails(self, mock_fd):
+        partitions = {'osd': '/dev/sda1'}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+
+        mock_fd.return_value = None
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        result = osdr._osd_disk()
+        assert result == None
 
     @patch('srv.salt._modules.osd.split_partition')
     def test_osd_disk_with_lockbox(self, mock_sp):
@@ -3045,6 +3111,16 @@ class TestOSDDestroyed():
             yield osd.OSDDestroyed()
         print('Teardown')
         fs.RemoveObject(filename)
+
+    def test_update_fails(self):
+        """
+        Device is in content
+        force is False
+        expected return -> ""
+        """
+        osdd = osd.OSDDestroyed()
+        result = osdd.update(None, 0)
+        assert "No device provided" in result
 
     @patch('srv.salt._modules.osd._safe_load_yaml')
     @patch('srv.salt._modules.osd._dump_yaml_to_file')
