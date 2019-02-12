@@ -1,3 +1,15 @@
+Tue Feb 12 19:01:19 UTC 2019 - jschmid@suse.com
+-------------------------------------------------------------------
+
+- Version: 0.9.12
+- Fixes for upgrade procedure
+- Check for digit before 'p'
+- Makefile: pass --long option to git describe
+- packages/common: Fix typo "realease"
+- Add retry logic to readlink for seemingly stubborn systems
+- Fix lint errors.
+- Move pytest to base_python 3.6 and adapt tests accordingly
+ 
 Tue Jan 29 14:01:19 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
 
