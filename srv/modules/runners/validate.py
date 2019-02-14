@@ -217,7 +217,7 @@ class Util(object):
         return [elem.strip() for elem in list_str.split(delim) if elem.strip()]
 
 
-LUMINOUS_VERSION = "11.2"
+NAUTILUS_VERSION = "14.0"
 
 
 # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -771,22 +771,17 @@ class Validate(Preparation):
         install only happens once.
         """
         search = __utils__['deepsea_minions.show']()
-        results = self._silent_search(search, 'pkg.info_installed')
+        results = self._silent_search(search, 'pkg.list_pkgs')
 
-        for minion in results:
-            if isinstance(results[minion], dict) and self.package in results[minion]:
-                if 'version' in results[minion][self.package]:
-                    version = self._check_version(minion, 'pkg.info_installed',
-                                                  results[minion][self.package]['version'])
-                    if (version and LooseVersion(version) < LooseVersion(LUMINOUS_VERSION)):
-                        prefix = 'Ceph version is older than Luminous on'
-                        self.errors.setdefault('ceph_version', [prefix]).append(minion)
-                else:
-                    # Something is really wrong
-                    prefix = 'Version missing from'
+        for minion, pkg_list in results.items():
+            if self.package in pkg_list:
+                version = pkg_list[self.package]
+                if (version and LooseVersion(version) < LooseVersion(NAUTILUS_VERSION)):
+                    prefix = 'Ceph version is older than Nautilus on'
                     self.errors.setdefault('ceph_version', [prefix]).append(minion)
             else:
                 self.uninstalled.append(minion)
+
 
     def _check_available(self):
         """
