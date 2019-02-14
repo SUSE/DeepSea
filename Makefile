@@ -615,6 +615,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/	
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring	
 	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/grafana
+	install -m 644 srv/salt/ceph/rescind/grafana/*.sls $(DESTDIR)/srv/salt/ceph/rescind/grafana/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/prometheus
+	install -m 644 srv/salt/ceph/rescind/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/rescind/prometheus/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
