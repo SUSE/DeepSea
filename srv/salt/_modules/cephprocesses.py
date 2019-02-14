@@ -40,6 +40,8 @@ processes = {'mon': ['ceph-mon'],
              'benchmark-blockdev': [],
              'benchmark-rbd': [],
              'benchmark-fs': [],
+             'prometheus': [],
+             'grafana': ['grafana-server'],
              'master': []}
 
 # Processes like lrbd have an inverted logic
@@ -107,6 +109,8 @@ class SystemdUnit(object):
             service_names = ["{}@{}".format('ceph-radosgw', __grains__['host'])]
         if self.proc_name == 'ganesha.nfsd':
             service_names = ['nfs-ganesha', 'rpcbind']
+        if self.proc_name == 'grafana':
+            service_names = ['grafana-server']
         return service_names
 
 
