@@ -21,3 +21,4 @@ install_ganesha:
         - nfs-ganesha-utils
 {% endif %}
     - fire_event: True
+    - failhard: True
