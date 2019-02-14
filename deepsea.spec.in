@@ -289,6 +289,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/tuned
 %dir /srv/salt/ceph/rescind/openattic	
 %dir /srv/salt/ceph/rescind/openattic/keyring
+%dir /srv/salt/ceph/rescind/grafana
+%dir /srv/salt/ceph/rescind/prometheus
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/force
 %dir /srv/salt/ceph/restart/osd
@@ -625,6 +627,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/openattic/*.sls
 %config /srv/salt/ceph/rescind/openattic/keyring/*.sls
 %config /srv/salt/ceph/rescind/storage/terminate/*.sls
+%config /srv/salt/ceph/rescind/grafana/*.sls
+%config /srv/salt/ceph/rescind/prometheus/*.sls
 %config /srv/salt/ceph/reset/*.sls
 %config /srv/salt/ceph/restart/*.sls
 %config /srv/salt/ceph/restart/force/*.sls
