@@ -17,7 +17,4 @@ install_ganesha:
         - nfs-ganesha
         - nfs-ganesha-ceph
         - nfs-ganesha-rgw
-{% if grains.get('os_family', '') == 'Suse' %}
-        - nfs-ganesha-utils
-{% endif %}
     - fire_event: True
