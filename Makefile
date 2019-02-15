@@ -291,16 +291,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/igw/files/*.j2 $(DESTDIR)/srv/salt/ceph/igw/files/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/config
 	install -m 644 srv/salt/ceph/igw/config/*.sls $(DESTDIR)/srv/salt/ceph/igw/config/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/import
-	install -m 644 srv/salt/ceph/igw/import/*.sls $(DESTDIR)/srv/salt/ceph/igw/import/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/key
 	install -m 644 srv/salt/ceph/igw/key/*.sls $(DESTDIR)/srv/salt/ceph/igw/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/auth
 	install -m 644 srv/salt/ceph/igw/auth/*.sls $(DESTDIR)/srv/salt/ceph/igw/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/keyring
 	install -m 644 srv/salt/ceph/igw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/igw/keyring/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/sysconfig
-	install -m 644 srv/salt/ceph/igw/sysconfig/*.sls $(DESTDIR)/srv/salt/ceph/igw/sysconfig/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -m 644 srv/salt/ceph/igw/restart/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/force
@@ -559,12 +555,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/ganesha/*.sls $(DESTDIR)/srv/salt/ceph/rescind/ganesha/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw
 	install -m 644 srv/salt/ceph/rescind/igw/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/ceph-iscsi
+	install -m 644 srv/salt/ceph/rescind/igw/ceph-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/ceph-iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/keyring
 	install -m 644 srv/salt/ceph/rescind/igw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/keyring/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/lrbd
-	install -m 644 srv/salt/ceph/rescind/igw/lrbd/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/lrbd/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/igw/sysconfig
-	install -m 644 srv/salt/ceph/rescind/igw/sysconfig/*.sls $(DESTDIR)/srv/salt/ceph/rescind/igw/sysconfig/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/master
 	install -m 644 srv/salt/ceph/rescind/master/*.sls $(DESTDIR)/srv/salt/ceph/rescind/master/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-cephfs

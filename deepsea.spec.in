@@ -140,14 +140,12 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0700, salt, salt) /srv/salt/ceph/igw/cache
 %dir /srv/salt/ceph/igw/config
 %dir /srv/salt/ceph/igw/files
-%dir /srv/salt/ceph/igw/import
 %dir /srv/salt/ceph/igw/key
 %dir /srv/salt/ceph/igw/auth
 %dir /srv/salt/ceph/igw/keyring
 %dir /srv/salt/ceph/igw/restart
 %dir /srv/salt/ceph/igw/restart/force
 %dir /srv/salt/ceph/igw/restart/reload
-%dir /srv/salt/ceph/igw/sysconfig
 %dir /srv/salt/ceph/macros
 %dir /srv/salt/ceph/mds
 %dir %attr(0700, salt, salt) /srv/salt/ceph/mds/cache
@@ -268,9 +266,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/benchmark-fs
 %dir /srv/salt/ceph/rescind/ganesha
 %dir /srv/salt/ceph/rescind/igw
+%dir /srv/salt/ceph/rescind/igw/ceph-iscsi
 %dir /srv/salt/ceph/rescind/igw/keyring
-%dir /srv/salt/ceph/rescind/igw/lrbd
-%dir /srv/salt/ceph/rescind/igw/sysconfig
 %dir /srv/salt/ceph/rescind/master
 %dir /srv/salt/ceph/rescind/mds
 %dir /srv/salt/ceph/rescind/mds/keyring
@@ -487,14 +484,12 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2
 %config /srv/salt/ceph/igw/config/*.sls
-%config /srv/salt/ceph/igw/import/*.sls
 %config /srv/salt/ceph/igw/key/*.sls
 %config /srv/salt/ceph/igw/auth/*.sls
 %config /srv/salt/ceph/igw/keyring/*.sls
 %config /srv/salt/ceph/igw/restart/*.sls
 %config /srv/salt/ceph/igw/restart/force/*.sls
 %config /srv/salt/ceph/igw/restart/reload/*.sls
-%config /srv/salt/ceph/igw/sysconfig/*.sls
 %config /srv/salt/ceph/macros/*.sls
 %config /srv/salt/ceph/mds/*.sls
 %config /srv/salt/ceph/mds/files/*.j2
@@ -604,9 +599,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/benchmark-fs/*.sls
 %config /srv/salt/ceph/rescind/ganesha/*.sls
 %config /srv/salt/ceph/rescind/igw/*.sls
+%config /srv/salt/ceph/rescind/igw/ceph-iscsi/*.sls
 %config /srv/salt/ceph/rescind/igw/keyring/*.sls
-%config /srv/salt/ceph/rescind/igw/lrbd/*.sls
-%config /srv/salt/ceph/rescind/igw/sysconfig/*.sls
 %config /srv/salt/ceph/rescind/master/*.sls
 %config /srv/salt/ceph/rescind/mds/*.sls
 %config /srv/salt/ceph/rescind/mds/keyring/*.sls
