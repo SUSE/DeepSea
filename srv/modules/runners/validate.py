@@ -689,9 +689,9 @@ class Validate(Preparation):
                        "and finally remove the role-openattic line from your "
                        "policy.cfg. To enable the ceph-dashboard please follow "
                        "the documentation.")
-                self.errors.setdefault('openattic', []).append(msg)
+                self.errors.setdefault('openattic-disabled', []).append(msg)
 
-        self._set_pass_status('openattic')
+        self._set_pass_status('openattic-disabled')
 
     def saltapi(self):
         """
