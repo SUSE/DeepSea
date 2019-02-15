@@ -799,7 +799,7 @@ class Validate(Preparation):
                     version = self._check_version(minion, 'pkg.info_available',
                                                   results[minion][self.package]['version'])
                     if (version and LooseVersion(version) < LooseVersion(NAUTILUS_VERSION)):
-                        prefix = 'Ceph repository version is older than Luminous on'
+                        prefix = 'Ceph repository version is older than Nautilus on'
                         self.errors.setdefault('ceph_version', [prefix]).append(minion)
                 else:
                     # Something is really wrong
