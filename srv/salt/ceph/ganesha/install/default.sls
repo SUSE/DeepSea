@@ -18,3 +18,4 @@ install_ganesha:
         - nfs-ganesha-ceph
         - nfs-ganesha-rgw
     - fire_event: True
+    - failhard: True
