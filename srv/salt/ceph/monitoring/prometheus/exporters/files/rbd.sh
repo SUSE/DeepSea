@@ -20,8 +20,10 @@ fi
 
 awk_cmd='
 {
-print "ceph_rbd_image_bytes_used{image=\""$1"\",cluster=\""cluster"\",pool=\""pool"\"} " $3
-print "ceph_rbd_image_bytes_provisioned{image=\""$1"\",cluster=\""cluster"\",pool=\""pool"\"} " $2
+    ($4!="")? snap=sprintf(",snapshot=\"%s\"", $4) : snap=""
+
+    printf "ceph_rbd_image_bytes_used{image=\"%s\"%s,cluster=\""cluster"\",pool=\""pool"\"} %s\n", $1, snap, $3;
+    printf "ceph_rbd_image_bytes_provisioned{image=\"%s\"%s,cluster=\""cluster"\",pool=\""pool"\"} %s\n", $1, snap, $2;
 }'
 
 echo '# HELP ceph_rbd_image_bytes_used Used space of an rbd image
@@ -40,7 +42,7 @@ do
         for img in `rbd -p $pool ls`; do
             if rbd -p $pool info $img | grep -q "features:.*fast-diff.*"; then
                 rbd -p $pool --format json -c $conf du $img 2>/dev/null |
-                jq ".images[] | [.name, .provisioned_size, .used_size] | @csv" |
+                jq ".images[] | [.name, .provisioned_size, .used_size, .snapshot] | @csv" |
                 sed -e 's/^"//' -e 's/"$//' -e 's/\\"//g' | # stripe some quotes
                 awk -F , -v cluster=$cluster -v pool=$pool "$awk_cmd"
             fi
