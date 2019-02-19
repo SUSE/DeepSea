@@ -1522,7 +1522,7 @@ class OSDRemove(object):
                 log.error(msg)
                 return msg
 
-        for func in [self.unmount, self.wipe, self.destroy]:
+        for func in [self.record_dmcrypt, self.unmount, self.wipe, self.destroy]:
             msg = func()
             if msg:
                 log.error(msg)
@@ -1564,6 +1564,17 @@ class OSDRemove(object):
         if _rc == 0:
             return "Failed to terminate OSD {} - pid {}".format(self.osd_id, _stdout)
         return ""
+
+    def record_dmcrypt(self):
+        """
+        Record separate dmcrypt partitions prior to unmounting the OSD.  These
+        are not recorded elsewhere.
+        """
+        for attr in ['block.wal', 'block.db']:
+            device_path = "/var/lib/ceph/osd/ceph-{}/{}_dmcrypt".format(self.osd_id, attr)
+            if os.path.exists(device_path):
+                log.debug("recording {}_dmcrypt".format(attr))
+                self.partitions["{}_dmcrypt".format(attr)] = readlink(device_path)
 
     def unmount(self):
         """
