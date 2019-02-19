@@ -7,9 +7,10 @@ include:
   - .mds
   - .igw
   - .ganesha
+  - .grafana
+  - .prometheus
 {% else %}
 
 No Ceph cluster:
   test.nop
 {% endif %}
-

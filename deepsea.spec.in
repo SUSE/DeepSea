@@ -652,6 +652,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/restart/ganesha/*.sls
 %config /srv/salt/ceph/restart/ganesha/force/*.sls
 %config /srv/salt/ceph/restart/ganesha/lax/*.sls
+%config /srv/salt/ceph/restart/grafana/*.sls
+%config /srv/salt/ceph/restart/prometheus/*.sls
 %config /srv/salt/ceph/rgw/*.sls
 %config /srv/salt/ceph/rgw/files/*.j2
 %config /srv/salt/ceph/rgw/files/*.yml
