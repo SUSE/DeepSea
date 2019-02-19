@@ -674,6 +674,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/restart/igw/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw/lax
 	install -m 644 srv/salt/ceph/restart/igw/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/lax
+	# state files - restart - grafana
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/grafana
+	install -m 644 srv/salt/ceph/restart/grafana/*.sls $(DESTDIR)/srv/salt/ceph/restart/grafana
+	# state files - restart - prometheus
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/prometheus
+	install -m 644 srv/salt/ceph/restart/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/restart/prometheus
 	# state files - reset
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reset
 	install -m 644 srv/salt/ceph/reset/*.sls $(DESTDIR)/srv/salt/ceph/reset/
