@@ -11,3 +11,4 @@ include:
   # - .symlink
   - .tuned
   - .terminate.all
+  - .orchestrator
