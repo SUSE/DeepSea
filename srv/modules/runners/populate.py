@@ -92,11 +92,11 @@ class SaltWriter(object):
         else:
             self.overwrite = False
 
-    def write(self, filename, contents):
+    def write(self, filename, contents, overwrite=False):
         """
         Write a yaml file in the conventional way
         """
-        if self.overwrite or not os.path.isfile(filename):
+        if self.overwrite or not os.path.isfile(filename) or overwrite:
             log.info("Writing {}".format(filename))
             with open(filename, "w") as yml:
                 yml.write(yaml.dump(contents, Dumper=self.dumper,
@@ -142,7 +142,7 @@ class CephStorage(object):
             _create_dirs(model_dir, self.root_dir)
         filename = model_dir + "/" +  server + ".yml"
         contents = {'storage': storage}
-        self.writer.write(filename, contents)
+        self.writer.write(filename, contents, True)
 
     def _save_roles(self, name, server):
         """
@@ -600,7 +600,7 @@ class CephRoles(object):
             contents['cluster_network'] = cluster_networks_str
             contents['available_roles'] = self.available_roles
 
-            self.writer.write(filename, contents)
+            self.writer.write(filename, contents, True)
 
     def _networks(self, minions):
         """
@@ -805,7 +805,7 @@ class CephCluster(object):
         contents = {}
         contents['time_server'] = '{}'.format(__salt__['master.minion']())
 
-        self.writer.write(filename, contents)
+        self.writer.write(filename, contents, True)
 
 
 def _create_dirs(path, root):
