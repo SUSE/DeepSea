@@ -313,6 +313,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/restart/ganesha
 %dir /srv/salt/ceph/restart/ganesha/force
 %dir /srv/salt/ceph/restart/ganesha/lax
+%dir /srv/salt/ceph/restart/grafana
+%dir /srv/salt/ceph/restart/prometheus
 %dir /srv/salt/ceph/rgw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/rgw/cache
 %dir /srv/salt/ceph/rgw/files
