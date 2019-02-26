@@ -125,4 +125,5 @@ TAGS
 .mypy_cache/
 
 # projectile files
+.#*
 .projectile

@@ -15,7 +15,6 @@ class MonTestListener(MonitorListener):
         self.parsing_error = None
         self.parsing_output = None
         self.finished = False
-
         self.steps = []
 
     def _last(self, search_sub=False):

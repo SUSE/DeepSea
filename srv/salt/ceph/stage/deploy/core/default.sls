@@ -1,4 +1,3 @@
-
 {% set master = salt['master.minion']() %}
 
 {% set FAIL_ON_WARNING = salt['pillar.get']('FAIL_ON_WARNING', 'True') %}
@@ -135,18 +134,16 @@ sysctl:
     - sls: ceph.sysctl
     - failhard: True
 
-storage:
+set osd keyrings:
   salt.state:
     - tgt: 'I@roles:storage and I@cluster:ceph'
     - tgt_type: compound
-    - sls: ceph.osd
+    - sls: ceph.osd.keyring
     - failhard: True
 
-grains:
-  salt.state:
-    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - tgt_type: compound
-    - sls: ceph.osd.grains
+deploy osds:
+  salt.runner:
+    - name: disks.deploy
     - failhard: True
 
 mgr tuned:

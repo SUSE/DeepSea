@@ -287,7 +287,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/time/chrony
 %dir /srv/salt/ceph/rescind/time/ntp
 %dir /srv/salt/ceph/rescind/tuned
-%dir /srv/salt/ceph/rescind/openattic	
+%dir /srv/salt/ceph/rescind/openattic
 %dir /srv/salt/ceph/rescind/openattic/keyring
 %dir /srv/salt/ceph/restart
 %dir /srv/salt/ceph/restart/force
@@ -470,6 +470,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/configuration/files/*.conf
 %config /srv/salt/ceph/configuration/files/*.j2
 %config /srv/salt/ceph/configuration/files/deprecated_map.yml
+%config /srv/salt/ceph/configuration/files/drive_groups.yml
 %config(noreplace) %attr(-, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.import
 /srv/salt/ceph/configuration/files/ceph.conf.d/README
 %config /srv/salt/ceph/ganesha/*.sls

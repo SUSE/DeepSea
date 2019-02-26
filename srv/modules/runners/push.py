@@ -43,7 +43,7 @@ Customization:
     desired values in /srv/pillar/ceph/stack directory tree and likely
     unnecessary.  This will still work and may prove useful for some.
 
-All files are overwritten in the destination tree /srv/pillar/ceph/stack/default.
+All files are overwritten in the destination tree /srv/pillar/ceph/stack/default.sls
 
 """
 
