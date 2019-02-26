@@ -2733,6 +2733,35 @@ class TestOSDRemove():
     f_os = fake_fs.FakeOsModule(fs)
     f_open = fake_fs.FakeFileOpen(fs)
 
+    @patch('os.path.exists', new=f_os.path.exists)
+    def test_record_dmcrypt_does_nothing(self):
+        partitions = {'osd': '/dev/sda1'}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        osdr.record_dmcrypt()
+
+        assert 'block.wal_dmcrypt' not in partitions
+        assert 'block.db_dmcrypt' not in partitions
+
+    @patch('os.path.exists', new=f_os.path.exists)
+    def test_record_dmcrypt_assigns_attrs(self):
+        TestOSDRemove.fs.CreateFile('/var/lib/ceph/osd/ceph-1/block.wal_dmcrypt')
+        TestOSDRemove.fs.CreateFile('/var/lib/ceph/osd/ceph-1/block.db_dmcrypt')
+        partitions = {'osd': '/dev/sda1'}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        osdr.record_dmcrypt()
+
+        TestOSDRemove.fs.RemoveFile('/var/lib/ceph/osd/ceph-1/block.wal_dmcrypt')
+        TestOSDRemove.fs.RemoveFile('/var/lib/ceph/osd/ceph-1/block.db_dmcrypt')
+
+        assert 'block.wal_dmcrypt' in partitions
+        assert 'block.db_dmcrypt' in partitions
+
     @patch('srv.salt._modules.osd._run')
     @patch('os.rmdir')
     @patch('__builtin__.open', new=f_open)
@@ -2806,7 +2835,7 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
-        
+
     @patch('srv.salt._modules.osd.readlink')
     def test_mounted_lockbox(self, mock_rl):
         partitions = {'lockbox': '/dev/sda1'}
@@ -2817,7 +2846,7 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
-        
+
     def test_mounted_none(self):
         partitions = {}
         mock_device = mock.Mock()
