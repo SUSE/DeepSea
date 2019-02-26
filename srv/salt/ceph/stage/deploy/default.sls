@@ -12,6 +12,7 @@ enable prometheus module:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.mgr_exporter
 
+{% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='prometheus') != []) %}
 
 populate mgr scrape configs:
   salt.state:
@@ -24,6 +25,8 @@ distribute mgr scrape configs:
     - tgt: 'I@roles:prometheus and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.push_mgr_scrape_configs
+
+{% endif %}
 
 setup rbd exporter:
   salt.state:

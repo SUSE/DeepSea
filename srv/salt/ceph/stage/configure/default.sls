@@ -35,6 +35,8 @@ show networks:
 
 {% endfor %}
 
+{% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='prometheus') != []) %}
+
 populate scrape configs:
   salt.state:
     - tgt: {{ master }}
@@ -53,6 +55,8 @@ push scrape configs:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.push_scrape_configs
 
+{% endif %}
+
 install and setup node exporters:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
@@ -62,6 +66,8 @@ install and setup node exporters:
 advise OSDs:
   salt.runner:
     - name: advise.osds
+
+{% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='grafana') != []) %}
 
 populate grafana datasources:
   salt.state:
@@ -74,3 +80,5 @@ install grafana:
     - tgt: 'I@roles:grafana and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.monitoring.grafana
+
+{% endif %}
