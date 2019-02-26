@@ -108,18 +108,6 @@ mgrs:
     - sls: ceph.mgr
     - failhard: True
 
-setup ceph exporter:
-  salt.state:
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - sls: ceph.monitoring.prometheus.exporters.ceph_exporter
-
-setup rbd exporter:
-  salt.state:
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - sls: ceph.monitoring.prometheus.exporters.rbd_exporter
-
 osd auth:
   salt.state:
     - tgt: {{ master }}

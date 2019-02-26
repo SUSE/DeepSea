@@ -35,11 +35,27 @@ show networks:
 
 {% endfor %}
 
-setup monitoring:
+{% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='prometheus') != []) %}
+
+populate scrape configs:
   salt.state:
     - tgt: {{ master }}
     - tgt_type: compound
-    - sls: ceph.monitoring
+    - sls: ceph.monitoring.prometheus.populate_scrape_configs
+
+install prometheus:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.install
+
+push scrape configs:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.prometheus.push_scrape_configs
+
+{% endif %}
 
 install and setup node exporters:
   salt.state:
@@ -51,3 +67,18 @@ advise OSDs:
   salt.runner:
     - name: advise.osds
 
+{% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='grafana') != []) %}
+
+populate grafana datasources:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.monitoring.grafana.populate_datasources
+
+install grafana:
+  salt.state:
+    - tgt: 'I@roles:grafana and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.grafana
+
+{% endif %}

@@ -1,0 +1,4 @@
+
+prometheus nop:
+  test.nop
+

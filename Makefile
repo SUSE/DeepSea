@@ -394,7 +394,7 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/grafana
 	install -m 644 srv/salt/ceph/monitoring/grafana/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/grafana
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/grafana/files
-	install -m 644 srv/salt/ceph/monitoring/grafana/files/*.json $(DESTDIR)/srv/salt/ceph/monitoring/grafana/files
+	install -m 644 srv/salt/ceph/monitoring/grafana/files/*.j2 $(DESTDIR)/srv/salt/ceph/monitoring/grafana/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	install -m 644 srv/salt/ceph/monitoring/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/prometheus
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/prometheus/files
@@ -616,6 +616,10 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/openattic/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring
 	install -m 644 srv/salt/ceph/rescind/openattic/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/openattic/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/grafana
+	install -m 644 srv/salt/ceph/rescind/grafana/*.sls $(DESTDIR)/srv/salt/ceph/rescind/grafana/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/prometheus
+	install -m 644 srv/salt/ceph/rescind/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/rescind/prometheus/
 	# state files - repo
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/repo
 	install -m 644 srv/salt/ceph/repo/*.sls $(DESTDIR)/srv/salt/ceph/repo/
@@ -671,6 +675,12 @@ copy-files:
 	install -m 644 srv/salt/ceph/restart/igw/force/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/force
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/igw/lax
 	install -m 644 srv/salt/ceph/restart/igw/lax/*.sls $(DESTDIR)/srv/salt/ceph/restart/igw/lax
+	# state files - restart - grafana
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/grafana
+	install -m 644 srv/salt/ceph/restart/grafana/*.sls $(DESTDIR)/srv/salt/ceph/restart/grafana
+	# state files - restart - prometheus
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/restart/prometheus
+	install -m 644 srv/salt/ceph/restart/prometheus/*.sls $(DESTDIR)/srv/salt/ceph/restart/prometheus
 	# state files - reset
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/reset
 	install -m 644 srv/salt/ceph/reset/*.sls $(DESTDIR)/srv/salt/ceph/reset/
