@@ -1,3 +1,18 @@
+Thu Feb 26 23:08:20 UTC 2019 - jschmid@suse.com
+-------------------------------------------------------------------
+
+- Version: 0.9.14
+- Assign drives based on filter rules (SES-150)
+- This patch completely changes the way we define osd layouts.
+- Please refer to https://github.com/SUSE/DeepSea/wiki/Drive-Groups for documentation.
+- monitoring: avoid failed state if no monitoring roles are deployed
+- monitoring: simple monitoring restarts
+- monitoring: add prometheus and grafana to cephprocesses
+- monitoring: add prometheus and grafana rescind
+- monitoring: setup and provision grafana with upstream dashboards
+- monitoring: deploy to prometheus roles
+- This patchset add two new roles. "grafana" and "prometheus"
+
 Thu Feb 21 12:38:20 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
 
