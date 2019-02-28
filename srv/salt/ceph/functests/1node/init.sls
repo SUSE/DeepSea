@@ -3,7 +3,7 @@ include:
   - .macros/os_switch
   - .quiescent
   # - .restart.mds
-  - .restart.mgr
+  # - .restart.mgr
   - .restart.mon
   - .restart.rgw
   - .apparmor
