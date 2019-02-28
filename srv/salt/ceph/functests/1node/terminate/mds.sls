@@ -1,4 +1,3 @@
-
 {% set node = salt.saltutil.runner('select.first', roles='mds') %}
 
 Shutdown mds on {{ node }}:
@@ -7,7 +6,7 @@ Shutdown mds on {{ node }}:
     - sls: ceph.terminate.mds
     - failhard: True
 
-Check process:
+Check process for ceph-mds:
   cmd.run:
     - name: "[ `pgrep -c ceph-mds` == 0 ]"
     - tgt: {{ node }}
