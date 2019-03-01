@@ -310,6 +310,9 @@ copy-files:
 	# state files - macros
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/macros
 	install -m 644 srv/salt/ceph/macros/*.sls $(DESTDIR)/srv/salt/ceph/macros/
+	# state files - dashboard
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/dashboard
+	install -m 644 srv/salt/ceph/dashboard/*.sls $(DESTDIR)/srv/salt/ceph/dashboard/
 	# state files - mds
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mds
 	install -m 644 srv/salt/ceph/mds/*.sls $(DESTDIR)/srv/salt/ceph/mds/
