@@ -1,6 +1,7 @@
 {% set master = salt['master.minion']() %}
 
 include:
+  - .monitoring
   - .core
   - ...restart.mon.lax
   - ...restart.mgr.lax
@@ -11,6 +12,8 @@ enable prometheus module:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.mgr_exporter
+    - require:
+      - salt: mgrs # from .core/default.sls
 
 {% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='prometheus') != []) %}
 
@@ -19,6 +22,8 @@ populate mgr scrape configs:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.populate_mgr_scrape_configs
+    - require:
+      - salt: enable prometheus module
 
 distribute mgr scrape configs:
   salt.state:
