@@ -1,4 +1,3 @@
-
 {% set node = salt.saltutil.runner('select.first', roles='igw') %}
 
 Shutdown igw on {{ node }}:
@@ -7,7 +6,7 @@ Shutdown igw on {{ node }}:
     - sls: ceph.terminate.igw
     - failhard: True
 
-Check process:
+Check process for targetcli:
   cmd.run:
     - name: "[ `targetcli ls| grep -c TPG` == 0 ]"
     - tgt: {{ node }}

@@ -1,4 +1,3 @@
-
 {% set node = salt.saltutil.runner('select.first', roles='storage') %}
 
 Shutdown storage on {{ node }}:
@@ -7,7 +6,7 @@ Shutdown storage on {{ node }}:
     - sls: ceph.terminate.storage
     - failhard: True
 
-Check process:
+Check process for ceph-osd:
   cmd.run:
     - name: "[ `pgrep -c ceph-osd` == 0 ]"
     - tgt: {{ node }}
