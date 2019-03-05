@@ -1,0 +1,31 @@
+[config]
+# name of the *.conf file. A suitable conf file allowing access to the ceph
+# cluster from the gateway node is required.
+##cluster_name = <ceph cluster name>
+
+# Place a copy of the ceph cluster's admin keyring in the gateway's /etc/ceph
+# drectory and reference the filename here
+gateway_keyring = ceph.{{ client }}.keyring
+cluster_client_name = {{ client }}
+
+
+# API settings.
+# The api supports a number of options that allow you to tailor it to your
+# local environment. If you want to run the api under https, you will need to
+# create crt/key files that are compatible for each gateway node (i.e. not
+# locked to a specific node). SSL crt and key files *must* be called
+# iscsi-gateway.crt and iscsi-gateway.key and placed in /etc/ceph on *each*
+# gateway node. With the SSL files in place, you can use api_secure = true
+# to switch to https mode.
+
+# To support the api, the bear minimum settings are;
+api_secure = false
+
+# Additional API configuration options are as follows (defaults shown);
+# api_user = admin
+# api_password = admin
+# api_port = 5000
+# trusted_ip_list = IP,IP
+
+# Refer to the ceph-iscsi-config/settings module for more options
+

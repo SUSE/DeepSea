@@ -5,8 +5,7 @@ igw nop:
 {% if 'igw' not in salt['pillar.get']('roles') %}
 
 include:
-- .lrbd
+- .ceph-iscsi
 - .keyring
-- .sysconfig
 
 {% endif %}

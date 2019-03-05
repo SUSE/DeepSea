@@ -1,11 +1,12 @@
 
-lrbd:
+ceph-iscsi:
   pkg.installed:
     - pkgs:
-      - lrbd
+      - ceph-iscsi
     - refresh: True
 
-enable lrbd:
+enable rbd-target-gw:
   service.running:
-    - name: lrbd
+    - name: rbd-target-gw
     - enable: True
+

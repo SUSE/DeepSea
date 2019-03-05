@@ -203,7 +203,7 @@ class TestMetaCheck():
     def test_add_igw(self, mc):
         mc.up = []
         role_name = 'igw'
-        proc_name = 'lrbd'
+        proc_name = 'rbd-target-gw'
         mc.add(self.build_proc(role_name, proc_name), role_name)
         assert len(mc.up) == 1
         assert mc.up[0].name == proc_name
@@ -221,17 +221,6 @@ class TestMetaCheck():
         assert mc.up[0].name == proc_name
         assert mc.up[1].name == proc_name2
         assert mc.up[2].name == proc_name3
-
-    def test_check_inverts_positive(self, mc):
-        mc.up = []
-        role_name = 'igw'
-        proc_name = 'lrbd'
-        proc = self.build_proc(role_name, proc_name)
-        assert mc.running == True
-        mc.up.append(proc)
-        mc.check_inverts(role_name)
-        # TODO: Expect a log.error
-        assert mc.running == False
 
     def test_check_inverts_negative(self, mc):
         mc.up = []
@@ -503,11 +492,6 @@ class TestSystemdUnit():
     def test_service_names_ganesha(self, proc_name):
         obj = cephprocesses.SystemdUnit(proc_name)
         assert obj.service_names == ['nfs-ganesha', 'rpcbind']
-
-    @pytest.mark.parametrize('proc_name', ['lrbd'])
-    def test_service_names_lrbd(self, proc_name):
-        obj = cephprocesses.SystemdUnit(proc_name)
-        assert obj.service_names == ['lrbd']
 
     @patch('srv.salt._modules.cephprocesses.Popen')
     def test_is_disabled_no_service_names(self, popen_mock):

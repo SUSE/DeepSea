@@ -29,7 +29,7 @@ processes = {'mon': ['ceph-mon'],
              'mgr': ['ceph-mgr'],
              'storage': ['ceph-osd'],
              'mds': ['ceph-mds'],
-             'igw': ['lrbd'],
+             'igw': ['rbd-target-gw', 'rbd-target-api'],
              'rgw': ['radosgw'],
              'ganesha': ['ganesha.nfsd', 'rpcbind', 'rpc.statd'],
              'admin': [],
@@ -44,10 +44,7 @@ processes = {'mon': ['ceph-mon'],
              'grafana': ['grafana-server'],
              'master': []}
 
-# Processes like lrbd have an inverted logic
-# if they are running it means that the service is _NOT_ ready
-# as opposed to the the services in the 'processes' map.
-absent_processes = {'igw': ['lrbd']}
+absent_processes = {}
 
 
 # pylint: disable=too-few-public-methods
@@ -103,8 +100,6 @@ class SystemdUnit(object):
             service_names = ["{}@{}".format(self.proc_name, self.osd_id)]
         if self.proc_name in ['ceph-mon', 'ceph-mgr', 'ceph-mds']:
             service_names = ["{}@{}".format(self.proc_name, __grains__['host'])]
-        if self.proc_name == 'lrbd':
-            service_names = ['lrbd']
         if self.proc_name == 'radosgw':
             service_names = ["{}@{}".format('ceph-radosgw', __grains__['host'])]
         if self.proc_name == 'ganesha.nfsd':
@@ -298,8 +293,7 @@ class MetaCheck(object):
         {'up':   {'ceph-osd': [1,2,3],
                   'ceph-mon': [1]
                  },
-         'down': {'ceph-osd': [4],
-                  'lrbd': ['lrbd']
+         'down': {'ceph-osd': [4]
                  }
         }
         In the down->ceph-osd case, the key describes the

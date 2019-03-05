@@ -291,10 +291,9 @@ def client():
 def igw():
     """
     Returns whether igw configuration has changed
+    Note: ceph-iscsi configuration is not kept in DeepSea
     """
-    return requires_conf_change(role=Role(role_name='igw',
-                                          conf_dir='/srv/salt/ceph/igw/cache/',
-                                          conf_filename='lrbd'))
+    return False
 
 
 def config(**kwargs):
