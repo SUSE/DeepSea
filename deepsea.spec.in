@@ -428,6 +428,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/processes/mon
 %dir /srv/salt/ceph/processes/osd
 %dir /srv/salt/ceph/processes/rgw
+%dir /srv/salt/ceph/salt
+%dir /srv/salt/ceph/salt/crc
 %{_mandir}/man7/deepsea*.7.gz
 %{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
@@ -757,6 +759,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/processes/mon/*.sls
 %config /srv/salt/ceph/processes/osd/*.sls
 %config /srv/salt/ceph/processes/rgw/*.sls
+%config /srv/salt/ceph/salt/*.sls
+%config /srv/salt/ceph/salt/crc/*.sls
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 

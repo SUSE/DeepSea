@@ -1,6 +1,10 @@
-
 {% set master = salt['master.minion']() %}
 
+crc_method:
+  salt.state:
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt_type: compound
+    - sls: ceph.salt.crc
 repo:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
@@ -86,7 +90,7 @@ finished {{ host }}:
 
 {% endfor %}
 
-unset noout after final iteration: 
+unset noout after final iteration:
   salt.state:
     - sls: ceph.noout.unset
     - tgt: {{ master }}
