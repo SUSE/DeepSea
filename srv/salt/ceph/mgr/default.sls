@@ -1,6 +1,7 @@
 
 include:
   - .keyring
+  - .dashboard
 
 start mgr:
   service.running:

@@ -334,6 +334,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/mgr/*.sls $(DESTDIR)/srv/salt/ceph/mgr/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/key
 	install -m 644 srv/salt/ceph/mgr/key/*.sls $(DESTDIR)/srv/salt/ceph/mgr/key/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/dashboard
+	install -m 644 srv/salt/ceph/mgr/dashboard/*.sls $(DESTDIR)/srv/salt/ceph/mgr/dashboard/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/auth
 	install -m 644 srv/salt/ceph/mgr/auth/*.sls $(DESTDIR)/srv/salt/ceph/mgr/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/keyring
@@ -574,6 +576,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/mgr/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mgr/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mgr/keyring
 	install -m 644 srv/salt/ceph/rescind/mgr/keyring/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mgr/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mgr/dashboard
+	install -m 644 srv/salt/ceph/rescind/mgr/dashboard/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mgr/dashboard/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/mon
 	install -m 644 srv/salt/ceph/rescind/mon/*.sls $(DESTDIR)/srv/salt/ceph/rescind/mon/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin

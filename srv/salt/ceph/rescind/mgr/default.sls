@@ -10,4 +10,5 @@ stop mgr {{ grains['host'] }}:
 
 include:
 - .keyring
+- .dashboard
 {% endif %}

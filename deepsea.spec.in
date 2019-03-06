@@ -160,6 +160,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mgr
 %dir %attr(0700, salt, salt) /srv/salt/ceph/mgr/cache
 %dir /srv/salt/ceph/mgr/files
+%dir /srv/salt/ceph/mgr/dashboard
 %dir /srv/salt/ceph/mgr/key
 %dir /srv/salt/ceph/mgr/auth
 %dir /srv/salt/ceph/mgr/keyring
@@ -272,6 +273,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/mds
 %dir /srv/salt/ceph/rescind/mds/keyring
 %dir /srv/salt/ceph/rescind/mgr
+%dir /srv/salt/ceph/rescind/mgr/dashboard
 %dir /srv/salt/ceph/rescind/mgr/keyring
 %dir /srv/salt/ceph/rescind/mon
 %dir /srv/salt/ceph/rescind/rgw
@@ -508,6 +510,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mgr/*.sls
 %config /srv/salt/ceph/mgr/files/*.j2
 %config /srv/salt/ceph/mgr/key/*.sls
+%config /srv/salt/ceph/mgr/dashboard/*.sls
 %config /srv/salt/ceph/mgr/auth/*.sls
 %config /srv/salt/ceph/mgr/keyring/*.sls
 %config /srv/salt/ceph/mgr/restart/*.sls
@@ -610,6 +613,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/mds/*.sls
 %config /srv/salt/ceph/rescind/mds/keyring/*.sls
 %config /srv/salt/ceph/rescind/mgr/*.sls
+%config /srv/salt/ceph/rescind/mgr/dashboard/*.sls
 %config /srv/salt/ceph/rescind/mgr/keyring/*.sls
 %config /srv/salt/ceph/rescind/mon/*.sls
 %config /srv/salt/ceph/rescind/rgw/*.sls
