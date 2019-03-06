@@ -2234,25 +2234,31 @@ class TestOSDCommands():
 
 class Testsplit_partition():
 
+    @patch('os.path.exists')
     @patch('srv.salt._modules.osd.readlink')
-    def test_split_partition(self, readlink):
+    def test_split_partition(self, readlink, exists):
+        exists.return_value = True
         readlink.return_value = "/dev/sda1"
         disk, part = osd.split_partition("/dev/sda1")
         assert disk == "/dev/sda"
         assert part == "1"
 
+    @patch('os.path.exists')
     @patch('srv.salt._modules.osd.readlink')
-    def test_split_partition_on_nvme(self, readlink):
+    def test_split_partition_on_nvme(self, readlink, exists):
+        exists.return_value = True
         readlink.return_value = "/dev/nvme0n1p1"
         disk, part = osd.split_partition("/dev/nvme0n1p1")
         assert disk == "/dev/nvme0n1"
         assert part == "1"
 
+    @patch('os.path.exists')
     @patch('srv.salt._modules.osd.readlink')
-    def test_split_partition_on_sdp(self, readlink):
+    def test_split_partition_on_sdp(self, readlink, exists):
         """
         Verify that the 'p' never gets truncated with /dev/sdp
         """
+        exists.return_value = True
         readlink.return_value = "/dev/sdp1"
         disk, part = osd.split_partition("/dev/sdp1")
         assert disk == "/dev/sdp"
@@ -2941,6 +2947,16 @@ class TestOSDDestroyed():
     fs = fake_fs.FakeFilesystem()
     f_os = fake_fs.FakeOsModule(fs)
     f_open = fake_fs.FakeFileOpen(fs)
+
+    def test_update_fails(self):
+        """
+        Device is in content
+        force is False
+        expected return -> ""
+        """
+        osdd = osd.OSDDestroyed()
+        result = osdd.update(None, 0)
+        assert "No device provided" in result
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('builtins.open', new=f_open)
