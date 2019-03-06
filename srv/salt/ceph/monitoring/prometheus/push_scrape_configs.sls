@@ -9,6 +9,10 @@
     - source: salt://ceph/monitoring/prometheus/cache/node_exporter/
     - clean: True
 
+partition node scrape configs:
+  module.run:
+    - name: scrape_targets.partition
+
 /etc/prometheus/SUSE/prometheus/:
   file.recurse:
     - user: prometheus

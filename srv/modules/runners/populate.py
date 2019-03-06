@@ -747,19 +747,25 @@ class CephCluster(object):
             'rule_files': [],
             'scrape_interval': {
                 'ceph': '10s',
-                'node': '10s',
+                'node_exporter': '10s',
                 'prometheus': '10s',
                 'grafana': '10s'},
             'relabel_config': {
                 'ceph': [],
-                'node': [],
+                'node_exporter': [],
                 'prometheus': [],
                 'grafana': []},
             'metric_relabel_config': {
                 'ceph': [],
-                'node': [],
+                'node_exporter': [],
                 'prometheus': [],
-                'grafana': []}}}}
+                'grafana': []},
+            'target_partition': {
+                'cepg': '1/1',
+                'node_exporter': '1/1',
+                'prometheus': '1/1',
+                'grafana': '1/1'}
+        }}}
 
     def __init__(self, settings, writer, **kwargs):
         """
