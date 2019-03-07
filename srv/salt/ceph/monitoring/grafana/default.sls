@@ -59,6 +59,15 @@ ceph grafana dashboard:
     - template: jinja
     - source: salt://ceph/monitoring/grafana/files/ses_dashboards.yaml.j2
 
+add mgr dashboard config section:
+  ini.options_present:
+    - name: /etc/grafana/grafana.ini
+    - sections:
+        auth.anonymous:
+          enabled: true
+          org_name: Main Org.
+          org_role: Viewer
+
 grafana-server:
   service.running:
     - enable: true
@@ -66,4 +75,6 @@ grafana-server:
       - pkg: grafana
     - watch:
       - file: /etc/grafana/provisioning/datasources/ses_datasource.yaml
+      - file: /etc/grafana/provisioning/dashboards/ses_dashboards.yaml
+      - ini: /etc/grafana/grafana.ini
 
