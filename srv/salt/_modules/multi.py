@@ -169,7 +169,8 @@ def iperf_server_cmd(cpu=0, port=5200):
     '''
     if iperf_path is None:
         return localhost_name + ": iperf3 not found in path, please install"
-    iperf_cmd = ["/usr/bin/iperf3", "-s", "-D", "-A"+str(cpu),  "-p"+str(port)]
+    iperf_cmd = ["/usr/bin/iperf3", "-s", "-D", "-A"+str(cpu),  "-p"+str(port),
+                 "--", "salt"]
     log.debug('iperf_server_cmd: cmd {}'.format(iperf_cmd))
     Popen(iperf_cmd)
     # it doesn't report fail so no need to check
@@ -180,7 +181,7 @@ def kill_iperf_cmd():
     '''
     Clean up all the iperf3 server and clean it.
     '''
-    kill_cmd = ["/usr/bin/killall", "-9", "iperf3"]
+    kill_cmd = ["/usr/bin/pkill", "-f", "iperf3.*salt"]
     log.debug('kill_iperf_cmd: cmd {}'.format(kill_cmd))
     Popen(kill_cmd)
     return True
