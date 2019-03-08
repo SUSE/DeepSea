@@ -83,6 +83,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 
 %files
 %defattr(-,root,root,-)
+%dir /etc/deepsea
+%dir %attr(0700, salt, salt) /etc/deepsea
 /srv/modules/pillar/stack.py*
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/stack
@@ -434,6 +436,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %{_mandir}/man5/deepsea*.5.gz
 %{_mandir}/man1/deepsea*.1.gz
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
+%config(noreplace) %attr(-, salt, salt) /etc/deepsea
 /srv/modules/modules/*.py*
 /srv/modules/runners/*.py*
 %exclude /srv/modules/runners/smoketests.py
