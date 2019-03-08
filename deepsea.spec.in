@@ -717,7 +717,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/processes/openattic/*.sls
 %config /srv/salt/ceph/processes/osd/*.sls
 %config /srv/salt/ceph/processes/rgw/*.sls
-%dir %{_libexecdir}/deepsea
 %dir %attr(-, root, root) %{_docdir}/%{name}
 %{_docdir}/%{name}/*
 
@@ -733,7 +732,6 @@ integration/regression testing. These scripts are "environment-agnostic" - see
 the README for more information.
 
 %files qa
-%{_libexecdir}/deepsea/qa
 /srv/salt/_modules/functest.py
 /srv/salt/ceph/functests
 /srv/salt/ceph/tests
