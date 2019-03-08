@@ -108,6 +108,19 @@ mgrs:
     - sls: ceph.mgr
     - failhard: True
 
+# Immediately after deploying ceph-mgr, it takes a few seconds for the
+# various modules to become available.  If we don't wait for this, any
+# subqeuent `ceph` commands that require mgr will fail (for example
+# `ceph mgr module enable [...]`).
+wait for mgr to be available:
+  salt.function:
+    - name: retry.cmd
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - kwarg:
+        'cmd': 'test "$(ceph mgr dump | jq .available)" = "true"'
+    - failhard: True
+
 osd auth:
   salt.state:
     - tgt: {{ master }}
