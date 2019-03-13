@@ -1,5 +1,5 @@
-Thu Mar 13 9:30:20 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
+Thu Mar 13 9:30:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.15
 - Add dashboard orchestration
@@ -16,9 +16,8 @@ Thu Mar 13 9:30:20 UTC 2019 - jschmid@suse.com
 - Add ceph.salt.crc to stage.0
 - force 'adler32' as CRC method
 
-
-Thu Feb 26 23:08:20 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
+Thu Feb 26 23:08:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.14
 - Assign drives based on filter rules (SES-150)
@@ -33,15 +32,15 @@ Thu Feb 26 23:08:20 UTC 2019 - jschmid@suse.com
 - monitoring: restarts, avoid "matched no target"
 - This patchset add two new roles. "grafana" and "prometheus"
 
-Thu Feb 21 12:38:20 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
+Thu Feb 21 12:38:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.13
 - ganesha: drop nfs-ganesha-utils install
 - install_ganesha: failhard
 
-Tue Feb 12 19:01:19 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
+Tue Feb 12 19:01:19 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.12
 - Fixes for upgrade procedure
@@ -52,8 +51,8 @@ Tue Feb 12 19:01:19 UTC 2019 - jschmid@suse.com
 - Fix lint errors.
 - Move pytest to base_python 3.6 and adapt tests accordingly
  
-Tue Jan 29 14:01:19 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
+Tue Jan 29 14:01:19 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.11
 - Save and restore reweight in addition to weight
