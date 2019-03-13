@@ -1,14 +1,3 @@
-# drive_groups.yml
-#
-# This file specifies the layout for your OSDs
-# It's best explained with examples.
-#
-# You can find a more detailed set of examples
-# and a proper explanation in the wiki.
-# https://github.com/SUSE/DeepSea/wiki/Drive-Groups
-#
-############# EXAMPLES ############
-#
 # default:
 #   target: 'data*'
 #   data_devices:
@@ -23,11 +12,6 @@
 #   wal_devices:
 #     size: 50G
 #     rotational: 0
-
-############# EXAMPLES ############
-
-# This is the default drive_group that just turns all
-# available devices into standalone OSDs
 
 default:
   target: '*'
