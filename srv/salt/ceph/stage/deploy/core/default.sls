@@ -119,6 +119,12 @@ wait for mgr to be available:
     - tgt_type: compound
     - kwarg:
         'cmd': 'test "$(ceph mgr dump | jq .available)" = "true"'
+
+dashboard:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.dashboard
     - failhard: True
 
 osd auth:
