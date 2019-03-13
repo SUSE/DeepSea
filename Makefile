@@ -298,6 +298,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/igw/auth/*.sls $(DESTDIR)/srv/salt/ceph/igw/auth/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/keyring
 	install -m 644 srv/salt/ceph/igw/keyring/*.sls $(DESTDIR)/srv/salt/ceph/igw/keyring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/rbd
+	install -m 644 srv/salt/ceph/igw/rbd/*.sls $(DESTDIR)/srv/salt/ceph/igw/rbd/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -m 644 srv/salt/ceph/igw/restart/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/force

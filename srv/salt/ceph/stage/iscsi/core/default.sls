@@ -11,6 +11,12 @@ add_mine_cephimages.list_function:
     - tgt: {{ master }}
     - tgt_type: compound
 
+rbd pool:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.igw.rbd
+
 igw config:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"

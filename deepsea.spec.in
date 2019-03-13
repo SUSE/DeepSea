@@ -144,6 +144,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/igw/key
 %dir /srv/salt/ceph/igw/auth
 %dir /srv/salt/ceph/igw/keyring
+%dir /srv/salt/ceph/igw/rbd
 %dir /srv/salt/ceph/igw/restart
 %dir /srv/salt/ceph/igw/restart/force
 %dir /srv/salt/ceph/igw/restart/reload
@@ -498,6 +499,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/igw/key/*.sls
 %config /srv/salt/ceph/igw/auth/*.sls
 %config /srv/salt/ceph/igw/keyring/*.sls
+%config /srv/salt/ceph/igw/rbd/*.sls
 %config /srv/salt/ceph/igw/restart/*.sls
 %config /srv/salt/ceph/igw/restart/force/*.sls
 %config /srv/salt/ceph/igw/restart/reload/*.sls
