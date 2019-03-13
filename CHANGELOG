@@ -3,6 +3,8 @@ Thu Mar 13 9:30:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.15
 - Add dashboard orchestration
+- monitoring/grafana: add config for mgr dashboard
+- monitoring: partition node_exporter targets
 - stage 3: wait for mgr to be available after it's initially deployed
 - Handle broken symlinks
 - Install the ceph-mgr-dashboard on mgr nodes
