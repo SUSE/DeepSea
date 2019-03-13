@@ -1,3 +1,21 @@
+Thu Mar 13 9:30:20 UTC 2019 - jschmid@suse.com
+-------------------------------------------------------------------
+
+- Version: 0.9.15
+- Add dashboard orchestration
+- Add central /etc/deepsea config directory.
+- stage 3: wait for mgr to be available after it's initially deployed
+- Handle broken symlinks
+- Install the ceph-mgr-dashboard on mgr nodes
+- monitoring: defer deployment to stage 3
+- Support ceph-iscsi
+- disable restart.mgr tests
+- Review functests
+- populate should overwrite the stack/default tree at all times
+- Add ceph.salt.crc to stage.0
+- force 'adler32' as CRC method
+
+
 Thu Feb 26 23:08:20 UTC 2019 - jschmid@suse.com
 -------------------------------------------------------------------
 
