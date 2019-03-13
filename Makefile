@@ -56,10 +56,7 @@ pyc: setup.py
 	find cli/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
 
 copy-files:
-# deepsea config files
-	install -d -m 755 $(DESTDIR)/etc/deepsea
 	# salt-master config files
-	install -d -m 755 $(DESTDIR)/etc/deepsea
 	install -d -m 755 $(DESTDIR)/etc/salt/master.d
 	install -m 644 etc/salt/master.d/modules.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/reactor.conf $(DESTDIR)/etc/salt/master.d/
@@ -916,17 +913,6 @@ copy-files:
 	ln -sf deploy		$(DESTDIR)/srv/salt/ceph/stage/3
 	ln -sf services		$(DESTDIR)/srv/salt/ceph/stage/4
 	ln -sf removal		$(DESTDIR)/srv/salt/ceph/stage/5
-
-# Central config dir
-	ln -sf /srv/salt/ceph/configuration/files/drive_groups.yml $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/salt/ceph/configuration/files/ceph.conf.d $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/pillar/ceph/deepsea_minions.sls $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/pillar/ceph/master_minion.sls $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/pillar/ceph/blacklist.sls $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/pillar/ceph/stack/global.yml $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/pillar/ceph/stack/ceph/cluster.yml $(DESTDIR)/etc/deepsea/
-	ln -sf /srv/pillar/ceph/stack/default/ceph/cluster.yml $(DESTDIR)/etc/deepsea/default_ceph_cluster.yml
-	ln -sf /srv/pillar/ceph/stack/default/global.yml $(DESTDIR)/etc/deepsea/default_global.yml
 
 	# cache directories
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/admin/cache
