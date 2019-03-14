@@ -11,11 +11,23 @@ add_mine_cephimages.list_function:
     - tgt: {{ master }}
     - tgt_type: compound
 
-igw config:
+create igw config:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.igw.config.create_iscsi_config
+    - failhard: True
+
+clear salt file server file list cache:
+  salt.runner:
+    - name: fileserver.clear_file_list_cache
+    
+apply igw config:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - tgt_type: compound
-    - sls: ceph.igw.config
+    - sls: ceph.igw.config.apply_iscsi_config
+    - failhard: True
 
 auth:
   salt.state:
@@ -27,6 +39,16 @@ keyring:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.igw.keyring
+
+create configs pool:
+  salt.function:
+    - name: cmd.run
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - arg:
+      - "ceph osd pool create .configs 1"
+    - kwarg:
+        unless: "ceph osd pool ls | grep -q \\.configs$"
 
 iscsi apply:
   salt.state:
