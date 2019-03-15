@@ -343,9 +343,7 @@ class CephRoles(object):
             if not os.path.isdir(role_dir):
                 _create_dirs(role_dir, self.root_dir)
 
-            # All minions are not necessarily storage - see CephStorage
-            if role != 'storage':
-                self._role_assignment(role_dir, role)
+            self._role_assignment(role_dir, role)
 
     def _client_roles(self):
         """
