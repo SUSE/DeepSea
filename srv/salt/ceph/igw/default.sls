@@ -3,7 +3,7 @@ ceph-iscsi:
   pkg.installed:
     - pkgs:
       - ceph-iscsi
-      - targetcli-fb
+      - python3-targetcli-fb
       - tcmu-runner
       - tcmu-runner-handler-rbd
     - refresh: True

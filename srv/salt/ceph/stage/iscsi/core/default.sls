@@ -11,12 +11,31 @@ add_mine_cephimages.list_function:
     - tgt: {{ master }}
     - tgt_type: compound
 
+{% set rbd_pool = salt('master.rbd_pool']('iscsi-images') %}
+
+{% if not rbd_pool %}
+{% set rbd_pool = "iscsi-images" %}
+
+create configs pool:
+  salt.function:
+    - name: cmd.run
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - arg:
+      - "ceph osd pool create iscsi-images 128 && ceph osd pool application enable iscsi-images rbd"
+    - kwarg:
+        unless: "ceph osd pool ls | grep -q iscsi-images$"
+  
+{% endif %}
+
 create igw config:
   salt.state:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.igw.config.create_iscsi_config
     - failhard: True
+    - pillar: 
+        iscsi-pool: {{ rbd_pool }}
 
 clear salt file server file list cache:
   salt.runner:
@@ -39,16 +58,6 @@ keyring:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.igw.keyring
-
-create configs pool:
-  salt.function:
-    - name: cmd.run
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - arg:
-      - "ceph osd pool create .configs 1"
-    - kwarg:
-        unless: "ceph osd pool ls | grep -q \\.configs$"
 
 iscsi apply:
   salt.state:

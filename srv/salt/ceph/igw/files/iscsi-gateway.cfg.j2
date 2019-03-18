@@ -1,5 +1,5 @@
 [config]
 cluster_client_name = {{ client }}
-pool = .configs
+pool = {{ pillar['iscsi-pool'] }}
 api_secure = false
 trusted_ip_list = {{ trusted_ip_list }}

@@ -35,3 +35,32 @@ def group():
     if __grains__.get('os_family', '') == 'Suse':
         return 'salt'
     return 'root'
+
+
+def rbd_pool(preferred_pool=None):
+    try:
+        import rados
+    except ImportError:
+        raise Exception("This method should not be called before Ceph is "
+                        "installed")
+
+    cluster = rados.Rados(conffile="/etc/ceph/ceph.conf")
+    cluster.connect()
+
+    pools = [pool for pool in cluster.list_pools()]
+    for pool in pools:
+        if pool == preferred_pool:
+            cluster.shutdown()
+            return pool
+
+    for pool in pools:
+        ioctx = cluster.open_ioctx(pool)
+        for app in ioctx.application_list():
+            if app == "rbd":
+                ioctx.close()
+                cluster.shutdown()
+                return pool
+
+    ioctx.close()
+    cluster.shutdown()
+    return None
