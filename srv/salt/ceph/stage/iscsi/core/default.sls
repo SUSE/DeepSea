@@ -65,5 +65,15 @@ iscsi apply:
     - tgt_type: compound
     - sls: ceph.igw
 
+{% for minion in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
+add iscsi gateway {{ minion }} to dashboard:
+  salt.function:
+    - name: cmd.run
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - arg:
+      - "ceph dashboard iscsi-gateway-add http://{{ minion }}:5000"
+{% endfor %}
+
 {% endif %}
 
