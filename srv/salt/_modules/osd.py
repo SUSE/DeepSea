@@ -1914,7 +1914,10 @@ class OSDDestroyed(object):
             # the OSD to be removed and rely on admin following instructions
             # below OR admin is overriding the save manually with the new
             # device name.  In either case, save the device name with the ID.
-            content[device] = osd_id
+            # Catastrophic failures can produce inoperable device names, 
+            # ignore those that do not exist.
+            if os.path.exists(device):
+                content[device] = osd_id
 
         _dump_yaml_to_file(content, self.filename, self.friendly_dumper)
 
