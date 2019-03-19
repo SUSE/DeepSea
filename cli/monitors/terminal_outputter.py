@@ -42,9 +42,9 @@ class SimplePrinter(MonitorListener):
             PP.println()
             if isinstance(exception, StateRenderingException):
                 PP.println("An error occurred when rendering one of the following states:")
-                for state in exception.states:
-                    PP.print("    - {}".format(state))
-                    PP.println(" ({})".format("/srv/salt/{}".format(state.replace(".", "/"))))
+                PP.print("    - {}".format(exception.state))
+                PP.println(" ({})".format("/srv/salt/{}".format(
+                    exception.state.replace(".", "/"))))
             else:
                 PP.println("An error occurred while rendering the stage:")
                 PP.println("    {}".format(exception.stage_name))
