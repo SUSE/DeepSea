@@ -11,7 +11,7 @@ add_mine_cephimages.list_function:
     - tgt: {{ master }}
     - tgt_type: compound
 
-{% set rbd_pool = salt('master.rbd_pool']('iscsi-images') %}
+{% set rbd_pool = salt['master.find_pool']('rbd', 'iscsi-images') %}
 
 {% if not rbd_pool %}
 {% set rbd_pool = "iscsi-images" %}

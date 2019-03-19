@@ -36,8 +36,9 @@ def minion():
     return ""
 
 
-def rbd_pool(preferred_pool=None):
+def find_pool(applications, preferred_pool=None):
     import salt.client
     local = salt.client.LocalClient()
     master = minion()
-    return local.cmd(master, 'deepsea.rbd_pool', [preferred_pool])[master]
+    return local.cmd(master, 'deepsea.rbd_pool',
+                     [applications, preferred_pool])[master]
