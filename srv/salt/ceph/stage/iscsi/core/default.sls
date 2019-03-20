@@ -72,7 +72,10 @@ add iscsi gateway {{ minion }} to dashboard:
     - tgt: {{ master }}
     - tgt_type: compound
     - arg:
-      - "ceph dashboard iscsi-gateway-add http://{{ minion }}:5000"
+      - "ceph dashboard iscsi-gateway-add http://admin:admin@{{ minion }}:5000"
+    - kwarg:
+        unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ minion }}:5000"
+      
 {% endfor %}
 
 {% endif %}
