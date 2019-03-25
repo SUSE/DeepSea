@@ -296,6 +296,10 @@ def create_bucket(**kwargs):
         s3conn.create_bucket(kwargs['bucket_name'])
     except boto.exception.S3CreateError:
         return False
+    except Exception as err:
+        log.exception("Other boto exception")
+        print('Other boto exception: ', err)
+        raise
     return True
 
 
