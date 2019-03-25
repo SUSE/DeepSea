@@ -13,7 +13,8 @@ import re
 import threading
 import time
 
-from ..common import PrettyPrinter as PP, check_terminal_utf8_support
+from ..common import PrettyPrinter as PP, check_terminal_utf8_support, \
+                     get_terminal_size
 from ..monitor import MonitorListener
 from ..stage_parser import StateRenderingException
 
@@ -316,8 +317,12 @@ class StepListPrinter(MonitorListener):
             step (StepListPrinter.Step): the step object
             depth (int): the step depth, if depth > 0 it's a substep
         """
+        num_cols = get_terminal_size()[1]
+        if num_cols > 100:
+            num_cols = 100
+
         step_order_width = 9
-        step_desc_width = 60
+        step_desc_width = num_cols - 20
         indent = 2
 
         if depth == 0:
@@ -356,18 +361,33 @@ class StepListPrinter(MonitorListener):
         """
         Breaks the string into an array of strings of max length width
         """
+        # list of characters that we will use to split a string in order of
+        # preference
+        split_chars = (' ', ',', ')', '(', '/')
+
+        def find_split_idx(text, reverse=True):
+            for ch in split_chars:
+                if reverse:
+                    idx = text.rfind(ch)
+                else:
+                    idx = text.find(ch)
+                if idx != -1:
+                    return idx
+            return -1
+
         result = []
         while len(desc) > width:
-            idx = desc[:width].rfind(' ')
+            idx = find_split_idx(desc[1:width])
             if idx != -1:
+                idx += 1
                 result.append(desc[0:idx])
-                desc = desc[idx+1:]
+                desc = desc[idx:]
             else:
-                idx = desc[width-1:].find(' ')
+                idx = find_split_idx(desc[width:], False)
                 if idx != -1:
-                    idx = idx + (width - 1)
+                    idx = idx + width
                     result.append(desc[:idx])
-                    desc = desc[idx+1:]
+                    desc = desc[idx:]
                 else:
                     break
         result.append(desc)
@@ -442,7 +462,8 @@ class StepListPrinter(MonitorListener):
                     substep.clean(desc_width-5)
             PP.print("\x1B[A\x1B[K")
             if self.args and len(self.step.name) + len(self.args)+2 >= desc_width:
-                PP.print("\x1B[A\x1B[K" * len(SP.format_desc(self.args, desc_width)))
+                PP.print("\x1B[A\x1B[K" * len(SP.format_desc(self.args,
+                                                             desc_width-2)))
 
         def print(self, offset, desc_width, depth):
             super(SP.Runner, self).print(offset, desc_width, depth)
@@ -496,7 +517,8 @@ class StepListPrinter(MonitorListener):
     class State(Step):
         def clean(self, desc_width):
             if self.args and len(self.step.name) + len(self.args) + 5 >= desc_width:
-                PP.print("\x1B[A\x1B[K" * len(SP.format_desc(self.args, desc_width)))
+                PP.print("\x1B[A\x1B[K" * len(SP.format_desc(self.args,
+                                                             desc_width-2)))
 
             if self.step.skipped:
                 PP.print("\x1B[A\x1B[K")
@@ -506,7 +528,11 @@ class StepListPrinter(MonitorListener):
                         substep.clean(desc_width-5)
 
                 for target in self.step.targets.values():
-                    PP.print("\x1B[A\x1B[K" * (len(target['states'])+1))
+                    for state_res in target['states']:
+                        lines = SP.format_desc(state_res.step.pretty_string(),
+                                               desc_width - 7)
+                        PP.print("\x1B[A\x1B[K" * len(lines))
+                    PP.print("\x1B[A\x1B[K")
                 PP.print("\x1B[A\x1B[K")
 
         def print(self, offset, desc_width, depth):
@@ -568,19 +594,27 @@ class StepListPrinter(MonitorListener):
                     PP.println(" ({})".format(SP.Step.ftime(ts-self.start_ts)))
 
                 for state_res in data['states']:
-                    msg = state_res.step.pretty_string()
-                    PP.print(" " * offset)
-                    PP.print(SP.STATE_RES("  |_ {}".format(msg)))
-                    msg_rest = desc_width - (len(msg) + 3) - 2
-                    msg_rest = 0 if msg_rest < 0 else msg_rest
-                    PP.print(SP.STATE_RES("{} ".format("." * msg_rest)))
-                    if state_res.finished:
-                        if state_res.success:
-                            PP.println(u"{}".format(SP.OK))
+                    lines = SP.format_desc(state_res.step.pretty_string(),
+                                           desc_width - 7)
+                    for idx, line in enumerate(lines):
+                        PP.print(" " * offset)
+                        if idx == 0:
+                            PP.print(SP.STATE_RES("  |_ {}".format(line)))
                         else:
-                            PP.println(u"{}".format(SP.FAIL))
-                    else:
-                        PP.println(SP.WAITING)
+                            PP.print("     ")
+                            PP.print(SP.STATE_RES(line))
+                        if idx == len(lines)-1:
+                            msg_rest = desc_width - (len(line) + 3) - 2
+                            PP.print(SP.STATE_RES("{} ".format("." * msg_rest)))
+                            if state_res.finished:
+                                if state_res.success:
+                                    PP.println(u"{}".format(SP.OK))
+                                else:
+                                    PP.println(u"{}".format(SP.FAIL))
+                            else:
+                                PP.println(SP.WAITING)
+                        else:
+                            PP.println()
 
     class PrinterThread(threading.Thread):
         def __init__(self, printer):

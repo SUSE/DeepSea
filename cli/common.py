@@ -81,6 +81,18 @@ def check_terminal_utf8_support():
         return False
 
 
+def get_terminal_size():
+    """
+    Returns the number of rows and columns of the current terminal
+    """
+    with os.popen('stty size', 'r') as f:
+        rows, columns = f.read().split()
+    try:
+        return int(rows), int(columns)
+    except ValueError:
+        return 80, 80
+
+
 class PrettyPrinter(object):
     """
     Helper class to pretty print
