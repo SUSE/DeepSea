@@ -8,5 +8,6 @@ rgw demo buckets:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.buckets
+    - failhard: True
 
 {% endif %}
