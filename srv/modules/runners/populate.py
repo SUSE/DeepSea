@@ -795,7 +795,7 @@ class CephCluster(object):
                 'prometheus': [],
                 'grafana': []},
             'target_partition': {
-                'cepg': '1/1',
+                'ceph': '1/1',
                 'node_exporter': '1/1',
                 'prometheus': '1/1',
                 'grafana': '1/1'}
