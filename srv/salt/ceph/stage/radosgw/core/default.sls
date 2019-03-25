@@ -31,10 +31,4 @@ setup prometheus rgw exporter:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
 
-rgw demo buckets:
-  salt.state:
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - sls: ceph.rgw.buckets
-
 {% endif %}
