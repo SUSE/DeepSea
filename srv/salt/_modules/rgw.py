@@ -12,6 +12,7 @@ from subprocess import Popen, PIPE
 import os
 import json
 import re
+import time
 try:
     import salt.config
 except ImportError:
@@ -292,14 +293,33 @@ def create_bucket(**kwargs):
     s3conn = s3connect(kwargs['user'])
     if s3conn is None:
         return False
-    try:
-        s3conn.create_bucket(kwargs['bucket_name'])
-    except boto.exception.S3CreateError:
+    created = False
+    initial_sleep_duration = 10
+    sleep_duration = initial_sleep_duration
+    sleep_step = 10
+    retries = 10
+    for trywait in range(0, retries):
+        try:
+            s3conn.create_bucket(kwargs['bucket_name'])
+        except boto.exception.S3CreateError:
+            return False
+        except ConnectionRefusedError:
+            log.warning("Could not create RGW bucket via S3 (attempt {})"
+                        .format(trywait))
+            log.info(("S3 failure possibly transient - "
+                      "waiting {} seconds before retry").format(sleep_duration))
+            time.sleep(sleep_duration)
+            sleep_duration += sleep_step
+            continue
+        except Exception as err:
+            log.exception("Other boto exception")
+            print('Other boto exception: ', err)
+            raise
+        created = True
+    if not created:
+        log.error(("Still could not create RGW bucket after {} tries. "
+                   "Giving up.").format(retries))
         return False
-    except Exception as err:
-        log.exception("Other boto exception")
-        print('Other boto exception: ', err)
-        raise
     return True
 
 
