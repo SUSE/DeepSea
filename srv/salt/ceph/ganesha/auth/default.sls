@@ -11,6 +11,7 @@ prevent empty rendering:
 auth {{ keyring_file }}:
   cmd.run:
     - name: "ceph auth add {{ client }} -i {{ keyring_file }}"
+    - fire_event: True
 
 {% endfor %}
 {% endfor %}

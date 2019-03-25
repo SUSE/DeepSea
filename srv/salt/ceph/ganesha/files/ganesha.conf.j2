@@ -1,26 +1,16 @@
-{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') != [] %}
-EXPORT
-{
-    Export_ID=1;
+{% set name = "client." + ganesha_role + "." + host %}
 
-    Path = /;
+RADOS_URLS {
+  # Path to a ceph.conf file for this cluster.
+  Ceph_Conf = /etc/ceph/ceph.conf;
 
-    #Required only for nfs version 4
-    Pseudo = /cephfs/;
-
-    Access_Type = RW;
-
-    Protocols = 3, 4;
-
-    Transports = UDP, TCP;
-
-    FSAL {
-            Name = CEPH;
-            User_Id = "{{user_id}}";
-            Secret_Access_Key = "{{secret_access_key}}";
-    }
-
+  # RADOS_URLS use their own ceph client too. Authenticated access
+  # requires a cephx keyring file.
+  UserId = "{{ ganesha_role }}.{{ host }}";
+  watch_url = "rados://{{ nfs_pool }}/ganesha/conf-{{ host }}";
 }
+
+{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') != [] %}
 
 # The libcephfs client will aggressively cache information while it
 # can, so there is little benefit to ganesha actively caching the same
@@ -39,48 +29,9 @@ CACHEINODE {
 
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles=role) != [] %}
 
-{% for user in salt['rgw.users']() %}
-EXPORT
-{
-    Export_ID={{ loop.index + 1 }};
-
-    {% set demo_bucket = user + '-' +  'demo' %}
-    {% if salt['rgw.lookup_bucket'](user, demo_bucket) == True %}
-
-    # exporting {{ user }}-demo bucket
-    Path = "{{ user }}-demo";
-
-    #Required only for nfs version 4
-    Pseudo = "/{{ user }}/{{ user }}-demo";
-
-    {% else %}
-    Path = "/";
-
-    #Required only for nfs version 4
-    Pseudo = "/{{ user }}";
-
-    {%endif%}
-
-    Access_Type = RW;
-
-    Protocols = 3, 4;
-
-    Transports = UDP, TCP;
-
-    FSAL {
-        Name = RGW;
-        User_Id = "{{ user }}";
-        Access_Key_Id ="{{ salt['rgw.access_key'](user) }}";
-        Secret_Access_Key = "{{ salt['rgw.secret_key'](user) }}";
-    }
-}
-
-{% endfor %}
-
-{% set name = "client." + ganesha_role + "." + host %}
 RGW {
     ceph_conf = "/etc/ceph/ceph.conf";
-    name = "{{name}}";
+    name = "{{ name }}";
     cluster = "ceph";
 }
 
@@ -94,3 +45,5 @@ NFS_KRB5
 {
     Active_krb5 = false;
 }
+
+%url rados://{{ nfs_pool }}/ganesha/conf-{{ host }}
