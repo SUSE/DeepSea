@@ -8,12 +8,14 @@ rgw auth:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.auth
+    - failhard: True
 
 rgw users:
   salt.state:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.users
+    - failhard: True
 
 {% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 {{ config }}:
@@ -21,6 +23,7 @@ rgw users:
     - tgt: "I@roles:{{ config }} and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.rgw
+    - failhard: True
 {% endfor %}
 
 # Install the Prometheus RGW exporter on the master node because it
@@ -30,11 +33,13 @@ setup prometheus rgw exporter:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.ceph_rgw_exporter
+    - failhard: True
 
 rgw demo buckets:
   salt.state:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.rgw.buckets
+    - failhard: True
 
 {% endif %}
