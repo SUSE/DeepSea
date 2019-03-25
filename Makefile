@@ -100,6 +100,7 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned/off
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/symlink
 	install -m 644 srv/salt/ceph/tests/restart/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart
 	install -m 644 srv/salt/ceph/tests/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon
 	install -m 644 srv/salt/ceph/tests/restart/mon/change/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon/change
@@ -119,6 +120,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	install -m 644 srv/salt/ceph/tests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned
 	install -m 644 srv/salt/ceph/tests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned/off
+	install -m 644 srv/salt/ceph/tests/symlink/*.sls $(DESTDIR)/srv/salt/ceph/tests/symlink
 	# functests/1node
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node
 	install -m 644 srv/salt/ceph/functests/1node/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node
@@ -156,6 +158,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
 	install -m 644 srv/salt/ceph/functests/1node/tuned/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
 	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/symlink
+	install -m 644 srv/salt/ceph/functests/1node/symlink/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/symlink
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
