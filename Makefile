@@ -197,6 +197,7 @@ copy-files:
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/deepsea_minions.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/blacklist.sls $(DESTDIR)/srv/pillar/ceph/
+	install -m 644 srv/pillar/ceph/disk_led.sls $(DESTDIR)/srv/pillar/ceph/
 	install -d -m 755 $(DESTDIR)/srv/pillar/ceph/stack
 	install -m 644 srv/pillar/ceph/stack/stack.cfg $(DESTDIR)/srv/pillar/ceph/stack/stack.cfg
 	install -m 644 srv/pillar/top.sls $(DESTDIR)/srv/pillar/
