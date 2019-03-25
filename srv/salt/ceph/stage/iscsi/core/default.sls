@@ -25,7 +25,7 @@ create configs pool:
       - "ceph osd pool create iscsi-images 128 && ceph osd pool application enable iscsi-images rbd"
     - kwarg:
         unless: "ceph osd pool ls | grep -q iscsi-images$"
-  
+
 {% endif %}
 
 create igw config:
@@ -34,13 +34,13 @@ create igw config:
     - tgt_type: compound
     - sls: ceph.igw.config.create_iscsi_config
     - failhard: True
-    - pillar: 
+    - pillar:
         iscsi-pool: {{ rbd_pool }}
 
 clear salt file server file list cache:
   salt.runner:
     - name: fileserver.clear_file_list_cache
-    
+
 apply igw config:
   salt.state:
     - tgt: "I@roles:igw and I@cluster:ceph"
@@ -75,7 +75,7 @@ add iscsi gateway {{ minion }} to dashboard:
       - "ceph dashboard iscsi-gateway-add http://admin:admin@{{ minion }}:5000"
     - kwarg:
         unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ minion }}:5000"
-      
+
 {% endfor %}
 
 {% endif %}

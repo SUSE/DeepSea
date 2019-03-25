@@ -311,8 +311,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/igw/restart/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/force
 	install -m 644 srv/salt/ceph/igw/restart/force/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/force
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/reload
-	install -m 644 srv/salt/ceph/igw/restart/reload/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/reload
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/igw/restart/controlled
+	install -m 644 srv/salt/ceph/igw/restart/controlled/*.sls $(DESTDIR)/srv/salt/ceph/igw/restart/controlled
 	# state files - macros
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/macros
 	install -m 644 srv/salt/ceph/macros/*.sls $(DESTDIR)/srv/salt/ceph/macros/
