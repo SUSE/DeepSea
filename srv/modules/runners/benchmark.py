@@ -263,32 +263,28 @@ def baseline(margin=10, verbose=False, **kwargs):
                              'I@roles:storage and I@cluster:ceph')
     log.info('client glob is {}'.format(client_glob))
 
-    # gotta get the master_minion...not pretty but works
-    master_minion = local_client.cmd(
-        'I@roles:master', 'pillar.get',
-        ['master_minion'], expr_form='compound').items()[0][1]
-
-    # get all osd ids for a given client_glob
-    osd_list = local_client.cmd(master_minion, 'cmd.shell',
-        ['ceph osd ls'])
+    master_minion_target = 'I@roles:master'
+    osd_list = local_client.cmd(master_minion_target, 'cmd.shell',
+                                ['ceph osd ls'], tgt_type='compound')
 
     if not osd_list:
-        raise Exception('No OSDs found for glob {}'.format(client_glob))
+        raise Exception('No OSDs found')
 
-    ids = osd_list[master_minion].split("\n")
+    ids = list(osd_list.values())[0].split("\n")
 
     sys.stdout.write('\nRunning osd benchmarks')
     sys.stdout.flush()
     results = []
-    for id in ids:
+    for id_ in ids:
         sys.stdout.write('.')
         sys.stdout.flush()
-        output = local_client.cmd(master_minion, 'cmd.shell',
-                                  ['ceph tell osd.{} bench'.format(id)])
+        output = local_client.cmd(master_minion_target, 'cmd.shell',
+                                  ['ceph tell osd.{} bench'.format(id_)],
+                                  tgt_type='compound')
         results.append(output)
 
     # minion output is a string, so must be parsed; ditch the key
-    parsed_results = [ast.literal_eval(r[master_minion]) for r in results]
+    parsed_results = [ast.literal_eval(list(r.values())[0]) for r in results]
 
     perf_abs = [r['bytes_per_sec'] for r in parsed_results]
 
