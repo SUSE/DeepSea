@@ -474,13 +474,8 @@ class CephRoles(object):
         self.root_dir = settings.root_dir
         self.search = __utils__['deepsea_minions.show']()
 
-        if self.publicnetwork_is_ipv6():
-            log.info("Public IPv6 network: {}".format(self.public_networks))
-            log.info("Cluster IPv6 network: {}".format(self.cluster_networks))
-        else:
-            log.info("Autodetecting IPv4 defaults")
-            self.networks = self._networks(self.servers)
-            self.public_networks, self.cluster_networks = self.public_cluster(self.networks.copy())
+        self.networks = self._networks(self.servers)
+        self.public_networks, self.cluster_networks = self.public_cluster(self.networks.copy())
 
         self.available_roles = ['storage']
 
@@ -606,35 +601,6 @@ class CephRoles(object):
             contents['available_roles'] = self.available_roles
 
             self.writer.write(filename, contents, True)
-
-    def publicnetwork_is_ipv6(self):
-        """
-        Check if public_network is an IPv6. Accept the cluster network as is
-        or default it to the same value as the public_network.
-
-        Validation of all networks occurs in validate.py
-        """
-        local = salt.client.LocalClient()
-        data = local.cmd(self.search , 'pillar.items', [], tgt_type="compound")
-        minion_values = list(data.values())[0]
-        log.debug("minion_values: {}".format(pprint.pformat(minion_values)))
-
-        if 'public_network' in minion_values:
-            # Check first entry if comma delimited
-            public_network = minion_values['public_network'].split(',')[0]
-            try:
-                network = ipaddress.ip_network(u'{}'.format(public_network))
-            except ValueError as err:
-                log.error("Public network {}".format(err))
-                return False
-            if network.version == 6:
-                self.public_networks = minion_values['public_network']
-                if 'cluster_network' in minion_values:
-                    self.cluster_networks = minion_values['cluster_network']
-                else:
-                    self.cluster_networks = minion_values['public_network']
-                return True
-        return False
 
     def _networks(self, minions):
         """
