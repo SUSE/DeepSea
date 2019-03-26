@@ -1,4 +1,36 @@
 -------------------------------------------------------------------
+Thu Mar 26 20:43:20 UTC 2019 - jschmid@suse.com
+
+- Version: 0.9.16
+- orchestrator: disable orchestrator for now
+- spec: fix igw file/dir list
+- packages: added "curl" to common
+- iscsi: wait for ceph-iscsi API to be available
+- iscsi: fix service restart
+- iscsi: fix gateway restart
+- iscsi: fixes several bugs
+- iscsi: add igw minions to dashboard
+- iscsi: make rbd_pool function more generic
+- iscsi: find or create rbd pool to store ceph-iscsi configuration
+- igw: iSCSI gateway deployment based on ceph-iscsi
+- runner: select: allow specify list of roles in public_addresses
+- stage 3: configure deepsea mgr orchestrator module
+- cli: fix function args string formating
+- Stage 4: add missing failhards to radosgw/core states
+- populate runner: fix typo "cepg"
+- functests/1node: disable broken symlink test
+- cli: automatically wrap of step lines
+- Makefile: install symlink tests and functests
+- cli: terminal_outputter: fix simple output when printing state exception
+- cli: fix stdout/stderr redirection for python 2
+- Update CHANGELOG
+- cli: fix simple outputter when printing stage exception
+- prometheus: fix populate_mgr_scrape_configs states to work with deepsea-cli
+- cli: handles render failure when minion does not respond
+- ceph.conf: disable msgr2
+- Add runner to enable/disable storage enclosure LED.
+
+-------------------------------------------------------------------
 Thu Mar 13 9:30:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.15
