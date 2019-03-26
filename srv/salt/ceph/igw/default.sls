@@ -15,9 +15,9 @@ enable tcmu-runner:
     - enable: True
     - fire_event: True
 
-enable rbd-target-gw:
+enable rbd-target-api:
   service.running:
-    - name: rbd-target-gw
+    - name: rbd-target-api
     - enable: True
     - fire_event: True
 

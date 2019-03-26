@@ -66,6 +66,15 @@ iscsi apply:
     - sls: ceph.igw
 
 {% for minion in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
+wait for iscsi gateway {{ minion }} to initialize:
+  salt.function:
+    - name: cmd.run
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - kwarg:
+        cmd: "C=0; while true; do if curl -s http://admin:admin@{{ minion }}:5000 > /dev/null; then break; else sleep 5; C=$(( C + 1 )); fi; if [ $C = 6 ]; then exit 1; fi; done"
+        shell: /bin/bash
+
 add iscsi gateway {{ minion }} to dashboard:
   salt.function:
     - name: cmd.run
