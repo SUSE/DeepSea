@@ -165,7 +165,7 @@ class SLSRenderer(object):
                     if states.endswith("is not available."):
                         if not retry:
                             res = StateRenderingException(
-                                minion, None,
+                                minion, ", ".join(state_name),
                                 ['deepsea module not available'])
                             break
 
@@ -175,6 +175,12 @@ class SLSRenderer(object):
                                                [], tgt_type="compound")
                         res, out2, err2 = cls._render_in_minion(state_name,
                                                                 target, False)
+                elif isinstance(states, bool):
+                    logger.info("call to deepsea module returned: %s", states)
+                    res = StateRenderingException(minion, ", ".join(state_name),
+                                                  ['minion did not respond'])
+                    break
+
                 else:
                     for state, steps in states.items():
                         if steps and isinstance(steps[0], str):
