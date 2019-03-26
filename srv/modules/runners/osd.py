@@ -52,7 +52,6 @@ class OSDUtil(object):
         self.host_osds = self._host_osds()
         self.host = self._find_host()
         self.osd_state = self._get_osd_state()
-        # timeout, delay?
         self.force: bool = kwargs.get('force', False)
         self.operation: str = kwargs.get('operation', 'None')
 
@@ -118,7 +117,7 @@ class OSDUtil(object):
 
         # This needs to be done for removal.
         # For a replacement operation we just set
-        # the out/destroyed and wait with Quescient
+        # the out/destroyed and wait with is_empty
         if not self.force and self.operation == 'remove':
             try:
                 print("Draining the OSD")
@@ -210,26 +209,30 @@ class OSDUtil(object):
         """
         print("Waiting for ceph to catch up.")
         time.sleep(3)
-        while True:
+        counter = 50
+        while True and counter >= 0:
             if message is True:
                 break
-            if message.startswith("Timeout expired"):
+            elif message.startswith("Timeout expired"):
                 print("  {}\nRetrying...".format(message))
                 log.debug(message)
                 time.sleep(3)
+                log.debug("Trying agian for {} times.".format(counter))
+                counter -= 1
                 message = func()
-            if message.startswith("osd.{} is safe to destroy".format(
+            elif message.startswith("osd.{} is safe to destroy".format(
                     self.osd_id)):
                 print(message)
                 return True
+            else:
+                print("Unexpected return: {}".format(message))
+                break
 
     def recover_osd_state(self):
         """ Wrapper method to recover the previous osd_state after a rollback """
         if self.osd_state:
             if self.osd_state.get('_in', False):
                 self._mark_osd('in')
-            if self.osd_state.get('down', False):
-                self._mark_osd('down')
             if self.osd_state.get('out', False):
                 self._mark_osd('out')
 
@@ -250,9 +253,8 @@ class OSDUtil(object):
             raise OSDNotFound("OSD {} doesn't exist in the cluster".format(
                 self.osd_id))
         return dict(
-            up=bool(osd_info.get('up', 0)),
             _in=bool(osd_info.get('in', 0)),
-            down=bool(osd_info.get('down', 0)))
+            out=bool(osd_info.get('out', 0)))
 
     def _lvm_zap(self):
         """ Remote call to minion for lvm zap """
@@ -283,6 +285,7 @@ class OSDUtil(object):
             tgt_type="glob",
         )
         message = list(ret.values())[0]
+
         if not message.startswith('destroyed osd'):
             log.error("Destroying the osd failed: {}".format(message))
             raise RuntimeError
@@ -309,7 +312,8 @@ class OSDUtil(object):
         log.info("Calling service.{} on {}".format(action, self.osd_id))
         ret = self.local.cmd(
             self.host,
-            'service.{}'.format(action), ['ceph-osd@{}'.format(self.osd_id)],
+            'service.{}'.format(action),
+            ['ceph-osd@{}'.format(self.osd_id)],
             tgt_type="glob")
         message = list(ret.values())[0]
         if not message:
@@ -319,7 +323,7 @@ class OSDUtil(object):
         return True
 
     def _mark_osd(self, state):
-        """ Mark a osd out/up/down/in """
+        """ Mark a osd out/in """
         cmd = "ceph osd {} {}".format(state, self.osd_id)
         log.info("Running command {}".format(cmd))
         ret = self.local.cmd(
@@ -396,6 +400,9 @@ def ok_to_stop_osds(osd_list):
 
 
 def pre_check(osd_list, force):
+    """ Pre check method
+    Skip if force flag is set
+    """
     if force:
         print("The 'force' flag is set. ok-to-stop checks are disabled."
               " Please use with caution.")
