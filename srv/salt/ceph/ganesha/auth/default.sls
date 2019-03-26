@@ -13,6 +13,18 @@ auth {{ keyring_file }}:
     - name: "ceph auth add {{ client }} -i {{ keyring_file }}"
     - fire_event: True
 
+{% set rgw_role = salt['rgw.configuration'](role) %}
+{% if rgw_role %}
+{% set rgw_keyring_file = "/srv/salt/ceph/ganesha/cache/ceph.client." + rgw_role + "." + role + "." + host + ".keyring" %}
+{% set rgw_client = "client." + rgw_role + "." + role + "." + host %}
+
+auth {{ rgw_keyring_file }}:
+  cmd.run:
+    - name: "ceph auth add {{ rgw_client }} -i {{ rgw_keyring_file }}"
+    - fire_event: True
+
+{% endif %}
+
 {% endfor %}
 {% endfor %}
 

@@ -26,7 +26,7 @@ check {{ role }}:
     - group: {{ salt['deepsea.group']() }}
     - mode: 600
     - context:
-      role: {{ salt['rgw.configuration'](role) }}
+      rgw_role: {{ salt['rgw.configuration'](role) }}
       host: {{ host }}
       ganesha_role: {{role}}
       nfs_pool: {{ nfs_pool }}
