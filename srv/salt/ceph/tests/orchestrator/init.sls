@@ -1,3 +1,10 @@
+# Force the orchestrator test to fail at this point, before doing
+# anything at all, and dump out the current cluster status
+"ceph status 2>&1 ; false":
+  cmd.run:
+    - failhard: True
+
+# This is unlikely to actually be necessary
 ensure mgr is available:
   module.run:
     - name: retry.cmd
