@@ -28,6 +28,7 @@ stage prep dependencies suse:
       - libgio-2_0-0
       - polkit
       - libstoragemgmt
+      - curl
     - fire_event: True
     - refresh: True
 
@@ -45,6 +46,7 @@ stage prep dependencies ubuntu:
       - python3-rados
       - iperf
       - jq
+      - curl
     - fire_event: True
     - refresh: True
 
@@ -74,6 +76,7 @@ stage prep dependencies CentOS:
       - python-netaddr
       - jq
       - libstoragemgmt
+      - curl
     - fire_event: True
     - refresh: True
 

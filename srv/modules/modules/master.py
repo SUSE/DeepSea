@@ -35,3 +35,10 @@ def minion():
         return minion_id
     return ""
 
+
+def find_pool(applications, preferred_pool=None):
+    import salt.client
+    local = salt.client.LocalClient()
+    master = minion()
+    return local.cmd(master, 'deepsea.find_pool',
+                     [applications, preferred_pool])[master]

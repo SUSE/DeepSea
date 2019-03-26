@@ -107,7 +107,7 @@ def first(**kwargs):
     return ""
 
 
-def public_addresses(tuples=False, host=False, **kwargs):
+def public_addresses(tuples=False, host=False, roles=None, roles_or=None, **kwargs):
     """
     Returns an array of public addresses matching the search critieria.
     Can also return an array of tuples with fqdn or short name.
@@ -117,6 +117,17 @@ def public_addresses(tuples=False, host=False, **kwargs):
         if key[0] == "_":
             continue
         criteria.append("I@{}:{}".format(key, kwargs[key]))
+
+    if roles_or is not None:
+        if not isinstance(roles_or, list):
+            roles_or = [roles_or]
+        roles_target = ["I@roles:{}".format(role) for role in roles_or]
+        criteria.append("( {} )".format(" or ".join(roles_target)))
+
+    if roles is not None:
+        if not isinstance(roles, list):
+            roles = [roles]
+            criteria.extend(["I@roles:{}".format(role) for role in roles])
 
     search = " and ".join(criteria)
 

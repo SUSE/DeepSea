@@ -1,2 +1,2 @@
 include:
-  - .reload
+  - .controlled
