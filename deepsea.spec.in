@@ -165,6 +165,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mgr/key
 %dir /srv/salt/ceph/mgr/auth
 %dir /srv/salt/ceph/mgr/keyring
+%dir /srv/salt/ceph/mgr/orchestrator
 %dir /srv/salt/ceph/mgr/restart
 %dir /srv/salt/ceph/mgr/restart/force
 %dir /srv/salt/ceph/mgr/restart/controlled
@@ -518,6 +519,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mgr/dashboard/*.sls
 %config /srv/salt/ceph/mgr/auth/*.sls
 %config /srv/salt/ceph/mgr/keyring/*.sls
+%config /srv/salt/ceph/mgr/orchestrator/*.sls
 %config /srv/salt/ceph/mgr/restart/*.sls
 %config /srv/salt/ceph/mgr/restart/force/*.sls
 %config /srv/salt/ceph/mgr/restart/controlled/*.sls

@@ -69,6 +69,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/tests/keyrings
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/openstack
 	install -m 644 srv/salt/ceph/tests/openstack/*.sls $(DESTDIR)/srv/salt/ceph/tests/openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/orchestrator
+	install -m 644 srv/salt/ceph/tests/orchestrator/*.sls $(DESTDIR)/srv/salt/ceph/tests/orchestrator
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/os_switch
 	install -m 644 srv/salt/ceph/tests/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/tests/os_switch
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/quiescent
@@ -133,6 +135,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/macros/os_switch/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/macros/os_switch
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
 	install -m 644 srv/salt/ceph/functests/1node/openstack/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/openstack
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/orchestrator
+	install -m 644 srv/salt/ceph/functests/1node/orchestrator/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/orchestrator
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -m 644 srv/salt/ceph/functests/1node/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
@@ -350,6 +354,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/mgr/keyring/*.sls $(DESTDIR)/srv/salt/ceph/mgr/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/files
 	install -m 644 srv/salt/ceph/mgr/files/*.j2 $(DESTDIR)/srv/salt/ceph/mgr/files/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/orchestrator
+	install -m 644 srv/salt/ceph/mgr/orchestrator/*.sls $(DESTDIR)/srv/salt/ceph/mgr/orchestrator/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/restart
 	install -m 644 srv/salt/ceph/mgr/restart/*.sls $(DESTDIR)/srv/salt/ceph/mgr/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mgr/restart/force
