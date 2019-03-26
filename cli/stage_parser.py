@@ -218,8 +218,12 @@ class SLSRenderer(object):
             os.setgid(pw.pw_gid)
             os.setuid(pw.pw_uid)
 
-            err = StringIO()
-            out = StringIO()
+            if sys.version_info >= (3, 0):
+                err = StringIO()
+                out = StringIO()
+            else:
+                err = BytesIO()
+                out = BytesIO()
             with redirect_output(out, err):
                 res = SaltClient.master().functions['state.show_low_sls'](
                     state_name)
