@@ -73,7 +73,7 @@ class Stage(object):
                     if arg == self.name:
                         continue
                     if first:
-                        first = True
+                        first = False
                         self.args_str += "{}".format(arg)
                     else:
                         self.args_str += ", {}".format(arg)
