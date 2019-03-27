@@ -1,0 +1,22 @@
+[global]
+directory={{ dir }}
+filename_format=f.$filenum
+wait_for_previous
+filesize={{ filesize }}
+nrfiles={{ nrfiles }}
+size={{ size }}
+ramp_time={{ ramp_time }}
+timebased
+runtime={{ runtime }}
+
+{% for op in operations %}
+{% for bs in blocksizes %}
+{% for workers in number_of_workers %}
+[{{ workers }}rw_{{ bs }}_{{ op }}]
+numjobs={{ workers }}
+rw={{ op }}
+blocksize={{ bs }}
+
+{% endfor %}
+{% endfor %}
+{% endfor %}

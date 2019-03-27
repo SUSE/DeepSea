@@ -1,0 +1,17 @@
+template: rw_many_files.j2
+filesize: 4m
+nrfiles: 100
+runtime: 15m
+ramp_time: 2m
+blocksizes:
+  - 4k
+  - 256k
+  - 1m
+  - 4m
+number_of_workers:
+  - 1
+  - 4
+  - 8
+operations:
+  - rw
+  - randrw
