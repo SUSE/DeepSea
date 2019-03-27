@@ -54,7 +54,7 @@ class Fio(object):
 
         clients = []
         ip_filter = lambda add: ipaddress.ip_address(
-            add.decode()) in ipaddress.ip_network(public_network.decode())
+            add) in ipaddress.ip_network(public_network)
         for minion, ip_list in minion_ip_lists.items():
             clients.extend(list(filter(ip_filter, ip_list)))
 
@@ -128,7 +128,7 @@ class Fio(object):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
                 job = yaml.load(yml)
-            except YAMLError as error:
+            except yaml.YAMLError as error:
                 log.error('Error parsing job spec in file {}/fio/{}'.format(self.bench_dir, job_spec))
                 log.error(error)
                 raise error
@@ -177,7 +177,7 @@ def __parse_collection(collection_file):
     with open(collection_file, 'r') as yml:
         try:
             return yaml.load(yml)
-        except YAMLError as error:
+        except yaml.YAMLError as error:
             log.error('Error parsing collection {}:'.format(collection_file))
             log.error(error)
             raise error
@@ -202,13 +202,14 @@ def help():
     print(usage)
     return ""
 
+
 def rbd(**kwargs):
     """
     Run rbd benchmark job
     """
 
     client_glob = kwargs.get('client_glob',
-        'I@roles:benchmark-rbd and I@cluster:ceph')
+                             'I@roles:benchmark-rbd and I@cluster:ceph')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
@@ -357,7 +358,7 @@ def fs(**kwargs):
 
 def __print_verbose(dev_percent, perf_abs, ids, margin):
     for d, pa, id in sorted(zip(dev_percent, perf_abs, ids), reverse=True,
-            key = lambda t: t[1]):
+                            key=lambda t: t[1]):
         if(d <= -margin):
             __print_osd_deviation(id, d, pa, bcolors.FAIL)
         else:
