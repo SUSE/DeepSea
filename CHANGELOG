@@ -2,6 +2,10 @@
 Thu Mar 26 20:43:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.16
+- qa: disable apparmor at end of functest
+- ganesha: fix radosgw keyring for use by nfs-ganesha
+- ganesha: store ganesha configuration in RADOS pool
+- radosgw: automatic configure ceph-dashboard
 - orchestrator: disable orchestrator for now
 - spec: fix igw file/dir list
 - packages: added "curl" to common
