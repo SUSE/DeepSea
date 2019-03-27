@@ -6,6 +6,8 @@ prevent empty rendering:
   test.nop:
     - name: skip
 
+{% set nfs_pool = salt['deepsea.find_pool'](['cephfs', 'rgw']) %}
+
 {% for role in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
 check {{ role }}:
   file.exists:
@@ -13,9 +15,6 @@ check {{ role }}:
     - failhard: True
 
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
-{% set user_id = role + "." + host %}
-{% set client = "client." + user_id %}
-{% set keyring_file = salt['keyring.file']('ganesha', client)  %}
 
 /srv/salt/ceph/ganesha/cache/{{ role }}.{{ host }}.conf:
   file.managed:
@@ -27,11 +26,10 @@ check {{ role }}:
     - group: {{ salt['deepsea.group']() }}
     - mode: 600
     - context:
-      role: {{ salt['rgw.configuration'](role) }}
-      user_id: {{ user_id }}
+      rgw_role: {{ salt['rgw.configuration'](role) }}
       host: {{ host }}
-      secret_access_key: {{ salt['keyring.secret'](keyring_file) }}
       ganesha_role: {{role}}
+      nfs_pool: {{ nfs_pool }}
     - fire_event: True
 
 {% endfor %}

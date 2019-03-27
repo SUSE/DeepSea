@@ -17,6 +17,12 @@ rgw users:
     - sls: ceph.rgw.users
     - failhard: True
 
+configure dashboard RGW:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.rgw.dashboard
+
 {% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
 {{ config }}:
   salt.state:
