@@ -156,8 +156,8 @@ class TestOSDInstanceMethods():
     def test_readlink_samename(self, mock_time, mock_popen):
         # This test cannot perfectly simulate all the Popen calls.  This
         # is primarily testing that the loop is working when the condition
-        # does not trigger.  After the first stdout is consumed, the 
-        # conditional does cause a break for an empty value from the second 
+        # does not trigger.  After the first stdout is consumed, the
+        # conditional does cause a break for an empty value from the second
         # read.
         mock_stdout = tempfile.NamedTemporaryFile(delete=False)
         mock_stdout.write(b'/dev/disk/by-id/wwn-0x12345-part1')
@@ -1043,7 +1043,7 @@ class TestOSDPartitions():
     @mock.patch('srv.salt._modules.osd.log')
     def test_bluestore_partitions_wal_encrypted_log(self, mock_log, osdp_o):
         """
-        Given I defined a wal 
+        Given I defined a wal
         And I encrypt with dmcrypt
         Expect to call log() ( and leave the partition creation to ceph-disk )
         Expect to call log() ( and leave the partition creation to ceph-disk )
@@ -2599,7 +2599,7 @@ class TestOSDRemove():
 
         result = osdr.remove()
         assert result == ""
-    
+
     @patch('srv.salt._modules.osd.update_destroyed')
     def test_remove_force_works(self, mock_ud):
         partitions = {'osd': '/dev/sda1'}
@@ -2633,7 +2633,7 @@ class TestOSDRemove():
 
         result = osdr.remove()
         assert result == ""
-    
+
     def test_empty(self):
         partitions = {'osd': '/dev/sda1'}
         mock_device = mock.Mock()
@@ -2763,7 +2763,7 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
-        
+
     @patch('srv.salt._modules.osd.readlink')
     def test_mounted_lockbox(self, mock_rl):
         partitions = {'lockbox': '/dev/sda1'}
@@ -2774,7 +2774,7 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
-        
+
     def test_mounted_none(self):
         partitions = {}
         mock_device = mock.Mock()
@@ -2783,7 +2783,7 @@ class TestOSDRemove():
         osdr = osd.OSDRemove(1, mock_device, None, None)
         result = osdr._mounted()
         assert result == []
-        
+
     def test_wipe_with_no_partitions(self):
         partitions = {}
         mock_device = mock.Mock()
@@ -2831,7 +2831,7 @@ class TestOSDRemove():
         result = osdr.wipe()
         TestOSDRemove.fs.RemoveFile('/dev/sda1')
         assert "Failed to wipe partition" in result
-    
+
     def test_destroy(self):
         partitions = {'osd': '/dev/sda1'}
         mock_device = mock.Mock()
@@ -3157,7 +3157,7 @@ class TestOSDDestroyed():
         by_path_mock.return_value = by_path_return
         result = osdd.get(device)
         by_path_mock.assert_called_once_with(device)
-        assert result == content
+        assert result == ""
 
     @patch('srv.salt._modules.osd._safe_load_yaml')
     @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
@@ -3177,7 +3177,7 @@ class TestOSDDestroyed():
         by_path_mock.return_value = by_path_return
         result = osdd.get(device)
         by_path_mock.assert_called_once_with(device)
-        assert result == content
+        assert result == ""
 
     @patch('srv.salt._modules.osd._safe_load_yaml')
     @patch('srv.salt._modules.osd.OSDDestroyed._by_path')
@@ -3305,7 +3305,7 @@ class TestOSDDestroyed():
     @pytest.mark.parametrize("content", [{'/dev/sdaa': 1, 'foo': 'bar'}, {'foo': 'bar'}])
     @patch('srv.salt._modules.osd._safe_load_yaml')
     def test_dump_1(self, safe_load_mock, osdd, fn, content):
-	"""
+        """
         File is populated
         Expect to return content
         """
@@ -3318,7 +3318,7 @@ class TestOSDDestroyed():
     @pytest.mark.parametrize("content", [""])
     @patch('srv.salt._modules.osd._safe_load_yaml')
     def test_dump_2(self, safe_load_mock, osdd, fn, content):
-	"""
+        """
         File is empty
         Expect to return content
         """
@@ -3370,7 +3370,7 @@ class TestOSDGrains():
         osdg = osd.OSDGrains(mock_device)
         osdg._update_grains = mock.Mock()
         osdg.delete(1)
-        log_mock.error.assert_called_once_with('Cannot delete osd 1 from grains') 
+        log_mock.error.assert_called_once_with('Cannot delete osd 1 from grains')
 
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('__builtin__.open', new=f_open)
@@ -3415,7 +3415,7 @@ class TestOSDGrains():
         osdg.delete(10)
         fs.RemoveFile(filename)
         assert osdg._update_grains.call_count == 1
-        expected = {'ceph': 
+        expected = {'ceph':
                        {'17': {'fsid': '28e231cd-cd01-40f9-aa47-e332ccf73e35',
                                'partitions': {'block': '/dev/vdd2',
                                               'osd': '/dev/vdd1'}}}}
@@ -3540,7 +3540,7 @@ class Test_is_incorrect():
     f_glob = fake_glob.FakeGlobModule(fs)
     f_os = fake_fs.FakeOsModule(fs)
     f_open = fake_fs.FakeFileOpen(fs)
-    
+
     @pytest.fixture(scope='class')
     def osdc_o(self):
         # Only return the non-instantiated class to allow
@@ -4199,5 +4199,3 @@ class Test_report():
         unconfigured, changed = osd._report_original_pillar(["/dev/sda"])
         assert unconfigured == []
         assert changed == ["/dev/sda"]
-
-
