@@ -281,6 +281,7 @@ def s3connect(user):
         is_secure=bool(endpoint['ssl']),
         port=int(endpoint['port']),
         calling_format=boto.s3.connection.OrdinaryCallingFormat(),
+        validate_certs=False,
     )
     return s3conn
 
