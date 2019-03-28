@@ -10,6 +10,10 @@ validate failed:
 
 {% endif %}
 
+crc_method:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.salt.crc.master
 
 sync master:
   salt.state:
@@ -64,7 +68,3 @@ ready:
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
-
-
-
-

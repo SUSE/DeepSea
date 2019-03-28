@@ -915,7 +915,11 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt
 	install -m 644 srv/salt/ceph/salt/*.sls $(DESTDIR)/srv/salt/ceph/salt/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt/crc
-	install -m 644 srv/salt/ceph/salt/crc/*.sls $(DESTDIR)/srv/salt/ceph/salt/crc/
+	install -m 644 srv/salt/ceph/salt/crc/*.conf $(DESTDIR)/srv/salt/ceph/salt/crc/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt/crc/minion
+	install -m 644 srv/salt/ceph/salt/crc/minion/*.sls $(DESTDIR)/srv/salt/ceph/salt/crc/minion/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt/crc/master
+	install -m 644 srv/salt/ceph/salt/crc/master/*.sls $(DESTDIR)/srv/salt/ceph/salt/crc/master/
 
 	# state files - orchestrate stage symlinks
 	ln -sf prep		$(DESTDIR)/srv/salt/ceph/stage/0
