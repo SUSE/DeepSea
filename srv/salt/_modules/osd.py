@@ -1940,7 +1940,7 @@ class OSDDestroyed(object):
             return content[by_path]
         if device in content:
             return content[device]
-        return content
+        return ""
 
     # pylint: disable=no-self-use
     def _by_path(self, device):
