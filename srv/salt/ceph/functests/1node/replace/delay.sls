@@ -5,7 +5,7 @@ Disengage {{ label }} for {{ context }}:
   salt.runner:
     - name: disengage.safety
 
-keyword arguments:
+keyword arguments for {{ label }} on {{ context }}:
   salt.runner:
     - name: osd.replace
     - arg:
