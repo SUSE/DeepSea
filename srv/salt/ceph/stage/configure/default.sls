@@ -47,7 +47,3 @@ install and setup node exporters:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.node_exporter
-
-advise OSDs:
-  salt.runner:
-    - name: advise.osds

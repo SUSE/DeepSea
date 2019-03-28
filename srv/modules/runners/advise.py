@@ -114,39 +114,40 @@ def osds():
 
     The deploy and redeploy are osd methods.
     """
-    local = salt.client.LocalClient()
-    report = local.cmd('I@roles:storage', 'osd.report',
-                       ['human=False'], tgt_type="compound")
+    # local = salt.client.LocalClient()
+    # report = local.cmd('I@roles:storage', 'osd.report',
+    #                    ['human=False'], tgt_type="compound")
 
-    bold = '\033[1m'
-    endc = '\033[0m'
+    # bold = '\033[1m'
+    # endc = '\033[0m'
 
-    unconfigured = _tidy('unconfigured', report)
-    changed = _tidy('changed', report)
-    unmounted = _tidy('unmounted', report)
+    # unconfigured = _tidy('unconfigured', report)
+    # changed = _tidy('changed', report)
+    # unmounted = _tidy('unmounted', report)
 
-    messages = {'deploy': {'header': '\nThese devices will be deployed',
-                           'footer': "Run 'salt-run state.orch ceph.stage.3'"},
-                'redeploy': {'header': "\nThe devices will be redeployed",
-                             'footer': "Run 'salt-run state.orch ceph.migrate.osds'"},
-                'stale': {'header': "\nVerify that these devices are in the desired state",
-                          'footer': "Run 'salt MINION osd.delete_grain ID' for a stale entry"}}
+    # messages = {'deploy': {'header': '\nThese devices will be deployed',
+    #                        'footer': "Run 'salt-run state.orch ceph.stage.3'"},
+    #             'redeploy': {'header': "\nThe devices will be redeployed",
+    #                          'footer': "Run 'salt-run state.orch ceph.migrate.osds'"},
+    #             'stale': {'header': "\nVerify that these devices are in the desired state",
+    #                       'footer': "Run 'salt MINION osd.delete_grain ID' for a stale entry"}}
 
-    if unconfigured:
-        print(messages['deploy']['header'])
-        print("{}{}{}".format(bold, unconfigured, endc))
-        print(messages['deploy']['footer'])
+    # if unconfigured:
+    #     print(messages['deploy']['header'])
+    #     print("{}{}{}".format(bold, unconfigured, endc))
+    #     print(messages['deploy']['footer'])
 
-    if changed:
-        print(messages['redeploy']['header'])
-        print("{}{}{}".format(bold, changed, endc))
-        print(messages['redeploy']['footer'])
+    # if changed:
+    #     print(messages['redeploy']['header'])
+    #     print("{}{}{}".format(bold, changed, endc))
+    #     print(messages['redeploy']['footer'])
 
-    if unmounted:
-        print(messages['stale']['header'])
-        print("{}{}{}".format(bold, unmounted, endc))
-        print(messages['stale']['footer'])
+    # if unmounted:
+    #     print(messages['stale']['header'])
+    #     print("{}{}{}".format(bold, unmounted, endc))
+    #     print(messages['stale']['footer'])
 
+    print("This function is currently non-functional and is being rewritten.")
     return ""
 
 
