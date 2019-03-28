@@ -431,6 +431,9 @@ class Validate(Preparation):
         With v0.9.14 we moved away from profile-***
         to the DriveGroup approach.
         This requires to have the role-storage defined.
+
+        -> storage() and storage_role() should be combined
+        in the future. todo!
         """
         policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
         present = False
