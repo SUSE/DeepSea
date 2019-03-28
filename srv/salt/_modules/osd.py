@@ -810,6 +810,28 @@ def delete_grain(osd_id):
     return osdg.delete(osd_id)
 
 
+def terminate(osd_id):
+    """
+    Stop the ceph-osd without error
+    """
+    cmd = "systemctl disable ceph-osd@{}".format(osd_id)
+    __salt__['helper.run'](cmd)
+    # How long will this hang on a broken OSD
+    cmd = "systemctl stop ceph-osd@{}".format(osd_id)
+    __salt__['helper.run'](cmd)
+    cmd = r"pkill -f ceph-osd.*id\ {}\ --".format(osd_id)
+    __salt__['helper.run'](cmd)
+    time.sleep(1)
+    cmd = r"pkill -9 -f ceph-osd.*id\ {}\ --".format(osd_id)
+    __salt__['helper.run'](cmd)
+    time.sleep(1)
+    cmd = r"pgrep -f ceph-osd.*id\ {}\ --".format(osd_id)
+    _rc, _stdout, _stderr = __salt__['helper.run'](cmd)
+    if _rc == 0:
+        return "Failed to terminate OSD {} - pid {}".format(osd_id, _stdout)
+    return ""
+
+
 def takeover():
     """ This is horrible and should be implemented in ceph-volume """
     # picking osd.list here as it lists osd_ids by looking at mountpoints
