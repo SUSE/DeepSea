@@ -1,6 +1,7 @@
 {% set label = "multiple" %}
+{% set context = "osd.replace test" %}
 
-Disengage {{ label }}:
+Disengage {{ label }} for {{ context }}:
   salt.runner:
     - name: disengage.safety
 
@@ -11,16 +12,16 @@ Multiple arguments:
       - 0
       - 1
 
-Check OSDs {{ label }}:
+Check OSDs {{ label }} for {{ context }}:
   salt.state:
     - tgt: {{ salt['master.minion']() }}
     - sls: ceph.tests.replace.check_absent
 
-Restore OSDs {{ label }}:
+Restore OSDs {{ label }} for {{ context }}:
   salt.runner:
     - name: disks.deploy
 
-Wait for Ceph {{ label }}:
+Wait for Ceph {{ label }} for {{ context }}:
   salt.state:
     - tgt: {{ salt['master.minion']() }}
     - sls: ceph.wait.until.OK
