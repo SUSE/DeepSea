@@ -342,7 +342,7 @@ def ping(cluster=None, exclude=None, ping_type=None, **kwargs):
     return ""
 
 
-def _address(addresses, network):
+def _address(addresses, networks):
     """
     Return all addresses in the given network
 
@@ -350,9 +350,11 @@ def _address(addresses, network):
     """
     matched = []
     for address in addresses:
-        log.debug("_address: ip {} in network {} ".format(address, network))
-        if IPAddress(address) in IPNetwork(network):
-            matched.append(address)
+        log.debug("_address: ip {} in".format(address))
+        for network in networks.split(','):
+            log.debug(" network {} ".format(network))
+            if IPAddress(address) in IPNetwork(network.lstrip()):
+                matched.append(address)
     return matched
 
 
