@@ -699,8 +699,6 @@ copy-files:
 	# state files - rgw
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw
 	install -m 644 srv/salt/ceph/rgw/*.sls $(DESTDIR)/srv/salt/ceph/rgw/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/buckets
-	install -m 644 srv/salt/ceph/rgw/buckets/*.sls $(DESTDIR)/srv/salt/ceph/rgw/buckets/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/key
 	install -m 644 srv/salt/ceph/rgw/key/*.sls $(DESTDIR)/srv/salt/ceph/rgw/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rgw/auth
