@@ -65,25 +65,25 @@ iscsi apply:
     - tgt_type: compound
     - sls: ceph.igw
 
-{% for minion in salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
-wait for iscsi gateway {{ minion }} to initialize:
+{% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph') %}
+wait for iscsi gateway {{ igw_address }} to initialize:
   salt.function:
     - name: cmd.run
     - tgt: {{ master }}
     - tgt_type: compound
     - kwarg:
-        cmd: "C=0; while true; do if curl -s http://admin:admin@{{ minion }}:5000 > /dev/null; then break; else sleep 5; C=$(( C + 1 )); fi; if [ $C = 6 ]; then exit 1; fi; done"
+        cmd: "C=0; while true; do if curl -s http://admin:admin@{{ igw_address }}:5000 > /dev/null; then break; else sleep 5; C=$(( C + 1 )); fi; if [ $C = 6 ]; then exit 1; fi; done"
         shell: /bin/bash
 
-add iscsi gateway {{ minion }} to dashboard:
+add iscsi gateway {{ igw_address }} to dashboard:
   salt.function:
     - name: cmd.run
     - tgt: {{ master }}
     - tgt_type: compound
     - arg:
-      - "ceph dashboard iscsi-gateway-add http://admin:admin@{{ minion }}:5000"
+      - "ceph dashboard iscsi-gateway-add http://admin:admin@{{ igw_address }}:5000"
     - kwarg:
-        unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ minion }}:5000"
+        unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ igw_address }}:5000"
 
 {% endfor %}
 
