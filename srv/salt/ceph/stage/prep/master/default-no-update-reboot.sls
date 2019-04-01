@@ -1,4 +1,3 @@
-
 {% set master = salt['master.minion']() %}
 
 {% if salt['saltutil.runner']('validate.setup') == False %}
@@ -10,6 +9,11 @@ validate failed:
     - failhard: True
 
 {% endif %}
+
+crc_method:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.salt.crc.master
 
 sync master:
   salt.state:
@@ -57,7 +61,3 @@ ready:
   salt.runner:
     - name: minions.ready
     - timeout: {{ salt['pillar.get']('ready_timeout', 300) }}
-
-
-
-

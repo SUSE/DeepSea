@@ -1,10 +1,10 @@
 {% set master = salt['master.minion']() %}
 
-crc_method:
+crc_method minion:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
-    - tgt_type: compound
-    - sls: ceph.salt.crc
+    - sls: ceph.salt.crc.minion
+
 repo:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
