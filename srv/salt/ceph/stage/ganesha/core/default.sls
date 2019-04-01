@@ -42,13 +42,12 @@ configure dashboard cephfs permissions:
     - arg:
       - "ceph config set mgr client_mount_uid 0 && ceph config set mgr client_mount_gid 0"
 
-{% set nfs_pool = salt['master.find_pool'](['cephfs', 'rgw']) %}
 configure dashboard nfs:
   salt.function:
     - name: cmd.run
     - tgt: {{ master }}
     - tgt_type: compound
-    - arg:
-      - "ceph dashboard set-ganesha-clusters-rados-pool-namespace {{ nfs_pool }}/ganesha"
+    - kwarg:
+        cmd: "POOL=`salt-call --out=json deepsea.find_pool '[\"cephfs\", \"rgw\"]' 2>/dev/null | jq -r .local` && ceph dashboard set-ganesha-clusters-rados-pool-namespace $POOL/ganesha"
 
 {% endif %}
