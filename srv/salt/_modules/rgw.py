@@ -2,7 +2,7 @@
 # pylint: disable=fixme
 
 """
-RadosGW related functions for users, configurations, keys and buckets
+RadosGW related functions for users, configurations and keys
 """
 
 from __future__ import absolute_import
@@ -11,18 +11,6 @@ import logging
 from subprocess import Popen, PIPE
 import os
 import json
-import re
-try:
-    import salt.config
-except ImportError:
-    logging.error("Could not import salt.config")
-# pylint: disable=import-error,3rd-party-module-not-gated
-import boto
-# pylint: disable=import-error,3rd-party-module-not-gated
-import boto.s3.connection
-# pylint: disable=import-error,3rd-party-module-not-gated
-import boto.exception
-
 
 log = logging.getLogger(__name__)
 
@@ -182,131 +170,3 @@ def secret_key(user, pathname="/srv/salt/ceph/rgw/cache"):
     Returns the secret key for a given user
     """
     return _key(user, 'secret_key', pathname)
-
-
-def endpoints(cluster='ceph'):
-    """
-    Returns an array of data structures for each gateway
-    """
-    result = []
-
-    search = "I@cluster:{}".format(cluster)
-    __opts__ = salt.config.client_config('/etc/salt/master')
-    pillar_util = salt.utils.master.MasterPillarUtil(search, "compound",
-                                                     use_cached_grains=True,
-                                                     grains_fallback=False,
-                                                     opts=__opts__)
-    cached = pillar_util.get_minion_pillar()
-    for minion in cached:
-        if 'rgw_endpoint' in cached[minion]:
-            match = re.search(r'http(s?)://(.+):?(\d*)', cached[minion]['rgw_endpoint'])
-            if match:
-                result.append({
-                    'host': match.group(2),
-                    'port': int(match.group(3)) if match.group(3) else 7480,
-                    'ssl': match.group(1) == 's',
-                    'url': cached[minion]['rgw_endpoint']
-                })
-            else:
-                result.append({
-                    'host': None,
-                    'port': None,
-                    'ssl': None,
-                    'url': cached[minion]['rgw_endpoint']
-                })
-            return result
-
-    port = '7480'  # civetweb default port
-    ssl = ''
-    admin_path = 'admin'
-    rgw_names = ['rgw']
-    for minion in cached:
-        if 'rgw_configurations' in cached[minion]:
-            # TODO: where is the master minion when we need it
-            rgw_names = cached[minion]['rgw_configurations']
-
-    conf_file_dir = "/srv/salt/ceph/configuration/files/"
-    rgw_conf_files = {}
-    for rgw_name in rgw_names:
-        # Check for user created configurations
-        pathname = "{}/ceph.conf.d/{}.conf".format(conf_file_dir, rgw_name)
-        if os.path.exists(pathname):
-            rgw_conf_files[pathname] = rgw_name
-            continue
-
-        pathname = "{}/{}.conf".format(conf_file_dir, rgw_name)
-        if os.path.exists(pathname):
-            rgw_conf_files[pathname] = rgw_name
-
-    for pathname in rgw_conf_files:
-        with open(pathname) as rgw_conf_file:
-            for line in rgw_conf_file:
-                if line:
-                    match = re.search(r'rgw.*frontends.*=.*port=(\d+)(s?)', line)
-                    if match:
-                        port = int(match.group(1))
-                        ssl = match.group(2)
-
-                    match = re.search(r'rgw.*admin.*entry.*=\s*(\w+)', line)
-                    if match:
-                        admin_path = match.group(1)
-
-        local = salt.client.LocalClient()
-
-        fqdns = local.cmd('I@roles:'+ rgw_conf_files[pathname], 'grains.item',
-                          ['fqdn'], tgt_type="compound")
-        for _, grains in fqdns.items():
-            log.warning("fqdns: {}".format(fqdns))
-            result.append({
-                'host': grains['fqdn'],
-                'port': port,
-                'ssl': ssl == 's',
-                'url': "http{}://{}:{}/{}".format(ssl, grains['fqdn'], port, admin_path)
-            })
-    return result
-
-
-def s3connect(user):
-    """
-    Return an S3 connection
-    """
-    if access_key(user) is None or secret_key(user) is None:
-        return None
-    endpoint = endpoints()[0]
-
-    s3conn = boto.connect_s3(
-        aws_access_key_id=access_key(user),
-        aws_secret_access_key=secret_key(user),
-        host=endpoint['host'],
-        is_secure=bool(endpoint['ssl']),
-        port=int(endpoint['port']),
-        calling_format=boto.s3.connection.OrdinaryCallingFormat(),
-    )
-    return s3conn
-
-
-def create_bucket(**kwargs):
-    """
-    Create a bucket for a user
-    """
-    s3conn = s3connect(kwargs['user'])
-    if s3conn is None:
-        return False
-    try:
-        s3conn.create_bucket(kwargs['bucket_name'])
-    except boto.exception.S3CreateError:
-        return False
-    return True
-
-
-def lookup_bucket(user, bucket):
-    """
-    Query a bucket for a user
-    """
-    s3conn = s3connect(user)
-    if s3conn is None:
-        return False
-    if s3conn.lookup(bucket, validate=True) is None:
-        return False
-
-    return True
