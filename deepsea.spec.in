@@ -771,6 +771,7 @@ Group:          System/Console
 BuildRequires:  python3-setuptools
 Requires:       python3-setuptools
 Requires:       python3-click
+Requires:       python3-configshell-fb
 
 %description cli
 The deepsea-cli contains the deepsea command.  This command reports the

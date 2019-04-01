@@ -3,7 +3,7 @@ DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe --long 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
 DEEPSEA_DEPS=salt-api
-PYTHON_DEPS=python3-setuptools python3-click python3-tox python3-configobj
+PYTHON_DEPS=python3-setuptools python3-click python3-tox python3-configobj python3-configshell-fb
 PYTHON=python3
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)

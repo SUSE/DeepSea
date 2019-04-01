@@ -16,11 +16,10 @@ from io import BytesIO
 from io import StringIO
 from multiprocessing import Process, Queue
 
-import salt.client
-import salt.minion
 import salt.exceptions
 
 from .common import redirect_output
+from .salt_client import SaltClient
 
 
 # pylint: disable=C0103
@@ -78,48 +77,6 @@ class StageRenderingException(RenderingException):
     def __init__(self, stage_name, error_list):
         super(StageRenderingException, self).__init__(error_list)
         self.stage_name = stage_name
-
-
-class SaltClient(object):
-    _OPTS_ = None
-    _CALLER_ = None
-    _LOCAL_ = None
-    _MASTER_ = None
-
-    @classmethod
-    def _opts(cls):
-        """
-        Initializes and retrieves the Salt opts structure
-        """
-        if cls._OPTS_ is None:
-            cls._OPTS_ = salt.config.minion_config('/etc/salt/minion')
-        return cls._OPTS_
-
-    @classmethod
-    def caller(cls):
-        """
-        Initializes and retrieves the Salt caller client instance
-        """
-        if cls._CALLER_ is None:
-            cls._CALLER_ = salt.client.Caller(mopts=cls._opts())
-        return cls._CALLER_
-
-    @classmethod
-    def local(cls):
-        """
-        Initializes and retrieves the Salt local client instance
-        """
-        if cls._LOCAL_ is None:
-            cls._LOCAL_ = salt.client.LocalClient()
-        return cls._LOCAL_
-
-    @classmethod
-    def master(cls):
-        if cls._MASTER_ is None:
-            _opts = salt.config.master_config('/etc/salt/master')
-            _opts['file_client'] = 'local'
-            cls._MASTER_ = salt.minion.MasterMinion(_opts)
-        return cls._MASTER_
 
 
 class SLSRenderer(object):

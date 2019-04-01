@@ -17,6 +17,7 @@ import pkg_resources
 import click
 
 from .config import Config
+from .config_shell import run_config_shell, run_config_cmdline
 from .common import PrettyPrinter as PP, PrettyFormat as PF
 from .common import requires_root_privileges, clean_pyc_files
 from .monitor import Monitor
@@ -290,7 +291,7 @@ def stage():
 
 
 @click.command(name='dry-run', short_help='show DeepSea stage steps')
-@click.argument('stage_name', 'the DeepSea stage name')
+@click.argument('stage_name')
 @click.option('--hide-state-steps', is_flag=True,
               help="this will disable state files steps from being parsed")
 @click.option('--only-visible-steps', is_flag=True,
@@ -309,7 +310,7 @@ def stage_dryrun(stage_name, hide_state_steps, only_visible_steps, clear_cache):
 
 
 @click.command(name='run', short_help='runs DeepSea stage')
-@click.argument('stage_name', 'the DeepSea stage name')
+@click.argument('stage_name')
 @click.option('--hide-state-steps', is_flag=True, help="shows state visible steps progress")
 @click.option('--hide-dynamic-steps', is_flag=True, help="shows runtime generated steps")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
@@ -340,7 +341,7 @@ def salt_run():
 
 
 @click.command(name='state.orch')
-@click.argument('stage_name', 'the DeepSea stage name')
+@click.argument('stage_name')
 @click.option('--hide-state-steps', is_flag=True, help="shows state visible steps progress")
 @click.option('--hide-dynamic-steps', is_flag=True, help="shows runtime generated steps")
 @click.option('--simple-output', is_flag=True, help="minimalistic b&w output")
@@ -359,6 +360,18 @@ def state_orch(stage_name, hide_state_steps, hide_dynamic_steps, simple_output):
     ret = run_stage(stage_name, hide_state_steps, hide_dynamic_steps, simple_output)
     sys.exit(ret)
 
+@click.command(name='config')
+@click.argument('config_args', nargs=-1, type=click.UNPROCESSED, required=False)
+def config_shell(config_args):
+    """
+    Starts DeepSea configuration shell
+    """
+    _setup_logging()
+    if config_args:
+        run_config_cmdline(" ".join(config_args))
+    else:
+        run_config_shell()
+
 
 def main():
     """
@@ -367,6 +380,7 @@ def main():
     cli.add_command(monitor)
     cli.add_command(stage)
     cli.add_command(salt_run)
+    cli.add_command(config_shell)
     stage.add_command(stage_dryrun)
     stage.add_command(stage_run)
     salt_run.add_command(state_orch)
