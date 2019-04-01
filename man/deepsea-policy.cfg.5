@@ -77,26 +77,8 @@ role-NAME/cluster/MINION.sls
 .RE
 .PP
 where NAME is one of the roles above and MINION is normally the fqdn of the host.
-.SS Profile Assignment
-This section defines how drives are configured for Ceph.  This is the most complex part of the configuration.  By default,
-.B profile-default
-will contain an arrangement of devices in a ratio of 1:5 (e.g one SSD for five HDDs) or failing that, independent OSDs.  The default format is
-.BR bluestore.
-For generating other configurations, see the utility known as a Salt runner
-.B salt-run proposal.help.
-.PP
-In the configuration file itself, two pathnames are included.  The default entries are:
-.PP
-.RS 4
-profile-default/cluster/*.sls
-.RE
-.RS 4
-profile-default/stack/default/ceph/minions/*.yml
-.RE
 .PP
 The second path references each disk configuration for all the minions that had available hardware.  Each file contains unique pathnames in a data structure suitable for creating an OSD.
-.PP
-Depending on the site and the administrator preferences, these lines can be removed and replaced with a custom configuration.  Another option is multiple profiles.  One group of storage nodes can be assigned a particular type of hardware profile such as profile-archive while another group with different characteristics is assigned profile-applications.  Beware that this may require editing the CRUSH map to achieve the desired results.
 .PP
 Although partial configurations can be created across different profiles for the same minion, this may result in heartarche.  The most important point to remember is to have only one set of devices for a minion in a profile.  If the
 .BR policy.cfg
@@ -134,11 +116,7 @@ role-mon/cluster/node[1-3].ceph.sls
 .PP
 role-mgr/cluster/node[1-3].ceph.sls
 .PP
-## Profile Assignment
-.PP
-profile-default/cluster/node[1-4].ceph.sls
-.PP
-profile-default/stack/default/ceph/minions/node[1-4].ceph.yml
+role-storage/cluster/node[1-3].ceph.sls
 .PP
 ## Common
 .PP
@@ -164,11 +142,7 @@ role-mon/cluster/node[1-3]*.sls
 .PP
 role-mgr/cluster/node[1-3]*.sls
 .PP
-## Profile Assignment
-.PP
-profile-default/cluster/*.sls
-.PP
-profile-default/stack/default/ceph/minions/*.yml
+role-storage/cluster/node[1-3]*.sls
 .PP
 ## Common
 .PP
@@ -193,13 +167,6 @@ will assign the first three nodes the monitor role.
 The re filter will apply a regular expression.  For example,
 .PP
 .RS 4
-profile-default/cluster/*.sls re=.*[^7]*.sls
-.RE
-.RS 4
-profile-default/stack/default/ceph/minions/*.yml re=.*[^7]*.yml
-.RE
-.PP
-will exclude a host named node7.
 .PP
 Globbing and multiple entires is encouraged and typically easier to maintain.  These filters remain for those that need them.
 .SH AUTHOR

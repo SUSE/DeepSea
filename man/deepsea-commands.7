@@ -605,9 +605,9 @@ Salt execution modules have different uses.  Some rely on the side effect of exe
 .PP
 One distinction with modules is that these run on a minion.  As a result, the scope of pillar data is restricted to the minion itself.
 .PP
-Like states, the Salt targets are listed as pseudo hostnames.  
+Like states, the Salt targets are listed as pseudo hostnames.
 The
-.BR master_minion 
+.BR master_minion
 target is intended to only run on the Salt master.
 Targets labeled as
 .BI role*
@@ -651,7 +651,7 @@ path='/var/lib/ceph'
 salt '*' fs.get_attrs path='/var/lib/ceph'
 .RS
 .RE
-salt '*' fs.add_attrs path='/var/lib/ceph' attrs='C' 
+salt '*' fs.add_attrs path='/var/lib/ceph' attrs='C'
 .RS 32
 [rec=True|False] [omit='/var/lib/ceph/osd']
 .RE
@@ -684,13 +684,13 @@ salt '*' fs.get_uuid dev_path='/dev/sda1'
 salt '*' fs.get_device_info mountpoint='/'
 .RS
 .RE
-salt '*' fs.instantiate_btrfs_subvolume subvol='@/var/lib/ceph' 
+salt '*' fs.instantiate_btrfs_subvolume subvol='@/var/lib/ceph'
 .RS 32
 path='/var/lib/ceph'
 .RE
 .RS
 .RE
-salt '*' fs.migrate_path_to_btrfs_subvolume subvol='@/var/lib/ceph' 
+salt '*' fs.migrate_path_to_btrfs_subvolume subvol='@/var/lib/ceph'
 .RS 32
 path='/var/lib/ceph'
 .RE
@@ -799,9 +799,6 @@ salt 'storage*' osd.is_incorrect
 .RS
 .RE
 salt 'storage*' osd.partitions
-.RS
-.RE
-salt 'storage*' osd.retain
 .RS
 .RE
 salt 'storage*' osd.report
@@ -1106,4 +1103,3 @@ salt-run changed.config name=service
 
 .SH AUTHOR
 Eric Jackson <ejackson@suse.com>
-

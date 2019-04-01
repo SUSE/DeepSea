@@ -12,3 +12,5 @@ include:
   - .tuned
   - .terminate.all
   # - .orchestrator
+  # - .remove
+  # - .replace

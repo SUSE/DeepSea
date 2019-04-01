@@ -15,53 +15,6 @@ import salt.client
 log = logging.getLogger(__name__)
 
 
-def _sanitize_devices(devices):
-    """
-    Takes a list of devices and returns only the information necessary for
-    the ceph-mgr orchestrator's InventoryDevice class.
-    """
-
-    def _device(drive):
-        """
-        Shamelessly stolen from populate.py, to try to prefer /dev/disk/by-id
-        paths over /dev/sd[a-z]+.  It would probably be better to lean on the
-        logic in srv/salt/_modules/cephdisks.py:device_() to get the most
-        preferred path, but calling that for each individual disk is going to
-        take a very long time!
-        """
-        device = drive['Device File']
-        if 'Device Files' in drive:
-            for path in drive['Device Files'].split(', '):
-                if 'by-id' in path:
-                    device = path
-                    break
-        return device
-
-    def _type(drive):
-        """
-        Attempt to figure out if the drive is hdd, ssd or nvme
-        TODO: this looks right, but is completely untested for ssd and nvme!
-        """
-        if drive["Driver"] == "nvme":
-            return "nvme"
-        if drive["rotational"] == "0":
-            return "ssd"
-        return "hdd"
-
-    sanitized = []
-    for drive in devices:
-        # pylint: disable=fixme
-        sanitized.append({
-            "blank": drive["blank"],
-            "type": _type(drive),
-            "id": _device(drive),
-            "size": int(drive["Bytes"]),
-            "extended": None,
-            "metadata_space_free": None     # TODO: calculate this
-        })
-    return sanitized
-
-
 def get_inventory(nodes=None, roles=None):
     """
     Return an inventory of all devices on all nodes, optionally limited
@@ -104,11 +57,11 @@ def get_inventory(nodes=None, roles=None):
     sys.stdout = open(os.devnull, 'w')
 
     local = salt.client.LocalClient()
-    _minions = local.cmd(search, 'cephdisks.list', [], tgt_type="compound")
+    minions = local.cmd(search, 'cephdisks.all', [], tgt_type="compound")
 
     sys.stdout = _stdout
 
-    return {minion: _sanitize_devices(devices) for minion, devices in _minions.items()}
+    return minions
 
 
 def describe_service(role=None, service_id=None, node=None):

@@ -411,8 +411,6 @@ class Validate(Preparation):
             if ('roles' in self.data[node] and
                 'storage' in self.data[node]['roles']):
                 storage.append(node)
-                if not self._has_storage(node):
-                    missing.append(node)
 
         if (not self.in_dev_env and len(storage) < 4) or (self.in_dev_env and len(storage) < 1):
             msg = "Too few storage nodes {}".format(",".join(storage))
@@ -427,15 +425,33 @@ class Validate(Preparation):
             else:
                 self.passed['storage'] = "valid"
 
-    def _has_storage(self, node):
+    def storage_role(self):
         """
-        Check original and ceph name space for storage attribute
+        Checks if the role-storage is present.
+        With v0.9.14 we moved away from profile-***
+        to the DriveGroup approach.
+        This requires to have the role-storage defined.
+
+        -> storage() and storage_role() should be combined
+        in the future. todo!
         """
-        if ('storage' in self.data[node] or
-           ('ceph' in self.data[node] and
-           'storage' in self.data[node]['ceph'])):
-            return True
-        return False
+        policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
+        present = False
+        with open(policy_file, "r") as policy:
+            for line in policy:
+                # strip comments from the end of the line
+                line = re.sub(r'\s+#.*$', '', line)
+                line = line.rstrip()
+                if line.startswith('#') or not line:
+                    log.debug("Ignoring '{}'".format(line))
+                    continue
+                if line.startswith('role-storage'):
+                    present = True
+                    self.passed['storage_role'] = "valid"
+            if not present:
+                self.errors['storage_role'] = [
+                    "You have to define a role-storage in your policy.cfg"
+                ]
 
     def rgw(self):
         """
@@ -893,19 +909,6 @@ class Validate(Preparation):
                     stack_files.append((os.path.join(drn, filename)))
         return stack_files
 
-    def profiles_populated(self):
-        """
-        Check for hardware profiles
-        """
-        policy_file = '/srv/pillar/ceph/proposals/policy.cfg'
-        accum_files = self._accumulate_files_from(policy_file)
-        profiles = [prf for prf in accum_files if 'profile' in prf]
-        if not profiles:
-            message = ("There are no files under the profiles directory."
-                       "Probably an issue with the discovery stage.")
-            self.errors.setdefault('profiles_populated', []).append(message)
-        self._set_pass_status('profiles_populated')
-
     def lint_yaml_files(self):
         """
         Scans for sanity of yaml files
@@ -1300,8 +1303,6 @@ def discovery(cluster=None, printer=None, **kwargs):
                      search=search)
     valid.deepsea_minions()
     valid.lint_yaml_files()
-    if not valid.in_dev_env:
-        valid.profiles_populated()
     valid.report()
 
     if valid.errors:
@@ -1357,6 +1358,7 @@ def pillar(cluster=None, printer=None, **kwargs):
     valid.monitors()
     valid.mgrs()
     valid.storage()
+    valid.storage_role()
     valid.rgw()
     valid.ganesha()
     valid.master_role()

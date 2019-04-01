@@ -267,196 +267,6 @@ class HardwareProfile(object):
             return _cmp(x.group(2), y.group(2))
 
 
-class DiskConfiguration(object):
-    """
-    All servers with free disks will become storage nodes
-    """
-
-    def __init__(self, options, servers=None):
-        """
-        Track proposals, default server list to mine data.
-        """
-        self.proposals = {}
-        self.storage_nodes = {}
-        if servers:
-            for server in servers:
-                ret = salt.utils.minions.mine_get(server, 'cephdisks.list',
-                                                  'glob', options.__opts__)
-                # what if server of servers returns anything -> no profile, no notification
-                self.storage_nodes.update(ret)
-        else:
-            ret = salt.utils.minions.mine_update('*', '', 'glob',
-                                                 options.__opts__)
-            self.storage_nodes = salt.utils.minions.mine_get('*',
-                                                             'cephdisks.list',
-                                                             'glob',
-                                                             options.__opts__)
-
-        self.servers = self.storage_nodes
-
-    def generate(self, hardwareprofile):
-        """
-        Add a hardware profile for each server.  Create proposals for each
-        profile. Create a proposal of all OSDs and OSDs with journals if
-        possible.
-        """
-        self.hardware = hardwareprofile
-        for server in self.storage_nodes:
-            self.hardware.add(server, self.storage_nodes[server])
-
-        for server in self.hardware.profiles:
-            if server not in self.proposals:
-                self.proposals[server] = {}
-            for configuration in self.hardware.profiles[server]:
-                if configuration not in self.proposals[server]:
-                    self.proposals[server][configuration] = []
-
-                drives = self.hardware.profiles[server][configuration]
-
-                log.debug("configuration {} with no journals".format(configuration))
-                self.proposals[server][configuration].append(self._assignments(drives))
-                for drive_model in drives:
-                    # How many types of drives are SSDs, NVMes
-                    if self.hardware.rotates[drive_model] == '0':
-                        log.debug(("configuration {} with {} "
-                                   "journal".format(configuration, drive_model)))
-                        proposal = self._assignments(drives, drive_model)
-                        if proposal:
-                            self.proposals[server][configuration].append(proposal)
-                        else:
-                            log.warning(("No proposal for {} as journal on "
-                                         "{}".format(drive_model,
-                                                     configuration)))
-
-    def _log_results(self, label, results):
-        """
-        """
-        log.debug("{}:".format(label))
-        for k in results:
-            log.debug(" {}:".format(k))
-            if k == 'data+journals':
-                for entry in results[k]:
-                    for d in entry:
-                        log.debug("  {}:".format(d))
-                        log.debug("   {}".format(entry[d]))
-            else:
-                for d in results[k]:
-                    log.debug("  {}".format(d))
-
-    def _assignments(self, drives, journal=None):
-        """
-        For a set of drives and designated journals (including none), assign
-        the devices to the various drive types.  The types are
-
-            osds = data + journal on same device
-            data+journals = data + journal on separate devices
-        """
-        assignments, data, journals = self._separate_drives(drives, journal)
-
-        log.debug("osds:")
-        for osd in assignments['osds']:
-            log.debug(" {}".format(osd))
-        log.debug("data:")
-        for d in data:
-            log.debug(" {}".format(d))
-        log.debug("journals:")
-        for j in journals:
-            log.debug(" {}".format(j))
-
-        # check that data drives can be evenly divided by 6-3
-        if journal:
-            # How to make this configurable, where to retrieve any
-            # configuration, etc. - placeholder for customization
-
-            results = self._nice_ratio(assignments, data, journals)
-            if results:
-                self._log_results("nice ratio", results)
-                return results
-
-            results = self._rounding(assignments, data, journals)
-            if results:
-                self._log_results("rounding", results)
-                return results
-
-            # No suggestion
-            return {}
-        else:
-            return assignments
-
-    def _separate_drives(self, drives, journal):
-        """
-        Put a drive in one of three queues: osd, data or journal
-        """
-        assignments = {'osds': [], 'data+journals': []}
-        data = []
-        journals = []
-        for drive_model in drives:
-            # check capacity
-            if drive_model == journal:
-                journals.extend(drives[drive_model])
-            else:
-                if self.hardware.rotates[drive_model] == '1':
-                    if journal:
-                        data.extend(drives[drive_model])
-                    else:
-                        assignments['osds'].extend(drives[drive_model])
-                else:
-                    if journal and self.hardware.nvme[journal]:
-                        data.extend(drives[drive_model])
-                    else:
-                        # SSD, NVMe for tier caching
-                        assignments['osds'].extend(drives[drive_model])
-        return assignments, data, journals
-
-    def _nice_ratio(self, assignments, data, journals):
-        """
-        Check if data drives are divisible by 6, 5, 4 or 3 and that we have
-        sufficient journal drives.  Add unused journal drives as standalone
-        osds.
-
-        """
-        for partitions in range(6, 2, -1):
-            if data and len(data) % partitions == 0:
-                if len(journals) >= len(data)/partitions:
-                    log.debug("Using {} partitions on {}".format(partitions, journals))
-
-                    return self._assign(partitions, assignments, data, journals)
-                else:
-                    log.debug("Not enough journals for {} partitions".format(partitions))
-            else:
-                log.debug("Skipping {} partitions".format(partitions))
-
-    def _rounding(self, assignments, data, journals):
-        """
-        Divide the data drives by the journal drives and round up. Use if
-        partitions are 3-6 inclusive.
-
-        """
-        partitions = len(data)/len(journals) + 1
-        if partitions > 2 and partitions < 7:
-            log.debug("Rounding... using {} partitions on {}".format(partitions, journals))
-            return self._assign(partitions, assignments, data, journals)
-
-    def _assign(self, partitions, assignments, data, journals):
-        """
-        Create the data+journal assignment from the data and journals arrays
-        """
-        index = 0
-        count = 1
-        for device in data:
-            log.debug("device: {}".format(device))
-            assignments['data+journals'].extend([{"{}".format(device):
-                                                  "{}".format(journals[index])}])
-            count += 1
-            if (count - 1) % partitions == 0:
-                log.debug("next journal")
-                count = 1
-                index += 1
-
-        # Add unused journal drives as OSDs
-        assignments['osds'].extend(journals[index:])
-        return assignments
-
 
 class CephRoles(object):
     """
@@ -523,7 +333,7 @@ class CephRoles(object):
         Create role named directories and create corresponding yaml files
         for every server.
         """
-        roles = ['admin', 'mon', 'mds', 'mgr', 'igw', 'grafana', 'prometheus']
+        roles = ['admin', 'mon', 'mds', 'mgr', 'igw', 'grafana', 'prometheus', 'storage']
         roles += self._rgw_configurations()
         roles += self._ganesha_configurations()
         self.available_roles.extend(roles)
@@ -533,9 +343,7 @@ class CephRoles(object):
             if not os.path.isdir(role_dir):
                 _create_dirs(role_dir, self.root_dir)
 
-            # All minions are not necessarily storage - see CephStorage
-            if role != 'storage':
-                self._role_assignment(role_dir, role)
+            self._role_assignment(role_dir, role)
 
     def _client_roles(self):
         """

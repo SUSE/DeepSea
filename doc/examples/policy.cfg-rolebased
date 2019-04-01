@@ -32,6 +32,6 @@ role-ganesha/cluster/ganesha*.sls
 config/stack/default/global.yml
 config/stack/default/ceph/cluster.yml
 
-## Profiles
-profile-default/cluster/*.sls
-profile-default/stack/default/ceph/minions/*.yml
+# Storage
+
+role-storage/cluster/data*.sls
