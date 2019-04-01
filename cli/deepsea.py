@@ -177,7 +177,10 @@ def _print_stage_step(step, indent, step_order_map):
             PP.print(PP.dark_green(" ({})".format(step.desc)))
             if step.target:
                 PP.print(PP.grey(" on "))
-                PP.print(PP.cyan(", ".join(step.target)))
+                if isinstance(step.target, list):
+                    PP.print(PP.cyan(", ".join(step.target)))
+                else:
+                    PP.print(PP.cyan(step.target))
         PP.println()
         _print_deps(step, indent, step_order_map)
 
