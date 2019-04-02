@@ -43,4 +43,11 @@ def address():
                     if (ipaddress.ip_address(u'{}'.format(_address)) in
                         ipaddress.ip_network(u'{}'.format(public_network))):
                         return _address
+            if 'inet6' in interfaces[interface]:
+                for entry in interfaces[interface]['inet6']:
+                    _address = entry['address']
+                    log.info("Checking address {}".format(_address))
+                    if (ipaddress.ip_address(u'{}'.format(_address)) in
+                        ipaddress.ip_network(u'{}'.format(public_network))):
+                        return _address
     return ""
