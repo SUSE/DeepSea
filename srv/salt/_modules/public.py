@@ -51,3 +51,41 @@ def address():
                         ipaddress.ip_network(u'{}'.format(public_network))):
                         return _address
     return ""
+
+
+def ipv6():
+    """
+    Return if any network is IPv6
+    """
+    return _ipnetwork(6)
+
+
+def ipv4():
+    """
+    Return if any network is IPv4
+    """
+    return _ipnetwork(4)
+
+
+def _ipnetwork(version):
+    """
+    Search the public_network variable for any networks matching the
+    version.
+    """
+    if 'public_network' not in __pillar__:
+        return False
+    log.debug("pillar: {}".format(type(__pillar__['public_network'])))
+    if isinstance(__pillar__['public_network'], str):
+        networks = re.split(', *', __pillar__['public_network'])
+    else:
+        networks = __pillar__['public_network']
+
+    log.debug("networks: {}".format(pprint.pformat(networks)))
+    for public_network in networks:
+        try:
+            network = ipaddress.ip_network(u'{}'.format(public_network))
+            if network.version == version:
+                return True
+        except ValueError as err:
+            log.error("Invalid network {}".format(err))
+    return False
