@@ -56,7 +56,8 @@ class TestMgrOrch():
             tgt_type="compound")
 
     @patch('salt.client.LocalClient', autospec=True)
-    def test_describe_service(self, localclient):
+    @patch('srv.modules.runners.mgr_orch._run_master_module_function', autospec=True)
+    def test_describe_service(self, mastermodule, localclient):
         daemon_ids = {
             "data1.ceph": {
                 "host": "data1"
@@ -75,34 +76,90 @@ class TestMgrOrch():
             "data1.ceph": ["storage", "admin", "mon", "mgr"],
             "data2.ceph": ["storage", "admin", "mon", "rgw"],
             "data3.ceph": ["storage", "admin", "mon"],
-            "data4.ceph": ["storage", "mds"]
+            "data4.ceph": ["storage", "mds", "igw", "ganesha"]
+        }
+        igw_address = {
+            "data4.ceph": "172.16.1.24"
+        }
+        igw_take_default = {
+            "data4.ceph": ""
         }
 
         local = localclient.return_value
-        local.cmd.side_effect = [daemon_ids, minion_roles]
+        local.cmd.side_effect = [daemon_ids, minion_roles, igw_address,
+            igw_take_default, igw_take_default, igw_take_default, igw_take_default]
+
+        mastermodule.return_value = 'cephfs_data'
 
         services = mgr_orch.describe_service()
 
-        local.cmd.assert_called_with(
+        local.cmd.assert_any_call(
             ("I@cluster:ceph and "
-             "( I@roles:mon or I@roles:mgr or I@roles:mds or I@roles:rgw )"),
+             "( I@roles:mon or I@roles:mgr or I@roles:mds or I@roles:rgw or I@roles:ganesha or I@roles:igw )"),
             'pillar.get', ['roles'],
             tgt_type="compound")
 
         assert services == {
             "data1.ceph": {
-                "mon": "data1",
-                "mgr": "data1"
+                "mon": {
+                    "service_instance": "data1"
+                },
+                "mgr": {
+                    "service_instance": "data1"
+                }
             },
             "data2.ceph": {
-                "mon": "data2",
-                "rgw": "data2"
+                "mon": {
+                    "service_instance": "data2"
+                },
+                "rgw": {
+                    "service_instance": "data2"
+                }
             },
             "data3.ceph": {
-                "mon": "data3"
+                "mon": {
+                    "service_instance": "data3"
+                }
             },
             "data4.ceph": {
-                "mds": "data4"
+                "mds": {
+                    "service_instance": "data4"
+                },
+                "igw": {
+                    "service_instance": "data4",
+                    "service_url": "http://admin:admin@172.16.1.24:5000"
+                },
+                "ganesha": {
+                    "service_instance": "data4",
+                    "rados_config_location": "rados://cephfs_data/ganesha/conf-data4"
+                }
+            }
+        }
+
+    @patch('salt.client.LocalClient', autospec=True)
+    def test_describe_service_igw_ipv6(self, localclient):
+        daemon_ids = {"data4.ceph": {"host": "data4"}}
+        minion_roles = {"data4.ceph": ["igw"]}
+        igw_address = { "data4.ceph": "2001:db8::" }
+        igw_take_default = { "data4.ceph": "" }
+
+        local = localclient.return_value
+        local.cmd.side_effect = [daemon_ids, minion_roles, igw_address,
+            igw_take_default, igw_take_default, igw_take_default, igw_take_default]
+
+        services = mgr_orch.describe_service(role='igw', service_id='data4')
+
+        local.cmd.assert_any_call(
+            "I@cluster:ceph and I@roles:igw",
+            'pillar.get', ['roles'],
+            tgt_type="compound")
+
+        assert services == {
+            "data4.ceph": {
+                "igw": {
+                    "service_instance": "data4",
+                    "service_url": "http://admin:admin@[2001:db8::]:5000"
+                },
             }
         }
 
@@ -137,13 +194,19 @@ class TestMgrOrch():
 
         assert services == {
             "data1.ceph": {
-                "mon": "data1"
+                "mon":  {
+                    "service_instance": "data1"
+                }
             },
             "data2.ceph": {
-                "mon": "data2"
+                "mon":  {
+                    "service_instance": "data2"
+                }
             },
             "data3.ceph": {
-                "mon": "data3"
+                "mon":  {
+                    "service_instance": "data3"
+                }
             }
         }
 
@@ -162,7 +225,7 @@ class TestMgrOrch():
             'pillar.get', ['roles'],
             tgt_type="compound")
 
-        assert services == {"data2.ceph": {"rgw": "data2"}}
+        assert services == {"data2.ceph": {"rgw": { "service_instance": "data2" } } }
 
     @patch('salt.client.LocalClient', autospec=True)
     def test_describe_service_role_wrong_id(self, localclient):
@@ -193,9 +256,18 @@ class TestMgrOrch():
 
         local.cmd.assert_called_with((
             "I@cluster:ceph and "
-            "( I@roles:mon or I@roles:mgr or I@roles:mds or I@roles:rgw ) and data1.ceph"
+            "( I@roles:mon or I@roles:mgr or I@roles:mds or I@roles:rgw or I@roles:ganesha or I@roles:igw ) and data1.ceph"
         ),
                                      'pillar.get', ['roles'],
                                      tgt_type="compound")
 
-        assert services == {"data1.ceph": {"mon": "data1", "mgr": "data1"}}
+        assert services == {
+            "data1.ceph": {
+                "mon": {
+                    "service_instance": "data1"
+                },
+                "mgr": {
+                    "service_instance": "data1"
+                }
+            }
+        }
