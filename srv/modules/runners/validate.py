@@ -243,6 +243,7 @@ class Validate(Preparation):
         self.passed = OrderedDict()
         self.errors = OrderedDict()
         self.warnings = OrderedDict()
+        self.ipversion = set()
         if search:
             self.search = search
 
@@ -331,7 +332,8 @@ class Validate(Preparation):
             log.debug("public_network: {} {}".format(node, net_list))
             for network in net_list:
                 try:
-                    ipaddress.ip_network(u'{}'.format(network))
+                    network = ipaddress.ip_network(u'{}'.format(network))
+                    self.ipversion.add(network.version)
                 except ValueError as err:
                     msg = "{} on {} is not valid: {}".format(network, node, err)
                     self.errors.setdefault('public_network', []).append(msg)
@@ -349,13 +351,18 @@ class Validate(Preparation):
             found = False
             public_network = self.data[node].get("public_network", "")
             net_list = Util.parse_list_from_string(public_network)
-            for address in self.grains[node]['ipv4']:
+            addresses = self.grains[node]['ipv4']
+            if 'ipv6' in self.grains[node]:
+                addresses += self.grains[node]['ipv6']
+            for address in addresses:
                 try:
                     for network in net_list:
                         addr = ipaddress.ip_address(u'{}'.format(address))
                         net = ipaddress.ip_network(u'{}'.format(network))
                         if addr in net:
+                            log.info("Found address {} in subnet {}".format(addr, net))
                             found = True
+                            break
                 except ValueError:
                     # Don't care about reporting a ValueError here if
                     # public_network is malformed, because the
@@ -365,7 +372,7 @@ class Validate(Preparation):
                 msg = "minion {} missing address on public network {}".format(node, public_network)
                 self.errors.setdefault('public_interface', []).append(msg)
 
-        self._set_pass_status('public_network')
+        self._set_pass_status('public_interface')
 
     def monitors(self):
         """
@@ -523,7 +530,8 @@ class Validate(Preparation):
                 log.debug("cluster_network: {} {}".format(node, net_list))
                 for network in net_list:
                     try:
-                        ipaddress.ip_network(u'{}'.format(network))
+                        network = ipaddress.ip_network(u'{}'.format(network))
+                        self.ipversion.add(network.version)
                     except ValueError as err:
                         msg = "{} on {} is not valid: {}".format(network, node, err)
                         self.errors.setdefault('cluster_network', []).append(msg)
@@ -541,13 +549,15 @@ class Validate(Preparation):
                 found = False
                 cluster_network = self.data[node].get("cluster_network", "")
                 net_list = Util.parse_list_from_string(cluster_network)
-                for address in self.grains[node]['ipv4']:
+                for address in self.grains[node]['ipv4'] + self.grains[node]['ipv6']:
                     try:
                         for network in net_list:
                             addr = ipaddress.ip_address(u'{}'.format(address))
                             net = ipaddress.ip_network(u'{}'.format(network))
                             if addr in net:
+                                log.info("Found address {} in subnet {}".format(addr, net))
                                 found = True
+                                break
                     except ValueError:
                         # Don't care about reporting a ValueError here if
                         # cluster_network is malformed, because the
@@ -559,6 +569,17 @@ class Validate(Preparation):
                     self.errors.setdefault('cluster_interface', []).append(msg)
 
         self._set_pass_status('cluster_interface')
+
+    def check_ipversion(self):
+        """
+        Check that all subnets are the same version
+        """
+        log.debug("ipversion: {}".format(self.ipversion))
+        if len(self.ipversion) != 1:
+            msg = "Networks must be either IPv4 or IPv6"
+            self.errors.setdefault('ip_version', []).append(msg)
+
+        self._set_pass_status('ip_version')
 
     def master_role(self):
         """
@@ -1355,6 +1376,7 @@ def pillar(cluster=None, printer=None, **kwargs):
     valid.public_interface()
     valid.cluster_network()
     valid.cluster_interface()
+    valid.check_ipversion()
     valid.monitors()
     valid.mgrs()
     valid.storage()
