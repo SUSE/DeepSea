@@ -14,7 +14,38 @@
         trusted_ip_list: {{ ip_addresses }}
 {% endfor %}
 
+{% if pillar.get('ceph_iscsi_ssl', True) %}
+{% if pillar.get('ceph_iscsi_ssl_cert', None) and pillar.get('ceph_iscsi_ssl_key', None) %}
+
+/srv/salt/ceph/igw/cache/tls/certs/iscsi-gateway.crt:
+  file.managed:
+    - source: {{ pillar['ceph_iscsi_ssl_cert'] }}
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - mode: 644
+    - makedirs: True
+    - fire_event: True
+
+/srv/salt/ceph/igw/cache/tls/certs/iscsi-gateway.key:
+  file.managed:
+    - source: {{ pillar['ceph_iscsi_ssl_key'] }}
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - mode: 644
+    - makedirs: True
+    - fire_event: True
+
+{% else %}
+generate ceph-iscsi self-signed SSL certificate:
+  module.run:
+    - name: tls.create_self_signed_cert
+    - cacert_path: /srv/salt/ceph/igw/cache
+    - CN: iscsi-gateway
+    - fire_event: True
+
+{% endif %}
+{% endif %}
+
 fix salt job cache permissions:
   cmd.run:
   - name: "find /var/cache/salt/master/jobs -user root -exec chown {{ salt['deepsea.user']() }}:{{ salt['deepsea.group']() }} {} ';'"
-  

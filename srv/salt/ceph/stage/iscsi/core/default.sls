@@ -64,16 +64,42 @@ iscsi apply:
     - tgt: "I@roles:igw and I@cluster:ceph"
     - tgt_type: compound
     - sls: ceph.igw
+    - failhard: True
+
+{% set iscsi_username = pillar.get('ceph_iscsi_username', 'admin') %}
+{% set iscsi_password = pillar.get('ceph_iscsi_password', 'admin') %}
+{% set iscsi_port = pillar.get('ceph_iscsi_port', '5000') %}
+{% set iscsi_ssl = pillar.get('ceph_iscsi_ssl', True) %}
+
+{% if iscsi_ssl %}
+disable dashboard ssl verification:
+  salt.function:
+    - name: cmd.run
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - kwarg:
+        cmd: ceph dashboard set-iscsi-api-ssl-verification false
+        shell: /bin/bash
+    - failhard: True
+{% endif %}
 
 {% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph') %}
+
+{% if iscsi_ssl %}
+{% set iscsi_url = "https://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}
+{% else %}
+{% set iscsi_url = "http://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}
+{% endif %}
+
 wait for iscsi gateway {{ igw_address }} to initialize:
   salt.function:
     - name: cmd.run
     - tgt: {{ master }}
     - tgt_type: compound
     - kwarg:
-        cmd: "C=0; while true; do if curl -s http://admin:admin@{{ igw_address }}:5000 > /dev/null; then break; else sleep 5; C=$(( C + 1 )); fi; if [ $C = 6 ]; then exit 1; fi; done"
+        cmd: "C=0; while true; do if curl --insecure -s {{ iscsi_url }} > /dev/null; then break; else sleep 5; C=$(( C + 1 )); fi; if [ $C = 6 ]; then exit 1; fi; done"
         shell: /bin/bash
+    - failhard: True
 
 add iscsi gateway {{ igw_address }} to dashboard:
   salt.function:
@@ -81,9 +107,9 @@ add iscsi gateway {{ igw_address }} to dashboard:
     - tgt: {{ master }}
     - tgt_type: compound
     - arg:
-      - "ceph dashboard iscsi-gateway-add http://admin:admin@{{ igw_address }}:5000"
+      - "ceph dashboard iscsi-gateway-add {{ iscsi_url }}"
     - kwarg:
-        unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ igw_address }}:5000"
+        unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ igw_address }}:{{ iscsi_port }}"
 
 {% endfor %}
 
