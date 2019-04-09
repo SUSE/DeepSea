@@ -18,6 +18,13 @@ ms_bind_msgr2 = false
 mon_health_preluminous_compat = true
 mon health preluminous compat warning = false
 
+{% set ipv6=salt['public.ipv6']() %}
+{% if ipv6 %}
+ms bind ipv4 = {{ salt['public.ipv4']() | lower }}
+ms bind ipv6 = true
+ip_version = ipv6
+{% endif %}
+
 {% include "ceph/configuration/files/rbd.conf" %}
 
 {% include "ceph/configuration/files/ceph.conf.d/global.conf" ignore missing %}
