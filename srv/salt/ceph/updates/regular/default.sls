@@ -1,3 +1,8 @@
+prevent empty rendering:
+  test.nop:
+    - name: skip
+
+{% if pillar.get('package_updates', True) %}
 {% if grains.get('os_family', '') == 'Suse' %}
 
 packagemanager update regular:
@@ -16,4 +21,5 @@ upgrade packages:
     - refresh: True
     - fire_event: True
 
+{% endif %}
 {% endif %}
