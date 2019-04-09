@@ -203,6 +203,30 @@ def ids():
     return list()
 
 
+# pylint: disable=invalid-name
+def df(**kwargs):
+    """
+    Return osd df
+    """
+    settings = {
+        'conf': "/etc/ceph/ceph.conf",
+        'keyring': '/etc/ceph/ceph.client.admin.keyring',
+        'client': 'client.admin',
+    }
+    settings.update(kwargs)
+
+    cluster = rados.Rados(conffile=settings['conf'],
+                          conf=dict(keyring=settings['keyring']),
+                          name=settings['client'])
+
+    cluster.connect()
+    cmd = json.dumps({"prefix": "osd df", "format": "json"})
+    _, output, _ = cluster.mon_command(cmd, b'', timeout=6)
+    osd_df = json.loads(output)
+    log.debug(json.dumps(osd_df, indent=4))
+    return osd_df
+
+
 def _tree(**kwargs):
     """
     Return osd tree
