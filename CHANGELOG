@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Tue Apr  9 14:12:34 UTC 2019 - Jan Fajerski <jan.fajerski@suse.com>
+
+- Version: 0.9.17
+- rgw: start making beast as a default frontend
+- adapt remove and replace logic to ceph-volume + tests
+- mgr_orch: return raw ceph_volume output in get_inventory()
+- populate: create storage roles for all nodes
+- iscsi: use iSCSi gateway public IP address in dashboard configuration
+- Remove RGW demo bucket creation
+- ganesha: find pool during stage execution (instead of in parsing phase)
+- Support IPv6
+
+-------------------------------------------------------------------
 Thu Mar 26 20:43:20 UTC 2019 - jschmid@suse.com
 
 - Version: 0.9.16
