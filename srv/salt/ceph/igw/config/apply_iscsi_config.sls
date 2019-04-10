@@ -7,7 +7,7 @@
     - mode: 600
     - fire_event: True
 
-{% if pillar.get('ceph_iscsi_ssl', True) %}
+{% if pillar.get('ceph_iscsi_ssl', False) %}
 
 /etc/ceph/iscsi-gateway.crt:
   file.managed:

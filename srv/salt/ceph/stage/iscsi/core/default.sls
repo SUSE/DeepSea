@@ -69,7 +69,7 @@ iscsi apply:
 {% set iscsi_username = pillar.get('ceph_iscsi_username', 'admin') %}
 {% set iscsi_password = pillar.get('ceph_iscsi_password', 'admin') %}
 {% set iscsi_port = pillar.get('ceph_iscsi_port', '5000') %}
-{% set iscsi_ssl = pillar.get('ceph_iscsi_ssl', True) %}
+{% set iscsi_ssl = pillar.get('ceph_iscsi_ssl', False) %}
 
 {% if iscsi_ssl %}
 disable dashboard ssl verification:
