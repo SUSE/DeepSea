@@ -67,6 +67,8 @@ add mgr dashboard config section:
           enabled: true
           org_name: Main Org.
           org_role: Viewer
+        users:
+          default_theme: light
 
 grafana-server:
   service.running:
