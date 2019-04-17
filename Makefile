@@ -560,6 +560,8 @@ copy-files:
 	# state files - rescind
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/alertmanager
+	install -m 644 srv/salt/ceph/rescind/alertmanager/*.sls $(DESTDIR)/srv/salt/ceph/rescind/alertmanager/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/configuration
