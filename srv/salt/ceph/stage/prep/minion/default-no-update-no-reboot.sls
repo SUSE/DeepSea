@@ -1,6 +1,7 @@
 crc_method minion:
   salt.state:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt_type: compound
     - sls: ceph.salt.crc.minion
 
 repo:
