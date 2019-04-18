@@ -34,6 +34,19 @@ golang-github-prometheus-prometheus:
     - makedirs: True
     - fire_event: True
 
+{% if salt['pillar.get']('monitoring:prometheus:additional_flags', False) %}
+/etc/sysconfig/prometheus:
+  file.managed:
+    - content: ARGS="{{ pillar['monitoring:prometheus:additional_flags'] }}"
+    - user: root
+    - group: root
+    - mode: 644
+    - makedirs: True
+    - fire_event: True
+    - watch_in:
+      - service: prometheus
+{% endif %}
+
 start prometheus:
   service.running:
     - name: prometheus
