@@ -59,6 +59,22 @@ ceph grafana dashboard:
     - template: jinja
     - source: salt://ceph/monitoring/grafana/files/ses_dashboards.yaml.j2
 
+/etc/grafana/grafana.crt:
+  file.managed:
+    - user: grafana
+    - group: grafana
+    - mode: 600
+    - fire_event: True
+    - source: salt://ceph/monitoring/grafana/cache/tls/certs/grafana.crt
+
+/etc/grafana/grafana.key:
+  file.managed:
+    - user: grafana
+    - group: grafana
+    - mode: 600
+    - fire_event: True
+    - source: salt://ceph/monitoring/grafana/cache/tls/certs/grafana.key
+
 add mgr dashboard config section:
   ini.options_present:
     - name: /etc/grafana/grafana.ini
@@ -67,6 +83,10 @@ add mgr dashboard config section:
           enabled: true
           org_name: Main Org.
           org_role: Viewer
+        server:
+          protocol: https
+          cert_file: /etc/grafana/grafana.crt
+          cert_key: /etc/grafana/grafana.key
         users:
           default_theme: light
 

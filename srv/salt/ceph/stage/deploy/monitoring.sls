@@ -24,11 +24,11 @@ push scrape configs:
 
 {% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='grafana') != []) %}
 
-populate grafana datasources:
+populate grafana config fragments:
   salt.state:
     - tgt: {{ master }}
     - tgt_type: compound
-    - sls: ceph.monitoring.grafana.populate_datasources
+    - sls: ceph.monitoring.grafana.create_configs
 
 install grafana:
   salt.state:
