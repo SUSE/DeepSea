@@ -308,6 +308,8 @@ def _check_state_result(states):
 
     Returns True if all states were successful, and False otherwise
     """
+    if not isinstance(states, dict):
+        return False
     for _, state in states.items():
         if not state['result']:
             return False
@@ -358,9 +360,19 @@ def _deploy_in_minions(minions):
         target = 'L@{}'.format(','.join(minions))
     else:
         target = 'I@roles:igw'
-    state_res = local.cmd(target, 'state.apply', ['ceph.igw.restart.force'], expr_form="compound")
-    for minion, states in state_res.items():
-        result['minions'][minion] = _check_state_result(states)
+
+    state_res = local.cmd(target, 'test.ping', expr_form="compound")
+    minion_list = [minion for minion in state_res]
+
+    log.info("Restart IGW minions: %s", minion_list)
+
+    # iterate over each minion to restart igw nodes sequentially
+    for minion in minion_list:
+        log.info("Restarting IGW minion: %s", minion)
+        state_res = local.cmd(minion, 'state.apply', ['ceph.igw.restart.force'])
+        result['minions'][minion] = _check_state_result(state_res[minion])
+        log.info("Restarted IGW minion: %s result: %s", minion,
+                 result['minions'][minion])
         if not result['minions'][minion]:
             result['success'] = False
 
