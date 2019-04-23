@@ -33,6 +33,11 @@ scrape_configs:
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:grafana', '10s')|yaml }}
     file_sd_configs:
       - files: [ '/etc/prometheus/SUSE/grafana/*.yml' ]
+    scheme: https
+{% if not pillar.get('monitoring:grafana:ssl_cert', False) and not pillar.get('monitoring:grafana:ssl_key', False) %}
+    tls_config:
+      insecure_skip_verify: true
+{% endif %}
     relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:grafana', [])|yaml }}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:grafana', [])|yaml }}
 
