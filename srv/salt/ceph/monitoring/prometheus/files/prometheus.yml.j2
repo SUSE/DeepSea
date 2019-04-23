@@ -35,3 +35,10 @@ scrape_configs:
       - files: [ '/etc/prometheus/SUSE/grafana/*.yml' ]
     relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:grafana', [])|yaml }}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:grafana', [])|yaml }}
+
+alerting:
+  alert_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:alert_relabel_config', [])|yaml }}
+  alertmanagers:
+    - file_sd_configs:
+        - files: [ '/etc/prometheus/SUSE/alertmanager/*.yml' ]
+      relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:alertmanager', [])|yaml }}
