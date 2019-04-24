@@ -37,13 +37,6 @@ time:
     - sls: ceph.time
 {% endif %}
 
-packages:
-  salt.state:
-    - tgt: 'I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.packages
-    - failhard: True
-
 configuration check:
   salt.state:
     - tgt: {{ master }}

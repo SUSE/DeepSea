@@ -29,6 +29,7 @@ stage prep dependencies suse:
       - polkit
       - libstoragemgmt
       - curl
+      - ceph
     - fire_event: True
     - refresh: True
 
@@ -47,6 +48,7 @@ stage prep dependencies ubuntu:
       - iperf
       - jq
       - curl
+      - ceph
     - fire_event: True
     - refresh: True
 
@@ -77,6 +79,7 @@ stage prep dependencies CentOS:
       - jq
       - libstoragemgmt
       - curl
+      - ceph
     - fire_event: True
     - refresh: True
 
