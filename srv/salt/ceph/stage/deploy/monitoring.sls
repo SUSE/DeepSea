@@ -12,7 +12,7 @@ install prometheus:
   salt.state:
     - tgt: 'I@roles:prometheus and I@cluster:ceph'
     - tgt_type: compound
-    - sls: ceph.monitoring.prometheus.install
+    - sls: ceph.monitoring.prometheus
 
 push scrape configs:
   salt.state:

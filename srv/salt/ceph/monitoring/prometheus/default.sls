@@ -55,7 +55,7 @@ golang-github-prometheus-prometheus:
     - user: root
     - group: root
     - mode: 644
-    - makedire: True
+    - makedirs: True
     - fire_event: True
 {% endfor %}
 
