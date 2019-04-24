@@ -823,6 +823,14 @@ def c_v_commands(**kwargs):
 
 def deploy(**kwargs):
     """ Execute the generated ceph-volume commands """
+    # do not run this when there is still ceph:storage in the pillar
+    # this indicates that we are in a post-upgrade scenario and
+    # the drive assignment was not ported to drive-groups yet.
+    if __pillar__.get('ceph', {}).get('storage'):
+        return ("You seem to have configured old-style profiles."
+                "Will not deploy using Drive-Groups."
+                "Please consult <insert doc/man> for guidance"
+                "on how to migrate to Drive-Groups")
     return __salt__['helper.run'](c_v_commands(**kwargs))
 
 
