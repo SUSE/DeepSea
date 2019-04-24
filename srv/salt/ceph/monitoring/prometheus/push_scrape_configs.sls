@@ -1,4 +1,4 @@
-/etc/prometheus/SUSE/node_exporter/:
+/etc/prometheus/SUSE/scrape_configs/node_exporter/:
   file.recurse:
     - user: prometheus
     - group: prometheus
@@ -6,14 +6,14 @@
     - dir_mode: 755
     - makedirs: True
     - fire_event: True
-    - source: salt://ceph/monitoring/prometheus/cache/node_exporter/
+    - source: salt://ceph/monitoring/prometheus/cache/scrape_configs/node_exporter/
     - clean: True
 
 partition node scrape configs:
   module.run:
     - name: scrape_targets.partition
 
-/etc/prometheus/SUSE/prometheus/:
+/etc/prometheus/SUSE/scrape_configs/prometheus/:
   file.recurse:
     - user: prometheus
     - group: prometheus
@@ -21,10 +21,10 @@ partition node scrape configs:
     - dir_mode: 755
     - makedirs: True
     - fire_event: True
-    - source: salt://ceph/monitoring/prometheus/cache/prometheus/
+    - source: salt://ceph/monitoring/prometheus/cache/scrape_configs/prometheus/
     - clean: True
 
-/etc/prometheus/SUSE/alertmanager/:
+/etc/prometheus/SUSE/scrape_configs/alertmanager/:
   file.recurse:
     - user: prometheus
     - group: prometheus
@@ -32,10 +32,10 @@ partition node scrape configs:
     - dir_mode: 755
     - makedirs: True
     - fire_event: True
-    - source: salt://ceph/monitoring/prometheus/cache/alertmanager/
+    - source: salt://ceph/monitoring/prometheus/cache/scrape_configs/alertmanager/
     - clean: True
 
-/etc/prometheus/SUSE/grafana/:
+/etc/prometheus/SUSE/scrape_configs/grafana/:
   file.recurse:
     - user: prometheus
     - group: prometheus
@@ -43,5 +43,5 @@ partition node scrape configs:
     - dir_mode: 755
     - makedirs: True
     - fire_event: True
-    - source: salt://ceph/monitoring/prometheus/cache/grafana/
+    - source: salt://ceph/monitoring/prometheus/cache/scrape_configs/grafana/
     - clean: True

@@ -1,9 +1,9 @@
 clean up node_exporter cache dir:
   file.absent:
-    - name: /srv/salt/ceph/monitoring/prometheus/cache/node_exporter
+    - name: /srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/node_exporter
 
 {% for minion in salt.saltutil.runner('select.minions', cluster='ceph', host=False) %}
-/srv/salt/ceph/monitoring/prometheus/cache/node_exporter/{{ minion }}.yml:
+/srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/node_exporter/{{ minion }}.yml:
   file.managed:
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
@@ -18,10 +18,10 @@ clean up node_exporter cache dir:
 
 clean up prometheus cache dir:
   file.absent:
-    - name: /srv/salt/ceph/monitoring/prometheus/cache/prometheus
+    - name: /srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/prometheus
 
 {% for minion in salt.saltutil.runner('select.minions', cluster='ceph', host=False, roles='prometheus') %}
-/srv/salt/ceph/monitoring/prometheus/cache/prometheus/{{ minion }}.yml:
+/srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/prometheus/{{ minion }}.yml:
   file.managed:
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
@@ -36,10 +36,10 @@ clean up prometheus cache dir:
 
 clean up alertmanager cache dir:
   file.absent:
-    - name: /srv/salt/ceph/monitoring/prometheus/cache/alertmanager
+    - name: /srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/alertmanager
 
 {% for minion in salt.saltutil.runner('select.minions', cluster='ceph', host=False, roles='prometheus') %}
-/srv/salt/ceph/monitoring/prometheus/cache/alertmanager/{{ minion }}.yml:
+/srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/alertmanager/{{ minion }}.yml:
   file.managed:
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
@@ -54,10 +54,10 @@ clean up alertmanager cache dir:
 
 clean up grafana cache dir:
   file.absent:
-    - name: /srv/salt/ceph/monitoring/prometheus/cache/grafana
+    - name: /srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/grafana
 
 {% for minion in salt.saltutil.runner('select.minions', cluster='ceph', host=False, roles='grafana') %}
-/srv/salt/ceph/monitoring/prometheus/cache/grafana/{{ minion }}.yml:
+/srv/salt/ceph/monitoring/prometheus/cache/scrape_configs/grafana/{{ minion }}.yml:
   file.managed:
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
