@@ -47,6 +47,18 @@ golang-github-prometheus-prometheus:
       - service: prometheus
 {% endif %}
 
+{% for rule_file in salt['pillar.get']('monitoring:prometheus:rule_files', []) %}
+{% set file_name = salt['cmd.shell']("basename" + rule_file) %}
+/etc/prometheus/SUSE/custom_rules/{{ file_name }}:
+  file.managed:
+    - source: {{ rule_file }}
+    - user: root
+    - group: root
+    - mode: 644
+    - makedire: True
+    - fire_event: True
+{% endfor %}
+
 start prometheus:
   service.running:
     - name: prometheus
