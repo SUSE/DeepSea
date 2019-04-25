@@ -1,4 +1,27 @@
 -------------------------------------------------------------------
+Thu Apr 25 13:47:45 UTC 2019 - jschmid@suse.com
+
+- Version: 0.8.10
+- iscsi: restart iSCSI gateways sequentially
+- Makefile: make "make rpm" less likely to produce a wrong version number
+- monitoring: update smartmon.sh, fix label dimension inconsistency
+- Correctly parse multiple networks
+- Align unittests with implementation. bonus: whitespaces
+- cli: fix stdout/stderr redirection for python 2
+- metapackage: add test.nop stanza
+- qa: drop health-ok.sh and associated scripting
+- ceph.mon.default: test if MONs are really up
+- ceph.stage.deploy.default: restart MONs and MGRs before OSDs
+- ceph.mon.default: use service.running
+- ceph.mgr.default: test if MGRs are really up
+- Kill iperf3 processes when complete
+- Handle broken symlinks
+- Address removal of dmcrypt partitions
+- Do not return content in case there is no matching by_path
+- Makefile: pass --long option to git describe
+- Add rebuild orchestration, obliterate state
+
+-------------------------------------------------------------------
 Tue Jan 29 13:33:45 UTC 2019 - jschmid@suse.com
 
 - Version: 0.8.9
