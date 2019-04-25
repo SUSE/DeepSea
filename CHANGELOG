@@ -2,10 +2,10 @@
 Thu Apr 25 13:47:45 UTC 2019 - jschmid@suse.com
 
 - Version: 0.8.10
-- iscsi: restart iSCSI gateways sequentially
+- iscsi: restart iSCSI gateways sequentially (bsc#1130223)
 - Makefile: make "make rpm" less likely to produce a wrong version number
 - monitoring: update smartmon.sh, fix label dimension inconsistency
-- Correctly parse multiple networks
+- Correctly parse multiple networks (bsc#1130511)
 - Align unittests with implementation. bonus: whitespaces
 - cli: fix stdout/stderr redirection for python 2
 - metapackage: add test.nop stanza
@@ -14,12 +14,12 @@ Thu Apr 25 13:47:45 UTC 2019 - jschmid@suse.com
 - ceph.stage.deploy.default: restart MONs and MGRs before OSDs
 - ceph.mon.default: use service.running
 - ceph.mgr.default: test if MGRs are really up
-- Kill iperf3 processes when complete
-- Handle broken symlinks
-- Address removal of dmcrypt partitions
+- Kill iperf3 processes when complete (bsc#1122941)
+- Handle broken symlinks (bsc#1123344)
+- Address removal of dmcrypt partitions (bsc#1122326)
 - Do not return content in case there is no matching by_path
 - Makefile: pass --long option to git describe
-- Add rebuild orchestration, obliterate state
+- Add rebuild orchestration, obliterate state (bsc#1122461)
 
 -------------------------------------------------------------------
 Tue Jan 29 13:33:45 UTC 2019 - jschmid@suse.com
@@ -31,7 +31,7 @@ Tue Jan 29 13:33:45 UTC 2019 - jschmid@suse.com
 - monitoring/dashboard: always refresh templates on time picker change. (bsc#1113824)
 - Fixes auth caps for openstack.integrate
 - Fix unicode output error in openstack.py
-- Check for digit before 'p' (split_partition)
+- Check for digit before 'p' (split_partition) (bsc#123226)
 
 -------------------------------------------------------------------
 Tue Dec 13 16:33:45 UTC 2018 - jschmid@suse.com
