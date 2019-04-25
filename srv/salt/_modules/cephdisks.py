@@ -26,14 +26,14 @@ class Inventory(object):
     @property
     def available_filter(self) -> bool:
         """ The available filter """
-        return self.kwargs.get('available', None)
+        return self.kwargs.get('available', False)
 
     @property
     def used_by_ceph_filter(self) -> bool:
         """ The used_by_ceph filter """
         # This also returns disks that are marked as
         # 'destroyed' is that valid?
-        return self.kwargs.get('used_by_ceph', True)
+        return self.kwargs.get('used_by_ceph', False)
 
     def osd_list(self) -> list:
         """
@@ -59,11 +59,11 @@ class Inventory(object):
         for dev in self.devices.devices:
             # Apply known filters
             if self.available_filter:
-                if dev.available is self.available_filter:
+                if dev.available:
                     devs.append(dev)
                     continue
             elif self.used_by_ceph_filter:
-                if dev.used_by_ceph is self.used_by_ceph_filter:
+                if dev.used_by_ceph:
                     devs.append(dev)
                     continue
             else:
