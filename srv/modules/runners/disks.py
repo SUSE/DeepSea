@@ -200,15 +200,17 @@ def details(**kwargs):
 def destroyed():
     """ List destroyed (about to be replaced) disks
     """
-    # This can't be solved with Popen since the salt-master is running as salt:salt
+    # This can't be solved with Popen since the salt-master is running as
+    # salt:salt
     local_client = salt.client.LocalClient()
     ret: str = local_client.cmd(
         "roles:master",
         'cmd.shell', ['ceph osd tree destroyed --format json'],
         tgt_type='pillar')
 
-    ret = list(ret.values())[0]
-    tree = json.loads(ret).get('nodes')
+    tree = {}
+    if ret:
+        tree = json.loads(list(ret.values())[0]).get('nodes')
 
     # what is stray? # probably destroyed osds that are not listed nder
     # a certain bucket/host. This may be useful later
@@ -218,7 +220,8 @@ def destroyed():
     for item in tree:
         # only looking for type host
         if item.get('type', '') == 'host':
-            report_map.update({item.get('name', ''): item.get('children', list())})
+            report_map.update({item.get('name', ''): item.get('children',
+                                                              list())})
 
     return report_map
 
