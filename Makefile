@@ -399,6 +399,10 @@ copy-files:
 	# state files - monitoring
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring
 	install -m 644 srv/salt/ceph/monitoring/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager
+	install -m 644 srv/salt/ceph/monitoring/alertmanager/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager/files
+	install -m 644 srv/salt/ceph/monitoring/alertmanager/files/*.j2 $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/grafana
 	install -m 644 srv/salt/ceph/monitoring/grafana/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/grafana
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/grafana/files
@@ -556,6 +560,8 @@ copy-files:
 	# state files - rescind
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind
 	install -m 644 srv/salt/ceph/rescind/*.sls $(DESTDIR)/srv/salt/ceph/rescind/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/alertmanager
+	install -m 644 srv/salt/ceph/rescind/alertmanager/*.sls $(DESTDIR)/srv/salt/ceph/rescind/alertmanager/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/admin
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/configuration

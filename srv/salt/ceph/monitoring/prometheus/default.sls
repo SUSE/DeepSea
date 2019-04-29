@@ -34,6 +34,31 @@ golang-github-prometheus-prometheus:
     - makedirs: True
     - fire_event: True
 
+{% if salt['pillar.get']('monitoring:prometheus:additional_flags', False) %}
+/etc/sysconfig/prometheus:
+  file.managed:
+    - content: ARGS="{{ pillar['monitoring:prometheus:additional_flags'] }}"
+    - user: root
+    - group: root
+    - mode: 644
+    - makedirs: True
+    - fire_event: True
+    - watch_in:
+      - service: prometheus
+{% endif %}
+
+{% for rule_file in salt['pillar.get']('monitoring:prometheus:rule_files', []) %}
+{% set file_name = salt['cmd.shell']("basename" + rule_file) %}
+/etc/prometheus/SUSE/custom_rules/{{ file_name }}:
+  file.managed:
+    - source: {{ rule_file }}
+    - user: root
+    - group: root
+    - mode: 644
+    - makedirs: True
+    - fire_event: True
+{% endfor %}
+
 start prometheus:
   service.running:
     - name: prometheus

@@ -195,6 +195,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mon/restart/force
 %dir /srv/salt/ceph/mon/restart/controlled
 %dir /srv/salt/ceph/monitoring
+%dir /srv/salt/ceph/monitoring/alertmanager
+%dir /srv/salt/ceph/monitoring/alertmanager/files
 %dir /srv/salt/ceph/monitoring/grafana
 %dir /srv/salt/ceph/monitoring/grafana/files
 %dir /srv/salt/ceph/monitoring/prometheus
@@ -269,6 +271,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/reset
 %dir /srv/salt/ceph/rescind
 %dir /srv/salt/ceph/rescind/admin
+%dir /srv/salt/ceph/rescind/alertmanager
 %dir /srv/salt/ceph/rescind/configuration
 %dir /srv/salt/ceph/rescind/client-cephfs
 %dir /srv/salt/ceph/rescind/client-iscsi
@@ -545,6 +548,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/restart/force/*.sls
 %config /srv/salt/ceph/mon/restart/controlled/*.sls
 %config /srv/salt/ceph/monitoring/*.sls
+%config /srv/salt/ceph/monitoring/alertmanager/*.sls
+%config /srv/salt/ceph/monitoring/alertmanager/files/*.j2
 %config /srv/salt/ceph/monitoring/grafana/*.sls
 %config /srv/salt/ceph/monitoring/grafana/files/*.j2
 %config /srv/salt/ceph/monitoring/prometheus/*.sls
@@ -612,6 +617,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/remove/openattic/*.sls
 %config /srv/salt/ceph/rescind/*.sls
 %config /srv/salt/ceph/rescind/admin/*.sls
+%config /srv/salt/ceph/rescind/alertmanager/*.sls
 %config /srv/salt/ceph/rescind/configuration/*.sls
 %config /srv/salt/ceph/rescind/client-iscsi/*.sls
 %config /srv/salt/ceph/rescind/client-cephfs/*.sls
