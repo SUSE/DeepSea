@@ -210,7 +210,12 @@ def destroyed():
 
     tree = {}
     if ret:
-        tree = json.loads(list(ret.values())[0]).get('nodes')
+        try:
+            tree = json.loads(list(ret.values())[0]).get('nodes')
+        except json.decoder.JSONDecodeError:
+            log.info(
+                "No valid json in ceph osd tree. Probably no cluster deployed yet."
+            )
 
     # what is stray? # probably destroyed osds that are not listed nder
     # a certain bucket/host. This may be useful later
