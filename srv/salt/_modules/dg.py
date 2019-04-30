@@ -104,6 +104,20 @@ class Filter(object):
         return 'Filter<{}>'.format(self.name)
 
 
+JSON_REGEX = re.compile(r'[[{].*[\]}]')
+
+
+def _parse_dirty_json(maybe_json: str) -> dict:
+    """
+    Try to parse c-v's dirty json output
+    """
+    match = JSON_REGEX.match(maybe_json)
+    if match:
+        return json.loads(match[0])
+    else:
+        raise ValueError('No valid json found in {}'.format(maybe_json))
+
+
 class Inventory():
     """ The Inventory class
 
@@ -136,7 +150,7 @@ class Inventory():
         Loads the json data from ceph-volume inventory
         """
         log.debug('Loading disks from inventory')
-        return json.loads(self.raw)
+        return _parse_dirty_json(self.raw)
 
 
 # pylint: disable=too-few-public-methods
