@@ -42,13 +42,44 @@ class NotOkToStop(Exception):
     pass
 
 
-class OSDUtil(object):
+class Util(object):
+    """
+    Util helper class
+    """
+
+    local = salt.client.LocalClient()
+
+    @staticmethod
+    def join_list(inp):
+        """ Join a list of integers to a list of strings """
+        return " ".join([str(x) for x in list(inp)])
+
+    @classmethod
+    def get_osd_list_for(cls, target):
+        """ call salt's LocalClient for osd.list with target """
+        return cls.local.cmd(target, "osd.list", tgt_type="compound")
+
+    @staticmethod
+    def master_minion():
+        """
+        Load the master modules
+        """
+        __master_opts__ = salt.config.client_config("/etc/salt/master")
+        __master_utils__ = salt.loader.utils(__master_opts__)
+        __salt_master__ = salt.loader.minion_mods(
+            __master_opts__, utils=__master_utils__)
+
+        return __salt_master__["master.minion"]()
+
+
+class OSDUtil(Util):
     """ Util class for OSD handling """
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, osd_id, **kwargs):
-        self.osd_id = osd_id
-        self.local = salt.client.LocalClient()
+        Util.__init__(self)
+        self.osd_id = int(osd_id)
+        self.local = Util.local
         self.host_osds = self._host_osds()
         self.host = self._find_host()
         self.osd_state = self._get_osd_state()
@@ -186,7 +217,7 @@ class OSDUtil(object):
         """ Remote call to osd.py to wait until and osd is empty"""
         log.info("Waiting for osd {} to empty".format(self.osd_id))
         ret = self.local.cmd(
-            _master_minion(),
+            Util.master_minion(),
             'osd.wait_until_empty', [self.osd_id],
             tgt_type="glob")
         message = list(ret.values())[0]
@@ -196,7 +227,7 @@ class OSDUtil(object):
         """ Remote call to osd.py to drain a osd """
         log.info("Emptying osd {}".format(self.osd_id))
         ret = self.local.cmd(
-            _master_minion(),
+            Util.master_minion(),
             'osd.empty',
             [self.osd_id],  # **kwargs
             tgt_type="glob")
@@ -241,7 +272,7 @@ class OSDUtil(object):
         cmd = 'ceph osd dump --format=json'
         log.info("Executing: {}".format(cmd))
         ret = self.local.cmd(
-            _master_minion(), "cmd.run", [cmd], tgt_type="glob")
+            Util.master_minion(), "cmd.run", [cmd], tgt_type="glob")
         message = list(ret.values())[0]
         message_json = json.loads(message)
         all_osds = message_json.get('osds', [])
@@ -253,8 +284,7 @@ class OSDUtil(object):
             raise OSDNotFound("OSD {} doesn't exist in the cluster".format(
                 self.osd_id))
         return dict(
-            _in=bool(osd_info.get('in', 0)),
-            out=bool(osd_info.get('out', 0)))
+            _in=bool(osd_info.get('in', 0)), out=bool(osd_info.get('out', 0)))
 
     def _lvm_zap(self):
         """ Remote call to minion for lvm zap """
@@ -279,7 +309,7 @@ class OSDUtil(object):
         cmd = "ceph osd destroy {} --yes-i-really-mean-it".format(self.osd_id)
         log.info("Executing: {}".format(cmd))
         ret = self.local.cmd(
-            _master_minion(),
+            Util.master_minion(),
             "cmd.run",
             [cmd],
             tgt_type="glob",
@@ -296,7 +326,7 @@ class OSDUtil(object):
         cmd = "ceph osd purge {} --yes-i-really-mean-it".format(self.osd_id)
         log.info("Executing: {}".format(cmd))
         ret = self.local.cmd(
-            _master_minion(),
+            Util.master_minion(),
             "cmd.run",
             [cmd],
             tgt_type="glob",
@@ -312,8 +342,7 @@ class OSDUtil(object):
         log.info("Calling service.{} on {}".format(action, self.osd_id))
         ret = self.local.cmd(
             self.host,
-            'service.{}'.format(action),
-            ['ceph-osd@{}'.format(self.osd_id)],
+            'service.{}'.format(action), ['ceph-osd@{}'.format(self.osd_id)],
             tgt_type="glob")
         message = list(ret.values())[0]
         if not message:
@@ -327,7 +356,7 @@ class OSDUtil(object):
         cmd = "ceph osd {} {}".format(state, self.osd_id)
         log.info("Running command {}".format(cmd))
         ret = self.local.cmd(
-            _master_minion(),
+            Util.master_minion(),
             "cmd.run",
             [cmd],
             tgt_type="glob",
@@ -355,27 +384,14 @@ class OSDUtil(object):
                 return host
         return ""
 
-    def _host_osds(self):
+    @staticmethod
+    def _host_osds():
         """
         osd.list is a mix of 'mounts' and 'grains'
         in the future this should come from ceph-volume inventory
         - check
         """
-        return self.local.cmd(
-            "I@roles:storage", "osd.list", tgt_type="compound")
-        #                       subject to change
-
-
-def _master_minion():
-    """
-    Load the master modules
-    """
-    __master_opts__ = salt.config.client_config("/etc/salt/master")
-    __master_utils__ = salt.loader.utils(__master_opts__)
-    __salt_master__ = salt.loader.minion_mods(
-        __master_opts__, utils=__master_utils__)
-
-    return __salt_master__["master.minion"]()
+        return Util.get_osd_list_for("I@roles:storage")
 
 
 def ok_to_stop_osds(osd_list):
@@ -384,7 +400,7 @@ def ok_to_stop_osds(osd_list):
     log.info("Running command {}".format(cmd))
     local = salt.client.LocalClient()
     ret = local.cmd(
-        _master_minion(),
+        Util.master_minion(),
         "cmd.run",
         [cmd],
         tgt_type="glob",
@@ -403,6 +419,7 @@ def pre_check(osd_list, force):
     """ Pre check method
     Skip if force flag is set
     """
+    osd_list = Util.join_list(osd_list)
     if force:
         print("The 'force' flag is set. ok-to-stop checks are disabled."
               " Please use with caution.")
@@ -410,13 +427,40 @@ def pre_check(osd_list, force):
         ok_to_stop_osds(osd_list)
 
 
+def _target_lookup(inp):
+    """
+    This allows to specify a compound taret on the commandline
+    """
+    osd_list = []
+    for target in inp:
+        if isinstance(target, int):
+            # It's safe to assume that when the first arg is
+            # an integer we get a list of osd_ids
+            return list(inp)
+        elif isinstance(target, str):
+            print("Detected a compound target")
+            osd_list_return = Util.get_osd_list_for(target)
+
+            if not osd_list_return:
+                print("Target: {} did not match anything".format(target))
+                return False
+            for _, osds in osd_list_return.items():
+                if osds:
+                    osd_list.extend(osds)
+            print("Found OSDS: {} in compound target {}".format(
+                osd_list, target))
+    return osd_list
+
+
 def remove(*args, **kwargs):
     """ User facing osd.remove function """
     results = dict()
     kwargs.update({'operation': 'remove'})
-    osd_list = " ".join([str(x) for x in list(args)])
+    osd_list = _target_lookup(args)
+    if not osd_list:
+        return False
     pre_check(osd_list, kwargs.get('force', False))
-    for osd_id in args:
+    for osd_id in osd_list:
         _rc = OSDUtil(osd_id, **kwargs).remove()
         results.update({osd_id: _rc})
     return results
@@ -426,9 +470,11 @@ def replace(*args, **kwargs):
     """ User facing osd.replace function """
     results = dict()
     kwargs.update({'operation': 'replace'})
-    osd_list = " ".join([str(x) for x in list(args)])
+    osd_list = _target_lookup(args)
+    if not osd_list:
+        return False
     pre_check(osd_list, kwargs.get('force', False))
-    for osd_id in args:
+    for osd_id in osd_list:
         _rc = OSDUtil(osd_id, **kwargs).replace()
         results.update({osd_id: _rc})
     return results

@@ -28,7 +28,7 @@ class TestOSDUtil():
                 c.force = force
                 c.operation = operation
                 c.local = patch(
-                    'salt.client.LocalClient', return_value=['moo'])
+                    'salt.client.LocalClient', return_value=['foo'])
                 c.local.start()
                 c.local.cmd = Mock(return_value={'host': 'something'})
                 return c
@@ -95,7 +95,7 @@ class TestOSDUtil():
             tgt_type='glob')
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     @patch(
@@ -112,7 +112,7 @@ class TestOSDUtil():
         assert wait_loop.called is True
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     @patch(
@@ -186,7 +186,7 @@ class TestOSDUtil():
 
     @patch('srv.modules.runners.osd.OSDUtil._mark_osd', autospec=True)
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_recover_osd_state_in(self, master_minion, mark_osd_mock,
@@ -197,7 +197,7 @@ class TestOSDUtil():
 
     @patch('srv.modules.runners.osd.OSDUtil._mark_osd', autospec=True)
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_recover_osd_state_out(self, master_minion, mark_osd_mock,
@@ -235,7 +235,7 @@ class TestOSDUtil():
             test_fix._lvm_zap()
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_mark_destroyed(self, master_minion, test_fix):
@@ -252,7 +252,7 @@ class TestOSDUtil():
             tgt_type='glob')
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_mark_destroyed_fail(self, master_minion, test_fix):
@@ -262,7 +262,7 @@ class TestOSDUtil():
             test_fix._mark_destroyed()
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_purge_osd(self, master_minion, test_fix):
@@ -279,7 +279,7 @@ class TestOSDUtil():
             tgt_type='glob')
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_purge_osd_fail(self, master_minion, test_fix):
@@ -302,7 +302,7 @@ class TestOSDUtil():
 
     @pytest.mark.parametrize("state", ['out', 'down'])
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_mark_osd(self, master_minion, state, test_fix):
@@ -319,7 +319,7 @@ class TestOSDUtil():
 
     @pytest.mark.parametrize("state", ['out', 'down'])
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_mark_osd_is_already(self, master_minion, state, test_fix):
@@ -336,7 +336,7 @@ class TestOSDUtil():
 
     @pytest.mark.parametrize("state", ['out', 'down'])
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_mark_osd_is_does_not_exist(self, master_minion, state, test_fix):
@@ -349,7 +349,7 @@ class TestOSDUtil():
 
     @pytest.mark.parametrize("state", ['out', 'down'])
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     def test_mark_osd_state_unknown(self, master_minion, state, test_fix):
@@ -375,14 +375,15 @@ class TestOSDUtil():
         ret = test_fix._find_host()
         assert ret == ""
 
-    def test_host_osds(self, test_fix):
+    @patch('srv.modules.runners.osd.Util.local.cmd')
+    def test_host_osds(self, local, test_fix):
         test_fix = test_fix()
         test_fix._host_osds()
-        test_fix.local.cmd.assert_called_once_with(
-            "I@roles:storage", 'osd.list', tgt_type='compound')
+        local.assert_called_once_with(
+            'I@roles:storage', 'osd.list', tgt_type='compound')
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     @patch('salt.client.LocalClient', autospec=True)
@@ -394,7 +395,7 @@ class TestOSDUtil():
         assert ret is True
 
     @patch(
-        'srv.modules.runners.osd._master_minion',
+        'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
     @patch('salt.client.LocalClient', autospec=True)
@@ -421,3 +422,25 @@ class TestOSDUtil():
     def test_pre_check_no_force(self, ok_to_stop):
         osd_module.pre_check("1, 2", False)
         assert ok_to_stop.called is True
+
+    @patch(
+        'srv.modules.runners.osd.Util.get_osd_list_for',
+        return_value={'': []})
+    def test__target_lookup(self, local):
+        ret = osd_module._target_lookup("")
+        assert ret == []
+
+    def test__target_lookup_empty(self):
+        ret = osd_module._target_lookup(tuple([]))
+        assert ret == []
+
+    @patch(
+        'srv.modules.runners.osd.Util.get_osd_list_for',
+        return_value={'foo': [1, 2, 3, 4, 5, 6]})
+    def test__target_lookup_compound(self, local):
+        ret = osd_module._target_lookup(tuple(["dummy_target"]))
+        assert ret == [1, 2, 3, 4, 5, 6]
+
+    def test__target_lookup_list(self):
+        ret = osd_module._target_lookup(tuple([1, 2, 3]))
+        assert ret == [1, 2, 3]
