@@ -1,6 +1,13 @@
 [config]
 cluster_client_name = {{ client }}
 pool = {{ pillar['iscsi-pool'] }}
-api_secure = false
 trusted_ip_list = {{ trusted_ip_list }}
 minimum_gateways = 1
+api_port = {{ pillar.get('ceph_iscsi_port', '5000') }}
+api_user = {{ pillar.get('ceph_iscsi_username', 'admin') }}
+api_password = {{ pillar.get('ceph_iscsi_password', 'admin') }}
+{% if pillar.get('ceph_iscsi_ssl', False) %}
+api_secure = true
+{% else %}
+api_secure = false
+{% endif %}
