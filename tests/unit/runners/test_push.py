@@ -118,4 +118,16 @@ class TestPush():
         result = push.organize('policy.cfg')
         assert result == {}
 
-
+    def test_migrate_journal_size(self):
+        pillar_data = push.PillarData()
+        data = {'ceph': {'storage': {'osds': {
+                    '/dev/vdb': {'format': 'filestore',
+                                 'journal': '/dev/vdc',
+                                 'journal_size': '200M'}}
+               }}}
+        result = pillar_data._migrate(data, "/tmp/none")
+        assert result == {'ceph': {'storage': {'osds': {
+                              '/dev/vdb': {'format': 'bluestore',
+                                           'wal': '/dev/vdc',
+                                           'db': '/dev/vdc'}}
+               }}}
