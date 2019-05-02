@@ -184,14 +184,6 @@ class TestMetaCheck():
         assert len(mc.up) == 1
         assert mc.up[0].name == proc_name
 
-    def test_add_igw(self, mc):
-        mc.up = []
-        role_name = 'mds'
-        proc_name = 'ceph-mds'
-        mc.add(self.build_proc(role_name, proc_name), role_name)
-        assert len(mc.up) == 1
-        assert mc.up[0].name == proc_name
-
     def test_add_rgw(self, mc):
         mc.up = []
         role_name = 'rgw'
@@ -203,10 +195,9 @@ class TestMetaCheck():
     def test_add_igw(self, mc):
         mc.up = []
         role_name = 'igw'
-        proc_name = 'rbd-target-gw'
+        proc_name = 'rbd-target-api'
         mc.add(self.build_proc(role_name, proc_name), role_name)
-        assert len(mc.up) == 1
-        assert mc.up[0].name == proc_name
+        assert len(mc.up) == 0
 
     def test_add_ganesha(self, mc):
         mc.up = []
