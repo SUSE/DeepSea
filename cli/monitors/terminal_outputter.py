@@ -361,6 +361,7 @@ class StepListPrinter(MonitorListener):
         """
         Breaks the string into an array of strings of max length width
         """
+        desc = desc.replace("\n", "")
         # list of characters that we will use to split a string in order of
         # preference
         split_chars = (' ', ',', ')', '(', '/')
