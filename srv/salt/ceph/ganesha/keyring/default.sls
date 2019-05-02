@@ -1,7 +1,7 @@
 {% for role in salt['ganesha.configurations']() %}
 
-{% set keyring_name = "ceph.client." + role + "." + grains['host'] + ".keyring" %}
-/etc/ceph/{{ keyring_name }}:
+{% set keyring_name = "client." + role + "." + grains['host'] + ".keyring" %}
+/etc/ceph/ceph.{{ keyring_name }}:
   file.managed:
     - source:
       - salt://ceph/ganesha/cache/{{ keyring_name }}
@@ -16,7 +16,7 @@
 /etc/ceph/ceph.client.{{ rgw_role }}.{{ role + "." + grains['host'] }}.keyring:
   file.managed:
     - source:
-      - salt://ceph/ganesha/cache/ceph.client.{{ rgw_role }}.{{ role + "." +  grains['host'] }}.keyring
+      - salt://ceph/ganesha/cache/client.{{ rgw_role }}.{{ role + "." +  grains['host'] }}.keyring
     - user: ceph
     - group: ceph
     - mode: 600

@@ -15,7 +15,7 @@ auth {{ keyring_file }}:
 
 {% set rgw_role = salt['rgw.configuration'](role) %}
 {% if rgw_role %}
-{% set rgw_keyring_file = "/srv/salt/ceph/ganesha/cache/ceph.client." + rgw_role + "." + role + "." + host + ".keyring" %}
+{% set rgw_keyring_file = "/srv/salt/ceph/ganesha/cache/client." + rgw_role + "." + role + "." + host + ".keyring" %}
 {% set rgw_client = "client." + rgw_role + "." + role + "." + host %}
 
 auth {{ rgw_keyring_file }}:
