@@ -597,12 +597,16 @@ class DriveGroup(object):
         return self.filter_args.get("journal_devices", dict())
 
     @property
-    def limit(self) -> int:
-        """ Limits the amount of devices assigned
-
-        Limit 0 -> unlimited
+    def block_wal_size(self) -> int:
+        """ Wal Device attributes
         """
-        return self.data_device_attrs.get("limit", 0)
+        return self.filter_args.get("block_wal_size", 0)
+
+    @property
+    def block_db_size(self) -> int:
+        """ Wal Device attributes
+        """
+        return self.filter_args.get("block_db_size", 0)
 
     @property
     def format(self) -> str:
@@ -653,7 +657,9 @@ class DriveGroup(object):
         log.debug("Scanning for journal devices")
         return self._filter_devices(self.journal_device_attrs)
 
-    def _limit_reached(self, len_devices: int, disk_path: str) -> bool:
+    @staticmethod
+    def _limit_reached(device_filter, len_devices: int,
+                       disk_path: str) -> bool:
         """ Check for the <limit> property and apply logic
 
         If a limit is set in 'device_attrs' we have to stop adding
@@ -666,9 +672,11 @@ class DriveGroup(object):
         :return: True/False if the device should be added to the list of devices
         :rtype: bool
         """
-        if self.limit > 0 and len_devices >= self.limit:
+        limit = device_filter.get('limit', 0)
+
+        if limit > 0 and len_devices >= limit:
             log.info("Refuse to add {} due to limit policy of {}>".format(
-                disk_path, self.limit))
+                disk_path, limit))
             return True
         return False
 
@@ -706,7 +714,8 @@ class DriveGroup(object):
                 if not self._has_mandatory_idents(disk):
                     continue
 
-                if self._limit_reached(len(devices), disk.get('path')):
+                if self._limit_reached(device_filter, len(devices),
+                                       disk.get('path')):
                     continue
 
                 devices.add(disk.get("path"))
@@ -876,6 +885,12 @@ def c_v_commands(**kwargs):
         cmd += appendix
     if dgo.encryption:
         cmd += " --dmcrypt"
+
+    if dgo.block_wal_size:
+        cmd += " --block-wal-size {}".format(dgo.block_wal_size)
+
+    if dgo.block_db_size:
+        cmd += " --block-db-size {}".format(dgo.block_db_size)
 
     return cmd
 
