@@ -590,12 +590,32 @@ class DriveGroup(object):
         return self.filter_args.get("wal_devices", dict())
 
     @property
+    def journal_device_attrs(self) -> dict:
+        """ Journal Device attributes
+        """
+        return self.filter_args.get("journal_devices", dict())
+
+    @property
     def limit(self) -> int:
         """ Limits the amount of devices assigned
 
         Limit 0 -> unlimited
         """
         return self.data_device_attrs.get("limit", 0)
+
+    @property
+    def format(self) -> str:
+        """
+        On-disk-format - Filestore/Bluestore
+        """
+        return self.filter_args.get("format", "bluestore")
+
+    @property
+    def journal_size(self) -> int:
+        """
+        Journal size
+        """
+        return self.filter_args.get("journal_size", False)
 
     @property
     def inventory(self) -> dict:
@@ -606,7 +626,7 @@ class DriveGroup(object):
 
     @property
     def data_devices(self) -> list:
-        """ Filter for (bluestore) DATA devices
+        """ Filter for (bluestore/filestore) DATA devices
         """
         log.debug("Scanning for data devices")
         return self._filter_devices(self.data_device_attrs)
@@ -624,6 +644,13 @@ class DriveGroup(object):
         """
         log.debug("Scanning for db devices")
         return self._filter_devices(self.db_device_attrs)
+
+    @property
+    def journal_devices(self) -> list:
+        """ Filter for filestore journal devices
+        """
+        log.debug("Scanning for journal devices")
+        return self._filter_devices(self.journal_device_attrs)
 
     def _limit_reached(self, len_devices: int, disk_path: str) -> bool:
         """ Check for the <limit> property and apply logic
@@ -770,6 +797,9 @@ def list_drives(**kwargs):
     if not filter_args:
         Exception("No filter_args provided")
     dgo = DriveGroup(filter_args)
+    if dgo.format == 'filestore':
+        return dict(
+            data_devices=dgo.data_devices, journal_devices=dgo.journal_devices)
     return dict(
         data_devices=dgo.data_devices,
         wal_devices=dgo.wal_devices,
@@ -808,22 +838,35 @@ def c_v_commands(**kwargs):
     # and will evetually end up there:
     # trackerbug: http://tracker.ceph.com/issues/38473
 
-    extra_db_devices = [
-        x for x in set(dgo.db_devices) if x not in set(dgo.wal_devices)
-    ]
+    if dgo.format == 'bluestore':
+        extra_db_devices = [
+            x for x in set(dgo.db_devices) if x not in set(dgo.wal_devices)
+        ]
+        cmd += " --bluestore"
 
-    if dgo.wal_devices and dgo.db_devices:
-        cmd += " --wal-devices {}".format(' '.join(dgo.wal_devices))
-        if extra_db_devices:
-            log.info(
-                "wal and db are same except for {}".format(extra_db_devices))
-            cmd += "--db-devices {}".format(' '.join(extra_db_devices))
-    elif dgo.wal_devices and not dgo.db_devices:
-        cmd += " --wal-devices {}".format(' '.join(dgo.wal_devices))
-    elif dgo.db_devices and not dgo.wal_devices:
-        cmd += " --db-devices {}".format(' '.join(dgo.db_devices))
-    else:
-        log.info("Neither wal nor db devices are specified")
+        if dgo.wal_devices and dgo.db_devices:
+            cmd += " --wal-devices {}".format(' '.join(dgo.wal_devices))
+            if extra_db_devices:
+                log.info("wal and db are same except for {}".format(
+                    extra_db_devices))
+                cmd += "--db-devices {}".format(' '.join(extra_db_devices))
+        elif dgo.wal_devices and not dgo.db_devices:
+            cmd += " --wal-devices {}".format(' '.join(dgo.wal_devices))
+        elif dgo.db_devices and not dgo.wal_devices:
+            cmd += " --db-devices {}".format(' '.join(dgo.db_devices))
+        else:
+            log.info("Neither wal nor db devices are specified")
+
+    if dgo.format == 'filestore':
+        cmd += " --filestore"
+
+        if dgo.journal_size:
+            cmd += " --journal-size {}".format(dgo.journal_size)
+
+        if dgo.journal_devices:
+            cmd += " --journal-devices {}".format(' '.join(
+                dgo.journal_devices))
+
     if kwargs.get('dry_run', False):
         cmd += " --report"
     else:
@@ -832,6 +875,7 @@ def c_v_commands(**kwargs):
         cmd += appendix
     if dgo.encryption:
         cmd += " --dmcrypt"
+
     return cmd
 
 
