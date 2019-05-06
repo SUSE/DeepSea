@@ -141,6 +141,7 @@ class TestDriveGroup_Disks(object):
             kwarg={
                 'filter_args': {'args'},
                 'dry_run': False,
+                'include_unavailable': False,
                 'destroyed_osds': {
                     'data1': [1, 2, 3]
                 }
@@ -158,6 +159,26 @@ class TestDriveGroup_Disks(object):
             kwarg={
                 'filter_args': {'args'},
                 'dry_run': True,
+                'include_unavailable': False,
+                'destroyed_osds': {
+                    'data1': [1, 2, 3]
+                }
+            })
+
+    @patch('srv.modules.runners.disks.destroyed')
+    def test_call_include_unavailable(self, destroyed_mock,
+                                      drive_groups_fixture):
+        dgo = drive_groups_fixture(include_unavailable=True)
+        destroyed_mock.return_value = {'data1': [1, 2, 3]}
+        dgo.call('target*', {'args'}, 'test_command')
+        dgo.local_client.cmd.assert_called_with(
+            'target*',
+            'dg.test_command',
+            expr_form='compound',
+            kwarg={
+                'filter_args': {'args'},
+                'dry_run': False,
+                'include_unavailable': True,
                 'destroyed_osds': {
                     'data1': [1, 2, 3]
                 }
