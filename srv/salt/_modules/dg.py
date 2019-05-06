@@ -615,7 +615,7 @@ class DriveGroup(object):
         """
         Journal size
         """
-        return self.filter_args.get("journal_size", False)
+        return self.filter_args.get("journal_size", 0)
 
     @property
     def inventory(self) -> dict:

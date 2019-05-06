@@ -331,9 +331,10 @@ class TestSizeMatcher(object):
 class TestDriveGroup(object):
     @pytest.fixture(scope='class')
     def test_fix(self, empty=None):
-        def make_sample_data(empty=empty, limit=0):
-            raw_sample = {
+        def make_sample_data(empty=empty, limit=0, disk_format='bluestore'):
+            raw_sample_bluestore = {
                 'target': 'data*',
+                'format': 'bluestore',
                 'data_devices': {
                     'size': '10G:29G',
                     'model': 'foo',
@@ -348,9 +349,28 @@ class TestDriveGroup(object):
                 },
                 'db_slots': 5,
                 'wal_slots': 5,
-                'objectstore': 'bluestore',
                 'encryption': True,
             }
+            raw_sample_filestore = {
+                'target': 'data*',
+                'format': 'filestore',
+                'data_devices': {
+                    'size': '10G:29G',
+                    'model': 'foo',
+                    'vendor': '1x',
+                    'limit': limit
+                },
+                'journal_devices': {
+                    'size': ':90G'
+                },
+                'journal_size': '500M',
+                'encryption': True,
+            }
+            if disk_format == 'filestore':
+                raw_sample = raw_sample_filestore
+            else:
+                raw_sample = raw_sample_bluestore
+
             if empty:
                 raw_sample = {}
 
@@ -421,6 +441,12 @@ class TestDriveGroup(object):
             'model': 'fast',
         }
 
+    def test_journal_device_prop(self, test_fix):
+        test_fix = test_fix(disk_format='filestore')
+        assert test_fix.journal_device_attrs == {
+            'size': ':90G',
+        }
+
     def test_wal_device_prop_empty(self, test_fix):
         test_fix = test_fix(empty=True)
         assert test_fix.wal_device_attrs == {}
@@ -449,6 +475,33 @@ class TestDriveGroup(object):
         test_fix = test_fix()
         test_fix.db_devices
         filter_mock.assert_called_once_with({'size': ':10G'})
+
+    @patch(
+        'srv.salt._modules.dg.DriveGroup._filter_devices', new_callable=Mock)
+    def test_journal_devices(self, filter_mock, test_fix):
+        test_fix = test_fix(disk_format='filestore')
+        test_fix.journal_devices
+        filter_mock.assert_called_once_with({'size': ':90G'})
+
+    def test_filestore_format_prop(self, test_fix):
+        test_fix = test_fix(disk_format='filestore')
+        assert test_fix.format == 'filestore'
+
+    def test_bluestore_format_prop(self, test_fix):
+        test_fix = test_fix(disk_format='bluestore')
+        assert test_fix.format == 'bluestore'
+
+    def test_default_format_prop(self, test_fix):
+        test_fix = test_fix(empty=True)
+        assert test_fix.format == 'bluestore'
+
+    def test_journal_size(self, test_fix):
+        test_fix = test_fix(disk_format='filestore')
+        assert test_fix.journal_size == '500M'
+
+    def test_journal_size_empty(self, test_fix):
+        test_fix = test_fix(empty=True)
+        assert test_fix.journal_size == 0
 
     @pytest.fixture
     def inventory(self, available=True):
