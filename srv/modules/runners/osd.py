@@ -429,7 +429,7 @@ def pre_check(osd_list, force):
 
 def _target_lookup(inp):
     """
-    This allows to specify a compound taret on the commandline
+    This allows to specify a compound target on the command line
     """
     osd_list = []
     for target in inp:
