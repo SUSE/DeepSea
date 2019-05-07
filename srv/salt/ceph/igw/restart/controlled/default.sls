@@ -1,20 +1,21 @@
-{% if salt['cephprocesses.need_restart'](role='igw') == True %}
+restart igw gateway:
+  deepsea.state_apply_if:
+    - condition:
+        salt:
+          cephprocesses.need_restart:
+            kwargs:
+              role: igw
+    - state_name: module.run
+    - kwargs:
+        name: service.restart
+        m_name: rbd-target-api
 
-restart igw gateway {{ grains['host'] }}:
+wait for iscsi gateway to initialize:
   module.run:
-    - name: service.restart
-    - m_name: rbd-target-api
+    - name: iscsi.wait_for_gateway
 
 unset igw restart grain:
   module.run:
     - name: grains.setval
     - key: restart_igw
     - val: False
-
-
-{% else %}
-
-igwrestart.noop:
-  test.nop
-
-{% endif %}

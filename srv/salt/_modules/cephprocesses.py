@@ -44,7 +44,10 @@ processes = {'mon': ['ceph-mon'],
              'grafana': ['grafana-server'],
              'master': []}
 
-absent_processes = {}
+# Processes like lrbd have an inverted logic
+# if they are running it means that the service is _NOT_ ready
+# as opposed to the the services in the 'processes' map.
+absent_processes = {'igw': ['lrbd']}
 
 
 # pylint: disable=too-few-public-methods
@@ -336,6 +339,7 @@ def check(results=False, **kwargs):
     fail.  If results flag is set, return a dictionary of the form:
       { 'down': [ process, ... ], 'up': { process: [ pid, ... ], ...} }
     """
+    processes['igw'] = __pillar__.get('igw_service_daemons', [])
     _extend_processes()
     res = MetaCheck(**kwargs)
 
@@ -426,6 +430,8 @@ def zypper_ps(role, lsof_map):
     processes_['rgw'] = ['ceph-radosgw', 'radosgw', 'rgw']
     # ganesha is called nfs-ganesha
     processes_['ganesha'] = ['ganesha.nfsd', 'rpcbind', 'rpc.statd', 'nfs-ganesha']
+    # igw we need to get the current iSCSI daemon deployed
+    processes_['igw'] = __pillar__.get('igw_service_daemons', ['lrbd'])
     for proc_l in stdout.split('\n'):
         if '@' in proc_l:
             proc_l = proc_l.split('@')[0]
