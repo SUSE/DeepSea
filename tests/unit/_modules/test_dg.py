@@ -3,6 +3,92 @@ from mock import patch, call, Mock, PropertyMock
 from srv.salt._modules import dg
 
 
+class InventoryFactory(object):
+    def __init__(self):
+        self.taken_paths = []
+
+    def _make_path(self, ident='b'):
+        return "/dev/{}{}".format(self.prefix, ident)
+
+    def _find_new_path(self):
+        cnt = 0
+        if len(self.taken_paths) >= 25:
+            raise Exception(
+                "Double-character disks are not implemetend. Maximum amount"
+                "of disks reached.")
+
+        while self.path in self.taken_paths:
+            ident = chr(ord('b') + cnt)
+            self.path = "/dev/{}{}".format(self.prefix, ident)
+            cnt += 1
+
+    def assemble(self):
+        if self.empty:
+            return {}
+        self._find_new_path()
+        inventory_sample = {
+            'available': self.available,
+            'lvs': [],
+            'path': self.path,
+            'rejected_reasons': self.rejected_reason,
+            'sys_api': {
+                'human_readable_size': self.human_readable_size,
+                'locked': 1,
+                'model': self.model,
+                'nr_requests': '256',
+                'partitions':
+                {  # partitions are not as relevant for now, todo for later
+                    'vda1': {
+                        'sectors': '41940992',
+                        'sectorsize': 512,
+                        'size': self.human_readable_size,
+                        'start': '2048'
+                    }
+                },
+                'path': self.path,
+                'removable': '0',
+                'rev': '',
+                'ro': '0',
+                'rotational': str(self.rotational),
+                'sas_address': '',
+                'sas_device_handle': '',
+                'scheduler_mode': 'mq-deadline',
+                'sectors': 0,
+                'sectorsize': '512',
+                'size': 123,  # TODO
+                'support_discard': '',
+                'vendor': self.vendor
+            }
+        }
+        self.taken_paths.append(self.path)
+        return inventory_sample
+
+    def _init(self, **kwargs):
+        self.prefix = 'vd'
+        self.path = kwargs.get('path', self._make_path())
+        self.human_readable_size = kwargs.get('human_readable_size',
+                                              '50.00 GB')
+        self.vendor = kwargs.get('vendor', 'samsung')
+        self.model = kwargs.get('model', '42-RGB')
+        self.available = kwargs.get('available', True)
+        self.rejected_reason = kwargs.get('rejected_reason', [''])
+        self.rotational = kwargs.get('rotational', '1')
+        if not self.available:
+            self.rejected_reason = ['locked']
+        self.empty = kwargs.get('empty', False)
+
+    def produce(self, pieces=1, **kwargs):
+        if kwargs.get('path') and pieces > 1:
+            raise Exception("/path/ and /pieces/ are mutually exclusive")
+        # Move to custom init to track _taken_paths.
+        # class is invoked once in each context.
+        # if disks with different properties are being created
+        # we'd have to re-init the class and loose track of the
+        # taken_paths
+        self._init(**kwargs)
+        return [self.assemble() for x in range(0, pieces)]
+
+
 class TestInventory(object):
     """ Test Inventory container class
     """
@@ -23,13 +109,21 @@ class TestDirtyJson(object):
     Test dirty json parser
     """
 
-    @pytest.mark.parametrize("test_input,expected",
-                             [('sdmkh{"foo":"bar"}', {"foo": "bar"}),
-                              ('{"foo":"bar"}', {"foo": "bar"}),
-                              ('sdmkh[{"foo":"bar"}]', [{"foo": "bar"}]),
-                              ('sdmkh[{"foo":\n"bar"}]', [{"foo": "bar"}]),
-                              ('sdmkh[{"foo":"bar"}]', [{"foo": "bar"}]),
-                              ('sdmkh[{"foo":{"bar":"foobar"}}]', [{"foo": {"bar": "foobar"}}])])
+    @pytest.mark.parametrize("test_input,expected", [('sdmkh{"foo":"bar"}', {
+        "foo": "bar"
+    }), ('{"foo":"bar"}', {
+        "foo": "bar"
+    }), ('sdmkh[{"foo":"bar"}]', [{
+        "foo": "bar"
+    }]), ('sdmkh[{"foo":\n"bar"}]', [{
+        "foo": "bar"
+    }]), ('sdmkh[{"foo":"bar"}]', [{
+        "foo": "bar"
+    }]), ('sdmkh[{"foo":{"bar":"foobar"}}]', [{
+        "foo": {
+            "bar": "foobar"
+        }
+    }])])
     def test_dirty_json(self, test_input, expected):
         assert dg._parse_dirty_json(test_input) == expected
 
@@ -347,14 +441,18 @@ class TestSizeMatcher(object):
 class TestDriveGroup(object):
     @pytest.fixture(scope='class')
     def test_fix(self, empty=None):
-        def make_sample_data(empty=empty, data_limit=0, wal_limit=0, db_limit=0, disk_format='bluestore'):
+        def make_sample_data(empty=empty,
+                             data_limit=0,
+                             wal_limit=0,
+                             db_limit=0,
+                             disk_format='bluestore'):
             raw_sample_bluestore = {
                 'target': 'data*',
                 'format': 'bluestore',
                 'data_devices': {
-                    'size': '10G:29G',
-                    'model': 'foo',
-                    'vendor': '1x',
+                    'size': '30G:50G',
+                    'model': '42-RGB',
+                    'vendor': 'samsung',
                     'limit': data_limit
                 },
                 'wal_devices': {
@@ -362,7 +460,7 @@ class TestDriveGroup(object):
                     'limit': wal_limit
                 },
                 'db_devices': {
-                    'size': ':10G',
+                    'size': ':20G',
                     'limit': db_limit
                 },
                 'db_slots': 5,
@@ -456,9 +554,9 @@ class TestDriveGroup(object):
     def test_data_devices_prop(self, test_fix):
         test_fix = test_fix()
         assert test_fix.data_device_attrs == {
-            'model': 'foo',
-            'size': '10G:29G',
-            'vendor': '1x',
+            'model': '42-RGB',
+            'size': '30G:50G',
+            'vendor': 'samsung',
             'limit': 0
         }
 
@@ -469,7 +567,7 @@ class TestDriveGroup(object):
     def test_db_devices_prop(self, test_fix):
         test_fix = test_fix()
         assert test_fix.db_device_attrs == {
-            'size': ':10G',
+            'size': ':20G',
             'limit': 0,
         }
 
@@ -496,13 +594,14 @@ class TestDriveGroup(object):
 
     @patch(
         'srv.salt._modules.dg.DriveGroup._filter_devices', new_callable=Mock)
-    def test_db_devices(self, filter_mock, test_fix):
+    def test_data_devices(self, filter_mock, test_fix):
         test_fix = test_fix()
         test_fix.data_devices
         filter_mock.assert_called_once_with({
-            'size': '10G:29G',
-            'model': 'foo',
-            'vendor': '1x'
+            'size': '30G:50G',
+            'model': '42-RGB',
+            'vendor': 'samsung',
+            'limit': 0
         })
 
     @patch(
@@ -517,7 +616,7 @@ class TestDriveGroup(object):
     def test_db_devices(self, filter_mock, test_fix):
         test_fix = test_fix()
         test_fix.db_devices
-        filter_mock.assert_called_once_with({'size': ':10G', 'limit': 0})
+        filter_mock.assert_called_once_with({'size': ':20G', 'limit': 0})
 
     @patch(
         'srv.salt._modules.dg.DriveGroup._filter_devices', new_callable=Mock)
@@ -548,258 +647,152 @@ class TestDriveGroup(object):
 
     @pytest.fixture
     def inventory(self, available=True):
-        def make_sample_data(available=available):
-            inventory_sample = [
-                {
-                    'available': available,
-                    'lvs': [],
-                    'path': '/dev/vda',
-                    'rejected_reasons': ['locked'],
-                    'sys_api': {
-                        'human_readable_size': '10.00 GB',
-                        'locked': 1,
-                        'model': 'modelA',
-                        'nr_requests': '256',
-                        'partitions': {
-                            'vda1': {
-                                'sectors': '41940992',
-                                'sectorsize': 512,
-                                'size': '10.00 GB',
-                                'start': '2048'
-                            }
-                        },
-                        'path': '/dev/vda',
-                        'removable': '0',
-                        'rev': '',
-                        'ro': '0',
-                        'rotational': '1',
-                        'sas_address': '',
-                        'sas_device_handle': '',
-                        'scheduler_mode': 'mq-deadline',
-                        'sectors': 0,
-                        'sectorsize': '512',
-                        'size': 10474836480.0,
-                        'support_discard': '',
-                        'vendor': 'samsung'
-                    }
-                },
-                {
-                    'available':
-                    available,
-                    'lvs': [{
-                        'block_uuid':
-                        'EbnVK1-chW6-NfEA-0RY4-dWjo-0AeL-b1V9hv',
-                        'cluster_fsid':
-                        'b9f1174e-fc02-4142-8816-172f20573c13',
-                        'cluster_name':
-                        'ceph',
-                        'name':
-                        'osd-block-d8a50e9b-2ea3-43a8-9617-2edccfee0c28',
-                        'osd_fsid':
-                        'd8a50e9b-2ea3-43a8-9617-2edccfee0c28',
-                        'osd_id':
-                        '0',
-                        'type':
-                        'block'
-                    }],
-                    'path':
-                    '/dev/vdb',
-                    'rejected_reasons': ['locked'],
-                    'sys_api': {
-                        'human_readable_size': '20.00 GB',
-                        'locked': 1,
-                        'model': 'modelB',
-                        'nr_requests': '256',
-                        'partitions': {
-                            'vdb1': {
-                                'sectors': '41940959',
-                                'sectorsize': 512,
-                                'size': '20.00 GB',
-                                'start': '2048'
-                            }
-                        },
-                        'path': '/dev/vdb',
-                        'removable': '0',
-                        'rev': '',
-                        'ro': '0',
-                        'rotational': '0',
-                        'sas_address': '',
-                        'sas_device_handle': '',
-                        'scheduler_mode': 'mq-deadline',
-                        'sectors': 0,
-                        'sectorsize': '512',
-                        'size': 21474836480.0,
-                        'support_discard': '',
-                        'vendor': 'intel'
-                    }
-                },
-                {
-                    'available':
-                    available,
-                    'lvs': [{
-                        'block_uuid':
-                        'ArrVrZ-5wIc-sDbu-gTkW-OFcc-uMy1-WuRbUZ',
-                        'cluster_fsid':
-                        'b9f1174e-fc02-4142-8816-172f20573c13',
-                        'cluster_name':
-                        'ceph',
-                        'name':
-                        'osd-block-ec36354c-110d-4273-8e47-f1fe78195860',
-                        'osd_fsid':
-                        'ec36354c-110d-4273-8e47-f1fe78195860',
-                        'osd_id':
-                        '4',
-                        'type':
-                        'block'
-                    }],
-                    'path':
-                    '/dev/vdc',
-                    'rejected_reasons': ['locked'],
-                    'sys_api': {
-                        'human_readable_size': '30.00 GB',
-                        'locked': 1,
-                        'model': 'modelC',
-                        'nr_requests': '256',
-                        'partitions': {
-                            'vdc1': {
-                                'sectors': '41940959',
-                                'sectorsize': 512,
-                                'size': '30.00 GB',
-                                'start': '2048'
-                            }
-                        },
-                        'path': '/dev/vdc',
-                        'removable': '0',
-                        'rev': '',
-                        'ro': '0',
-                        'rotational': '1',
-                        'sas_address': '',
-                        'sas_device_handle': '',
-                        'scheduler_mode': 'mq-deadline',
-                        'sectors': 0,
-                        'sectorsize': '512',
-                        'size': 32474836480.0,
-                        'support_discard': '',
-                        'vendor': 'micron'
-                    }
-                }
-            ]
-            self.raw_property = patch(
-                'srv.salt._modules.dg.Inventory.raw',
-                new_callable=PropertyMock,
-                return_value=[])
-            self.dg_property = patch(
+        def make_sample_data(available=available,
+                             data_devices=10,
+                             wal_devices=0,
+                             db_devices=2):
+            factory = InventoryFactory()
+            inventory_sample = []
+            data_disks = factory.produce(
+                pieces=data_devices, available=available)
+            wal_disks = factory.produce(
+                pieces=wal_devices,
+                human_readable_size='20.00 GB',
+                rotational='0',
+                model='ssd_type_model',
+                available=available)
+            db_disks = factory.produce(
+                pieces=db_devices,
+                human_readable_size='20.00 GB',
+                rotational='0',
+                model='ssd_type_model',
+                available=available)
+            inventory_sample.extend(data_disks)
+            inventory_sample.extend(wal_disks)
+            inventory_sample.extend(db_disks)
+
+            self.disks_mock = patch(
                 'srv.salt._modules.dg.Inventory.disks',
                 new_callable=PropertyMock,
                 return_value=inventory_sample)
-            self.raw_property.start()
-            self.dg_property.start()
+            self.disks_mock.start()
 
-            inv = dg.Inventory
-            return inv
+            inv = dg.Inventory()
+            return inv.disks
 
-            self.raw_property.stop()
-            self.dg_property.stop()
+            self.disks_mock.stop()
 
         return make_sample_data
 
-    def test_filter_devices_2_size_min_max(self, test_fix, inventory):
+    def test_filter_devices_10_size_min_max(self, test_fix, inventory):
         """ Test_fix's data_device_attrs is configured to take any disk from
-        10G - 29G.  This means that in this test two out of three disks should
-        appear in the output
-        (Disks are 10G/20G/30G)
+        30G - 50G or with vendor samsung or with model 42-RGB
+        The default inventory setup is configured to have 10 data devices(50G)
+        and 2 wal devices(20G).
+        The expected match is 12
         """
         # initialize inventory once (scope is session by default)
         inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(test_fix.data_device_attrs)
+        assert len(ret) == 12
+
+    def test_filter_devices_size_exact(self, test_fix, inventory):
+        """
+        Configure to only take disks with 20G (exact)
+        """
+        inventory()
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(size='20G'))
         assert len(ret) == 2
 
-    def test_filter_devices_1_size_exact(self, test_fix, inventory):
-        """
-        Configure to only take disks with 10G
-        """
-        test_fix = test_fix()
-        ret = test_fix._filter_devices(dict(size='10G'))
-        assert len(ret) == 1
-
-    def test_filter_devices_3_max(self, test_fix, inventory):
+    def test_filter_devices_2_max(self, test_fix, inventory):
         """
         Configure to only take disks with a max of 30G
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(size=':30G'))
-        assert len(ret) == 3
+        assert len(ret) == 2
 
-    def test_filter_devices_1_max(self, test_fix, inventory):
+    def test_filter_devices_0_max(self, test_fix, inventory):
         """
         Configure to only take disks with a max of 10G
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(size=':10G'))
-        assert len(ret) == 1
+        assert len(ret) == 0
 
-    def test_filter_devices_1_min(self, test_fix, inventory):
+    def test_filter_devices_12_min(self, test_fix, inventory):
         """
         Configure to only take disks with a min of 10G
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(size='10G:'))
-        assert len(ret) == 3
+        assert len(ret) == 12
 
-    def test_filter_devices_2_min(self, test_fix, inventory):
+    def test_filter_devices_12_min(self, test_fix, inventory):
         """
         Configure to only take disks with a min of 20G
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(size='20G:'))
-        assert len(ret) == 2
+        assert len(ret) == 12
 
-    def test_filter_devices_1_model(self, test_fix, inventory):
+    def test_filter_devices_0_model(self, test_fix, inventory):
         """
         Configure to only take disks with a model of modelA
         """
+        inventory()
         test_fix = test_fix()
-        ret = test_fix._filter_devices(dict(model='modelA'))
-        assert len(ret) == 1
+        ret = test_fix._filter_devices(dict(model='unknown'))
+        assert len(ret) == 0
 
-    def test_filter_devices_3_model(self, test_fix, inventory):
+    def test_filter_devices_2_model(self, test_fix, inventory):
         """
         Configure to only take disks with a model of model*(wildcard)
         """
+        inventory()
         test_fix = test_fix()
-        ret = test_fix._filter_devices(dict(model='model'))
-        assert len(ret) == 3
+        ret = test_fix._filter_devices(dict(model='ssd_type_model'))
+        assert len(ret) == 2
 
-    def test_filter_devices_1_vendor(self, test_fix, inventory):
+    def test_filter_devices_12_vendor(self, test_fix, inventory):
         """
         Configure to only take disks with a vendor of samsung
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(vendor='samsung'))
-        assert len(ret) == 1
-
-    def test_filter_devices_1_rotational(self, test_fix, inventory):
-        """
-        Configure to only take disks with a rotational flag of 0
-        """
-        test_fix = test_fix()
-        ret = test_fix._filter_devices(dict(rotational='0'))
-        assert len(ret) == 1
+        assert len(ret) == 12
 
     def test_filter_devices_2_rotational(self, test_fix, inventory):
         """
+        Configure to only take disks with a rotational flag of 0
+        """
+        inventory()
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(rotational='0'))
+        assert len(ret) == 2
+
+    def test_filter_devices_10_rotational(self, test_fix, inventory):
+        """
         Configure to only take disks with a rotational flag of 1
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(rotational='1'))
-        assert len(ret) == 2
+        assert len(ret) == 10
 
     def test_filter_devices_limit(self, test_fix, inventory):
         """
         Configure to only take disks with a rotational flag of 1
         This should take two disks, but limit=1 is in place
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(rotational='1', limit=1))
         assert len(ret) == 1
@@ -809,6 +802,7 @@ class TestDriveGroup(object):
         Configure to take all disks
         limiting to two
         """
+        inventory()
         test_fix = test_fix()
         ret = test_fix._filter_devices(dict(all=True, limit=2))
         assert len(ret) == 2
@@ -816,7 +810,7 @@ class TestDriveGroup(object):
     def test_filter_devices_empty_list_eq_matcher(self, test_fix, inventory):
         """
         Configure to only take disks with a rotational flag of 1
-        This should take two disks, but limit=1 is in place
+        This should take 10 disks, but limit=1 is in place
         Available is set to False. No disks are assigned
         """
         inventory(available=False)
@@ -874,6 +868,106 @@ class TestDriveGroup(object):
                 dg.FilterNotSupported,
                 message="Filter unknown is not supported"):
             test_fix._check_filter(dict(unknown='foo'))
+
+    def test_list_devices(self):
+        pass
+
+    def test_c_v_commands(self, test_fix, inventory):
+        inventory()
+        test_fix = test_fix()
+        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
+        assert ret == [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk /dev/vdl /dev/vdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500'
+        ]
+
+    def test_c_v_commands_external_db(self, test_fix, inventory):
+        inventory()
+        ret = dg.c_v_commands(filter_args={
+            'data_devices': {
+                'rotational': '1'
+            },
+            'db_devices': {
+                'rotational': '0'
+            }
+        })
+        assert ret == [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdl --yes',
+            'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdm --yes'
+        ]
+
+    def test_c_v_commands_external_wal_only(self, test_fix, inventory):
+        inventory(wal_devices=2, db_devices=0)
+        ret = dg.c_v_commands(
+            filter_args={
+                'data_devices': {
+                    'rotational': '1'
+                },
+                'wal_devices': {
+                    'rotational': '0'
+                }
+            })
+        assert "You specified only wal_devices" in ret
+
+    def test_c_v_commands_external_2_dbs_and_2_wals(self, test_fix, inventory):
+        inventory(db_devices=2, wal_devices=2)
+        ret = dg.c_v_commands(
+            filter_args={
+                'data_devices': {
+                    'rotational': '1'
+                },
+                'db_devices': {
+                    'rotational': '0',
+                    'limit': 2
+                },
+                'wal_devices': {
+                    'rotational': '0',
+                    'limit': 2
+                }
+            })
+        assert ret == [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdn --wal-devices /dev/vdl --yes',
+            'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdo --wal-devices /dev/vdm --yes'
+        ]
+
+    def test_c_v_commands_external_2_dbs_and_3_wals(self, test_fix, inventory):
+        inventory(db_devices=2, wal_devices=3)
+        ret = dg.c_v_commands(
+            filter_args={
+                'data_devices': {
+                    'rotational': '1'
+                },
+                'db_devices': {
+                    'rotational': '0',
+                    'limit': 2
+                },
+                'wal_devices': {
+                    'rotational': '0',
+                    'limit': 3
+                }
+            })
+        assert [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdo --wal-devices /dev/vdl /dev/vdn --yes',
+            'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdp --wal-devices /dev/vdm --yes'
+        ] == ret
+
+    def test_c_v_commands_11_data_external_3_dbs_and_1_wals(
+            self, test_fix, inventory):
+        inventory(data_devices=11, db_devices=3, wal_devices=1)
+        ret = dg.c_v_commands(
+            filter_args={
+                'data_devices': {
+                    'rotational': '1'
+                },
+                'db_devices': {
+                    'rotational': '0',
+                    'limit': 3
+                },
+                'wal_devices': {
+                    'rotational': '0',
+                    'limit': 1
+                }
+            })
+        assert "This doesn't work right now" in ret
 
 
 class TestFilter(object):
