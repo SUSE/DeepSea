@@ -71,3 +71,12 @@ set dashboard password grain:
     - val: {{ dashboard_pw }}
     - onchanges:
         - cmd: set username and password
+
+# configure grafana
+{% set grafana_addresses = salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='grafana') %}
+{% if grafana_addresses %}
+set dashboard grafana url:
+  cmd.run:
+    - name: ceph dashboard set-grafana-api-url https://{{ grafana_addresses[0] }}:3000
+    - fire_event: True
+{% endif %}
