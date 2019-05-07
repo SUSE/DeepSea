@@ -1,6 +1,6 @@
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='ganesha') or salt.saltutil.runner('select.minions', cluster='ceph', ganesha_configurations='*') %}
 
-validate upgrade pre-requesites:
+validate ganesha upgrade pre-requesites:
   salt.runner:
     - name: ganesha_upgrade.validate
     - failhard: True
