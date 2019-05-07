@@ -224,7 +224,7 @@ def _check_if_fresh_install(roles):
     local = salt.client.LocalClient()
     for role in roles:
         result = local.cmd('I@roles:{}'.format(role), 'pkg.info_installed',
-                           tgt_type='compound')
+                           ['nfs-ganesha-ceph'], tgt_type='compound')
         if not result:
             raise Exception("Failed to run pkg.info_installed in ganesha minions")
 
