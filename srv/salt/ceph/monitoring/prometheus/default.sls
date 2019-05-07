@@ -22,6 +22,12 @@ golang-github-prometheus-prometheus:
     - name: golang-github-prometheus-prometheus
     - refresh: True
 
+ceph-prometheus-alerts:
+  pkg.installed:
+    - fire_event: True
+    - name: ceph-prometheus-alerts
+    - refresh: True
+
 {% endif %}
 
 /etc/prometheus/prometheus.yml:
