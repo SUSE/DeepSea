@@ -82,8 +82,8 @@ def minions(host=False, format='{}', **kwargs):
     sys.stdout = _stdout
 
     if host:
-        return [format.format(_grain_host(local, k)) for k in _minions.keys()]
-    return [format.format(m) for m in _minions.keys()]
+        return sorted([format.format(_grain_host(local, k)) for k in _minions.keys()])
+    return sorted([format.format(m) for m in _minions.keys()])
 
 
 def one_minion(**kwargs):
