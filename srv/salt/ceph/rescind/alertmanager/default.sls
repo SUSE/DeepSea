@@ -18,5 +18,14 @@ golang-github-prometheus-alertmanager:
 
 /etc/sysconfig/prometheus-alertmanager:
   file.absent
-{% endif %}
 
+prometheus_webhook_snmp_stop:
+  service.dead:
+    - name: prometheus-webhook-snmp
+    - enable: False
+
+prometheus_webhook_snmp_uninstall:
+  pkg.removed:
+    - name: prometheus-webhook-snmp
+    - fire_event: True
+{% endif %}
