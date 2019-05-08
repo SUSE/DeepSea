@@ -547,7 +547,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/restart/*.sls
 %config /srv/salt/ceph/mon/restart/force/*.sls
 %config /srv/salt/ceph/mon/restart/controlled/*.sls
-%config /srv/salt/ceph/monitoring/*.sls
 %config /srv/salt/ceph/monitoring/alertmanager/*.sls
 %config /srv/salt/ceph/monitoring/alertmanager/files/*.j2
 %config /srv/salt/ceph/monitoring/grafana/*.sls
