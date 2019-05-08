@@ -20,6 +20,18 @@ push scrape configs:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.push_scrape_configs
 
+populate alertmanager peers:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.alertmanager.populate_peers
+
+install alertmanager:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.alertmanager
+
 {% endif %}
 
 {% if (salt.saltutil.runner('select.minions', cluster='ceph', roles='grafana') != []) %}
