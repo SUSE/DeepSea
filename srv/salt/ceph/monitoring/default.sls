@@ -1,7 +1,5 @@
 include:
   - .prometheus
-  - .prometheus.update_service_discovery
-  - .prometheus.alertmanager
   - .grafana
 
 fix salt job cache permissions:
