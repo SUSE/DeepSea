@@ -16,25 +16,25 @@ scrape_configs:
   - job_name: 'ceph-mgr'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:ceph', '10s')|yaml }}
     file_sd_configs:
-      - files: [ '/etc/prometheus/SUSE/ceph/mgr_exporter.yml' ]
+      - files: [ '/etc/prometheus/SUSE/scrape_configs/ceph/mgr_exporter.yml' ]
     relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:ceph', [])|yaml }}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:ceph', [])|yaml }}
   - job_name: 'node-exporter'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:node', '10s')|yaml }}
     file_sd_configs:
-      - files: [ '/etc/prometheus/SUSE/node_exporter/*.yml' ]
+      - files: [ '/etc/prometheus/SUSE/scrape_configs/node_exporter/*.yml' ]
     relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:node', [])|yaml }}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', [])|yaml }}
   - job_name: 'prometheus'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:prometheus', '10s')|yaml }}
     file_sd_configs:
-      - files: [ '/etc/prometheus/SUSE/prometheus/*.yml' ]
+      - files: [ '/etc/prometheus/SUSE/scrape_configs/prometheus/*.yml' ]
     relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:prometheus', [])|yaml }}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:prometheus', [])|yaml }}
   - job_name: 'grafana'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:grafana', '10s')|yaml }}
     file_sd_configs:
-      - files: [ '/etc/prometheus/SUSE/grafana/*.yml' ]
+      - files: [ '/etc/prometheus/SUSE/scrape_configs/grafana/*.yml' ]
     scheme: https
 {% if not pillar.get('monitoring:grafana:ssl_cert', False) and not pillar.get('monitoring:grafana:ssl_key', False) %}
     tls_config:
@@ -47,5 +47,5 @@ alerting:
   alert_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:alert_relabel_config', [])|yaml }}
   alertmanagers:
     - file_sd_configs:
-        - files: [ '/etc/prometheus/SUSE/alertmanager/*.yml' ]
+        - files: [ '/etc/prometheus/SUSE/scrape_configs/alertmanager/*.yml' ]
       relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:alertmanager', [])|yaml }}
