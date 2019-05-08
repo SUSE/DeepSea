@@ -18,6 +18,22 @@ class TestInventory(object):
         assert call1 in dg.__salt__['helper.run'].call_args_list
 
 
+class TestDirtyJson(object):
+    """
+    Test dirty json parser
+    """
+
+    @pytest.mark.parametrize("test_input,expected",
+                             [('sdmkh{"foo":"bar"}', {"foo": "bar"}),
+                              ('{"foo":"bar"}', {"foo": "bar"}),
+                              ('sdmkh[{"foo":"bar"}]', [{"foo": "bar"}]),
+                              ('sdmkh[{"foo":\n"bar"}]', [{"foo": "bar"}]),
+                              ('sdmkh[{"foo":"bar"}]', [{"foo": "bar"}]),
+                              ('sdmkh[{"foo":{"bar":"foobar"}}]', [{"foo": {"bar": "foobar"}}])])
+    def test_dirty_json(self, test_input, expected):
+        assert dg._parse_dirty_json(test_input) == expected
+
+
 class TestMatcher(object):
     """ Test Matcher base class
     """
