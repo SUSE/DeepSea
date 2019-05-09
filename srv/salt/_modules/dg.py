@@ -104,14 +104,14 @@ class Filter(object):
         return 'Filter<{}>'.format(self.name)
 
 
-JSON_REGEX = re.compile(r'[[{].*[\]}]')
+JSON_REGEX = re.compile(r'(?s)[{[].*[]}]')
 
 
 def _parse_dirty_json(maybe_json: str) -> dict:
     """
     Try to parse c-v's dirty json output
     """
-    match = JSON_REGEX.match(maybe_json)
+    match = JSON_REGEX.search(maybe_json)
     if match:
         return json.loads(match[0])
     else:
