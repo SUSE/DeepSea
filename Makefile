@@ -988,7 +988,7 @@ tarball:
 	rm -r $(TEMPDIR)
 
 test: setup.py
-	tox -e py36
+	tox -e py3
 
 lint: setup.py
 	tox -e lint
