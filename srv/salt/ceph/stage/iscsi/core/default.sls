@@ -101,7 +101,7 @@ disable dashboard ssl verification:
     - failhard: True
 {% endif %}
 
-{% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph') %}
+{% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph', url=True) %}
 
 {% if iscsi_ssl %}
 {% set iscsi_url = "https://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}

@@ -12,6 +12,7 @@ import sys
 import re
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
+import netaddr
 
 log = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ def first(**kwargs):
     return ""
 
 
-def public_addresses(tuples=False, host=False, roles=None, roles_or=None, **kwargs):
+def public_addresses(tuples=False, host=False, roles=None, roles_or=None, url=False, **kwargs):
     """
     Returns an array of public addresses matching the search critieria.
     Can also return an array of tuples with fqdn or short name.
@@ -140,15 +141,25 @@ def public_addresses(tuples=False, host=False, roles=None, roles_or=None, **kwar
 
     sys.stdout = _stdout
 
+    def format_addr(addr):
+        """
+        Format IP address when used for URLs
+        """
+        if url:
+            if netaddr.valid_ipv6(addr) is True:
+                return "[{}]".format(addr)
+        return addr
+
     if tuples:
         if host:
-            addresses = [[_grain_host(local, k), v] for k, v in result.items()]
+            addresses = [[_grain_host(local, k), format_addr(v)] for k, v in result.items()]
         else:
-            addresses = [[k, v] for k, v in result.items()]
+            addresses = [[k, format_addr(v)] for k, v in result.items()]
     else:
         addresses = []
         for entry in result:
-            addresses.append(result[entry])
+            addresses.append(format_addr(result[entry]))
+
     return addresses
 
 
