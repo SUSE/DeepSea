@@ -111,6 +111,7 @@ class DriveGroups(object):
     def __init__(self, **kwargs: dict) -> None:
         self.local_client = salt.client.LocalClient()
         self.dry_run: bool = kwargs.get('dry_run', False)
+        self.include_unavailable: bool = kwargs.get('include_unavailable', False)
         self.drive_groups_path: str = '/srv/salt/ceph/configuration/files/drive_groups.yml'
         self.drive_groups: dict = self._get_drive_groups()
 
@@ -171,6 +172,7 @@ class DriveGroups(object):
             kwarg={
                 'filter_args': filter_args,
                 'dry_run': self.dry_run,
+                'include_unavailable': self.include_unavailable,
                 'destroyed_osds': destroyed()
             },
             expr_form='compound')

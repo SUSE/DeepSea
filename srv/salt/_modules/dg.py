@@ -538,9 +538,10 @@ class DriveGroup(object):
     """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, filter_args: dict) -> None:
+    def __init__(self, filter_args: dict, include_unavailable=False) -> None:
         self.filter_args: dict = filter_args
         self._check_filter_support()
+        self._include_unavailable = include_unavailable
         self._data_devices = None
         self._wal_devices = None
         self._db_devices = None
@@ -755,9 +756,8 @@ class DriveGroup(object):
                 raise FilterNotSupported(
                     "Filtering for {} is not supported".format(applied_filter))
 
-    @staticmethod
     # pylint: disable=inconsistent-return-statements
-    def _reduce_inventory(disk: dict) -> dict:
+    def _reduce_inventory(self, disk: dict) -> dict:
         """ Wrapper to validate 'ceph-volume inventory' output
         """
         # Temp disable this check, only for testing purposes
@@ -768,7 +768,7 @@ class DriveGroup(object):
         # maybe this can and should be dropped when the fix is public
         if not disk:
             return {}
-        if disk["available"] is True:
+        if disk.get("available", False) or self._include_unavailable:
             try:
                 reduced_disk = {"path": disk.get("path")}
 
@@ -794,9 +794,10 @@ def list_drives(**kwargs):
     of matching disks
     """
     filter_args = kwargs.get('filter_args', dict())
+    include_unavailable = kwargs.get('include_unavailable', False)
     if not filter_args:
         Exception("No filter_args provided")
-    dgo = DriveGroup(filter_args)
+    dgo = DriveGroup(filter_args, include_unavailable=include_unavailable)
     if dgo.format == 'filestore':
         return dict(
             data_devices=dgo.data_devices, journal_devices=dgo.journal_devices)
