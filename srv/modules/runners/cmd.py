@@ -16,5 +16,5 @@ def run(**kwargs):
     args.update(kwargs)
     local_client = salt.client.LocalClient()
     target = 'I@roles:admin'
-    output = local_client.cmd(target, 'cmd.shell', [args['cmd']], expr_form='compound')
+    output = local_client.cmd(target, 'cmd.shell', [args['cmd']], tgt_type='compound')
     return next(iter(output.values()))
