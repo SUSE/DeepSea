@@ -20,6 +20,7 @@ Thu Apr 25 13:47:45 UTC 2019 - jschmid@suse.com
 - Do not return content in case there is no matching by_path
 - Makefile: pass --long option to git describe
 - Add rebuild orchestration, obliterate state (bsc#1122461)
+- build: fix deepsea version parsing (bsc#1134216)
 
 -------------------------------------------------------------------
 Tue Jan 29 13:33:45 UTC 2019 - jschmid@suse.com
