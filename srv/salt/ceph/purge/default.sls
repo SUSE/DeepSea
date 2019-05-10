@@ -1,4 +1,3 @@
-
 {% set master = salt['master.minion']() %}
 
 {% if salt['saltutil.runner']('disengage.check', cluster='ceph') == False %}
@@ -17,16 +16,13 @@ reset master configuration:
     - sls: ceph.reset
 
 terminate ceph osds:
-  salt.state:
-    - tgt: 'I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.rescind.storage.terminate
+  salt.runner:
+    - name: osd.remove
+    - arg: ['I@roles:storage']
+    - force: True
 
 rescind roles:
   salt.state:
     - tgt: 'I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.rescind
-
-
-
