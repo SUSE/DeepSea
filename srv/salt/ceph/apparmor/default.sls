@@ -1,3 +1,3 @@
 
-apparmor noop:
-  test.nop
+include:
+  - .default-teardown
