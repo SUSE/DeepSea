@@ -11,8 +11,13 @@ restart igw gateway:
         m_name: rbd-target-api
 
 wait for iscsi gateway to initialize:
-  module.run:
-    - name: iscsi.wait_for_gateway
+  deepsea.state_apply_if:
+    - condition:
+        pillar:
+          igw_service_daemons: [rbd-target-api]
+    - state_name: module.run
+    - kwargs:
+        name: iscsi.wait_for_gateway
 
 unset igw restart grain:
   module.run:
