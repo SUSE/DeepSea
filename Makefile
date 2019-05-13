@@ -151,6 +151,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore
 	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore2
 	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore3/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore3
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/rebuild
+	install -m 644 srv/salt/ceph/functests/1node/rebuild/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/rebuild
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/replace
 	install -m 644 srv/salt/ceph/functests/1node/replace/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/replace
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/remove
