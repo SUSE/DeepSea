@@ -216,6 +216,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
 	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
 	# state modules
+	install -d -m 755 $(DESTDIR)/srv/salt/_states
+	install -m 644 srv/salt/_states/*.py* $(DESTDIR)/srv/salt/_states/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
 	install -m 644 srv/salt/ceph/admin/*.sls $(DESTDIR)/srv/salt/ceph/admin/

@@ -72,7 +72,7 @@ def file_(component, name=None):
         return "/srv/salt/ceph/openstack/cache/" + name + "glance.keyring"
 
     elif component == "ganesha":
-        return "/srv/salt/ceph/ganesha/cache/ceph." + name + ".keyring"
+        return "/srv/salt/ceph/ganesha/cache/" + name + ".keyring"
 
     elif component == "deepsea_cephfs_bench":
         return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.keyring"

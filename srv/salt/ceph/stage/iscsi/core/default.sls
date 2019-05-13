@@ -1,7 +1,13 @@
 
 {% set master = salt['master.minion']() %}
 
-{% if salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
+{% set igw_minions = salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
+{% if igw_minions %}
+
+set igw_service_daemon pillar item:
+  salt.runner:
+    - name: iscsi_upgrade.set_igw_service_daemon
+    - failhard: True
 
 add_mine_cephimages.list_function:
   salt.function:
@@ -59,12 +65,24 @@ keyring:
     - tgt_type: compound
     - sls: ceph.igw.keyring
 
-iscsi apply:
+{% for igw_minion in igw_minions %}
+# We need to perform this step sequentially in each minion
+# to avoid the downtime of the iSCSI service in case of
+# an upgrade
+
+install and start ceph-iscsi in {{ igw_minion }}:
   salt.state:
-    - tgt: "I@roles:igw and I@cluster:ceph"
-    - tgt_type: compound
+    - tgt: {{ igw_minion }}
     - sls: ceph.igw
     - failhard: True
+
+wait for iscsi gateway {{ igw_minion }}:
+  salt.function:
+    - name: iscsi.wait_for_gateway
+    - tgt: {{ igw_minion }}
+    - failhard: True
+
+{% endfor %}
 
 {% set iscsi_username = pillar.get('ceph_iscsi_username', 'admin') %}
 {% set iscsi_password = pillar.get('ceph_iscsi_password', 'admin') %}
@@ -83,23 +101,13 @@ disable dashboard ssl verification:
     - failhard: True
 {% endif %}
 
-{% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph') %}
+{% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph', url=True) %}
 
 {% if iscsi_ssl %}
 {% set iscsi_url = "https://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}
 {% else %}
 {% set iscsi_url = "http://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}
 {% endif %}
-
-wait for iscsi gateway {{ igw_address }} to initialize:
-  salt.function:
-    - name: cmd.run
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - kwarg:
-        cmd: "C=0; while true; do if curl --insecure -s {{ iscsi_url }} > /dev/null; then break; else sleep 5; C=$(( C + 1 )); fi; if [ $C = 6 ]; then exit 1; fi; done"
-        shell: /bin/bash
-    - failhard: True
 
 add iscsi gateway {{ igw_address }} to dashboard:
   salt.function:
