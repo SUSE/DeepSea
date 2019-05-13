@@ -180,7 +180,7 @@ class DriveGroups(object):
                 'include_unavailable': self.include_unavailable,
                 'destroyed_osds': destroyed()
             },
-            expr_form='compound')
+            tgt_type='compound')
         return ret
 
 

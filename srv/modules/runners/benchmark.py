@@ -266,7 +266,7 @@ def baseline(margin=10, verbose=False, **kwargs):
     # gotta get the master_minion...not pretty but works
     master_minion = local_client.cmd(
         'I@roles:master', 'pillar.get',
-        ['master_minion'], expr_form='compound').items()[0][1]
+        ['master_minion'], tgt_type='compound').items()[0][1]
 
     # get all osd ids for a given client_glob
     osd_list = local_client.cmd(master_minion, 'cmd.shell',

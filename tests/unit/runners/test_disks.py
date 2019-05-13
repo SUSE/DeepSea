@@ -137,7 +137,7 @@ class TestDriveGroup_Disks(object):
         dgo.local_client.cmd.assert_called_with(
             'target*',
             'dg.test_command',
-            expr_form='compound',
+            tgt_type='compound',
             kwarg={
                 'filter_args': {'args'},
                 'dry_run': False,
@@ -155,7 +155,7 @@ class TestDriveGroup_Disks(object):
         dgo.local_client.cmd.assert_called_with(
             'target*',
             'dg.test_command',
-            expr_form='compound',
+            tgt_type='compound',
             kwarg={
                 'filter_args': {'args'},
                 'dry_run': True,
@@ -174,7 +174,7 @@ class TestDriveGroup_Disks(object):
         dgo.local_client.cmd.assert_called_with(
             'target*',
             'dg.test_command',
-            expr_form='compound',
+            tgt_type='compound',
             kwarg={
                 'filter_args': {'args'},
                 'dry_run': False,
