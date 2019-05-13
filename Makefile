@@ -398,7 +398,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/mon/restart/controlled/init.sls $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
 	# state files - monitoring
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring
-	install -m 644 srv/salt/ceph/monitoring/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager
 	install -m 644 srv/salt/ceph/monitoring/alertmanager/*.sls $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager/files
