@@ -22,7 +22,7 @@
     - source: {{ pillar['ceph_iscsi_ssl_cert'] }}
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
-    - mode: 644
+    - mode: 600
     - makedirs: True
     - fire_event: True
 
@@ -31,16 +31,32 @@
     - source: {{ pillar['ceph_iscsi_ssl_key'] }}
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
-    - mode: 644
+    - mode: 600
     - makedirs: True
     - fire_event: True
 
 {% else %}
-generate ceph-iscsi self-signed SSL certificate:
-  module.run:
-    - name: tls.create_self_signed_cert
-    - cacert_path: /srv/salt/ceph/igw/cache
-    - CN: iscsi-gateway
+
+{% set CN = salt['deepsea.ssl_cert_cn_wildcard']() %}
+
+/srv/salt/ceph/igw/cache/tls/certs/iscsi-gateway.crt:
+  file.managed:
+    - source: /etc/ssl/deepsea/certs/{{ CN }}.crt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - mode: 600
+    - makedirs: True
+    - replace: True
+    - fire_event: True
+
+/srv/salt/ceph/igw/cache/tls/certs/iscsi-gateway.key:
+  file.managed:
+    - source: /etc/ssl/deepsea/certs/{{ CN }}.key
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - mode: 600
+    - makedirs: True
+    - replace: True
     - fire_event: True
 
 {% endif %}
