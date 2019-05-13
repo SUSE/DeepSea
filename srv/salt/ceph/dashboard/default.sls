@@ -44,11 +44,21 @@ set dashboard ssl key:
     - fire_event: True
 
 {% else %}
-create self signed certificate:
+
+{% set CN = salt['deepsea.ssl_cert_cn_wildcard']() %}
+
+set dashboard ssl cert:
   cmd.run:
-    - name: ceph dashboard create-self-signed-cert
+    - name: ceph config-key set mgr/dashboard/crt -i /etc/ssl/deepsea/certs/{{ CN }}.crt
     - failhard: True
     - fire_event: True
+
+set dashboard ssl key:
+  cmd.run:
+    - name: ceph config-key set mgr/dashboard/key -i /etc/ssl/deepsea/certs/{{ CN }}.key
+    - failhard: True
+    - fire_event: True
+
 {% endif %}
 {% endif %}
 
@@ -73,10 +83,10 @@ set dashboard password grain:
         - cmd: set username and password
 
 # configure grafana
-{% set grafana_addresses = salt.saltutil.runner('select.public_addresses', cluster='ceph', roles='grafana') %}
-{% if grafana_addresses %}
+{% set grafana_minion = salt.saltutil.runner('select.one_minion', cluster='ceph', roles='grafana') %}
+{% if grafana_minion %}
 set dashboard grafana url:
   cmd.run:
-    - name: ceph dashboard set-grafana-api-url https://{{ grafana_addresses[0] }}:3000
+    - name: ceph dashboard set-grafana-api-url https://{{ grafana_minion }}:3000
     - fire_event: True
 {% endif %}
