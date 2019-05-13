@@ -47,3 +47,15 @@ install and setup node exporters:
     - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.exporters.node_exporter
+
+create SSL CA and certificate:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.ssl
+    - failhard: True
+
+install SSL CA in master:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.ssl.distribute_ca
+    - failhard: True

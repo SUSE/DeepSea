@@ -725,6 +725,9 @@ copy-files:
 	# state files - shutdown
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/shutdown
 	install -m 644 srv/salt/ceph/shutdown/*.sls $(DESTDIR)/srv/salt/ceph/shutdown
+	# state files - ssl
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ssl
+	install -m 644 srv/salt/ceph/ssl/*.sls $(DESTDIR)/srv/salt/ceph/ssl
 	# state files - startup
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/startup
 	install -m 644 srv/salt/ceph/startup/*.sls $(DESTDIR)/srv/salt/ceph/startup
