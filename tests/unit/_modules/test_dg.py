@@ -347,7 +347,7 @@ class TestSizeMatcher(object):
 class TestDriveGroup(object):
     @pytest.fixture(scope='class')
     def test_fix(self, empty=None):
-        def make_sample_data(empty=empty, limit=0, disk_format='bluestore'):
+        def make_sample_data(empty=empty, data_limit=0, wal_limit=0, db_limit=0, disk_format='bluestore'):
             raw_sample_bluestore = {
                 'target': 'data*',
                 'format': 'bluestore',
@@ -355,16 +355,21 @@ class TestDriveGroup(object):
                     'size': '10G:29G',
                     'model': 'foo',
                     'vendor': '1x',
-                    'limit': limit
+                    'limit': data_limit
                 },
                 'wal_devices': {
-                    'model': 'fast'
+                    'model': 'fast',
+                    'limit': wal_limit
                 },
                 'db_devices': {
-                    'size': ':10G'
+                    'size': ':10G',
+                    'limit': db_limit
                 },
                 'db_slots': 5,
                 'wal_slots': 5,
+                'block_wal_size': 500,
+                'block_db_size': 500,
+                'objectstore': 'bluestore',
                 'encryption': True,
             }
             raw_sample_filestore = {
@@ -374,7 +379,7 @@ class TestDriveGroup(object):
                     'size': '10G:29G',
                     'model': 'foo',
                     'vendor': '1x',
-                    'limit': limit
+                    'limit': data_limit
                 },
                 'journal_devices': {
                     'size': ':90G'
@@ -416,6 +421,10 @@ class TestDriveGroup(object):
         test_fix = test_fix()
         assert test_fix.db_slots is 5
 
+    def test_db_slots_prop(self, test_fix):
+        test_fix = test_fix()
+        assert test_fix.db_slots is 5
+
     def test_db_slots_prop_empty(self, test_fix):
         test_fix = test_fix(empty=True)
         assert test_fix.db_slots is False
@@ -427,6 +436,22 @@ class TestDriveGroup(object):
     def test_wal_slots_prop_empty(self, test_fix):
         test_fix = test_fix(empty=True)
         assert test_fix.wal_slots is False
+
+    def test_block_wal_size_prop(self, test_fix):
+        test_fix = test_fix()
+        assert test_fix.block_wal_size == 500
+
+    def test_block_wal_size_prop_empty(self, test_fix):
+        test_fix = test_fix(empty=True)
+        assert test_fix.block_wal_size == 0
+
+    def test_block_db_size_prop(self, test_fix):
+        test_fix = test_fix()
+        assert test_fix.block_db_size == 500
+
+    def test_block_db_size_prop_empty(self, test_fix):
+        test_fix = test_fix(empty=True)
+        assert test_fix.block_db_size == 0
 
     def test_data_devices_prop(self, test_fix):
         test_fix = test_fix()
@@ -445,6 +470,7 @@ class TestDriveGroup(object):
         test_fix = test_fix()
         assert test_fix.db_device_attrs == {
             'size': ':10G',
+            'limit': 0,
         }
 
     def test_db_devices_prop_empty(self, test_fix):
@@ -455,6 +481,7 @@ class TestDriveGroup(object):
         test_fix = test_fix()
         assert test_fix.wal_device_attrs == {
             'model': 'fast',
+            'limit': 0,
         }
 
     def test_journal_device_prop(self, test_fix):
@@ -483,14 +510,14 @@ class TestDriveGroup(object):
     def test_wal_devices(self, filter_mock, test_fix):
         test_fix = test_fix()
         test_fix.wal_devices
-        filter_mock.assert_called_once_with({'model': 'fast'})
+        filter_mock.assert_called_once_with({'model': 'fast', 'limit': 0})
 
     @patch(
         'srv.salt._modules.dg.DriveGroup._filter_devices', new_callable=Mock)
     def test_db_devices(self, filter_mock, test_fix):
         test_fix = test_fix()
         test_fix.db_devices
-        filter_mock.assert_called_once_with({'size': ':10G'})
+        filter_mock.assert_called_once_with({'size': ':10G', 'limit': 0})
 
     @patch(
         'srv.salt._modules.dg.DriveGroup._filter_devices', new_callable=Mock)
@@ -773,48 +800,61 @@ class TestDriveGroup(object):
         Configure to only take disks with a rotational flag of 1
         This should take two disks, but limit=1 is in place
         """
-        test_fix = test_fix(limit=1)
-        ret = test_fix._filter_devices(dict(rotational='1'))
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(rotational='1', limit=1))
         assert len(ret) == 1
+
+    def test_filter_devices_all_limit_2(self, test_fix, inventory):
+        """
+        Configure to take all disks
+        limiting to two
+        """
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(all=True, limit=2))
+        assert len(ret) == 2
 
     def test_filter_devices_empty_list_eq_matcher(self, test_fix, inventory):
         """
         Configure to only take disks with a rotational flag of 1
         This should take two disks, but limit=1 is in place
+        Available is set to False. No disks are assigned
         """
         inventory(available=False)
-        test_fix = test_fix(limit=1)
-        ret = test_fix._filter_devices(dict(rotational='1'))
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(rotational='1', limit=1))
         assert len(ret) == 0
 
     def test_filter_devices_empty_string_matcher(self, test_fix, inventory):
         """
         Configure to only take disks with a rotational flag of 1
         This should take two disks, but limit=1 is in place
+        Available is set to False. No disks are assigned
         """
         inventory(available=False)
-        test_fix = test_fix(limit=1)
-        ret = test_fix._filter_devices(dict(vendor='samsung'))
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(vendor='samsung', limit=1))
         assert len(ret) == 0
 
     def test_filter_devices_empty_size_matcher(self, test_fix, inventory):
         """
         Configure to only take disks with a rotational flag of 1
         This should take two disks, but limit=1 is in place
+        Available is set to False. No disks are assigned
         """
         inventory(available=False)
-        test_fix = test_fix(limit=1)
-        ret = test_fix._filter_devices(dict(size='10G:100G'))
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(size='10G:100G', limit=1))
         assert len(ret) == 0
 
     def test_filter_devices_empty_all_matcher(self, test_fix, inventory):
         """
         Configure to only take disks with a rotational flag of 1
         This should take two disks, but limit=1 is in place
+        Available is set to False. No disks are assigned
         """
         inventory(available=False)
-        test_fix = test_fix(limit=1)
-        ret = test_fix._filter_devices(dict(all=True))
+        test_fix = test_fix()
+        ret = test_fix._filter_devices(dict(all=True, limit=1))
         assert len(ret) == 0
 
     @patch('srv.salt._modules.dg.DriveGroup._check_filter')
