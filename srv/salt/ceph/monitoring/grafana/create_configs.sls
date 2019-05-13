@@ -28,11 +28,26 @@
 
 {% else %}
 
-generate grafana self-signed SSL certificate:
-  module.run:
-    - name: tls.create_self_signed_cert
-    - cacert_path: /srv/salt/ceph/monitoring/grafana/cache
-    - CN: grafana
+{% set CN = salt['deepsea.ssl_cert_cn_wildcard']() %}
+
+/srv/salt/ceph/monitoring/grafana/cache/tls/certs/grafana.crt:
+  file.managed:
+    - source: /etc/ssl/deepsea/certs/{{ CN }}.crt
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - mode: 600
+    - makedirs: True
+    - replace: True
+    - fire_event: True
+
+/srv/salt/ceph/monitoring/grafana/cache/tls/certs/grafana.key:
+  file.managed:
+    - source: /etc/ssl/deepsea/certs/{{ CN }}.key
+    - user: {{ salt['deepsea.user']() }}
+    - group: {{ salt['deepsea.group']() }}
+    - mode: 600
+    - makedirs: True
+    - replace: True
     - fire_event: True
 
 {% endif %}
