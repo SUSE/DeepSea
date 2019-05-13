@@ -820,8 +820,7 @@ def c_v_commands(**kwargs):
     dgo = DriveGroup(filter_args)
 
     destroyed_osds_map = kwargs.get('destroyed_osds', {})
-    my_destroyed_osds = destroyed_osds_map.get(
-        __grains__.get('id', ''), list())
+    my_destroyed_osds = destroyed_osds_map.get(__grains__.get('host', ''), list())
 
     appendix = ""
     if my_destroyed_osds:
