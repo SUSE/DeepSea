@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# pylint: disable=incompatible-py3-code
 """ This module will match disks based on applied filter rules
 
 Internally this will be called 'DriveGroups'
@@ -9,7 +10,7 @@ from __future__ import absolute_import
 import json
 import re
 import logging
-from typing import Set, Tuple
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 
@@ -545,6 +546,7 @@ class DriveGroup(object):
         self._data_devices = None
         self._wal_devices = None
         self._db_devices = None
+        self.disks = self.inventory()
 
     @property
     def db_slots(self) -> dict:
@@ -623,13 +625,6 @@ class DriveGroup(object):
         return self.filter_args.get("journal_size", 0)
 
     @property
-    def inventory(self) -> dict:
-        """
-        Disks found in the inventory
-        """
-        return Inventory().disks
-
-    @property
     def data_devices(self) -> list:
         """ Filter for (bluestore/filestore) DATA devices
         """
@@ -656,6 +651,13 @@ class DriveGroup(object):
         """
         log.debug("Scanning for journal devices")
         return self._filter_devices(self.journal_device_attrs)
+
+    @staticmethod
+    def inventory() -> list:
+        """
+        Disks found in the inventory
+        """
+        return Inventory().disks
 
     @staticmethod
     def _limit_reached(device_filter, len_devices: int,
@@ -700,28 +702,44 @@ class DriveGroup(object):
         :return: Set of devices that matched the filter
         :rtype set:
         """
-        devices: Set = set()
+        devices: list = list()
         for name, val in device_filter.items():
             _filter = Filter(name=name, value=val)
-            for disk in self.inventory:
+            for disk in self.disks:
+                log.debug("Processing disk {}".format(disk.get('path')))
                 # continue criterias
                 if not _filter.is_matchable:
+                    log.debug(
+                        "Ignoring disk {}. Filter is not matchable".format(
+                            disk.get('path')))
                     continue
 
                 if not _filter.matcher.compare(self._reduce_inventory(disk)):
+                    log.debug("Ignoring disk {}. Filter did not match".format(
+                        disk.get('path')))
                     continue
 
                 if not self._has_mandatory_idents(disk):
+                    log.debug(
+                        "Ignoring disk {}. Missing mandatory idents".format(
+                            disk.get('path')))
                     continue
 
                 if self._limit_reached(device_filter, len(devices),
                                        disk.get('path')):
+                    log.debug("Ignoring disk {}. Limit reached".format(
+                        disk.get('path')))
                     continue
 
-                devices.add(disk.get("path"))
+                if disk not in devices:
+                    log.debug('Adding disk {}'.format(disk.get("path")))
+                    devices.append(disk)
 
-        # sorted() returns a sorted list by the cost of losing the <set>
-        return sorted(devices)
+        # This disk is already taken and must not be re-assigned.
+        for taken_device in devices:
+            if taken_device in self.disks:
+                self.disks.remove(taken_device)
+        return sorted([x.get('path') for x in devices])
 
     @staticmethod
     def _has_mandatory_idents(disk: dict) -> bool:
@@ -810,10 +828,17 @@ def list_drives(**kwargs):
     if dgo.format == 'filestore':
         return dict(
             data_devices=dgo.data_devices, journal_devices=dgo.journal_devices)
-    return dict(
+    ret = dict(
         data_devices=dgo.data_devices,
         wal_devices=dgo.wal_devices,
         db_devices=dgo.db_devices)
+    if ret.get('db_devices') and not ret.get('wal_devices'):
+        return """
+        You specified only db_devices. If your intention was to
+        have dedicated WALs/DBs please specify it with the wal_devices
+        filter. DBs will be colocated alongside the WALs.
+        """
+    return ret
 
 
 def c_v_commands(**kwargs):
@@ -829,45 +854,39 @@ def c_v_commands(**kwargs):
     dgo = DriveGroup(filter_args)
 
     destroyed_osds_map = kwargs.get('destroyed_osds', {})
-    my_destroyed_osds = destroyed_osds_map.get(__grains__.get('host', ''), list())
+    my_destroyed_osds = destroyed_osds_map.get(
+        __grains__.get('host', ''), list())
 
     appendix = ""
     if my_destroyed_osds:
         appendix = " --osd-ids {}".format(" ".join(
             ([str(x) for x in my_destroyed_osds])))
 
-    if not dgo.data_devices:
+    data_devices = dgo.data_devices
+    wal_devices = dgo.wal_devices
+    db_devices = dgo.db_devices
+    if not data_devices:
         return ""
-    cmd = "ceph-volume lvm batch --no-auto {}".format(' '.join(
-        dgo.data_devices))
 
-    # Compute difference between two lists
+    def chunks(seq, size):
+        """ Splits a sequence in evenly sized chunks"""
+        return (seq[i::size] for i in range(size))
 
-    # This validation should belong to ceph-volume
-    # and will evetually end up there:
-    # trackerbug: http://tracker.ceph.com/issues/38473
+    if wal_devices and not db_devices:
+        return """
+        You specified only wal_devices. If your intention was to
+        have dedicated WALs/DBs please specify it with the db_devices
+        filter. WALs will be colocated alongside the DBs.
+        """
 
-    if dgo.format == 'bluestore':
-        extra_db_devices = [
-            x for x in set(dgo.db_devices) if x not in set(dgo.wal_devices)
-        ]
-        cmd += " --bluestore"
-
-        if dgo.wal_devices and dgo.db_devices:
-            cmd += " --wal-devices {}".format(' '.join(dgo.wal_devices))
-            if extra_db_devices:
-                log.info("wal and db are same except for {}".format(
-                    extra_db_devices))
-                cmd += "--db-devices {}".format(' '.join(extra_db_devices))
-        elif dgo.wal_devices and not dgo.db_devices:
-            cmd += " --wal-devices {}".format(' '.join(dgo.wal_devices))
-        elif dgo.db_devices and not dgo.wal_devices:
-            cmd += " --db-devices {}".format(' '.join(dgo.db_devices))
-        else:
-            log.info("Neither wal nor db devices are specified")
+    if wal_devices and db_devices:
+        if len(wal_devices) < len(db_devices):
+            return "This doesn't work right now."
 
     if dgo.format == 'filestore':
-        cmd += " --filestore"
+        cmd = "ceph-volume lvm batch "
+
+        cmd += " {}".format(" ".join(data_devices))
 
         if dgo.journal_size:
             cmd += " --journal-size {}".format(dgo.journal_size)
@@ -876,22 +895,65 @@ def c_v_commands(**kwargs):
             cmd += " --journal-devices {}".format(' '.join(
                 dgo.journal_devices))
 
-    if kwargs.get('dry_run', False):
-        cmd += " --report"
-    else:
-        cmd += " --yes"
-    if appendix:
-        cmd += appendix
-    if dgo.encryption:
-        cmd += " --dmcrypt"
+        cmd += " --filestore"
 
-    if dgo.block_wal_size:
-        cmd += " --block-wal-size {}".format(dgo.block_wal_size)
+        if kwargs.get('dry_run', False):
+            cmd += " --report"
+        else:
+            cmd += " --yes"
 
-    if dgo.block_db_size:
-        cmd += " --block-db-size {}".format(dgo.block_db_size)
+        if appendix:
+            cmd += appendix
 
-    return cmd
+        if dgo.encryption:
+            cmd += " --dmcrypt"
+
+        return cmd
+
+    if dgo.format == 'bluestore':
+
+        chunks_wal_devices = list(chunks(wal_devices, len(db_devices)))
+        chunks_db_devices = list(chunks(db_devices, len(db_devices)))
+        chunks_data_devices = list(chunks(data_devices, len(db_devices)))
+
+        commands = []
+
+        for i in range(0, len(db_devices)):
+            cmd = "ceph-volume lvm batch --no-auto"
+            cmd += " {}".format(" ".join(chunks_data_devices[i]))
+            cmd += " --db-devices {}".format(" ".join(chunks_db_devices[i]))
+            if chunks_wal_devices[i]:
+                cmd += " --wal-devices {}".format(" ".join(
+                    chunks_wal_devices[i]))
+            commands.append(cmd)
+
+        if not db_devices:
+            cmd = "ceph-volume lvm batch --no-auto {}".format(
+                " ".join(data_devices))
+            commands.append(cmd)
+
+        # pylint: disable=consider-using-enumerate
+        for i in range(0, len(commands)):
+            if kwargs.get('dry_run', False):
+                commands[i] += " --report"
+            else:
+                commands[i] += " --yes"
+            # how is that working now? That might get
+            # passed multiple times.. How is c-v reacting
+            if appendix:
+                commands[i] += appendix
+
+            if dgo.encryption:
+                commands[i] += " --dmcrypt"
+
+            if dgo.block_wal_size:
+                commands[i] += " --block-wal-size {}".format(
+                    dgo.block_wal_size)
+
+            if dgo.block_db_size:
+                commands[i] += " --block-db-size {}".format(dgo.block_db_size)
+
+        return commands
 
 
 def deploy(**kwargs):
@@ -904,7 +966,13 @@ def deploy(**kwargs):
                 "Will not deploy using Drive-Groups."
                 "Please consult <insert doc/man> for guidance"
                 "on how to migrate to Drive-Groups")
-    return __salt__['helper.run'](c_v_commands(**kwargs))
+    c_v_command_list = c_v_commands(**kwargs)
+    log.debug("Running commands: {}".format(c_v_command_list))
+    rets = []
+    for cmd in c_v_command_list:
+        rets.append(__salt__['helper.run'](cmd))
+    log.debug("Returns for dg.deploy: {}".format(rets))
+    return rets
 
 
 def _help():
