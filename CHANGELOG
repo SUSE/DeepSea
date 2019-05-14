@@ -1,3 +1,57 @@
+Tue May 14 21:24:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.19
+- Add functests for rebuild, fix helptext for rebuild.py
+- spec: add explicit prometheus, grafana runtime deps
+- select.one_minion: handle case when no minions match criteria
+- iscsi: use deepsea wildcard SSL certificate
+- grafana: use deepsea wildcard SSL certificate
+- dashboard: use deepsea wildcard SSL certificate
+- SSL certificate management state
+- core: workaround ceph-volume's wal/db VG spanning issue  …
+- mds: move reset/shrink-mds-cluster
+- Implement rebuild runner
+- modules: expr_form has been deprecated over tgt_type
+- iscsi: only wait for iscsi gateway if it's ceph-iscsi
+- iscsi: set ceph-iscsi logger level to WARNING
+- ipv6: fix iscsi configuration in ceph-dashboard
+- iSCSI upgrade implementation
+- ganesha: use deepsea.state_apply_if to decide ganesha restarts
+- ganesha_upgrade: fix call to pkg.info_installed
+- select: sort minion list to maintain the order across calls
+- deepsea state module - state_apply_if implementation
+- Improve RGW configuration in ceph-dasboard
+- rgw: allow the configuration of radosgw frontend port using the salt pillar
+- Configure grafana in ceph-dashboard
+- tests: fix igw test case in cephprocesses module test
+- ganesha: upgrade orchestration
+- Use correct config name for Dashboard SSL port
+- mgr_orch: return ganesha and iscsi endpoint URLs
+- core: add wal/db size flag, enable limit: for wal/db devices
+- monitoring: fix file_sd_config paths in prometheus config
+- monitoring: deploy alertmanager in stage 3
+- monitoring: remove old state files
+- Use short hostname from salt grains to feed ceph c_v properly (`ceph-volume lvm batch`)
+- monitoring: install default Ceph alerts
+- core: add include_unavailable flag for disks.py
+- tests: add tests for dg.py filestore implementation
+- apparmor: add teardown state
+- apparmor: teardown existing apparmor by default
+- runners/deepsea.py: fix deepsea RPM version detection
+- tox: use python3 instead of python3.6
+- Remove obsolete includes.
+- dg: use re.search instead of re.match
+- ganesha: keep generating cephx keys with same name as in ses5
+- cephprocesses: don't wait for rbd-target-api because it might not exist
+- cli: fix step long descriptions format
+- build: order Requires alphabetically
+- Update srv/modules/runners/osd.py
+- core: add filestore support for dg.py
+- build: make drive_group.yml 'noreplace'
+- osd.remove to accept compound targets
+- chrony: allow NTP access from local network
+
+
 -------------------------------------------------------------------
 Tue Apr 30 18:00:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
