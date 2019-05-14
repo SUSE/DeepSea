@@ -13,13 +13,13 @@ disable dashboard ssl:
 
 set dashboard port:
   cmd.run:
-    - name: ceph config set mgr mgr/dashboard/server_port {{ salt['pillar.get']('dashboard_port', '8080') }}
+    - name: ceph config set mgr mgr/dashboard/server_port {{ salt['pillar.get']('dashboard_port', 8080) }}
     - failhard: true
     - fire_event: True
 {% else %}
-set dashboard port:
+set dashboard ssl port:
   cmd.run:
-    - name: ceph config set mgr mgr/dashboard/server_port {{ salt['pillar.get']('dashboard_ssl_port', '8443') }}
+    - name: ceph config set mgr mgr/dashboard/ssl_server_port {{ salt['pillar.get']('dashboard_ssl_port', 8443) }}
     - failhard: true
     - fire_event: True
 {% endif %}
