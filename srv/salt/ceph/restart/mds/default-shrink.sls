@@ -13,7 +13,7 @@ shrink mds cluster:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls:
-      - ceph.mds.restart.shrink-mds-cluster
+      - ceph.mds.shrink-mds-cluster
     - pillar:
         'fs_name': {{ fs_name }}
 
@@ -54,7 +54,7 @@ reset mds cluster:
     - tgt: {{ master }}
     - tgt_type: compound
     - sls:
-      - ceph.mds.restart.reset-mds-cluster
+      - ceph.mds.reset-mds-cluster
     - pillar:
         'fs_name': {{ fs_name }}
         'ranks_in': {{ ranks_in }}
