@@ -343,6 +343,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rgw/users
 %dir /srv/salt/ceph/rgw/users/users.d
 %dir /srv/salt/ceph/shutdown
+%dir /srv/salt/ceph/ssl
 %dir /srv/salt/ceph/startup
 %dir /srv/salt/ceph/stage
 %dir /srv/salt/ceph/stage/all
@@ -690,6 +691,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rgw/users/*.sls
 %config /srv/salt/ceph/rgw/users/users.d/README
 %config /srv/salt/ceph/shutdown/*.sls
+%config /srv/salt/ceph/ssl/*.sls
 %config /srv/salt/ceph/startup/*.sls
 %config /srv/salt/ceph/stage/0
 %config /srv/salt/ceph/stage/1

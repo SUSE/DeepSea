@@ -101,6 +101,13 @@ mgrs:
     - sls: ceph.mgr
     - failhard: True
 
+install ca cert in mgr minions:
+  salt.state:
+    - tgt: 'I@roles:mgr and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.ssl.distribute_ca
+    - failhard: True
+
 # Immediately after deploying ceph-mgr, it takes a few seconds for the
 # various modules to become available.  If we don't wait for this, any
 # subqeuent `ceph` commands that require mgr will fail (for example

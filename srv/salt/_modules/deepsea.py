@@ -74,3 +74,19 @@ def find_pool(applications, preferred_pool=None):
     if [pool for _, pool in eligible_pools if pool == preferred_pool]:
         return preferred_pool
     return eligible_pools[0][1]
+
+
+def ssl_ca_cert_cn():
+    domain = __grains__['domain']
+    if not domain:
+        raise Exception("According to the 'domain' grain, the cluster does"
+                        " not have a DNS domain configured")
+    return "deepsea.{}".format(domain)
+
+
+def ssl_cert_cn_wildcard():
+    domain = __grains__['domain']
+    if not domain:
+        raise Exception("According to the 'domain' grain, the cluster does"
+                        " not have a DNS domain configured")
+    return "*.{}".format(domain)

@@ -92,9 +92,8 @@ def one_minion(**kwargs):
     Some steps only need to be run once, but on any minion in a specific
     search.  Return the first matching key.
     """
-    ret = [None]
     ret = minions(**kwargs)
-    return ret[0]
+    return ret[0] if ret else None
 
 
 def first(**kwargs):
