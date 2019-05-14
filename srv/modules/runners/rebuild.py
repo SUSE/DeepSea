@@ -21,12 +21,12 @@ def help_():
     Usage
     """
     usage = ('salt-run rebuild.node [TARGET...]\n'
-             'salt-run rebuild.nodes [TARGET...]:\n\n'
-             '    Removes and deploys OSDs\n'
-             'salt-run rebuild.identical [TARGET...]:\n\n'
-             '    Removes and deploys OSDs with same IDs\n'
-             'salt-run rebuild.check [TARGET...]:\n\n'
-             '    Checks available space\n'
+             'salt-run rebuild.nodes [TARGET...]:\n'
+             '    Removes and deploys OSDs\n\n'
+             'salt-run rebuild.identical [TARGET...]:\n'
+             '    Removes and deploys OSDs with same IDs\n\n'
+             'salt-run rebuild.check [TARGET...]:\n'
+             '    Checks available space\n\n'
              '\n\n'
              'Examples:\n'
              '    salt-run rebuild.node data1.ceph\n'
@@ -251,7 +251,9 @@ def check(*args):
     return ""
 
 
+# pylint: disable=duplicate-key
 __func_alias__ = {
                  'help_': 'help',
                  'node': 'nodes',
+                 'node': 'node',
                  }
