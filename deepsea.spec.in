@@ -32,6 +32,12 @@ Url:            https://github.com/suse/deepsea
 Source0:        %{name}-%{version}.tar.bz2
 
 BuildRequires:  salt-master
+Requires:       ceph-grafana-dashboards
+%if 0%{?suse_version}
+Requires:       ceph-prometheus-alerts
+Requires:       golang-github-prometheus-alertmanager
+Requires:       golang-github-prometheus-prometheus
+%endif
 Requires:       curl
 Requires:       gptfdisk
 Requires:       hwinfo
