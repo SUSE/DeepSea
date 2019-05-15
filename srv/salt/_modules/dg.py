@@ -928,7 +928,7 @@ def c_v_commands(**kwargs):
         if dgo.encryption:
             cmd += " --dmcrypt"
 
-        return cmd
+        return [cmd]
 
     if dgo.format == 'bluestore':
 
