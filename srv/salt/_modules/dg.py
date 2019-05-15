@@ -52,6 +52,13 @@ class UnitNotSupported(Exception):
     pass
 
 
+class ConfigError(Exception):
+    """ A critical error which encounteres when a configuration is not supported
+    or is invalid.
+    """
+    pass
+
+
 class Filter(object):
     """ Filter class to assign properties to bare filters.
 
@@ -815,6 +822,24 @@ class DriveGroup(object):
                 raise
 
 
+def _apply_policies(data_devices: list, wal_devices: list,
+                    db_devices: list) -> bool:
+    if wal_devices and not db_devices:
+        log.error("""
+        You specified only wal_devices. If your intention was to
+        have dedicated WALs/DBs please specify it with the db_devices
+        filter. WALs will be colocated alongside the DBs.
+        """)
+        return False
+
+    if wal_devices and db_devices:
+        if len(wal_devices) < len(db_devices):
+            log.error("This doesn't work right now.")
+            return False
+
+    return True
+
+
 def list_drives(**kwargs):
     """
     A public method that returns a dict
@@ -825,19 +850,21 @@ def list_drives(**kwargs):
     if not filter_args:
         Exception("No filter_args provided")
     dgo = DriveGroup(filter_args, include_unavailable=include_unavailable)
+    data_devices = dgo.data_devices
+    db_devices = dgo.db_devices
+    wal_devices = dgo.wal_devices
+    journal_devices = dgo.journal_devices
+
+    if not _apply_policies(data_devices, wal_devices, db_devices):
+        raise ConfigError(
+            "Detected invalid configuration. Please check the logs")
+
     if dgo.format == 'filestore':
-        return dict(
-            data_devices=dgo.data_devices, journal_devices=dgo.journal_devices)
+        return dict(data_devices=data_devices, journal_devices=journal_devices)
     ret = dict(
-        data_devices=dgo.data_devices,
-        wal_devices=dgo.wal_devices,
-        db_devices=dgo.db_devices)
-    if ret.get('db_devices') and not ret.get('wal_devices'):
-        return """
-        You specified only db_devices. If your intention was to
-        have dedicated WALs/DBs please specify it with the wal_devices
-        filter. DBs will be colocated alongside the WALs.
-        """
+        data_devices=data_devices,
+        wal_devices=wal_devices,
+        db_devices=db_devices)
     return ret
 
 
@@ -868,20 +895,13 @@ def c_v_commands(**kwargs):
     if not data_devices:
         return ""
 
+    if not _apply_policies(data_devices, wal_devices, db_devices):
+        raise ConfigError(
+            "Detected invalid configuration. Please check the logs")
+
     def chunks(seq, size):
         """ Splits a sequence in evenly sized chunks"""
         return (seq[i::size] for i in range(size))
-
-    if wal_devices and not db_devices:
-        return """
-        You specified only wal_devices. If your intention was to
-        have dedicated WALs/DBs please specify it with the db_devices
-        filter. WALs will be colocated alongside the DBs.
-        """
-
-    if wal_devices and db_devices:
-        if len(wal_devices) < len(db_devices):
-            return "This doesn't work right now."
 
     if dgo.format == 'filestore':
         cmd = "ceph-volume lvm batch "
@@ -970,6 +990,10 @@ def deploy(**kwargs):
     log.debug("Running commands: {}".format(c_v_command_list))
     rets = []
     for cmd in c_v_command_list:
+        if not cmd.startswith("ceph-volume"):
+            if cmd:
+                log.error(cmd)
+            continue
         rets.append(__salt__['helper.run'](cmd))
     log.debug("Returns for dg.deploy: {}".format(rets))
     return rets
