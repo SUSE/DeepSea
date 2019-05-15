@@ -53,7 +53,7 @@ class UnitNotSupported(Exception):
 
 
 class ConfigError(Exception):
-    """ A critical error which encounteres when a configuration is not supported
+    """ A critical error which is encountered when a configuration is not supported
     or is invalid.
     """
     pass
@@ -822,8 +822,8 @@ class DriveGroup(object):
                 raise
 
 
-def _apply_policies(data_devices: list, wal_devices: list,
-                    db_devices: list) -> bool:
+def _apply_policies(wal_devices: list, db_devices: list) -> bool:
+    """ Apply known policies """
     if wal_devices and not db_devices:
         log.error("""
         You specified only wal_devices. If your intention was to
@@ -855,7 +855,7 @@ def list_drives(**kwargs):
     wal_devices = dgo.wal_devices
     journal_devices = dgo.journal_devices
 
-    if not _apply_policies(data_devices, wal_devices, db_devices):
+    if not _apply_policies(wal_devices, db_devices):
         raise ConfigError(
             "Detected invalid configuration. Please check the logs")
 
@@ -892,10 +892,11 @@ def c_v_commands(**kwargs):
     data_devices = dgo.data_devices
     wal_devices = dgo.wal_devices
     db_devices = dgo.db_devices
+    journal_devices = dgo.journal_devices
     if not data_devices:
         return ""
 
-    if not _apply_policies(data_devices, wal_devices, db_devices):
+    if not _apply_policies(wal_devices, db_devices):
         raise ConfigError(
             "Detected invalid configuration. Please check the logs")
 
@@ -904,16 +905,15 @@ def c_v_commands(**kwargs):
         return (seq[i::size] for i in range(size))
 
     if dgo.format == 'filestore':
-        cmd = "ceph-volume lvm batch "
+        cmd = "ceph-volume lvm batch"
 
         cmd += " {}".format(" ".join(data_devices))
 
         if dgo.journal_size:
             cmd += " --journal-size {}".format(dgo.journal_size)
 
-        if dgo.journal_devices:
-            cmd += " --journal-devices {}".format(' '.join(
-                dgo.journal_devices))
+        if journal_devices:
+            cmd += " --journal-devices {}".format(' '.join(journal_devices))
 
         cmd += " --filestore"
 

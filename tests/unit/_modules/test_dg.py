@@ -475,15 +475,15 @@ class TestDriveGroup(object):
                 'target': 'data*',
                 'format': 'filestore',
                 'data_devices': {
-                    'size': '10G:29G',
+                    'size': '30G:50G',
                     'model': 'foo',
                     'vendor': '1x',
                     'limit': data_limit
                 },
                 'journal_devices': {
-                    'size': ':90G'
+                    'size': ':20G'
                 },
-                'journal_size': '500M',
+                'journal_size': '500',
                 'encryption': True,
             }
             if disk_format == 'filestore':
@@ -586,7 +586,7 @@ class TestDriveGroup(object):
     def test_journal_device_prop(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
         assert test_fix.journal_device_attrs == {
-            'size': ':90G',
+            'size': ':20G',
         }
 
     def test_wal_device_prop_empty(self, test_fix):
@@ -624,7 +624,7 @@ class TestDriveGroup(object):
     def test_journal_devices(self, filter_mock, test_fix):
         test_fix = test_fix(disk_format='filestore')
         test_fix.journal_devices
-        filter_mock.assert_called_once_with({'size': ':90G'})
+        filter_mock.assert_called_once_with({'size': ':20G'})
 
     def test_filestore_format_prop(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
@@ -640,7 +640,7 @@ class TestDriveGroup(object):
 
     def test_journal_size(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
-        assert test_fix.journal_size == '500M'
+        assert test_fix.journal_size == '500'
 
     def test_journal_size_empty(self, test_fix):
         test_fix = test_fix(empty=True)
@@ -879,6 +879,14 @@ class TestDriveGroup(object):
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
             'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk /dev/vdl /dev/vdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500'
+        ]
+
+    def test_c_v_commands_filestore(self, test_fix, inventory):
+        inventory()
+        test_fix = test_fix(disk_format='filestore')
+        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
+        assert ret == [
+            'ceph-volume lvm batch /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk --journal-size 500 --journal-devices /dev/vdl /dev/vdm --filestore --yes --dmcrypt'
         ]
 
     def test_c_v_commands_external_db(self, test_fix, inventory):
