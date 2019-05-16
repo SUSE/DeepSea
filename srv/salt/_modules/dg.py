@@ -961,7 +961,8 @@ def deploy(**kwargs):
     # do not run this when there is still ceph:storage in the pillar
     # this indicates that we are in a post-upgrade scenario and
     # the drive assignment was not ported to drive-groups yet.
-    if __pillar__.get('ceph', {}).get('storage'):
+    if not kwargs.get('bypass_pillar', False) and ('storage' in __pillar__.get(
+            'ceph', {})):
         return ("You seem to have configured old-style profiles."
                 "Will not deploy using Drive-Groups."
                 "Please consult <insert doc/man> for guidance"

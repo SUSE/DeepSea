@@ -111,7 +111,9 @@ class DriveGroups(object):
     def __init__(self, **kwargs: dict) -> None:
         self.local_client = salt.client.LocalClient()
         self.dry_run: bool = kwargs.get('dry_run', False)
-        self.include_unavailable: bool = kwargs.get('include_unavailable', False)
+        self.include_unavailable: bool = kwargs.get('include_unavailable',
+                                                    False)
+        self.bypass_pillar: bool = kwargs.get('bypass_pillar', False)
         self.target: str = kwargs.get('target', '')
         self.drive_groups_path: str = '/srv/salt/ceph/configuration/files/drive_groups.yml'
         self.drive_groups: dict = self._get_drive_groups()
@@ -177,6 +179,7 @@ class DriveGroups(object):
             kwarg={
                 'filter_args': filter_args,
                 'dry_run': self.dry_run,
+                'bypass_pillar': self.bypass_pillar,
                 'include_unavailable': self.include_unavailable,
                 'destroyed_osds': destroyed()
             },
@@ -232,8 +235,10 @@ def destroyed():
     for item in tree:
         # only looking for type host
         if item.get('type', '') == 'host':
-            report_map.update({item.get('name', ''): item.get('children',
-                                                              list())})
+            report_map.update({
+                item.get('name', ''):
+                item.get('children', list())
+            })
 
     return report_map
 
