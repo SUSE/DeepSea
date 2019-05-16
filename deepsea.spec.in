@@ -464,6 +464,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 /srv/modules/utils/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
+/srv/pillar/ceph/README
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/config.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/benchmark.cfg
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/collections/*.yml
