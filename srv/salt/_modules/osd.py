@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=fixme,modernize-parse-error
 # pylint: disable=visually-indented-line-with-same-indent-as-next-logical-line
-
 """
 All OSD related functions
 """
@@ -17,7 +16,6 @@ import re
 import pprint
 import yaml
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
-
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +40,192 @@ def paths():
     Return an array of pathnames
     """
     return [pathname for pathname in glob.glob("/var/lib/ceph/osd/*")]
+
+
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
+class OSD(object):
+    """
+    I can't use decorated setters as I need to pass the uninstantiated
+    function in order to map it to the respective data_fields.
+
+    This is a container class for the discoverable OSD attributes
+    """
+
+    def __init__(self, path):
+        """ init """
+        self.path: list = path
+        self._osd_id: str = ''
+        self._fsid: str = ''
+        self._backend: str = ''
+        self._block_data: str = ''
+        self._block_db: str = ''
+        self._block_wal: str = ''
+        self._block_dmcrypt: str = ''
+        self._journal: str = ''
+
+    def _is_mounted(self) -> bool:
+        """ Check if the path is mounted """
+        return os.path.ismount(self.path)
+
+    @staticmethod
+    def _read_file_for(full_path: str) -> str:
+        """
+        Read link if .islink
+        Read file if isfile
+        unless path doesn't exist
+        """
+        if not os.path.exists(full_path):
+            return ''
+        if os.path.islink(full_path):
+            return os.readlink(full_path)
+        with open(full_path, 'r') as _fd:
+            return _fd.read().strip()
+
+    @property
+    def data_fields(self) -> dict:
+        """ Datafield mapping """
+        return {
+            'whoami': self.set_osd_id,
+            'fsid': self.set_fsid,
+            'type': self.set_backend,
+            'block': self.set_block_data,
+            'block.db': self.set_block_db,
+            'block.wal': self.set_block_wal,
+            'block.dmcrypt': self.set_block_dmcrypt,
+            'journal': self.set_journal,
+        }
+
+    def dig(self) -> bool:
+        """ Looks for data_fields and sets the discovered value """
+        for field, setter_method in self.data_fields.items():
+            log.debug(f"Processing {field}")
+            setter_method(self._read_file_for(f"{self.path}/{field}"))
+        return True
+
+    def discover(self) -> bool:
+        """ .dig method wrapper. Skips if the path is not mounted """
+        if not self._is_mounted():
+            log.debug(f"{self.path} is not mounted. Skipping")
+            return False
+        return self.dig()
+
+    @property
+    def osd_id(self) -> str:
+        """ osd_id property """
+        return str(self._osd_id)
+
+    def set_osd_id(self, osd_id: str) -> None:
+        """ osd_id setter """
+        log.debug(f"Setting osd_id value {osd_id}")
+        self.osd_id = str(osd_id)
+
+    @property
+    def fsid(self) -> str:
+        """ fsid property """
+        return str(self._fsid)
+
+    def set_fsid(self, osd_fsid: str) -> None:
+        """ fsid setter """
+        log.debug(f"Setting osd_fsid value {osd_fsid}")
+        self._fsid = str(osd_fsid)
+
+    @property
+    def backend(self) -> str:
+        """ backend property """
+        return self._backend
+
+    def set_backend(self, backend: str) -> None:
+        """ backend setter """
+        log.debug(f"Setting backend value {backend}")
+        self._backend = backend
+
+    @property
+    def block_data(self) -> str:
+        """ block property """
+        return self._block_data
+
+    def set_block_data(self, block_data: str) -> None:
+        """ block data setter """
+        log.debug(f"Setting block_data value {block_data}")
+        self._block_data = block_data
+
+    @property
+    def block_db(self) -> str:
+        """ block db property """
+        return self._block_db
+
+    def set_block_db(self, block_db: str) -> None:
+        """ block db setter """
+        log.debug(f"Setting block_db value {block_db}")
+        self._block_db = block_db
+
+    @property
+    def block_wal(self) -> str:
+        """ block wal property """
+        return self._block_wal
+
+    def set_block_wal(self, block_wal: str) -> None:
+        """ block wal setter """
+        log.debug(f"Setting block_wal value {block_wal}")
+        self._block_wal = block_wal
+
+    @property
+    def block_dmcrypt(self) -> str:
+        """ block dmcrypt property """
+        return self._block_dmcrypt
+
+    def set_block_dmcrypt(self, block_dmcrypt: str) -> None:
+        """ block dmcrypt setter """
+        log.debug(f"Setting block_dmcrypt value {block_dmcrypt}")
+        self._block_dmcrypt = block_dmcrypt
+
+    @property
+    def journal(self) -> str:
+        """ journal property """
+        return self._journal
+
+    def set_journal(self, journal: str) -> None:
+        """ journal setter """
+        log.debug(f"Setting journal value {journal}")
+        self._journal = journal
+
+    def report(self) -> str:
+        """ formatted reporting """
+        message: str = f"""
+osd_id  : {self.osd_id:<1}
+osd_fsid: {self.fsid:<1}
+backend : {self.backend:<1}
+data    : {self.block_data:<1}
+db      : {self.block_db:<1}
+wal     : {self.block_wal:<1}
+journal : {self.journal:<1}
+dmcrypt : {self.block_dmcrypt:<1}
+        """
+        return message
+
+    def as_json(self) -> str:
+        """ return attributes as json """
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            allow_nan=False,
+            sort_keys=False,
+            indent=4)
+
+    def as_dict(self) -> dict:
+        """ return attributes as dict """
+        return self.__dict__
+
+
+# pylint: disable=unused-argument
+def discover(**kwargs):
+    """ user facing discovery method """
+    discovered_osds = []
+    for path in paths():
+        osd = OSD(path)
+        if osd.discover():
+            discovered_osds.append(osd.as_dict())
+    return discovered_osds
 
 
 def devices():
@@ -111,8 +295,10 @@ def _filter_devices(_devices, **kwargs):
     Only supporting format currently.
     """
     if 'format' in kwargs:
-        _devices = [device for device in _devices
-                    if _devices[device]['format'] == kwargs['format']]
+        _devices = [
+            device for device in _devices
+            if _devices[device]['format'] == kwargs['format']
+        ]
 
     return _devices
 
@@ -127,20 +313,18 @@ def configured(**kwargs):
     # storage[osds] OR storage[data+journals]
     # TODO: append devices from one config version
     if ('ceph' in __pillar__ and 'storage' in __pillar__['ceph']
-        and 'osds' in __pillar__['ceph']['storage']):
+            and 'osds' in __pillar__['ceph']['storage']):
         _devices = __pillar__['ceph']['storage']['osds']
         log.debug("devices from pillar: {}".format(_devices))
         _devices = _filter_devices(_devices, **kwargs)
-    if ('storage' in __pillar__ and
-        'osds' in __pillar__['storage'] and
-        isinstance(__pillar__['storage']['osds'], list)):
+    if ('storage' in __pillar__ and 'osds' in __pillar__['storage']
+            and isinstance(__pillar__['storage']['osds'], list)):
         _devices = __pillar__['storage']['osds']
         log.debug("devices: {}".format(_devices))
         if 'format' in kwargs and kwargs['format'] != 'filestore':
             return []
-    if ('storage' in __pillar__ and
-        'data+journals' in __pillar__['storage'] and
-        isinstance(__pillar__['storage']['data+journals'], list)):
+    if ('storage' in __pillar__ and 'data+journals' in __pillar__['storage']
+            and isinstance(__pillar__['storage']['data+journals'], list)):
         for entry in __pillar__['storage']['data+journals']:
             _devices.append(list(entry.keys())[0])
     log.debug("devices: {}".format(_devices))
@@ -152,8 +336,10 @@ def list_():
     """
     Return the array of ids.
     """
-    mounted = [path.split('-')[1][:-5]
-               for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path]
+    mounted = [
+        path.split('-')[1][:-5]
+        for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path
+    ]
     log.info("mounted osds {}".format(mounted))
     # the 'ceph' grain will disappear over time.
     # the 'remove osd' operation will remove the grain
@@ -169,8 +355,10 @@ def rescinded():
     """
     Return the array of ids that are no longer mounted.
     """
-    mounted = [int(path.split('-')[1][:-5])
-               for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path]
+    mounted = [
+        int(path.split('-')[1][:-5])
+        for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path
+    ]
     log.info("mounted osds {}".format(mounted))
     # ids = __grains__['ceph'].keys() if 'ceph' in __grains__ else []
     _ids = _children()
@@ -215,9 +403,10 @@ def df(**kwargs):
     }
     settings.update(kwargs)
 
-    cluster = rados.Rados(conffile=settings['conf'],
-                          conf=dict(keyring=settings['keyring']),
-                          name=settings['client'])
+    cluster = rados.Rados(
+        conffile=settings['conf'],
+        conf=dict(keyring=settings['keyring']),
+        name=settings['client'])
 
     cluster.connect()
     cmd = json.dumps({"prefix": "osd df", "format": "json"})
@@ -284,10 +473,12 @@ class OSDWeight(object):
             'delay': 6
         }
         self.settings.update(kwargs)
-        log.debug("settings for OSDWeight: {}".format(pprint.pformat(self.settings)))
-        self.cluster = rados.Rados(conffile=self.settings['conf'],
-                                   conf=dict(keyring=self.settings['keyring']),
-                                   name=self.settings['client'])
+        log.debug("settings for OSDWeight: {}".format(
+            pprint.pformat(self.settings)))
+        self.cluster = rados.Rados(
+            conffile=self.settings['conf'],
+            conf=dict(keyring=self.settings['keyring']),
+            name=self.settings['client'])
         try:
             self.cluster.connect()
         except Exception as error:
@@ -318,13 +509,15 @@ class OSDWeight(object):
         if os.path.isfile(self.settings['filename']):
             with open(self.settings['filename']) as weightfile:
                 saved_weight = weightfile.read().rstrip('\n')
-                log.info("Restoring weight {} to osd.{}".format(saved_weight, self.osd_id))
+                log.info("Restoring weight {} to osd.{}".format(
+                    saved_weight, self.osd_id))
                 self.update_weight(saved_weight)
 
         if os.path.isfile(self.settings['rfilename']):
             with open(self.settings['rfilename']) as reweightfile:
                 saved_reweight = reweightfile.read().rstrip('\n')
-                log.info("Restoring reweight {} to osd.{}".format(saved_reweight, self.osd_id))
+                log.info("Restoring reweight {} to osd.{}".format(
+                    saved_reweight, self.osd_id))
                 self.update_reweight(saved_reweight)
 
     def update_weight(self, weight):
@@ -365,8 +558,10 @@ class OSDWeight(object):
         """
         Returns safe-to-destroy output, does not return JSON
         """
-        cmd = json.dumps({"prefix": "osd safe-to-destroy",
-                          "ids": ["{}".format(self.osd_id)]})
+        cmd = json.dumps({
+            "prefix": "osd safe-to-destroy",
+            "ids": ["{}".format(self.osd_id)]
+        })
         rc, _, output = self.cluster.mon_command(cmd, b'', timeout=6)
         return rc, output
 
@@ -383,7 +578,7 @@ class OSDWeight(object):
         """
         i = 0
         last_pgs = 0
-        while i < self.settings['timeout']/self.settings['delay']:
+        while i < self.settings['timeout'] / self.settings['delay']:
             rc, msg = self.osd_safe_to_destroy()
             if rc == 0:
                 ret = "osd.{} is safe to destroy".format(self.osd_id)
@@ -392,10 +587,11 @@ class OSDWeight(object):
             entry = self.osd_df()
             if 'pgs' in entry:
                 if entry['pgs'] == 0:
-                    log.warning("osd.{} has {} PGs remaining but {}".
-                                format(self.osd_id, entry['pgs'], msg))
+                    log.warning("osd.{} has {} PGs remaining but {}".format(
+                        self.osd_id, entry['pgs'], msg))
                 else:
-                    log.warning("osd.{} has {} PGs remaining".format(self.osd_id, entry['pgs']))
+                    log.warning("osd.{} has {} PGs remaining".format(
+                        self.osd_id, entry['pgs']))
                     if last_pgs != entry['pgs']:
                         # Making progress, reset countdown
                         i = 0
@@ -406,7 +602,8 @@ class OSDWeight(object):
             i += 1
             time.sleep(self.settings['delay'])
 
-        msg = "Timeout expired - OSD {} has {} PGs remaining".format(self.osd_id, last_pgs)
+        msg = "Timeout expired - OSD {} has {} PGs remaining".format(
+            self.osd_id, last_pgs)
         log.error(msg)
         return msg
 
@@ -429,9 +626,10 @@ class CephPGs(object):
         }
         self.settings.update(kwargs)
         log.debug("settings: {}".format(pprint.pformat(self.settings)))
-        self.cluster = rados.Rados(conffile=self.settings['conf'],
-                                   conf=dict(keyring=self.settings['keyring']),
-                                   name=self.settings['client'])
+        self.cluster = rados.Rados(
+            conffile=self.settings['conf'],
+            conf=dict(keyring=self.settings['keyring']),
+            name=self.settings['client'])
         try:
             self.cluster.connect()
         except Exception as error:
@@ -446,7 +644,7 @@ class CephPGs(object):
         last = []
         if self.settings['delay'] == 0:
             raise ValueError("The delay cannot be 0")
-        while i < self.settings['timeout']/self.settings['delay']:
+        while i < self.settings['timeout'] / self.settings['delay']:
             current = self.pg_states()
             if not current:
                 log.warning("PGs are not present")
@@ -454,7 +652,8 @@ class CephPGs(object):
             if len(current) == 1 and current[0]['name'] == 'active+clean':
                 log.warning("PGs are active+clean")
                 return True
-            log.warning("Waiting on active+clean {}".format(pprint.pformat(current)))
+            log.warning("Waiting on active+clean {}".format(
+                pprint.pformat(current)))
             if self._pg_value(last) != self._pg_value(current):
                 # Making progress - reset counter
                 log.debug("Resetting active+clean counter")
@@ -462,8 +661,8 @@ class CephPGs(object):
                 last = current
 
             i += 1
-            log.debug("iteration: {} last: {} current: {}".
-                      format(i, self._pg_value(last), self._pg_value(current)))
+            log.debug("iteration: {} last: {} current: {}".format(
+                i, self._pg_value(last), self._pg_value(current)))
             time.sleep(self.settings['delay'])
 
         log.error("Timeout expired waiting on active+clean")
@@ -500,10 +699,7 @@ def _settings(**kwargs):
     settings = {}
     storage_keyring = '/etc/ceph/ceph.client.storage.keyring'
     if os.path.exists(storage_keyring):
-        settings = {
-            'keyring': storage_keyring,
-            'client': 'client.storage'
-        }
+        settings = {'keyring': storage_keyring, 'client': 'client.storage'}
         settings.update(kwargs)
     return settings
 
@@ -579,6 +775,7 @@ def readlink(device, follow=True):
 
 
 # pylint: disable=too-many-instance-attributes
+
 
 def _detect(osd_id, pathname="/var/lib/ceph/osd"):
     """
@@ -681,7 +878,9 @@ class OSDDevices(object):
                     log.info("lockbox: {}".format(line))
                     _partitions['lockbox'] = self._uuid_device(entry[0])
 
-        for device_type in ['journal', 'block', 'block.db', 'block.wal', 'block_dmcrypt']:
+        for device_type in [
+                'journal', 'block', 'block.db', 'block.wal', 'block_dmcrypt'
+        ]:
             result = self._uuid_device("{}/{}".format(mount_dir, device_type))
             if result:
                 _partitions[device_type] = result
@@ -691,7 +890,8 @@ class OSDDevices(object):
         """
         Returns lockbox pathname
         """
-        return "{}-lockbox/{}".format(self.pathname, self.osd_fsid(self.osd_id))
+        return "{}-lockbox/{}".format(self.pathname,
+                                      self.osd_fsid(self.osd_id))
 
     def osd_fsid(self, osd_id):
         """
@@ -727,7 +927,10 @@ class OSDGrains(object):
     Manage caching the device names for all OSDs.
     """
 
-    def __init__(self, device, pathname="/var/lib/ceph/osd", filename="/etc/salt/grains"):
+    def __init__(self,
+                 device,
+                 pathname="/var/lib/ceph/osd",
+                 filename="/etc/salt/grains"):
         """
         Initialize settings
         """
@@ -748,7 +951,8 @@ class OSDGrains(object):
                 try:
                     del content['ceph'][str(osd_id)]
                 except:
-                    log.error("Cannot delete osd {} from grains".format(osd_id))
+                    log.error(
+                        "Cannot delete osd {} from grains".format(osd_id))
             if content:
                 self._update_grains(content)
 
@@ -778,9 +982,9 @@ class OSDGrains(object):
         friendly_dumper.ignore_aliases = lambda self, data: True
 
         with open(self.filename, 'w') as minion_grains:
-            minion_grains.write(yaml.dump(content,
-                                          Dumper=friendly_dumper,
-                                          default_flow_style=False))
+            minion_grains.write(
+                yaml.dump(
+                    content, Dumper=friendly_dumper, default_flow_style=False))
         log.info("Syncing grains")
         __salt__['saltutil.sync_grains']()
 
@@ -887,5 +1091,5 @@ def takeover():
 
 
 __func_alias__ = {
-                'list_': 'list',
-                }
+    'list_': 'list',
+}
