@@ -19,6 +19,7 @@ import time
 
 import requests
 from salt.exceptions import CommandExecutionError
+import netaddr
 
 try:
     from rtslib_fb.root import RTSRoot
@@ -566,6 +567,10 @@ def wait_for_gateway():
     port = __pillar__.get('ceph_iscsi_port', '5000')
     ssl = __pillar__.get('ceph_iscsi_ssl', False)
     address = __salt__['public.address']()
+
+    if netaddr.valid_ipv6(address) is True:
+        address = "[{}]".format(address)
+
     url = "http{}://{}:{}@{}:{}/api/_ping" \
           .format("s" if ssl else "", username,
                   password, address, port)
