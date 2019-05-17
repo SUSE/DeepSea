@@ -8,6 +8,16 @@ populate scrape configs:
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.populate_scrape_configs
 
+populate alertmanager peers:
+  salt.state:
+    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.monitoring.alertmanager.populate_peers
+
+clear salt file server file list cache:
+  salt.runner:
+    - name: fileserver.clear_file_list_cache
+
 install prometheus:
   salt.state:
     - tgt: 'I@roles:prometheus and I@cluster:ceph'
@@ -19,12 +29,6 @@ push scrape configs:
     - tgt: 'I@roles:prometheus and I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.monitoring.prometheus.push_scrape_configs
-
-populate alertmanager peers:
-  salt.state:
-    - tgt: 'I@roles:prometheus and I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.monitoring.alertmanager.populate_peers
 
 install alertmanager:
   salt.state:
