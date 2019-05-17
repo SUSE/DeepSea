@@ -125,7 +125,7 @@ class DriveGroups(object):
         """ Get the drive Group specs"""
         ret = self._load_drive_group_file()
         if not ret:
-            raise RuntimeError("Make sure to to populate {}.".format(
+            raise RuntimeError("Make sure to populate {}.".format(
                 self.drive_groups_path))
 
         if not isinstance(ret, dict):
