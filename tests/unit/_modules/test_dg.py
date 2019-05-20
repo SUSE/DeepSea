@@ -1,6 +1,7 @@
 import pytest
 from mock import patch, call, Mock, PropertyMock
 from srv.salt._modules import dg
+from tests.unit.helper.fixtures import helper_specs
 
 
 class InventoryFactory(object):
@@ -474,15 +475,15 @@ class TestDriveGroup(object):
                 'target': 'data*',
                 'format': 'filestore',
                 'data_devices': {
-                    'size': '10G:29G',
+                    'size': '30G:50G',
                     'model': 'foo',
                     'vendor': '1x',
                     'limit': data_limit
                 },
                 'journal_devices': {
-                    'size': ':90G'
+                    'size': ':20G'
                 },
-                'journal_size': '500M',
+                'journal_size': '500',
                 'encryption': True,
             }
             if disk_format == 'filestore':
@@ -585,7 +586,7 @@ class TestDriveGroup(object):
     def test_journal_device_prop(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
         assert test_fix.journal_device_attrs == {
-            'size': ':90G',
+            'size': ':20G',
         }
 
     def test_wal_device_prop_empty(self, test_fix):
@@ -623,7 +624,7 @@ class TestDriveGroup(object):
     def test_journal_devices(self, filter_mock, test_fix):
         test_fix = test_fix(disk_format='filestore')
         test_fix.journal_devices
-        filter_mock.assert_called_once_with({'size': ':90G'})
+        filter_mock.assert_called_once_with({'size': ':20G'})
 
     def test_filestore_format_prop(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
@@ -639,7 +640,7 @@ class TestDriveGroup(object):
 
     def test_journal_size(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
-        assert test_fix.journal_size == '500M'
+        assert test_fix.journal_size == '500'
 
     def test_journal_size_empty(self, test_fix):
         test_fix = test_fix(empty=True)
@@ -880,6 +881,14 @@ class TestDriveGroup(object):
             'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk /dev/vdl /dev/vdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500'
         ]
 
+    def test_c_v_commands_filestore(self, test_fix, inventory):
+        inventory()
+        test_fix = test_fix(disk_format='filestore')
+        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
+        assert ret == [
+            'ceph-volume lvm batch /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk --journal-size 500 --journal-devices /dev/vdl /dev/vdm --filestore --yes --dmcrypt'
+        ]
+
     def test_c_v_commands_external_db(self, test_fix, inventory):
         inventory()
         ret = dg.c_v_commands(filter_args={
@@ -897,16 +906,16 @@ class TestDriveGroup(object):
 
     def test_c_v_commands_external_wal_only(self, test_fix, inventory):
         inventory(wal_devices=2, db_devices=0)
-        ret = dg.c_v_commands(
-            filter_args={
-                'data_devices': {
-                    'rotational': '1'
-                },
-                'wal_devices': {
-                    'rotational': '0'
-                }
-            })
-        assert "You specified only wal_devices" in ret
+        with pytest.raises(dg.ConfigError):
+            dg.c_v_commands(
+                filter_args={
+                    'data_devices': {
+                        'rotational': '1'
+                    },
+                    'wal_devices': {
+                        'rotational': '0'
+                    }
+                })
 
     def test_c_v_commands_external_2_dbs_and_2_wals(self, test_fix, inventory):
         inventory(db_devices=2, wal_devices=2)
@@ -953,21 +962,97 @@ class TestDriveGroup(object):
     def test_c_v_commands_11_data_external_3_dbs_and_1_wals(
             self, test_fix, inventory):
         inventory(data_devices=11, db_devices=3, wal_devices=1)
-        ret = dg.c_v_commands(
-            filter_args={
-                'data_devices': {
-                    'rotational': '1'
-                },
-                'db_devices': {
-                    'rotational': '0',
-                    'limit': 3
-                },
-                'wal_devices': {
-                    'rotational': '0',
-                    'limit': 1
-                }
-            })
-        assert "This doesn't work right now" in ret
+        with pytest.raises(dg.ConfigError):
+            dg.c_v_commands(
+                filter_args={
+                    'data_devices': {
+                        'rotational': '1'
+                    },
+                    'db_devices': {
+                        'rotational': '0',
+                        'limit': 3
+                    },
+                    'wal_devices': {
+                        'rotational': '0',
+                        'limit': 1
+                    }
+                })
+
+    @patch("srv.salt._modules.dg.c_v_commands", autospec=True)
+    def test_deploy(self, c_v_commands):
+        """
+        No ceph-volume commands
+        No errors
+        No old profiles in the pillar
+        """
+        c_v_commands.return_value = []
+        dg.__pillar__ = {}
+        dg.__salt__ = {}
+        dg.__salt__['helper.run'] = Mock()
+        ret = dg.deploy()
+        dg.__salt__['helper.run'].assert_not_called
+        assert ret == []
+
+    @patch("srv.salt._modules.dg.c_v_commands", autospec=True)
+    def test_deploy_1(self, c_v_commands):
+        """
+        No ceph-volume commands
+        No errors
+        Old profiles in the pillar
+        """
+        c_v_commands.return_value = []
+        dg.__pillar__ = {'ceph': {'storage': {'something'}}}
+        dg.__salt__ = {}
+        dg.__salt__['helper.run'] = Mock()
+        ret = dg.deploy()
+        dg.__salt__['helper.run'].assert_not_called()
+        assert "You seem to have configured" in ret
+
+    @patch("srv.salt._modules.dg.c_v_commands", autospec=True)
+    def test_deploy_2(self, c_v_commands):
+        """
+        ceph-volume commands
+        No errors
+        No old profiles in the pillar
+        """
+        c_v_commands.return_value = ['ceph-volume foo bar baz']
+        dg.__pillar__ = {}
+        dg.__salt__ = {}
+        dg.__salt__['helper.run'] = Mock()
+        ret = dg.deploy()
+        dg.__salt__['helper.run'].assert_called_once_with(
+            'ceph-volume foo bar baz')
+        assert len(ret) == len(c_v_commands.return_value)
+
+    @patch("srv.salt._modules.dg.c_v_commands", autospec=True)
+    def test_deploy_3(self, c_v_commands):
+        """
+        No ceph-volume commands
+        One error
+        No old profiles in the pillar
+        """
+        c_v_commands.return_value = ['An error message']
+        dg.__pillar__ = {}
+        dg.__salt__ = {}
+        dg.__salt__['helper.run'] = Mock()
+        ret = dg.deploy()
+        dg.__salt__['helper.run'].assert_not_called()
+        assert len(ret) == 0
+
+    @patch("srv.salt._modules.dg.c_v_commands", autospec=True)
+    def test_deploy_4(self, c_v_commands):
+        """
+        No ceph-volume commands
+        One error
+        No old profiles in the pillar
+        """
+        c_v_commands.return_value = ['']
+        dg.__pillar__ = {}
+        dg.__salt__ = {}
+        dg.__salt__['helper.run'] = Mock()
+        ret = dg.deploy()
+        dg.__salt__['helper.run'].assert_not_called()
+        assert len(ret) == 0
 
 
 class TestFilter(object):
