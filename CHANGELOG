@@ -1,3 +1,18 @@
+-------------------------------------------------------------------
+Tue May 21 21:24:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.20
+- Add parameter to bypass the pillar_check of dg.py(bsc#1135340)
+- osd: add independent osd discovery method (bsc#1135340)
+- dg: fix filestore deployment (bsc#1135301)
+- fix return type for filestore deployments (bsc#1135302)
+- dg: make error conditions consistent; don't execute a error message (bsc#1135301)
+- iscsi: fix gateway URL when using IPv6 address
+- typo: s/to to/to
+- Deploy Prometheus Alertmanager SNMP receiver
+- srv/pillar/ceph/README should be installed
+
+-------------------------------------------------------------------
 Tue May 14 21:24:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.19
