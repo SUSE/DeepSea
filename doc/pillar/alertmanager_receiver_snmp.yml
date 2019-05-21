@@ -1,0 +1,9 @@
+monitoring:
+  alertmanager_receiver_snmp:
+    enabled: True
+    config:
+      host: localhost
+      port: 9099
+      snmp_host: snmp.foo-bar.com
+      snmp_community: private
+      metrics: True
