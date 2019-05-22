@@ -3,6 +3,7 @@ cluster_client_name = {{ client }}
 pool = {{ pillar['iscsi-pool'] }}
 trusted_ip_list = {{ trusted_ip_list }}
 minimum_gateways = 1
+fqdn_enabled=true
 api_port = {{ pillar.get('ceph_iscsi_port', '5000') }}
 api_user = {{ pillar.get('ceph_iscsi_username', 'admin') }}
 api_password = {{ pillar.get('ceph_iscsi_password', 'admin') }}

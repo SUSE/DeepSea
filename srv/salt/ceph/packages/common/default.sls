@@ -21,6 +21,7 @@ stage prep dependencies suse:
       - gptfdisk
       - python3-boto
       - python3-rados
+      - python3-netaddr
       - iperf
       - lsof
       - jq

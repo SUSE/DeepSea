@@ -403,7 +403,7 @@ def _this_host():
     """
     return the local machine's shortname
     """
-    return socket.gethostname().split('.')[0]
+    return socket.getfqdn()
 
 
 def _get_portal_name(addr):
