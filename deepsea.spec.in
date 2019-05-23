@@ -52,8 +52,6 @@ Requires:       python3-six
 Requires:       salt-api
 Requires:       salt-master
 Requires:       salt-minion
-Requires:       smartmontools
-Requires:       tuned
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 Recommends:     deepsea-cli
