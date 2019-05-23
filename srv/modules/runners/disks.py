@@ -255,6 +255,9 @@ def discover(**kwargs):
     for host, osds in discover_map.items():
         if not osds:
             continue
+        if isinstance(osds, str) and osds.startswith('The minion function caused'):
+            log.warning(f"Couldn't retrieve OSD information for host {host}")
+            continue
         print(f"Found the following OSDs on host {host}")
         for osd in osds:
             print(_format_osd_map(osd))
