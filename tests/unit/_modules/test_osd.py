@@ -54,6 +54,26 @@ class TestOSDInstanceMethods():
         glob.glob.assert_called_with('/var/lib/ceph/osd/*')
         assert type(ret) is list
 
+    @patch('__builtin__.open', new=f_open)
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test_pairs_returns_pair(self):
+        TestOSDInstanceMethods.fs.CreateFile("/proc/mounts", contents="/dev/sda1 /var/lib/ceph/osd/ceph-1\n")
+        TestOSDInstanceMethods.fs.CreateFile("/var/lib/ceph/osd/ceph-1")
+        ret = osd.pairs()
+        assert ret == [["/dev/sda", "/var/lib/ceph/osd/ceph-1"]]
+        TestOSDInstanceMethods.fs.RemoveFile("/var/lib/ceph/osd/ceph-1")
+        TestOSDInstanceMethods.fs.RemoveFile("/proc/mounts")
+
+    @patch('__builtin__.open', new=f_open)
+    @mock.patch('glob.glob', new=f_glob.glob)
+    def test_pairs_broken_device(self):
+        TestOSDInstanceMethods.fs.CreateFile("/proc/mounts", contents="/dev/broken /var/lib/ceph/osd/ceph-1\n")
+        TestOSDInstanceMethods.fs.CreateFile("/var/lib/ceph/osd/ceph-1")
+        ret = osd.pairs()
+        assert ret == []
+        TestOSDInstanceMethods.fs.RemoveFile("/var/lib/ceph/osd/ceph-1")
+        TestOSDInstanceMethods.fs.RemoveFile("/proc/mounts")
+
     @pytest.mark.skip(reason="Postponed to later")
     def test_filter_devices(self):
         pass
@@ -2381,10 +2401,22 @@ class Testsplit_partition():
     @patch('srv.salt._modules.osd.readlink')
     def test_split_partition_broken(self, readlink, exists):
         """
-        Verify that the 'p' never gets truncated with /dev/sdp
+        Symlink points to missing file
         """
         readlink.return_value = "/dev/sda1"
         exists.return_value = False
+        disk, part = osd.split_partition("/dev/sda1")
+        assert disk == None
+        assert part == None
+
+    @patch('os.path.exists')
+    @patch('srv.salt._modules.osd.readlink')
+    def test_split_partition_broken_symlink(self, readlink, exists):
+        """
+        Symlink points to broken device name
+        """
+        readlink.return_value = "/dev/broken"
+        exists.return_value = True
         disk, part = osd.split_partition("/dev/sda1")
         assert disk == None
         assert part == None
@@ -2836,6 +2868,18 @@ class TestOSDRemove():
         result = osdr._mounted()
         assert '/dev/sda1' in result
 
+    @patch('__builtin__.open', new=f_open)
+    def test_mounted_broken_osd(self):
+        TestOSDRemove.fs.CreateFile("/proc/mounts", contents="/dev/sda1 /var/lib/ceph/osd/ceph-1\n")
+        partitions = {'osd': None}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        result = osdr._mounted()
+        assert '/dev/sda1' in result
+        TestOSDRemove.fs.RemoveFile("/proc/mounts")
+
     @patch('srv.salt._modules.osd.readlink')
     def test_mounted_lockbox(self, mock_rl):
         partitions = {'lockbox': '/dev/sda1'}
@@ -2846,6 +2890,19 @@ class TestOSDRemove():
         mock_rl.return_value = '/dev/sda1'
         result = osdr._mounted()
         assert '/dev/sda1' in result
+
+    @patch('__builtin__.open', new=f_open)
+    def test_mounted_broken_lockbox(self):
+        TestOSDRemove.fs.CreateFile("/proc/mounts", contents="/dev/sda1 /var/lib/ceph/osd-lockbox/66758302-deb5-4078-b871-988c54f0eb57\n")
+        partitions = {'osd': None}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+        mock_device.osd_fsid.return_value = '66758302-deb5-4078-b871-988c54f0eb57'
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        result = osdr._mounted()
+        assert '/dev/sda1' in result
+        TestOSDRemove.fs.RemoveFile("/proc/mounts")
 
     def test_mounted_none(self):
         partitions = {}
@@ -3000,6 +3057,32 @@ class TestOSDRemove():
         osdr = osd.OSDRemove(1, mock_device, None, None)
         result = osdr._osd_disk()
         assert result == "/dev/sda"
+
+    @patch('__builtin__.open', new=f_open)
+    def test_osd_disk_with_broken_lockbox(self):
+        TestOSDRemove.fs.CreateFile("/proc/mounts", contents="/dev/sda1 /var/lib/ceph/osd-lockbox/66758302-deb5-4078-b871-988c54f0eb57\n")
+        partitions = {'lockbox': None}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+        mock_device.osd_fsid.return_value = '66758302-deb5-4078-b871-988c54f0eb57'
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        result = osdr._osd_disk()
+        assert result == "/dev/sda"
+        TestOSDRemove.fs.RemoveFile("/proc/mounts")
+
+    @patch('__builtin__.open', new=f_open)
+    def test_osd_disk_with_unrecoverable_lockbox(self):
+        TestOSDRemove.fs.CreateFile("/proc/mounts", contents="/dev/sda1 /var/lib/ceph/osd/ceph-1\n")
+        partitions = {'lockbox': None}
+        mock_device = mock.Mock()
+        mock_device.partitions.return_value = partitions
+        mock_device.osd_fsid.return_value = '66758302-deb5-4078-b871-988c54f0eb57'
+
+        osdr = osd.OSDRemove(1, mock_device, None, None)
+        result = osdr._osd_disk()
+        assert result == None
+        TestOSDRemove.fs.RemoveFile("/proc/mounts")
 
     @patch('srv.salt._modules.osd._run')
     @patch('srv.salt._modules.osd.readlink')
@@ -4304,3 +4387,49 @@ class Test_report():
         unconfigured, changed = osd._report_original_pillar(["/dev/sda"])
         assert unconfigured == []
         assert changed == ["/dev/sda"]
+
+class TestOSDDevices():
+
+    fs = fake_fs.FakeFilesystem()
+    f_os = fake_fs.FakeOsModule(fs)
+    f_open = fake_fs.FakeFileOpen(fs)
+    f_glob = fake_glob.FakeGlobModule(fs)
+
+    @patch('__builtin__.open', new=f_open)
+    @patch('os.path.exists', new=f_os.path.exists)
+    def test_osd_fsid(self):
+        TestOSDDevices.fs.CreateFile("/var/lib/ceph/osd/ceph-1/fsid", contents="1234\n")
+        osdd = osd.OSDDevices()
+        result = osdd.osd_fsid(1)
+        assert result == "1234"
+        TestOSDDevices.fs.RemoveFile("/var/lib/ceph/osd/ceph-1/fsid")
+
+    @patch('__builtin__.open', new=f_open)
+    @patch('os.path.exists', new=f_os.path.exists)
+    def test_osd_fsid_with_file_missing(self):
+        osd.__grains__ = {'ceph': {'1':{'fsid': 1234}}}
+        osdd = osd.OSDDevices()
+        result = osdd.osd_fsid(1)
+        assert result == 1234
+
+    def raise_err(self):
+        raise Exception("Disk is gone")
+
+    @patch('__builtin__.open', new=raise_err)
+    @patch('os.path.exists', new=f_os.path.exists)
+    def test_osd_fsid_with_file_broken(self):
+        TestOSDDevices.fs.CreateFile("/var/lib/ceph/osd/ceph-1/fsid", contents="1234\n")
+        osd.__grains__ = {'ceph': {'1':{'fsid': 1234}}}
+        osdd = osd.OSDDevices()
+        result = osdd.osd_fsid(1)
+        TestOSDDevices.fs.RemoveFile("/var/lib/ceph/osd/ceph-1/fsid")
+        assert result == 1234
+
+    @patch('__builtin__.open', new=f_open)
+    @patch('os.path.exists', new=f_os.path.exists)
+    def test_osd_fsid_with_file_and_grains_missing(self):
+        osd.__grains__ = {'ceph': ''}
+        osdd = osd.OSDDevices()
+        result = osdd.osd_fsid(1)
+        assert result == None
+
