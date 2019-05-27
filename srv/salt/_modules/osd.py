@@ -123,7 +123,7 @@ class OSD(object):
     def set_osd_id(self, osd_id: str) -> None:
         """ osd_id setter """
         log.debug(f"Setting osd_id value {osd_id}")
-        self.osd_id = str(osd_id)
+        self._osd_id = str(osd_id)
 
     @property
     def fsid(self) -> str:
