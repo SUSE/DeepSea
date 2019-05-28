@@ -17,20 +17,149 @@ scrape_configs:
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:ceph', '10s')|yaml }}
     file_sd_configs:
       - files: [ '/etc/prometheus/SUSE/scrape_configs/ceph/mgr_exporter.yml' ]
-    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:ceph', [])|yaml }}
+    {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:ceph', False) %}
+    relabel_configs:
+      {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:ceph', []) %}
+        {%- if label.source_labels is string %}
+          {%- set label_list = label.source_labels.split(',') %}
+        {%- elif label.source_labels is list %}
+          {%- set label_list = label.source_labels %}
+        {%- endif %}
+        {%- if label_list is defined %}
+      - source_labels: {{ label_list }}
+        regex: "{{ label.regex }}"
+          {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+          {%- endif %}
+          {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+          {%- endif %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+    {%- if salt['pillar.get']('monitoring:prometheus:metric_relabel_config:ceph', False) %}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:ceph', [])|yaml }}
+      {%- for label in salt['pillar.get']('monitoring:prometheus:metric_relabel_config:ceph', []) %}
+      - action: {{ label.get('action', 'replace') }}
+        {%- if label.get('source_labels') %}
+          {%- if label.source_labels is string %}
+            {%- set label_list = label.source_labels.split(',') %}
+          {%- elif label.source_labels is list %}
+            {%- set label_list = label.source_labels %}
+          {%- endif %}
+          {%- if label_list is defined %}
+        source_labels: {{ label_list }}
+          {%- endif %}
+        {%- endif %}
+        {%- if label.get('regex') %}
+        regex: "{{ label.regex }}"
+        {%- endif %}
+        {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+        {%- endif %}
+        {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
   - job_name: 'node-exporter'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:node', '10s')|yaml }}
     file_sd_configs:
       - files: [ '/etc/prometheus/SUSE/scrape_configs/node_exporter/*.yml' ]
-    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:node', [])|yaml }}
+    {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:node', False) %}
+    relabel_configs:
+      {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:node', []) %}
+        {%- if label.source_labels is string %}
+          {%- set label_list = label.source_labels.split(',') %}
+        {%- elif label.source_labels is list %}
+          {%- set label_list = label.source_labels %}
+        {%- endif %}
+        {%- if label_list is defined %}
+      - source_labels: {{ label_list }}
+        regex: "{{ label.regex }}"
+          {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+          {%- endif %}
+          {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+          {%- endif %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+    {%- if salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', False) %}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', [])|yaml }}
+      {%- for label in salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', []) %}
+      - action: {{ label.get('action', 'replace') }}
+        {%- if label.get('source_labels') %}
+          {%- if label.source_labels is string %}
+            {%- set label_list = label.source_labels.split(',') %}
+          {%- elif label.source_labels is list %}
+            {%- set label_list = label.source_labels %}
+          {%- endif %}
+          {%- if label_list is defined %}
+        source_labels: {{ label_list }}
+          {%- endif %}
+        {%- endif %}
+        {%- if label.get('regex') %}
+        regex: "{{ label.regex }}"
+        {%- endif %}
+        {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+        {%- endif %}
+        {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
   - job_name: 'prometheus'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:prometheus', '10s')|yaml }}
     file_sd_configs:
       - files: [ '/etc/prometheus/SUSE/scrape_configs/prometheus/*.yml' ]
-    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:prometheus', [])|yaml }}
+    {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:prometheus', False) %}
+    relabel_configs:
+      {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:prometheus', []) %}
+        {%- if label.source_labels is string %}
+          {%- set label_list = label.source_labels.split(',') %}
+        {%- elif label.source_labels is list %}
+          {%- set label_list = label.source_labels %}
+        {%- endif %}
+        {%- if label_list is defined %}
+      - source_labels: {{ label_list }}
+        regex: "{{ label.regex }}"
+          {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+          {%- endif %}
+          {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+          {%- endif %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+    {%- if salt['pillar.get']('monitoring:prometheus:metric_relabel_config:prometheus', False) %}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:prometheus', [])|yaml }}
+      {%- for label in salt['pillar.get']('monitoring:prometheus:metric_relabel_config:prometheus', []) %}
+      - action: {{ label.get('action', 'replace') }}
+        {%- if label.get('source_labels') %}
+          {%- if label.source_labels is string %}
+            {%- set label_list = label.source_labels.split(',') %}
+          {%- elif label.source_labels is list %}
+            {%- set label_list = label.source_labels %}
+          {%- endif %}
+          {%- if label_list is defined %}
+        source_labels: {{ label_list }}
+          {%- endif %}
+        {%- endif %}
+        {%- if label.get('regex') %}
+        regex: "{{ label.regex }}"
+        {%- endif %}
+        {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+        {%- endif %}
+        {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
   - job_name: 'grafana'
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:grafana', '10s')|yaml }}
     file_sd_configs:
@@ -40,12 +169,98 @@ scrape_configs:
     tls_config:
       insecure_skip_verify: true
 {% endif %}
-    relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:grafana', [])|yaml }}
+    {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:grafana', False) %}
+    relabel_configs:
+      {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:grafana', []) %}
+        {%- if label.source_labels is string %}
+          {%- set label_list = label.source_labels.split(',') %}
+        {%- elif label.source_labels is list %}
+          {%- set label_list = label.source_labels %}
+        {%- endif %}
+        {%- if label_list is defined %}
+      - source_labels: {{ label_list }}
+        regex: "{{ label.regex }}"
+          {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+          {%- endif %}
+          {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+          {%- endif %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+    {%- if salt['pillar.get']('monitoring:prometheus:metric_relabel_config:grafana', False) %}
     metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:grafana', [])|yaml }}
+      {%- for label in salt['pillar.get']('monitoring:prometheus:metric_relabel_config:grafana', []) %}
+      - action: {{ label.get('action', 'replace') }}
+        {%- if label.get('source_labels') %}
+          {%- if label.source_labels is string %}
+            {%- set label_list = label.source_labels.split(',') %}
+          {%- elif label.source_labels is list %}
+            {%- set label_list = label.source_labels %}
+          {%- endif %}
+          {%- if label_list is defined %}
+        source_labels: {{ label_list }}
+          {%- endif %}
+        {%- endif %}
+        {%- if label.get('regex') %}
+        regex: "{{ label.regex }}"
+        {%- endif %}
+        {%- if label.get('target_label') %}
+        target_label: "{{ label.target_label }}"
+        {%- endif %}
+        {%- if label.get('replacement') %}
+        replacement: "{{ label.replacement }}"
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
 
 alerting:
-  alert_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:alert_relabel_config', [])|yaml }}
+  {%- if  salt['pillar.get']('monitoring:prometheus:alert_relabel_config', False) %}
+  alert_relabel_configs:
+    {%- for label in salt['pillar.get']('monitoring:prometheus:alert_relabel_config', []) %}
+    - action: {{ label.get('action', 'replace') }}
+      {%- if label.get('source_labels') %}
+        {%- if label.source_labels is string %}
+          {%- set label_list = label.source_labels.split(',') %}
+        {%- elif label.source_labels is list %}
+          {%- set label_list = label.source_labels %}
+        {%- endif %}
+        {%- if label_list is defined %}
+      source_labels: {{ label_list }}
+        {%- endif %}
+      {%- endif %}
+      {%- if label.get('regex') %}
+      regex: "{{ label.regex }}"
+      {%- endif %}
+      {%- if label.get('target_label') %}
+      target_label: "{{ label.target_label }}"
+      {%- endif %}
+      {%- if label.get('replacement') %}
+      replacement: "{{ label.replacement }}"
+      {%- endif %}
+    {%- endfor %}
+  {%- endif %}
   alertmanagers:
     - file_sd_configs:
         - files: [ '/etc/prometheus/SUSE/scrape_configs/alertmanager/*.yml' ]
-      relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:relabel_config:alertmanager', [])|yaml }}
+      {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:alertmanager', False) %}
+      relabel_configs:
+        {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:alertmanager', []) %}
+          {%- if label.source_labels is string %}
+            {%- set label_list = label.source_labels.split(',') %}
+          {%- elif label.source_labels is list %}
+            {%- set label_list = label.source_labels %}
+          {%- endif %}
+          {%- if label_list is defined %}
+        - source_labels: {{ label_list }}
+          regex: "{{ label.regex }}"
+            {%- if label.get('target_label') %}
+          target_label: "{{ label.target_label }}"
+            {%- endif %}
+            {%- if label.get('replacement') %}
+          replacement: "{{ label.replacement }}"
+            {%- endif %}
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
