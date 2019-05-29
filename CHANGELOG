@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Tue May 29 10:30:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.21
+- doc: generalize info string
+- dg: s/wal_devices/db_devices/ to conform guides
+- apparmor: fix mgr profile after nautilus changes (bsc#1130630)
+- osd: do not assign value to property
+- build: remove tuned from the Requires list
+- Revert "spec: add explicit prometheus, grafana runtime deps" (bsc#1134058)
+- discovery: do not format if salt returned an error
+- monitoring: iterate over pillar yaml to generate prometheus yaml
+
+-------------------------------------------------------------------
 Tue May 22 10:24:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.20
