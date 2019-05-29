@@ -985,7 +985,7 @@ def deploy(**kwargs):
             'ceph', {})):
         return ("You seem to have configured old-style profiles."
                 "Will not deploy using Drive-Groups."
-                "Please consult <insert doc/man> for guidance"
+                "Please consult the official documentation for guidance"
                 "on how to migrate to Drive-Groups")
     c_v_command_list = c_v_commands(**kwargs)
     log.debug("Running commands: {}".format(c_v_command_list))

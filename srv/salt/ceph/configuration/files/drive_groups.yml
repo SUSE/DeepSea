@@ -2,14 +2,14 @@
 #   target: 'data*'
 #   data_devices:
 #     size: 20G
-#   wal_devices:
+#   db_devices:
 #     size: 10G
 #     rotational: 1
 # allflash:
 #   target: 'fast_nodes*'
 #   data_devices:
 #     size: 100G
-#   wal_devices:
+#   db_devices:
 #     size: 50G
 #     rotational: 0
 
