@@ -17,7 +17,7 @@
   /etc/os-release r,
 
   /run/ceph** rw,
-  /tmp/ r,
+  /tmp/* r,
   /var/lib/ceph/** rwk,
   /var/log/ceph/* rwk,
   /var/run/ceph/* rwk,

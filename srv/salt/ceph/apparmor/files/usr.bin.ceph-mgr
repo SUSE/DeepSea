@@ -4,14 +4,23 @@
 # Author: Jan Fajerski <jfajerski@suse.com>
 
 /usr/bin/ceph-mgr {
-  #include <ceph.d/common>
   #include <abstractions/openssl>
+  #include <abstractions/user-tmp>
+  #include <ceph.d/common>
 
-  /usr/bin/ceph-mgr mrix,
-
-  /etc/mime.types r,
-  /bin/bash mr,
   /bin/bash cx,
+  /bin/bash mr,
+  /etc/mime.types r,
+  /proc/*/fd** r,
+  /proc/*/mounts r,
+  /sbin/ldconfig cx,
+  /sbin/ldconfig mr,
+  /sys/fs/cgroup/memory/memory.limit_in_bytes r,
+  /usr/bin/ceph-mgr mrix,
+  /usr/bin/ld.bfd mrix,
+  /usr/lib64/ceph/mgr/** rw,
+  /usr/share/ceph/mgr/ r,
+  /usr/share/ceph/mgr/** r,
 
   profile /bin/bash {
     #include <abstractions/base>
@@ -22,20 +31,9 @@
     /usr/bin/uname mrix,
   }
 
-  /sbin/ldconfig mr,
-  /sbin/ldconfig cx,
-
   profile /sbin/ldconfig {
     #include <abstractions/base>
 
     /sbin/ldconfig mr,
   }
-
-  /usr/bin/ld.bfd mrix,
-
-  /proc/*/fd** r,
-  /proc/*/mounts r,
-
-  /usr/lib64/ceph/mgr/** rw,
-
 }
