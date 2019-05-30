@@ -2,6 +2,7 @@ import pytest
 import salt.client
 import sys
 import types
+import mock
 sys.path.insert(0, 'srv/modules/runners')
 sys.path.insert(0, 'srv/modules/runners/utils')
 
@@ -736,6 +737,61 @@ class TestValidation():
         def set_pillar(self):
             self.data = {'admin.ceph': {'roles': 'admin'},
                          'igw1.ceph': {'roles': 'igw'}}
+
+    def test_subvolume(self):
+        data = {'mon.ceph': {},
+                'mgr.ceph': {}}
+
+        client = mock.Mock()
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.local = client.return_value
+            validator.local.cmd.return_value = {'mon.ceph': [True, "/var/lib/ceph subvolume mounted"]}
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = {}
+
+            validator.subvolume()
+            assert validator.passed['subvolume'] == "valid"
+
+    def test_subvolume_fails(self):
+        data = {'mon.ceph': {},
+                'mgr.ceph': {}}
+
+        client = mock.Mock()
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.local = client.return_value
+            validator.local.cmd.return_value = {'mon.ceph': [False, "/var/lib/ceph subvolume missing"]}
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.data = data
+            validator.grains = {}
+
+            validator.subvolume()
+            assert "/var/lib/ceph subvolume missing on mon.ceph" in validator.errors['subvolume']
+
+    def test_subvolume_skips(self):
+        data = {'mon.ceph': {'subvolume_init': 'disabled'},
+                'mgr.ceph': {'subvolume_init': 'disabled'}}
+
+        client = mock.Mock()
+        with patch.object(validate.Validate, "__init__", lambda self, n: None):
+            validator = validate.Validate("setup")
+            validator.local = client.return_value
+            validator.local.cmd.return_value = {'mon.ceph': [False, "/var/lib/ceph subvolume missing"]}
+            validator.errors = {}
+            validator.warnings = {}
+            validator.passed = {}
+            validator.skipped = {}
+            validator.data = data
+            validator.grains = {}
+
+            validator.subvolume()
+            assert validator.skipped['subvolume'] == "skipping"
 
 
 class TestConfigCheck():
