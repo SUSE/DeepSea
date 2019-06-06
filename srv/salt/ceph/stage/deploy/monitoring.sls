@@ -10,7 +10,7 @@ populate scrape configs:
 
 populate alertmanager peers:
   salt.state:
-    - tgt: 'I@roles:prometheus and I@cluster:ceph'
+    - tgt: {{ master }}
     - tgt_type: compound
     - sls: ceph.monitoring.alertmanager.populate_peers
 
