@@ -13,7 +13,9 @@
 #     size: 50G
 #     rotational: 0
 
+# This is the default configuration and
+# will create an OSD on all available drives
 default:
-  target: '*'
+  target: 'I@roles:storage'
   data_devices:
     all: true
