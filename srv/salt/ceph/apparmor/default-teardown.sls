@@ -1,6 +1,8 @@
 
 aa-teardown:
-  cmd.run
+  cmd.run:
+    - onlyif:
+      - which aa-teardown
 
 apparmor:
   service.dead:
