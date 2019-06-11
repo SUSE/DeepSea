@@ -84,10 +84,11 @@ def pairs():
             _partition, path = line.split()[:2]
             if path in paths:
                 match = re.match(r'^(.+)\d+$', _partition)
-                device = match.group(1)
-                if device.endswith('p'):
-                    device = device[:-1]
-                pairs.append([ device, path ])
+                if match:
+                    device = match.group(1)
+                    if device.endswith('p'):
+                        device = device[:-1]
+                    pairs.append([ device, path ])
 
     return pairs
 
@@ -173,6 +174,7 @@ def rescinded():
         if osd in ids:
             ids.remove(osd)
     return ids
+
 
 def _children():
     """
@@ -1445,11 +1447,13 @@ def split_partition(partition):
         return None, None
     log.debug("splitting partition {}".format(part))
     match = re.match(r"(.+\D)(\d+)", part)
-    disk = match.group(1)
-    if re.match(r".+\dp$", disk):
-        disk = disk[:-1]
-        log.debug("Truncating p {}".format(disk))
-    return disk, match.group(2)
+    if match:
+        disk = match.group(1)
+        if re.match(r".+\dp$", disk):
+            disk = disk[:-1]
+            log.debug("Truncating p {}".format(disk))
+        return disk, match.group(2)
+    return None, None
 
 class OSDRemove(object):
     """
@@ -1602,7 +1606,8 @@ class OSDRemove(object):
                         return msg
                     os.rmdir(entry[1])
 
-        if '/dev/dm' in self.partitions['osd']:
+        log.debug("self.partitions: {}".format(self.partitions))
+        if 'osd' in self.partitions and self.partitions['osd'] and '/dev/dm' in self.partitions['osd']:
             cmd = "dmsetup remove {}".format(self.partitions['osd'])
             _run(cmd)
         return ""
@@ -1614,7 +1619,18 @@ class OSDRemove(object):
         devices = []
         for attr in ['osd', 'lockbox']:
             if attr in self.partitions:
-                devices.append(readlink(self.partitions[attr]))
+                if self.partitions[attr]:
+                    devices.append(readlink(self.partitions[attr]))
+                else:
+                    # devices are missing
+                    osd = "/var/lib/ceph/osd/ceph-{}".format(self.osd_id)
+                    lockbox = "/var/lib/ceph/osd-lockbox/{}".format(self.osd_fsid(self.osd_id))
+                    with open("/proc/mounts", "r") as mounts:
+                        for line in mounts:
+                            entry = line.split()
+                            if osd == entry[1] or lockbox == entry[1]:
+                                devices.append(entry[0])
+
         log.debug("mounted: {}".format(devices))
         return devices
 
@@ -1622,9 +1638,10 @@ class OSDRemove(object):
         """
         Erase the beginning of any filesystems
         """
+        log.debug("wipe self.partitions: {}".format(self.partitions))
         if self.partitions:
             for _, _partition in self.partitions.iteritems():
-                if os.path.exists(_partition):
+                if _partition and os.path.exists(_partition):
                     cmd = "dd if=/dev/zero of={} bs=4M count=1 oflag=direct".format(_partition)
                     _rc, _stdout, _stderr = _run(cmd)
                     if _rc != 0:
@@ -1657,7 +1674,19 @@ class OSDRemove(object):
         """
         """
         if 'lockbox' in self.partitions:
-            partition = self.partitions['lockbox']
+            if self.partitions['lockbox']:
+                partition = self.partitions['lockbox']
+            else:
+                lockbox = "/var/lib/ceph/osd-lockbox/{}".format(self.osd_fsid(self.osd_id))
+                with open("/proc/mounts", "r") as mounts:
+                    for line in mounts:
+                        entry = line.split()
+                        if entry[1].startswith(lockbox):
+                            match = re.match(r"(.+\D)(\d+)", entry[0])
+                            disk = match.group(1)
+                            if disk:
+                                return disk
+                return
         else:
             partition = self.partitions['osd']
         disk = _find_disk(partition, self.osd_id)
@@ -1672,7 +1701,7 @@ class OSDRemove(object):
         """
         for attr in self.partitions:
             log.debug("Checking attr {}".format(attr))
-            if '/dev/dm' in self.partitions[attr]:
+            if self.partitions[attr] and '/dev/dm' in self.partitions[attr]:
                 cmd = "dmsetup remove {}".format(self.partitions[attr])
                 _run(cmd)
                 continue
@@ -1847,10 +1876,19 @@ class OSDDevices(object):
         """
         filename = "{}/ceph-{}/fsid".format(self.pathname, osd_id)
         if os.path.exists(filename):
-            with open(filename, 'r') as fsid:
-                return fsid.read().rstrip()
-        else:
-            log.error("file {} is missing".format(filename))
+            try:
+                with open(filename, 'r') as fsid:
+                    return fsid.read().rstrip()
+            except:
+                pass
+
+        osd_str = str(osd_id)
+        if 'ceph' in __grains__ and osd_str in __grains__['ceph'] and 'fsid' in __grains__['ceph'][osd_str]:
+            log.warning("grain fsid: {}".format(__grains__['ceph'][osd_str]['fsid']))
+            return __grains__['ceph'][osd_str]['fsid']
+
+        log.error("file {} and grain are missing".format(filename))
+        return None
 
     # pylint: disable=no-self-use, no-else-return
     def _uuid_device(self, device):
