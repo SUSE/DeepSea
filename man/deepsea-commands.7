@@ -101,9 +101,6 @@ salt-run state.orch ceph.migrate.osds
 .RS
 .RE
 salt-run state.orch ceph.migrate.policy
-.RS
-.RE
-salt-run state.orch ceph.migrate.subvolume
 .PP
 salt-run state.orch ceph.purge
 .PP
@@ -188,7 +185,7 @@ Salt States are the essential building blocks for running a series of steps on a
 .BR sls
 file.
 .PP
-The states below can be run indepdently and are useful when debugging.  Nearly all states are part of a larger orchestration which may have prerequisites of other states.  Running these commands requires understanding what you are doing.
+The states below can be run independently and are useful when debugging.  Nearly all states are part of a larger orchestration which may have prerequisites of other states.  Running these commands requires understanding what you are doing.
 .PP
 For guidance, the Salt targets are listed as pseudo hostnames.  Some are intended to only run on the Salt master.  These targets are
 .BR master_minion.
@@ -283,6 +280,8 @@ salt 'rgw*' state.apply ceph.rgw.users
 .RS
 .RE
 salt 'rgw*' state.apply ceph.rgw
+.PP
+salt 'mon*' state.apply ceph.subvolume
 .PP
 salt '*' state.apply ceph.time.ntp
 .RS

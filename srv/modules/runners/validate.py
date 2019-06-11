@@ -1013,6 +1013,33 @@ class Validate(Preparation):
             self.passed['kernel_module'] = 'valid'
         self._set_pass_status('kernel_module')
 
+    def subvolume(self):
+        """
+        Verify that /var/lib/ceph is a subvolume on the monitors when using
+        btrfs.  Skip checks if subvolume state is disabled.
+        """
+        for node in self.data:
+            if 'subvolume_init' in self.data[node] and self.data[node]['subvolume_init'] == "disabled":
+                self.skipped['subvolume'] = "skipping"
+                return
+            break
+
+        targets = "I@roles:mon"
+        results = self.local.cmd(targets, 'subvolume.check', [], tgt_type="compound")
+        for minion in results:
+            rc_, msg = results[minion]
+            if not rc_:
+                if 'subvolume' in self.errors:
+                    self.errors['subvolume'].append("{} on {}".format(msg, minion))
+                else:
+                    self.errors['subvolume'] = ["{} on {}".format(msg, minion)]
+
+        if 'subvolume' in self.errors:
+            self.errors['subvolume'].append("See /srv/salt/ceph/subvolume/README.md")
+        else:
+            self.passed['subvolume'] = "valid"
+        self._set_pass_status('subvolume')
+
     def salt_updates(self):
         """
         Salt Updates available?
@@ -1378,6 +1405,7 @@ def pillar(cluster=None, printer=None, **kwargs):
     valid.cluster_interface()
     valid.check_ipversion()
     valid.monitors()
+    valid.subvolume()
     valid.mgrs()
     valid.storage()
     valid.storage_role()

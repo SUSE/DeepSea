@@ -379,8 +379,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/migrate/nodes/*.sls $(DESTDIR)/srv/salt/ceph/migrate/nodes/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/policy
 	install -m 644 srv/salt/ceph/migrate/policy/*.sls $(DESTDIR)/srv/salt/ceph/migrate/policy/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/subvolume
-	install -m 644 srv/salt/ceph/migrate/subvolume/*.sls $(DESTDIR)/srv/salt/ceph/migrate/subvolume/
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
 	install -m 644 srv/salt/ceph/mines/*.sls $(DESTDIR)/srv/salt/ceph/mines/
@@ -858,6 +856,9 @@ copy-files:
 	# state files - sync
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/sync
 	install -m 644 srv/salt/ceph/sync/*.sls $(DESTDIR)/srv/salt/ceph/sync/
+	# state files - subvolume
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/subvolume
+	install -m 644 srv/salt/ceph/subvolume/*.sls $(DESTDIR)/srv/salt/ceph/subvolume/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags
 	install -m 644 srv/salt/ceph/setosdflags/*.sls $(DESTDIR)/srv/salt/ceph/setosdflags
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags/requireosdrelease

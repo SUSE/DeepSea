@@ -183,7 +183,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/migrate/nodes
 %dir /srv/salt/ceph/migrate/osds
 %dir /srv/salt/ceph/migrate/policy
-%dir /srv/salt/ceph/migrate/subvolume
 %dir /srv/salt/ceph/mines
 %dir /srv/salt/ceph/mines/files
 %dir /srv/salt/ceph/mon
@@ -384,6 +383,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/tools/fio
 %dir /srv/salt/ceph/tools/fio/files
 %dir /srv/salt/ceph/sync
+%dir /srv/salt/ceph/subvolume
 %dir /srv/salt/ceph/sysctl
 %dir /srv/salt/ceph/sysctl/files
 %dir /srv/salt/ceph/setosdflags
@@ -540,7 +540,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/migrate/nodes/*.sls
 %config /srv/salt/ceph/migrate/osds/*.sls
 %config /srv/salt/ceph/migrate/policy/*.sls
-%config /srv/salt/ceph/migrate/subvolume/*.sls
 %config /srv/salt/ceph/mines/*.sls
 %config /srv/salt/ceph/mines/files/*.conf
 %config /srv/salt/ceph/mon/*.sls
@@ -718,6 +717,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/services/*.sls
 %config /srv/salt/ceph/stage/validate/*.sls
 %config /srv/salt/ceph/sync/*.sls
+%config /srv/salt/ceph/subvolume/*.sls
 %config /srv/salt/ceph/sysctl/*.sls
 %config /srv/salt/ceph/sysctl/files/*.conf
 %config /srv/salt/ceph/setosdflags/*.sls
