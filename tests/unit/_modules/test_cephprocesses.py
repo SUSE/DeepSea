@@ -406,7 +406,7 @@ class TestInstanceMethods():
         Exit if there is no pillar data
         """
         cephprocesses.__pillar__ = {}
-        assert cephprocesses.check() == False
+        assert cephprocesses.check() == True
 
     @mock.patch('srv.salt._modules.cephprocesses.psutil')
     @mock.patch('srv.salt._modules.cephprocesses.MetaCheck')
@@ -416,7 +416,7 @@ class TestInstanceMethods():
         Exit if there is pillar data but no roles in it
         """
         cephprocesses.__pillar__ = {'NOroles': ['dummy']}
-        assert cephprocesses.check() == False
+        assert cephprocesses.check() == True
 
     @pytest.mark.parametrize("test_input,expected", [
         ("mgr", 'mgr'),
