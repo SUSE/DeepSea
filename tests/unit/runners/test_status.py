@@ -2,6 +2,7 @@ from mock import patch
 import pytest
 from srv.modules.runners import status
 from tests.unit.helper.output import OutputHelper
+import six
 
 
 class TestStatusReport():
@@ -49,10 +50,10 @@ class TestStatusReport():
 
             # if reverse, set the data to the old_values
             if reverse:
-                for node,value in data.iteritems():
+                for node,value in six.iteritems(data):
                     data[node] = data[node].replace(ov, cv)
 
-            for count, (node, value) in enumerate(data.iteritems(), 0):
+            for count, (node, value) in enumerate(six.iteritems(data), 0):
                 if count < recurrence:
                     data[node] = ov
                     if node not in expect['statusreport'][1]['out of sync']:
@@ -61,169 +62,53 @@ class TestStatusReport():
 
         return salt_versions, os_codenames, ceph_versions, expect
 
-    @pytest.mark.skip()
+    @pytest.mark.parametrize('off, in_sync, expect_version', [
+        (0, 9, 'common_version'),
+        # 0 are off, all are in sync
+        # Expecting to have the Common Version to be 'common_version'
+        # Expecting to have 0 nodes in the out of sync list
+
+        (1, 8, 'common_version'),
+        # 1 are off, 8 are in sync
+        # Expecting to have the Common Version to be 'common_version'
+        # Expecting to have 1 nodes in the out of sync list
+
+        (3, 6, 'common_version'),
+        # 3 are off, 6 are in sync
+        # Expecting to have the Common Version to be 'common_version'
+        # Expecting to have 3 nodes in the out of sync list
+
+        (4, 5, 'common_version'),
+        # 4 are off, 5 are in sync
+        # Expecting to have the Common Version to be 'common_version'
+        # Expecting to have 4 nodes in the out of sync list
+
+        (5, 4, 'old_version'),
+        # 5 are off, 4 are in sync
+        # which means that common values will be the 'old_version'
+
+        # Expecting to have 4 nodes in the out of sync list
+
+        (6, 3, 'old_version'),
+        # 6 are off, 3 are in sync
+        # which means that common values will be the 'old_version'
+        # Expecting to have 3 nodes in the out of sync list
+
+        (9, 0, 'old_version'),
+        # 9 are off, 0 are in sync
+        # which means that common values will be the 'old_version'
+        # Expecting to have 0 nodes in the out of sync list
+    ])
     @patch('srv.modules.runners.status._get_data')
-    def test_report_4_of_9(self, data):
-        """
-        4 are off, 5 are in sync
-        Expecting to have the Common Version to be:
-        salt: 2016.11.4
-        os: SLE12SP3
-        ceph_versions: ceph version 12.0.2
-        Expecting to have 4 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=4)
-
+    def test_report(self, data, off, in_sync, expect_version):
+        reverse = off > in_sync
+        out_of_sync = recurrence = min(off, in_sync)
+        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence, reverse)
 
         data.return_value = os_codenames, salt_versions, ceph_versions
         ret = status.report(return_data=True)
 
         for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['common_version']
+            assert ret['statusreport'][0][ident] == self.versions()[ident][expect_version]
         assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 4
-
-    @pytest.mark.skip()
-    @patch('srv.modules.runners.status._get_data')
-    def test_report_3_of_9(self, data):
-        """
-        3 are off, 6 are in sync
-        Expecting to have the Common Version to be:
-        salt: 2016.11.4
-        os: SLE12SP3
-        ceph_versions: ceph version 12.0.2
-        Expecting to have 3 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=3)
-
-        data.return_value = os_codenames, salt_versions, ceph_versions
-        ret = status.report(return_data=True)
-
-        for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['common_version']
-        assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 3
-
-    @pytest.mark.skip()
-    @patch('srv.modules.runners.status._get_data')
-    def test_report_1_of_9(self, data):
-        """
-        1 are off, 8 are in sync
-        Expecting to have the Common Version to be:
-        salt: 2016.11.4
-        os: SLE12SP3
-        ceph_versions: ceph version 12.0.2
-        Expecting to have 1 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=1)
-
-        data.return_value = os_codenames, salt_versions, ceph_versions
-        ret = status.report(return_data=True)
-
-        for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['common_version']
-        assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 1
-
-    @pytest.mark.skip()
-    @patch('srv.modules.runners.status._get_data')
-    def test_report_0_of_9(self, data):
-        """
-        0 are off, all are in sync
-        Expecting to have the Common Version to be:
-        salt: 2016.11.4
-        os: SLE12SP3
-        ceph_versions: ceph version 12.0.2
-        Expecting to have 0 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=0)
-
-        data.return_value = os_codenames, salt_versions, ceph_versions
-        ret = status.report(return_data=True)
-
-        for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['common_version']
-        assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 0
-
-    @pytest.mark.skip()
-    @patch('srv.modules.runners.status._get_data')
-    def test_report_5_of_9(self, data):
-        """
-
-        5 are off, 4 are in sync
-        which means that common values 
-        will be the old_versions
-
-        salt: 2015.0.1
-        os: SLE12SP2
-        ceph_versions: ceph version 10.0.2
-
-        Expecting to have 4 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=4, reverse=True)
-
-        data.return_value = os_codenames, salt_versions, ceph_versions
-        ret = status.report(return_data=True)
-
-        for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['old_version']
-        assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 4
-
-    @pytest.mark.skip()
-    @patch('srv.modules.runners.status._get_data')
-    def test_report_6_of_9(self, data):
-        """
-
-        6 are off, 3 are in sync
-        which means that common values 
-        will be the old_versions
-
-        salt: 2015.0.1
-        os: SLE12SP2
-        ceph_versions: ceph version 10.0.2
-
-        Expecting to have 3 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=3, reverse=True)
-
-        data.return_value = os_codenames, salt_versions, ceph_versions
-        ret = status.report(return_data=True)
-
-        for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['old_version']
-        assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 3
-
-    @pytest.mark.skip()
-    @patch('srv.modules.runners.status._get_data')
-    def test_report_9_of_9(self, data):
-        """
-
-        9 are off, 0 are in sync
-        which means that common values 
-        will be the old_versions
-
-        salt: 2015.0.1
-        os: SLE12SP2
-        ceph_versions: ceph version 10.0.2
-
-        Expecting to have 0 nodes in the out of sync list
-        """
-
-        salt_versions, os_codenames, ceph_versions, expect = self.alter_input(recurrence=0, reverse=True)
-
-        data.return_value = os_codenames, salt_versions, ceph_versions
-        ret = status.report(return_data=True)
-
-        for ident in ['salt', 'ceph', 'os']:
-            assert ret['statusreport'][0][ident] == self.versions()[ident]['old_version']
-        assert ret == expect
-        assert len(ret['statusreport'][1]['out of sync'].keys()) == 0
+        assert len(ret['statusreport'][1]['out of sync'].keys()) == out_of_sync
