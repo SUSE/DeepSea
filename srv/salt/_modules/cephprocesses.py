@@ -344,8 +344,7 @@ def check(results=False, **kwargs):
     res = MetaCheck(**kwargs)
 
     if 'roles' not in __pillar__:
-        log.error("Did not find _roles_ in pillar. Aborting")
-        return False
+        return {'up': {}, 'down': {}} if results else True
     for role in kwargs.get('roles', __pillar__['roles']):
         for running_proc in psutil.process_iter():
             res.add(ProcInfo(running_proc), role)
