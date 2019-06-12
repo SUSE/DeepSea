@@ -403,20 +403,20 @@ class TestInstanceMethods():
 
     def test_check(self):
         """
-        Exit if there is no pillar data
+        Pass if there is no pillar data
         """
         cephprocesses.__pillar__ = {}
-        assert cephprocesses.check() == False
+        assert cephprocesses.check() == True
 
     @mock.patch('srv.salt._modules.cephprocesses.psutil')
     @mock.patch('srv.salt._modules.cephprocesses.MetaCheck')
     @mock.patch('srv.salt._modules.cephprocesses.ProcInfo')
     def test_check_1(self, proc_mock, meta_mock, psutil_mock):
         """
-        Exit if there is pillar data but no roles in it
+        Pass if there is pillar data but no roles in it
         """
         cephprocesses.__pillar__ = {'NOroles': ['dummy']}
-        assert cephprocesses.check() == False
+        assert cephprocesses.check() == True
 
     @pytest.mark.parametrize("test_input,expected", [
         ("mgr", 'mgr'),
