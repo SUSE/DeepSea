@@ -9,9 +9,9 @@ stop ntpd:
     - enable: False
     - fire_event: True
 
-uninstall ntpd:
+uninstall ntp:
   pkg.removed:
-    - name: ntpd
+    - name: ntp
 {% endif %}
 
 prevent empty ntp:
