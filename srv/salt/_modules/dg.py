@@ -10,9 +10,15 @@ from __future__ import absolute_import
 import json
 import re
 import logging
+from collections import namedtuple
 from typing import Tuple
-
 log = logging.getLogger(__name__)
+try:
+    from ceph_volume.util.device import Devices, Device
+except ModuleNotFoundError:
+    log.debug("Could not load ceph_volume. Make sure to install ceph")
+except ImportError:
+    log.debug("Could not load ceph_volume. Make sure to install ceph")
 
 USAGE = """
 
@@ -68,7 +74,7 @@ class Filter(object):
     """ Filter class to assign properties to bare filters.
 
     This is a utility class that tries to simplify working
-    with information comming from a textfile/salt (drive_group.yaml)/(pillar)
+    with information comming from a textfile (drive_group.yaml)
 
     """
 
@@ -242,11 +248,24 @@ class Matcher(object):
         :return: A disk value
         :rtype: str
         """
-        disk_value: str = disk.get(self.key, None)
+
+        def findkeys(node, kv):
+            if isinstance(node, list):
+                for i in node:
+                    for x in findkeys(i, kv):
+                        yield x
+            elif isinstance(node, dict):
+                if kv in node:
+                    yield node[kv]
+                for j in node.values():
+                    for x in findkeys(j, kv):
+                        yield x
+
+        disk_value: str = list(findkeys(disk, self.key))
         if not disk_value and self.fallback_key:
-            disk_value = disk.get(self.fallback_key, None)
+            disk_value = list(findkeys(disk, self.fallback_key))
         if disk_value:
-            return disk_value
+            return disk_value[0]
         if self.virtual:
             log.info(
                 "Virtual-env detected. Not raising Exception on missing keys."
@@ -530,6 +549,10 @@ class SizeMatcher(Matcher):
         # The current output from ceph-volume gives a float..
         # This may change in the future..
         # todo: harden this paragraph
+        if not disk_value:
+            log.warning("Could not retrieve value for disk")
+            return False
+
         disk_size = float(re.findall(r"\d+\.\d+", disk_value)[0])
         disk_suffix = self._parse_suffix(disk_value)
         disk_size_in_byte = self.to_byte((disk_size, disk_suffix))
@@ -562,6 +585,17 @@ class SizeMatcher(Matcher):
         return False
 
 
+class Inventory(object):
+    def __init__(self, include_unavailable=False):
+        self.include_unavailable = include_unavailable
+
+    @property
+    def disks(self) -> list:
+        """ Returns a list of disks (json_report)"""
+        return __salt__['cephdisks.all'](kwarg=dict(
+            exclude_available=self.include_unavailable))
+
+
 class DriveGroup(object):
     """ The Drive-Group class
 
@@ -580,9 +614,10 @@ class DriveGroup(object):
         self._check_filter_support()
         self._include_unavailable = include_unavailable
         self._data_devices = None
+        self._disks = Inventory(include_unavailable=include_unavailable).disks
         self._wal_devices = None
         self._db_devices = None
-        self.disks = self.inventory()
+        self.prop = namedtuple("Property", 'ident can_have_osds devices')
 
     @property
     def db_slots(self) -> dict:
@@ -675,11 +710,23 @@ class DriveGroup(object):
         return self._filter_devices(self.data_device_attrs)
 
     @property
+    def data_device_properties(self) -> dict:
+        return self.prop(
+            can_have_osds=True,
+            ident='data_devices',
+            devices=self.data_devices)
+
+    @property
     def wal_devices(self) -> list:
         """ Filter for bluestore WAL devices
         """
         log.debug("Scanning for WAL devices")
         return self._filter_devices(self.wal_device_attrs)
+
+    @property
+    def wal_device_properties(self) -> dict:
+        return self.prop(
+            can_have_osds=False, ident='wal_devices', devices=self.wal_devices)
 
     @property
     def db_devices(self) -> list:
@@ -689,18 +736,30 @@ class DriveGroup(object):
         return self._filter_devices(self.db_device_attrs)
 
     @property
+    def db_device_properties(self) -> dict:
+        return self.prop(
+            can_have_osds=False, ident='db_devices', devices=self.db_devices)
+
+    @property
     def journal_devices(self) -> list:
         """ Filter for filestore journal devices
         """
         log.debug("Scanning for journal devices")
         return self._filter_devices(self.journal_device_attrs)
 
-    @staticmethod
-    def inventory() -> list:
+    @property
+    def journal_device_properties(self) -> dict:
+        return self.prop(
+            can_have_osds=False,
+            ident='journal_devices',
+            devices=self.journal_devices)
+
+    @property
+    def disks(self) -> list:
         """
         Disks found in the inventory
         """
-        return Inventory().disks
+        return self._disks
 
     @staticmethod
     def _limit_reached(device_filter, len_devices: int,
@@ -717,10 +776,10 @@ class DriveGroup(object):
         :return: True/False if the device should be added to the list of devices
         :rtype: bool
         """
-        limit = device_filter.get('limit', 0)
+        limit = int(device_filter.get('limit', 0))
 
         if limit > 0 and len_devices >= limit:
-            log.info("Refuse to add {} due to limit policy of {}>".format(
+            log.info("Refuse to add {} due to limit policy of <{}>".format(
                 disk_path, limit))
             return True
         return False
@@ -734,7 +793,7 @@ class DriveGroup(object):
         model: Fujitsu
         rotational: 1
 
-        Question: ##############################
+        Question: #######inventory#######################
         This currently acts as a OR gate. Should this be a AND gate?
         Question: #############################
 
@@ -757,7 +816,7 @@ class DriveGroup(object):
                             disk.get('path')))
                     continue
 
-                if not _filter.matcher.compare(self._reduce_inventory(disk)):
+                if not _filter.matcher.compare(disk):
                     log.debug("Ignoring disk {}. Filter did not match".format(
                         disk.get('path')))
                     continue
@@ -782,7 +841,9 @@ class DriveGroup(object):
         for taken_device in devices:
             if taken_device in self.disks:
                 self.disks.remove(taken_device)
-        return sorted([x.get('path') for x in devices])
+        # return sorted([x.get('path') for x in devices])
+        return sorted([x for x in devices],
+                      key=lambda dev: dev.get('path', ''))
 
     @staticmethod
     def _has_mandatory_idents(disk: dict) -> bool:
@@ -826,220 +887,558 @@ class DriveGroup(object):
                 raise FilterNotSupported(
                     "Filtering for {} is not supported".format(applied_filter))
 
-    # pylint: disable=inconsistent-return-statements
-    def _reduce_inventory(self, disk: dict) -> dict:
-        """ Wrapper to validate 'ceph-volume inventory' output
+
+class Disk(object):
+    def __init__(self, path):
+        self.path = path
+        self.device = Device(self.path)
+
+    def is_osd(self):
+        return self.device.used_by_ceph
+
+    def is_lvm_member(self):
+        return self.device.is_lvm_member
+
+    def is_ceph_disk_member(self):
+        return self.device.is_ceph_disk_member
+
+    def get_handler(self):
+        if self.is_lvm_member:
+            return LvmOSD(self.device)
+        if self.is_ceph_disk_member:
+            return CephDiskOSD(self.device)
+        raise Exception("Could not detect OSD type")
+
+
+class LvmOSD(object):
+    def __init__(self, device):
+        self.device = device
+
+    @property
+    def osd_ids(self) -> list:
+        osd_ids = []
+        for _vol in self.device.lvs:
+            # search lvolume tags for ceph.osd_id
+            osd_id: str = _vol.tags.get('ceph.osd_id', '')
+            if osd_id:
+                osd_ids.append(osd_id)
+        return osd_ids
+
+
+class CephDiskOSD(object):
+    """
+    I can't use decorated setters as I need to pass the uninstantiated
+    function in order to map it to the respective data_fields.
+
+    This is a container class for the discoverable OSD attributes
+    """
+
+    def __init__(self, device):
         """
-        # Temp disable this check, only for testing purposes
-        # maybe this check doesn't need to be here as ceph-volume
-        # does this check aswell..
-        # This also mostly exists due to:
-        # https://github.com/ceph/ceph/pull/25390
-        # maybe this can and should be dropped when the fix is public
-        if not disk:
-            return {}
-        if disk.get("available", False) or self._include_unavailable:
-            try:
-                reduced_disk = {"path": disk.get("path")}
+        Takes `device` as a single argument.
+        device is a object from ceph_volume.util.Device
+        """
+        self.device = device
+        self._path: str = self._find_mount_point()
+        self._osd_id: str = ''
+        self._fsid: str = ''
+        self._backend: str = ''
+        self._block_data: str = ''
+        self._block_db: str = ''
+        self._block_wal: str = ''
+        self._block_dmcrypt: str = ''
+        self._journal: str = ''
+        if not self._path:
+            raise Exception(
+                f"Mountpoint for {self.device.path} could not be determined")
 
-                reduced_disk["size"] = disk.get("sys_api", {}).get(
-                    "human_readable_size", "")
-                reduced_disk["vendor"] = disk.get("sys_api", {}).get(
-                    "vendor", "")
-                reduced_disk["bare_size"] = disk.get("sys_api", {}).get(
-                    "size", "")
-                reduced_disk["model"] = disk.get("sys_api", {}).get(
-                    "model", "")
-                reduced_disk["rotational"] = disk.get("sys_api", {}).get(
-                    "rotational", "")
+    def _find_data_partition(self) -> str:
+        partitions = self.device.sys_api.get('partitions', dict())
+        for partition in list(partitions.keys()):
+            part = Device(f"/dev/{partition}")
+            if part.ceph_disk.type == 'data':
+                return part.abspath
+        return ''
 
-                return reduced_disk
-            except KeyError("Could not retrieve mandatory key from disk spec"):
-                raise
+    def _find_mount_point(self) -> str:
+        data_partition = self._find_data_partition()
+        if not data_partition:
+            return ''
+        rc, stdout, stderr = __salt__['helper.run'](
+            f"mount|grep {data_partition}|cut -d' ' -f 3")
+        if not rc == 0:
+            log.warning("Could not determine root disk. Command failed")
+            return ""
+        if stdout and not stderr:
+            return stdout
+        return ""
+
+    @property
+    def path(self):
+        return self._path
+
+    def _is_mounted(self) -> bool:
+        """ Check if the path is mounted """
+        return os.path.ismount(self.path)
+
+    @staticmethod
+    def _read_file_for(full_path: str) -> str:
+        """
+        Read link if .islink
+        Read file if isfile
+        unless path doesn't exist
+        """
+        if not os.path.exists(full_path):
+            return ''
+        if os.path.islink(full_path):
+            return os.readlink(full_path)
+        with open(full_path, 'r') as _fd:
+            return _fd.read().strip()
+
+    @property
+    def data_fields(self) -> dict:
+        """ Datafield mapping """
+        return {
+            'whoami': self.set_osd_id,
+            'fsid': self.set_fsid,
+            'type': self.set_backend,
+            'block': self.set_block_data,
+            'block.db': self.set_block_db,
+            'block.wal': self.set_block_wal,
+            'block.dmcrypt': self.set_block_dmcrypt,
+            'journal': self.set_journal,
+        }
+
+    def dig(self) -> bool:
+        """ Looks for data_fields and sets the discovered value """
+        for field, setter_method in self.data_fields.items():
+            log.debug(f"Processing {field}")
+            setter_method(self._read_file_for(f"{self.path}/{field}"))
+        return True
+
+    def discover(self) -> bool:
+        """ .dig method wrapper. Skips if the path is not mounted """
+        if not self._is_mounted():
+            log.debug(f"{self.path} is not mounted. Skipping")
+            return False
+        return self.dig()
+
+    @property
+    def osd_id(self) -> list:
+        """
+        osd_id property
+
+        It's a list since this needs to aligned with it's LvmOSD counterpart
+        This list will always be len->1 since we never supported multiple OSDs on one device
+        """
+        return [str(self._osd_id)]
+
+    def set_osd_id(self, osd_id: str) -> None:
+        """ osd_id setter """
+        log.debug(f"Setting osd_id value {osd_id}")
+        self.osd_id = str(osd_id)
+
+    @property
+    def fsid(self) -> str:
+        """ fsid property """
+        return str(self._fsid)
+
+    def set_fsid(self, osd_fsid: str) -> None:
+        """ fsid setter """
+        log.debug(f"Setting osd_fsid value {osd_fsid}")
+        self._fsid = str(osd_fsid)
+
+    @property
+    def backend(self) -> str:
+        """ backend property """
+        return self._backend
+
+    def set_backend(self, backend: str) -> None:
+        """ backend setter """
+        log.debug(f"Setting backend value {backend}")
+        self._backend = backend
+
+    @property
+    def block_data(self) -> str:
+        """ block property """
+        return self._block_data
+
+    def set_block_data(self, block_data: str) -> None:
+        """ block data setter """
+        log.debug(f"Setting block_data value {block_data}")
+        self._block_data = block_data
+
+    @property
+    def block_db(self) -> str:
+        """ block db property """
+        return self._block_db
+
+    def set_block_db(self, block_db: str) -> None:
+        """ block db setter """
+        log.debug(f"Setting block_db value {block_db}")
+        self._block_db = block_db
+
+    @property
+    def block_wal(self) -> str:
+        """ block wal property """
+        return self._block_wal
+
+    def set_block_wal(self, block_wal: str) -> None:
+        """ block wal setter """
+        log.debug(f"Setting block_wal value {block_wal}")
+        self._block_wal = block_wal
+
+    @property
+    def block_dmcrypt(self) -> str:
+        """ block dmcrypt property """
+        return self._block_dmcrypt
+
+    def set_block_dmcrypt(self, block_dmcrypt: str) -> None:
+        """ block dmcrypt setter """
+        log.debug(f"Setting block_dmcrypt value {block_dmcrypt}")
+        self._block_dmcrypt = block_dmcrypt
+
+    @property
+    def journal(self) -> str:
+        """ journal property """
+        return self._journal
+
+    def set_journal(self, journal: str) -> None:
+        """ journal setter """
+        log.debug(f"Setting journal value {journal}")
+        self._journal = journal
+
+    def report(self) -> str:
+        """ formatted reporting """
+        message: str = f"""
+osd_id  : {self.osd_id:<1}
+osd_fsid: {self.fsid:<1}
+backend : {self.backend:<1}
+data    : {self.block_data:<1}
+db      : {self.block_db:<1}
+wal     : {self.block_wal:<1}
+journal : {self.journal:<1}
+dmcrypt : {self.block_dmcrypt:<1}
+        """
+        return message
+
+    def as_json(self) -> str:
+        """ return attributes as json """
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            allow_nan=False,
+            sort_keys=False,
+            indent=4)
+
+    def as_dict(self) -> dict:
+        """ return attributes as dict """
+        return self.__dict__
 
 
-def _apply_policies(wal_devices: list, db_devices: list) -> bool:
-    """ Apply known policies """
-    if wal_devices and not db_devices:
-        log.error("""
-        You specified only wal_devices. If your intention was to
-        have dedicated WALs/DBs please specify it with the db_devices
-        filter. WALs will be colocated alongside the DBs.
-        """)
-        return False
+class Output(object):
+    def __init__(self, **kwargs):
+        self.filter_args: dict = kwargs.get('filter_args', dict())
+        ## OVERWRITE ##
 
-    if wal_devices and db_devices:
-        if len(wal_devices) < len(db_devices):
-            log.error("This doesn't work right now.")
+        # self.filter_args = {
+        #     'data_devices': {
+        #         'size': '20G',
+        #         'limit': '1'
+        #     },
+        #     'db_devices': {
+        #         'size': '10G'
+        #     }
+        # }
+
+        ###############
+
+        # Actually this is False -> FIXME
+        self.bypass_pillar = kwargs.get('bypass_pillar', False)
+        self.include_unavailable: bool = kwargs.get('include_unavailable',
+                                                    True)
+        self.destroyed_osds_map = kwargs.get('destroyed_osds', {})
+        self.dry_run = kwargs.get('dry_run', False)
+        self.dgo = DriveGroup(
+            self.filter_args, include_unavailable=self.include_unavailable)
+        self.ret: dict = dict(
+            data_devices={},
+            wal_devices={},
+            db_devices={},
+            journal_devices={},
+            errors={})
+        self.data_device_props = self.dgo.data_device_properties
+        self.db_device_props = self.dgo.db_device_properties
+        self.wal_device_props = self.dgo.wal_device_properties
+        self.journal_device_props = self.dgo.journal_device_properties
+
+        self._pre_check()
+
+    def _pre_check(self):
+        if not self.filter_args:
+            raise Exception("No filter_args provided")
+
+        return self._apply_policies()
+
+    def _apply_policies(self) -> bool:
+        """ Apply known policies """
+
+        if not self.data_device_props.devices:
+            error_message = """
+You didn't specify data_devices. No actions will be taken.
+            """
+            log.error(error_message)
+            self.ret.get('errors', {}).update(
+                dict(no_data_devices=error_message))
             return False
 
-    return True
+        if self.wal_device_props.devices and not self.db_device_props.devices:
+            error_message = """
+You specified only wal_devices. If your intention was to
+have dedicated WALs/DBs please specify it with the db_devices
+filter. WALs will be colocated alongside the DBs.
+Read more about this here <link>.
+            """
+            log.error(error_message)
+            self.ret.get('errors', {}).update(dict(wal_devices=error_message))
+            return False
+
+        if len(self.db_device_props.devices) > len(
+                self.data_device_props.devices):
+            error_message = """
+You specified more db_devices than data_devices.
+This will result in an uneven configuration.
+Read more about this here <link>.
+"""
+            log.error(error_message)
+            self.ret.get('errors', {}).update(dict(uneven=error_message))
+            return False
+
+        if self.wal_device_props.devices and self.db_device_props.devices:
+            if len(self.wal_device_props.devices) < len(
+                    self.db_device_props.devices):
+                error_message = "We can't guarantee proper wal/db distribution in this configuration. Please make sure to have more/equal wal_devices than db_devices"
+                log.error(error_message)
+                self.ret.get('errors', {}).update(
+                    dict(wal_db_distribution=error_message))
+                return False
+
+        return True
+
+    def _guide(self, osd_ids: list, can_have_osds: bool = False) -> dict:
+        if osd_ids and can_have_osds:
+            return dict(osds=osd_ids)
+        if osd_ids and not can_have_osds:
+            return dict(
+                conflict=
+                f"Detected OSD(s) {' '.join(osd_ids)} in a non-admissible category."
+            )
+        if can_have_osds:
+            return dict(
+                message=
+                "No OSD detected (Will be created in the next deployment run)")
+
+        # TODO also detect if db/wal-device is _actually_ a wal/db device of a already deployed OSD
+        return dict(message="No issues found.")
+
+    def annotate_return(self, devices: list, can_have_osds=False) -> dict:
+        ret = {}
+        for device in devices:
+            dev_path: str = device.get('path', '')
+            if not dev_path:
+                continue
+            disk = Disk(dev_path).get_handler()
+            ret.update({
+                dev_path:
+                self._guide(disk.osd_ids, can_have_osds=can_have_osds)
+            })
+        return ret
+
+    def _find_conflicts(self) -> bool:
+        def find(key, value):
+            # Search recursively through dict
+            for k, v in (value.items() if isinstance(value, dict) else
+                         enumerate(value) if isinstance(value, list) else []):
+                if k == key:
+                    yield v
+                elif isinstance(v, (dict, list)):
+                    for result in find(key, v):
+                        yield result
+
+        conflicts = list(find('conflict', self.ret))
+        if conflicts:
+            self.ret.get('errors').update(dict(conflicts=conflicts))
+            return True
+        if self.ret.get('errors', {}):
+            return True
+        return False
+
+    def generate_annotated_report(self) -> dict:
+        for prop in [
+                self.data_device_props, self.db_device_props,
+                self.wal_device_props, self.journal_device_props
+        ]:
+            self.ret.get(prop.ident).update(
+                self.annotate_return(prop.devices, prop.can_have_osds))
+
+        self._find_conflicts()
+        return self.ret
+
+    @property
+    def destroyed_osds(self) -> list:
+        return self.destroyed_osds_map.get(__grains__.get('host', ''), list())
+
+    def generate_c_v_commands(self):
+        data_devices = [x.get('path') for x in self.data_device_props.devices]
+        db_devices = [x.get('path') for x in self.db_device_props.devices]
+        wal_devices = [x.get('path') for x in self.wal_device_props.devices]
+        journal_devices = [
+            x.get('path') for x in self.journal_device_props.devices
+        ]
+
+        appendix = ""
+        if self.destroyed_osds:
+            appendix = " --osd-ids {}".format(" ".join(
+                ([str(x) for x in self.destroyed_osds])))
+
+        if self._find_conflicts():
+            return self.ret.get('errors')
+
+        def chunks(seq, size):
+            """ Splits a sequence in evenly sized chunks"""
+            return (seq[i::size] for i in range(size))
+
+        if self.dgo.format == 'filestore':
+            cmd = "ceph-volume lvm batch"
+
+            cmd += " {}".format(" ".join(data_devices))
+
+            if self.dgo.journal_size:
+                cmd += " --journal-size {}".format(self.dgo.journal_size)
+
+            if journal_devices:
+                cmd += " --journal-devices {}".format(
+                    ' '.join(journal_devices))
+
+            cmd += " --filestore"
+
+            if self.dry_run:
+                cmd += " --report"
+            else:
+                cmd += " --yes"
+
+            if appendix:
+                cmd += appendix
+
+            if self.dgo.encryption:
+                cmd += " --dmcrypt"
+
+            return [cmd]
+
+        if self.dgo.format == 'bluestore':
+
+            chunks_wal_devices = list(chunks(wal_devices, len(db_devices)))
+            chunks_db_devices = list(chunks(db_devices, len(db_devices)))
+            chunks_data_devices = list(chunks(data_devices, len(db_devices)))
+
+            commands = []
+
+            for i in range(0, len(db_devices)):
+                cmd = "ceph-volume lvm batch --no-auto"
+                cmd += " {}".format(" ".join(chunks_data_devices[i]))
+                cmd += " --db-devices {}".format(" ".join(
+                    chunks_db_devices[i]))
+                if chunks_wal_devices[i]:
+                    cmd += " --wal-devices {}".format(" ".join(
+                        chunks_wal_devices[i]))
+                commands.append(cmd)
+
+            if not db_devices:
+                cmd = "ceph-volume lvm batch --no-auto {}".format(
+                    " ".join(data_devices))
+                commands.append(cmd)
+
+            # pylint: disable=consider-using-enumerate
+            for i in range(0, len(commands)):
+                if self.dry_run:
+                    commands[i] += " --report"
+                else:
+                    commands[i] += " --yes"
+                # how is that working now? That might get
+                # passed multiple times.. How is c-v reacting
+                if appendix:
+                    commands[i] += appendix
+
+                if self.dgo.osds_per_device:
+                    commands[i] += " --osds-per-device {}".format(self.dgo.osds_per_device)
+
+                if self.dgo.encryption:
+                    commands[i] += " --dmcrypt"
+
+                if self.dgo.block_wal_size:
+                    commands[i] += " --block-wal-size {}".format(
+                        self.dgo.block_wal_size)
+
+                if self.dgo.block_db_size:
+                    commands[i] += " --block-db-size {}".format(
+                        self.dgo.block_db_size)
+
+            return commands
+
+    def _check_for_old_profiles(self):
+        if not self.bypass_pillar and ('storage' in __pillar__.get('ceph',
+                                                                   {})):
+            return ("You seem to have configured old-style profiles."
+                    "Will not deploy using Drive-Groups."
+                    "Please consult the official documentation for guidance"
+                    "on how to migrate to Drive-Groups")
+        return ""
+
+    def deploy(self):
+        """ Execute the generated ceph-volume commands """
+        # do not run this when there is still ceph:storage in the pillar
+        # this indicates that we are in a post-upgrade scenario and
+        # the drive assignment was not ported to drive-groups yet.
+        error_message = self._check_for_old_profiles()
+        if error_message:
+            return error_message
+
+        c_v_command_list = self.generate_c_v_commands()
+
+        if isinstance(c_v_command_list, dict):
+            # In this case we have an error dict
+            return c_v_command_list
+
+        rets = []
+        for cmd in c_v_command_list:
+            if not cmd.startswith("ceph-volume"):
+                if cmd:
+                    log.error(cmd)
+                continue
+            log.debug("Running command: {}".format(cmd))
+            rets.append(__salt__['helper.run'](cmd))
+        log.debug("Returns for dg.deploy: {}".format(rets))
+        return rets
 
 
-def list_drives(**kwargs):
+def report(**kwargs):
+    return Output(**kwargs).generate_annotated_report()
+
+
+def list_(**kwargs):
     """
-    A public method that returns a dict
-    of matching disks
+    Salt's __func_alias__ doens't support more than one alias
+    for a function.
     """
-    filter_args = kwargs.get('filter_args', dict())
-    include_unavailable = kwargs.get('include_unavailable', False)
-    if not filter_args:
-        Exception("No filter_args provided")
-    dgo = DriveGroup(filter_args, include_unavailable=include_unavailable)
-    data_devices = dgo.data_devices
-    db_devices = dgo.db_devices
-    wal_devices = dgo.wal_devices
-    journal_devices = dgo.journal_devices
-
-    if not _apply_policies(wal_devices, db_devices):
-        raise ConfigError(
-            "Detected invalid configuration. Please check the logs")
-
-    if dgo.format == 'filestore':
-        return dict(data_devices=data_devices, journal_devices=journal_devices)
-    ret = dict(
-        data_devices=data_devices,
-        wal_devices=wal_devices,
-        db_devices=db_devices)
-    return ret
+    return report(**kwargs)
 
 
 def c_v_commands(**kwargs):
-    """
-    Construct the ceph-volume command based on the
-    matching disks
-    Provide the --no-auto switch to avoid unwanted
-    wal/db setups.
-    """
-    filter_args = kwargs.get('filter_args', dict())
-    if not filter_args:
-        Exception("No filter_args provided")
-    dgo = DriveGroup(filter_args)
-
-    destroyed_osds_map = kwargs.get('destroyed_osds', {})
-    my_destroyed_osds = destroyed_osds_map.get(
-        __grains__.get('host', ''), list())
-
-    appendix = ""
-    if my_destroyed_osds:
-        appendix = " --osd-ids {}".format(" ".join(
-            ([str(x) for x in my_destroyed_osds])))
-
-    data_devices = dgo.data_devices
-    wal_devices = dgo.wal_devices
-    db_devices = dgo.db_devices
-    journal_devices = dgo.journal_devices
-    if not data_devices:
-        return ""
-
-    if not _apply_policies(wal_devices, db_devices):
-        raise ConfigError(
-            "Detected invalid configuration. Please check the logs")
-
-    def chunks(seq, size):
-        """ Splits a sequence in evenly sized chunks"""
-        return (seq[i::size] for i in range(size))
-
-    if dgo.format == 'filestore':
-        cmd = "ceph-volume lvm batch"
-
-        cmd += " {}".format(" ".join(data_devices))
-
-        if dgo.journal_size:
-            cmd += " --journal-size {}".format(dgo.journal_size)
-
-        if journal_devices:
-            cmd += " --journal-devices {}".format(' '.join(journal_devices))
-
-        cmd += " --filestore"
-
-        if kwargs.get('dry_run', False):
-            cmd += " --report"
-        else:
-            cmd += " --yes"
-
-        if appendix:
-            cmd += appendix
-
-        if dgo.encryption:
-            cmd += " --dmcrypt"
-
-        if dgo.osds_per_device:
-            cmd += " --osds-per-device {}".format(dgo.osds_per_device)
-
-        return [cmd]
-
-    if dgo.format == 'bluestore':
-
-        chunks_wal_devices = list(chunks(wal_devices, len(db_devices)))
-        chunks_db_devices = list(chunks(db_devices, len(db_devices)))
-        chunks_data_devices = list(chunks(data_devices, len(db_devices)))
-
-        commands = []
-
-        for i in range(0, len(db_devices)):
-            cmd = "ceph-volume lvm batch --no-auto"
-            cmd += " {}".format(" ".join(chunks_data_devices[i]))
-            cmd += " --db-devices {}".format(" ".join(chunks_db_devices[i]))
-            if chunks_wal_devices[i]:
-                cmd += " --wal-devices {}".format(" ".join(
-                    chunks_wal_devices[i]))
-            commands.append(cmd)
-
-        if not db_devices:
-            cmd = "ceph-volume lvm batch --no-auto {}".format(
-                " ".join(data_devices))
-            commands.append(cmd)
-
-        # pylint: disable=consider-using-enumerate
-        for i in range(0, len(commands)):
-            if kwargs.get('dry_run', False):
-                commands[i] += " --report"
-            else:
-                commands[i] += " --yes"
-            # how is that working now? That might get
-            # passed multiple times.. How is c-v reacting
-            if appendix:
-                commands[i] += appendix
-
-            if dgo.encryption:
-                commands[i] += " --dmcrypt"
-
-            if dgo.block_wal_size:
-                commands[i] += " --block-wal-size {}".format(
-                    dgo.block_wal_size)
-
-            if dgo.block_db_size:
-                commands[i] += " --block-db-size {}".format(dgo.block_db_size)
-
-            if dgo.osds_per_device:
-                commands[i] += " --osds-per-device {}".format(dgo.osds_per_device)
-
-        return commands
+    return Output(**kwargs).generate_c_v_commands()
 
 
 def deploy(**kwargs):
-    """ Execute the generated ceph-volume commands """
-    # do not run this when there is still ceph:storage in the pillar
-    # this indicates that we are in a post-upgrade scenario and
-    # the drive assignment was not ported to drive-groups yet.
-    if not kwargs.get('bypass_pillar', False) and ('storage' in __pillar__.get(
-            'ceph', {})):
-        return ("You seem to have configured old-style profiles."
-                "Will not deploy using Drive-Groups."
-                "Please consult the official documentation for guidance"
-                "on how to migrate to Drive-Groups")
-    c_v_command_list = c_v_commands(**kwargs)
-    log.debug("Running commands: {}".format(c_v_command_list))
-    rets = []
-    for cmd in c_v_command_list:
-        if not cmd.startswith("ceph-volume"):
-            if cmd:
-                log.error(cmd)
-            continue
-        rets.append(__salt__['helper.run'](cmd))
-    log.debug("Returns for dg.deploy: {}".format(rets))
-    return rets
+    return Output(**kwargs).deploy()
 
 
 def _help():
@@ -1048,6 +1447,4 @@ def _help():
     print(USAGE)
 
 
-__func_alias__ = {
-    'help_': 'help',
-}
+__func_alias__ = {'help_': 'help', 'list_': 'list'}
