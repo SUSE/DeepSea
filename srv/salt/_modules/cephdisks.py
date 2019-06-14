@@ -24,23 +24,33 @@ class Inventory(object):
         self.devices = Devices()
 
     @property
-    def available_filter(self) -> bool:
+    def exclude_available(self) -> bool:
         """ The available filter """
-        return self.kwargs.get('available', False)
+        return self.kwargs.get('exclude_available', False)
 
     @property
-    def used_by_ceph_filter(self) -> bool:
+    def exclude_used_by_ceph(self) -> bool:
         """ The used_by_ceph filter """
         # This also returns disks that are marked as
         # 'destroyed' is that valid?
-        return self.kwargs.get('used_by_ceph', False)
+        return self.kwargs.get('exclude_used_by_ceph', False)
 
-    def osd_list(self) -> list:
+    @property
+    def exclude_root_disk(self) -> bool:
+        """ The root_disk filter """
+        return self.kwargs.get('exclude_root_disk', True)
+
+    def osd_list(self, devices=[]) -> list:
         """
         Can and should probably be offloaded to ceph-volume upstream
         """
+        assert type(devices) == list
+        if not devices:
+            devices = self.devices.devices
+        else:
+            devices = [Device(path) for path in devices]
         osd_ids: list = list()
-        lvs: list = [x.lvs for x in self.devices.devices]
+        lvs: list = [x.lvs for x in devices]
         # list of all lvs of all disks
         for _lv in lvs:
             # each lv can have multiple volumes
@@ -51,6 +61,15 @@ class Inventory(object):
                     osd_ids.append(osd_id)
         return osd_ids
 
+    def _is_root_disk(self, path: str) -> bool:
+        """ Return True/False if disk is root disk """
+        rc, stdout, stderr = __salt__['helper.run'](
+            "mount|grep ' / '|cut -d' ' -f 1 | sed 's/[0-9]//g'")
+        if not rc == 0:
+            log.warning("Could not determine root disk. Command failed")
+            return False
+        return stdout == path
+
     def filter_(self) -> list:
         """
         Apply set filters and return list of devices
@@ -58,16 +77,19 @@ class Inventory(object):
         devs: list = list()
         for dev in self.devices.devices:
             # Apply known filters
-            if self.available_filter:
+            if self.exclude_root_disk:
+                if self._is_root_disk(dev.path):
+                    log.debug("Skipping disk due to <root_disk> filter")
+                    continue
+            if self.exclude_available:
                 if dev.available:
-                    devs.append(dev)
+                    log.debug("Skipping disk due to <available> filter")
                     continue
-            elif self.used_by_ceph_filter:
+            if self.exclude_used_by_ceph:
                 if dev.used_by_ceph:
-                    devs.append(dev)
+                    log.debug("Skipping disk due to <used_by_ceph> filter")
                     continue
-            else:
-                devs.append(dev)
+            devs.append(dev)
         return devs
 
     def find_by_osd_id(self, osd_id_search: str) -> list:
@@ -92,7 +114,7 @@ class Inventory(object):
         return devs
 
 
-def get_(disk_path) -> dict:
+def get_(disk_path):
     """ Get a json report for a given device """
     return Device(disk_path).json_report()
 
@@ -127,25 +149,34 @@ def attr_list(**kwargs):
     return report
 
 
+def all_(**kwargs):
+    """ List all devices regardless of used or not
+    also exclude root disk by default
+    """
+    kwargs.update(dict(exclude_root_disk=True))
+    return [x.json_report() for x in Inventory(**kwargs).filter_()]
+
+
+def used(**kwargs):
+    """ List only devices that are used by ceph """
+    kwargs.update(dict(exclude_used_by_ceph=False))
+    return [x.json_report() for x in Inventory(**kwargs).filter_()]
+
+
+def unsed(**kwargs):
+    """ List only devices that are not used by ceph and are available """
+    kwargs.update(dict(exclude_used_by_ceph=True, exclude_available=False))
+    return [x.json_report() for x in Inventory(**kwargs).filter_()]
+
+
 def devices(**kwargs):
     """ List device paths"""
     return [x.path for x in Inventory(**kwargs).filter_() if x.path]
 
 
-def all_(**kwargs):
-    """ List all devices regardless of used or not """
-    return [x.json_report() for x in Inventory(**kwargs).devices.devices]
-
-
-def list_(**kwargs):
-    """ List only devices that are used by ceph """
-    kwargs.update(dict(used_by_ceph=True))
-    return [x.json_report() for x in Inventory(**kwargs).filter_()]
-
-
-def osd_list(**kwargs):
-    """ Get a list of osds for that node """
-    return Inventory(**kwargs).osd_list()
+def osd_list(devices=[], **kwargs):
+    """ Get a list of osds for that node or set of devices """
+    return Inventory(**kwargs).osd_list(devices)
 
 
 def help_():
@@ -155,7 +186,7 @@ def help_():
 
 __func_alias__ = {
     'all_': 'all',
-    'list_': 'list',
+    'used': 'list',
     'help_': 'help',
     'filter_': 'filter',
     'get_': 'get',
