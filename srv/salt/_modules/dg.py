@@ -10,10 +10,12 @@ from __future__ import absolute_import
 import json
 import re
 import logging
+import os
 from collections import namedtuple
 from typing import Tuple
 log = logging.getLogger(__name__)
 try:
+    # pylint: disable=unused-import
     from ceph_volume.util.device import Devices, Device
 except ModuleNotFoundError:
     log.debug("Could not load ceph_volume. Make sure to install ceph")
@@ -123,78 +125,6 @@ class Filter(object):
         return 'Filter<{}>'.format(self.name)
 
 
-JSON_REGEX = re.compile(r'(?s)[{[].*[]}]')
-
-
-def _parse_dirty_json(maybe_json: str) -> dict:
-    """
-    Try to parse c-v's dirty json output
-    """
-    match = JSON_REGEX.search(maybe_json)
-    if match:
-        return json.loads(match[0])
-    else:
-        raise ValueError('No valid json found in {}'.format(maybe_json))
-
-
-class Inventory():
-    """ The Inventory class
-
-    A container for the inventory call
-    This may be extended in the future, depending on our needs.
-    """
-
-    def __init__(self):
-        log.debug("Inventory init")
-
-    @property
-    def raw(self) -> str:
-        """ Raw data from a ceph-volume inventory call via salt
-        """
-        log.debug('Querying ceph-volume inventory')
-        return_code, stdout, stderr = __salt__['helper.run'](
-            "ceph-volume inventory --format json")
-        if return_code == 0:
-            return stdout
-        log.error('ceph-volume inventory --format json returned with {}'.
-                  format(return_code))
-        log.error(stderr)
-        log.error(stdout)
-        return '{}'
-
-    @property
-    def _disks(self) -> list:
-        """ All disks found on the 'target'
-
-        Loads the json data from ceph-volume inventory
-        """
-        log.debug('Loading disks from inventory')
-        return _parse_dirty_json(self.raw)
-
-    @property
-    def disks(self):
-        """ apply filter before returning
-        Those filters are needed for various reasons
-        Explanations in comments
-        """
-        # Disks smaller than 5GB are problematic for ceph-volume
-        # todo: http://tracker.ceph.com/issues/40776
-        disks = self._disks
-
-        filtered_for_size = [
-            disk for disk in disks
-            if disk.get('sys_api', dict()).get('size', 0) > 5368709120
-        ]
-        filtered_for_path = [
-            # ceph-volume inventory reads /dev/mapper (crypt devices) as valid and available devices
-            # this creates a nice little loop and needs to be excluded
-            # todo: http://tracker.ceph.com/issues/40799
-            disk for disk in filtered_for_size
-            if not disk.get('path', '').startswith('/dev/mapper')
-        ]
-        return filtered_for_path
-
-
 # pylint: disable=too-few-public-methods
 class Matcher(object):
     """ The base class to all Matchers
@@ -249,17 +179,18 @@ class Matcher(object):
         :rtype: str
         """
 
-        def findkeys(node, kv):
+        def findkeys(node, key_val):
+            """ Find keys in non-flat dict recursively """
             if isinstance(node, list):
                 for i in node:
-                    for x in findkeys(i, kv):
-                        yield x
+                    for key in findkeys(i, key_val):
+                        yield key
             elif isinstance(node, dict):
-                if kv in node:
-                    yield node[kv]
+                if key_val in node:
+                    yield node[key_val]
                 for j in node.values():
-                    for x in findkeys(j, kv):
-                        yield x
+                    for key in findkeys(j, key_val):
+                        yield key
 
         disk_value: str = list(findkeys(disk, self.key))
         if not disk_value and self.fallback_key:
@@ -530,7 +461,7 @@ class SizeMatcher(Matcher):
         # it's not quite good to return something here.. ignore?
         return 0.00
 
-    # pylint: disable=inconsistent-return-statements
+    # pylint: disable=inconsistent-return-statements, too-many-return-statements
     def compare(self, disk: dict) -> bool:
         """ Convert MB/GB/TB down to bytes and compare
 
@@ -586,6 +517,10 @@ class SizeMatcher(Matcher):
 
 
 class Inventory(object):
+    """
+    Inventory class that calls out to cephdisks
+    """
+
     def __init__(self, include_unavailable=False):
         self.include_unavailable = include_unavailable
 
@@ -596,6 +531,7 @@ class Inventory(object):
             exclude_available=self.include_unavailable))
 
 
+# pylint: disable=too-many-public-methods
 class DriveGroup(object):
     """ The Drive-Group class
 
@@ -711,6 +647,7 @@ class DriveGroup(object):
 
     @property
     def data_device_properties(self) -> dict:
+        """ Property for data  """
         return self.prop(
             can_have_osds=True,
             ident='data_devices',
@@ -725,6 +662,7 @@ class DriveGroup(object):
 
     @property
     def wal_device_properties(self) -> dict:
+        """ Property for wal """
         return self.prop(
             can_have_osds=False, ident='wal_devices', devices=self.wal_devices)
 
@@ -737,6 +675,7 @@ class DriveGroup(object):
 
     @property
     def db_device_properties(self) -> dict:
+        """ Property for db """
         return self.prop(
             can_have_osds=False, ident='db_devices', devices=self.db_devices)
 
@@ -749,6 +688,7 @@ class DriveGroup(object):
 
     @property
     def journal_device_properties(self) -> dict:
+        """ Property for journal """
         return self.prop(
             can_have_osds=False,
             ident='journal_devices',
@@ -889,20 +829,38 @@ class DriveGroup(object):
 
 
 class Disk(object):
+    """ Parent class to interface with LVM and Non-LVM disks. """
+
     def __init__(self, path):
         self.path = path
         self.device = Device(self.path)
 
-    def is_osd(self):
-        return self.device.used_by_ceph
+    @property
+    def is_available(self):
+        """ availability property """
+        return self.device.available
 
+    @property
     def is_lvm_member(self):
+        """ lvm_membership property """
         return self.device.is_lvm_member
 
+    @property
     def is_ceph_disk_member(self):
+        """ ceph_disk membership property """
         return self.device.is_ceph_disk_member
 
+    @property
+    def osd_ids(self):
+        """ osd_id placeholder for a disk that is neither
+        a lvm nor a ceph_disk OSD.
+        """
+        return []
+
     def get_handler(self):
+        """ Return the correct handler """
+        if self.is_available:
+            return self
         if self.is_lvm_member:
             return LvmOSD(self.device)
         if self.is_ceph_disk_member:
@@ -911,11 +869,14 @@ class Disk(object):
 
 
 class LvmOSD(object):
+    """ LVM wrapper class """
+
     def __init__(self, device):
         self.device = device
 
     @property
     def osd_ids(self) -> list:
+        """ gather osd_ids for LVM osds """
         osd_ids = []
         for _vol in self.device.lvs:
             # search lvolume tags for ceph.osd_id
@@ -925,6 +886,7 @@ class LvmOSD(object):
         return osd_ids
 
 
+# pylint: disable=too-many-instance-attributes, too-many-public-methods
 class CephDiskOSD(object):
     """
     I can't use decorated setters as I need to pass the uninstantiated
@@ -948,11 +910,14 @@ class CephDiskOSD(object):
         self._block_wal: str = ''
         self._block_dmcrypt: str = ''
         self._journal: str = ''
+        self.discover()
+
         if not self._path:
             raise Exception(
                 f"Mountpoint for {self.device.path} could not be determined")
 
     def _find_data_partition(self) -> str:
+        """ Find data partition in all partitions """
         partitions = self.device.sys_api.get('partitions', dict())
         for partition in list(partitions.keys()):
             part = Device(f"/dev/{partition}")
@@ -961,20 +926,24 @@ class CephDiskOSD(object):
         return ''
 
     def _find_mount_point(self) -> str:
+        """ Find mount point for ceph """
         data_partition = self._find_data_partition()
         if not data_partition:
-            return ''
-        rc, stdout, stderr = __salt__['helper.run'](
-            f"mount|grep {data_partition}|cut -d' ' -f 3")
-        if not rc == 0:
-            log.warning("Could not determine root disk. Command failed")
             return ""
-        if stdout and not stderr:
-            return stdout
-        return ""
+        with open('/proc/mounts', 'rb') as _fd:
+            for _line in _fd.readlines():
+                line = _line.decode()
+                device_path_full = line.split(' ')[0]
+                device_ident = device_path_full.split('/')[-1]
+                mount_point = line.split(' ')[1]
+                if mount_point and device_ident == data_partition:
+                    return mount_point
+            log.warning("Could not determine mount point. Command failed")
+            return ""
 
     @property
     def path(self):
+        """ path property """
         return self._path
 
     def _is_mounted(self) -> bool:
@@ -1024,7 +993,7 @@ class CephDiskOSD(object):
         return self.dig()
 
     @property
-    def osd_id(self) -> list:
+    def osd_ids(self) -> list:
         """
         osd_id property
 
@@ -1036,7 +1005,7 @@ class CephDiskOSD(object):
     def set_osd_id(self, osd_id: str) -> None:
         """ osd_id setter """
         log.debug(f"Setting osd_id value {osd_id}")
-        self.osd_id = str(osd_id)
+        self._osd_id = str(osd_id)
 
     @property
     def fsid(self) -> str:
@@ -1136,24 +1105,12 @@ dmcrypt : {self.block_dmcrypt:<1}
         return self.__dict__
 
 
+# pylint: disable=too-many-instance-attributes
 class Output(object):
+    """ Container class for user facing functions """
+
     def __init__(self, **kwargs):
         self.filter_args: dict = kwargs.get('filter_args', dict())
-        ## OVERWRITE ##
-
-        # self.filter_args = {
-        #     'data_devices': {
-        #         'size': '20G',
-        #         'limit': '1'
-        #     },
-        #     'db_devices': {
-        #         'size': '10G'
-        #     }
-        # }
-
-        ###############
-
-        # Actually this is False -> FIXME
         self.bypass_pillar = kwargs.get('bypass_pillar', False)
         self.include_unavailable: bool = kwargs.get('include_unavailable',
                                                     True)
@@ -1175,6 +1132,7 @@ class Output(object):
         self._pre_check()
 
     def _pre_check(self):
+        """ Check if filter_args and policies are valid"""
         if not self.filter_args:
             raise Exception("No filter_args provided")
 
@@ -1217,7 +1175,9 @@ Read more about this here <link>.
         if self.wal_device_props.devices and self.db_device_props.devices:
             if len(self.wal_device_props.devices) < len(
                     self.db_device_props.devices):
-                error_message = "We can't guarantee proper wal/db distribution in this configuration. Please make sure to have more/equal wal_devices than db_devices"
+                error_message = """
+We can't guarantee proper wal/db distribution in this configuration.
+Please make sure to have more/equal wal_devices than db_devices"""
                 log.error(error_message)
                 self.ret.get('errors', {}).update(
                     dict(wal_db_distribution=error_message))
@@ -1225,7 +1185,9 @@ Read more about this here <link>.
 
         return True
 
-    def _guide(self, osd_ids: list, can_have_osds: bool = False) -> dict:
+    @staticmethod
+    def _guide(osd_ids: list, can_have_osds: bool = False) -> dict:
+        """ Return dict with meaningful message for a specific category """
         if osd_ids and can_have_osds:
             return dict(osds=osd_ids)
         if osd_ids and not can_have_osds:
@@ -1238,10 +1200,11 @@ Read more about this here <link>.
                 message=
                 "No OSD detected (Will be created in the next deployment run)")
 
-        # TODO also detect if db/wal-device is _actually_ a wal/db device of a already deployed OSD
+        # also detect if db/wal-device is _actually_ a wal/db device of a already deployed OSD
         return dict(message="No issues found.")
 
     def annotate_return(self, devices: list, can_have_osds=False) -> dict:
+        """ Annotate a return based on the output of `guide` """
         ret = {}
         for device in devices:
             dev_path: str = device.get('path', '')
@@ -1255,14 +1218,17 @@ Read more about this here <link>.
         return ret
 
     def _find_conflicts(self) -> bool:
+        """ Find conflicts in a output dict """
+
         def find(key, value):
-            # Search recursively through dict
-            for k, v in (value.items() if isinstance(value, dict) else
-                         enumerate(value) if isinstance(value, list) else []):
+            """ Search recursively through dict """
+            for k, v__ in (
+                    value.items() if isinstance(value, dict) else
+                    enumerate(value) if isinstance(value, list) else []):
                 if k == key:
-                    yield v
-                elif isinstance(v, (dict, list)):
-                    for result in find(key, v):
+                    yield v__
+                elif isinstance(v__, (dict, list)):
+                    for result in find(key, v__):
                         yield result
 
         conflicts = list(find('conflict', self.ret))
@@ -1274,6 +1240,7 @@ Read more about this here <link>.
         return False
 
     def generate_annotated_report(self) -> dict:
+        """ Generate a annotated report based on group properties """
         for prop in [
                 self.data_device_props, self.db_device_props,
                 self.wal_device_props, self.journal_device_props
@@ -1286,9 +1253,11 @@ Read more about this here <link>.
 
     @property
     def destroyed_osds(self) -> list:
+        """ Property that lists 'destroyed' osds """
         return self.destroyed_osds_map.get(__grains__.get('host', ''), list())
 
     def generate_c_v_commands(self):
+        """ Generate ceph-volume commands based on the DriveGroup filters """
         data_devices = [x.get('path') for x in self.data_device_props.devices]
         db_devices = [x.get('path') for x in self.db_device_props.devices]
         wal_devices = [x.get('path') for x in self.wal_device_props.devices]
@@ -1333,6 +1302,9 @@ Read more about this here <link>.
             if self.dgo.encryption:
                 cmd += " --dmcrypt"
 
+            if self.dgo.osds_per_device:
+                cmd += " --osds-per-device {}".format(self.dgo.osds_per_device)
+
             return [cmd]
 
         if self.dgo.format == 'bluestore':
@@ -1369,9 +1341,6 @@ Read more about this here <link>.
                 if appendix:
                     commands[i] += appendix
 
-                if self.dgo.osds_per_device:
-                    commands[i] += " --osds-per-device {}".format(self.dgo.osds_per_device)
-
                 if self.dgo.encryption:
                     commands[i] += " --dmcrypt"
 
@@ -1383,9 +1352,14 @@ Read more about this here <link>.
                     commands[i] += " --block-db-size {}".format(
                         self.dgo.block_db_size)
 
+                if self.dgo.osds_per_device:
+                    commands[i] += " --osds-per-device {}".format(
+                        self.dgo.osds_per_device)
+
             return commands
 
     def _check_for_old_profiles(self):
+        """ Check if old profiles are present. Do not deploy if present """
         if not self.bypass_pillar and ('storage' in __pillar__.get('ceph',
                                                                    {})):
             return ("You seem to have configured old-style profiles."
@@ -1422,6 +1396,7 @@ Read more about this here <link>.
 
 
 def report(**kwargs):
+    """ User facing report(list) call """
     return Output(**kwargs).generate_annotated_report()
 
 
@@ -1434,10 +1409,12 @@ def list_(**kwargs):
 
 
 def c_v_commands(**kwargs):
+    """ User facing ceph-volume command call """
     return Output(**kwargs).generate_c_v_commands()
 
 
 def deploy(**kwargs):
+    """ User facing deploy call """
     return Output(**kwargs).deploy()
 
 

@@ -37,7 +37,6 @@ except ImportError:
 # These first three methods should be combined... saving for later
 
 
-
 def devices():
     """
     Return an array of devices

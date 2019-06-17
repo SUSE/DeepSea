@@ -2,151 +2,7 @@ import pytest
 from mock import patch, call, Mock, PropertyMock
 from srv.salt._modules import dg
 from tests.unit.helper.fixtures import helper_specs
-
-
-class InventoryFactory(object):
-    def __init__(self):
-        self.taken_paths = []
-
-    def _make_path(self, ident='b'):
-        return "/dev/{}{}".format(self.prefix, ident)
-
-    def _find_new_path(self):
-        cnt = 0
-        if len(self.taken_paths) >= 25:
-            raise Exception(
-                "Double-character disks are not implemetend. Maximum amount"
-                "of disks reached.")
-
-        while self.path in self.taken_paths:
-            ident = chr(ord('b') + cnt)
-            self.path = "/dev/{}{}".format(self.prefix, ident)
-            cnt += 1
-
-    def assemble(self):
-        if self.empty:
-            return {}
-        self._find_new_path()
-        inventory_sample = {
-            'available': self.available,
-            'lvs': [],
-            'path': self.path,
-            'rejected_reasons': self.rejected_reason,
-            'sys_api': {
-                'human_readable_size': self.human_readable_size,
-                'locked': 1,
-                'model': self.model,
-                'nr_requests': '256',
-                'partitions':
-                {  # partitions are not as relevant for now, todo for later
-                    'sda1': {
-                        'sectors': '41940992',
-                        'sectorsize': 512,
-                        'size': self.human_readable_size,
-                        'start': '2048'
-                    }
-                },
-                'path': self.path,
-                'removable': '0',
-                'rev': '',
-                'ro': '0',
-                'rotational': str(self.rotational),
-                'sas_address': '',
-                'sas_device_handle': '',
-                'scheduler_mode': 'mq-deadline',
-                'sectors': 0,
-                'sectorsize': '512',
-                'size': self.size,
-                'support_discard': '',
-                'vendor': self.vendor
-            }
-        }
-
-        if self.available:
-            self.taken_paths.append(self.path)
-            return inventory_sample
-        return {}
-
-    def _init(self, **kwargs):
-        self.prefix = 'sd'
-        self.path = kwargs.get('path', self._make_path())
-        self.human_readable_size = kwargs.get('human_readable_size',
-                                              '50.00 GB')
-        self.vendor = kwargs.get('vendor', 'samsung')
-        self.model = kwargs.get('model', '42-RGB')
-        self.available = kwargs.get('available', True)
-        self.rejected_reason = kwargs.get('rejected_reason', [''])
-        self.rotational = kwargs.get('rotational', '1')
-        if not self.available:
-            self.rejected_reason = ['locked']
-        self.empty = kwargs.get('empty', False)
-        self.size = kwargs.get('size', 5368709121)
-
-    def produce(self, pieces=1, **kwargs):
-        if kwargs.get('path') and pieces > 1:
-            raise Exception("/path/ and /pieces/ are mutually exclusive")
-        # Move to custom init to track _taken_paths.
-        # class is invoked once in each context.
-        # if disks with different properties are being created
-        # we'd have to re-init the class and loose track of the
-        # taken_paths
-        self._init(**kwargs)
-        return [self.assemble() for x in range(0, pieces)]
-
-
-class TestInventory(object):
-    """ Test Inventory container class
-    """
-
-    def test_inventory_raw(self):
-        """ Check if c-v inv gets called
-        """
-        dg.__salt__ = {}
-        dg.__salt__['helper.run'] = Mock()
-        dg.__salt__['helper.run'].return_value = (1, "out", "err")
-        dg.Inventory().raw
-        call1 = call("ceph-volume inventory --format json")
-        assert call1 in dg.__salt__['helper.run'].call_args_list
-
-    @patch("srv.salt._modules.dg.Inventory._disks", autospec=True)
-    def test_disk_exclude_mapper_devices(self, disks_mock):
-        disks_mock.return_value = InventoryFactory().produce(
-            path='/dev/mapper/foo')
-        assert not dg.Inventory().disks
-
-    @patch("srv.salt._modules.dg.Inventory._disks", autospec=True)
-    def test_disk_exclude_small_size(self, disks_mock):
-        disks_mock.return_value = InventoryFactory().produce(size=1)
-        assert not dg.Inventory().disks
-
-    @patch("srv.salt._modules.dg.Inventory._disks", new_callable=PropertyMock)
-    def test_disk_positive_test(self, disks_mock):
-        disks_mock.return_value = InventoryFactory().produce(size=10000000000000)
-        assert len(dg.Inventory().disks) == 1
-
-
-class TestDirtyJson(object):
-    """
-    Test dirty json parser
-    """
-
-    @pytest.mark.parametrize("test_input,expected", [('sdmkh{"foo":"bar"}', {
-        "foo": "bar"
-    }), ('{"foo":"bar"}', {
-        "foo": "bar"
-    }), ('sdmkh[{"foo":"bar"}]', [{
-        "foo": "bar"
-    }]), ('sdmkh[{"foo":\n"bar"}]', [{
-        "foo": "bar"
-    }]), ('sdmkh[{"foo":"bar"}]', [{
-        "foo": "bar"
-    }]), ('sdmkh[{"foo":{"bar":"foobar"}}]', [{
-        "foo": {
-            "bar": "foobar"
-        }
-    }])])
-    def test_dirty_json(self, test_input, expected):
-        assert dg._parse_dirty_json(test_input) == expected
+from tests.unit.helper.factories import InventoryFactory
 
 
 class TestMatcher(object):
@@ -157,7 +13,7 @@ class TestMatcher(object):
         "srv.salt._modules.dg.Matcher._virtual",
         autospec=True,
         return_value=True)
-    def test_get_disk_key_1(self, whatthefuck):
+    def test_get_disk_key_1(self, virtual):
         """
         virtual is True
         key is found
@@ -507,7 +363,7 @@ class TestDriveGroup(object):
                 'wal_slots': 5,
                 'block_wal_size': 500,
                 'block_db_size': 500,
-                'objectstore': 'bluestore',
+                'objectstore': disk_format,
                 'osds_per_device': osds_per_device,
                 'encryption': True,
             }
@@ -694,7 +550,6 @@ class TestDriveGroup(object):
         test_fix = test_fix()
         assert test_fix.osds_per_device == ''
 
-
     def test_journal_size_empty(self, test_fix):
         test_fix = test_fix(empty=True)
         assert test_fix.journal_size == 0
@@ -735,13 +590,13 @@ class TestDriveGroup(object):
             inventory_sample.extend(db_disks)
 
             self.disks_mock = patch(
-                'srv.salt._modules.dg.Inventory._disks',
+                'srv.salt._modules.dg.Inventory.disks',
                 new_callable=PropertyMock,
                 return_value=inventory_sample)
             self.disks_mock.start()
 
             inv = dg.Inventory()
-            return inv._disks
+            return inv.disks
 
             self.disks_mock.stop()
 
@@ -947,14 +802,7 @@ class TestDriveGroup(object):
         test_fix = test_fix(osds_per_device=3)
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk /dev/vdl /dev/vdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500 --osds-per-device 3'
-        ]
-    def test_c_v_commands_filestore(self, test_fix, inventory):
-        inventory()
-        test_fix = test_fix(disk_format='filestore')
-        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
-        assert ret == [
-            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 500 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt'
+            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500 --osds-per-device 3'
         ]
 
     def test_c_v_commands_filestore_osds_per_device(self, test_fix, inventory):
@@ -962,7 +810,15 @@ class TestDriveGroup(object):
         test_fix = test_fix(disk_format='filestore', osds_per_device='3')
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
-            'ceph-volume lvm batch /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk --journal-size 500 --journal-devices /dev/vdl /dev/vdm --filestore --yes --dmcrypt --osds-per-device 3'
+            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 500 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt --osds-per-device 3'
+        ]
+
+    def test_c_v_commands_filestore(self, test_fix, inventory):
+        inventory()
+        test_fix = test_fix(disk_format='filestore')
+        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
+        assert ret == [
+            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 500 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt'
         ]
 
     def test_c_v_commands_external_db(self, test_fix, inventory):
@@ -1017,7 +873,8 @@ class TestDriveGroup(object):
             'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --wal-devices /dev/sdo --yes'
         ]
 
-    def test_c_v_commands_external_2_dbs_and_2_wals_osds_per_device(self, test_fix, inventory):
+    def test_c_v_commands_external_2_dbs_and_2_wals_osds_per_device(
+            self, test_fix, inventory):
         """ Check if osds_per_device shows up in multi commands runs """
         inventory(db_devices=2, wal_devices=2)
         ret = dg.c_v_commands(
@@ -1036,8 +893,8 @@ class TestDriveGroup(object):
                 'osds_per_device': '3',
             })
         assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdn --wal-devices /dev/vdl --yes --osds-per-device 3',
-            'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdo --wal-devices /dev/vdm --yes --osds-per-device 3'
+            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdd /dev/sdf /dev/sdh /dev/sdj --db-devices /dev/sdl --wal-devices /dev/sdn --yes --osds-per-device 3',
+            'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --wal-devices /dev/sdo --yes --osds-per-device 3'
         ]
 
     def test_c_v_commands_external_2_dbs_and_3_wals(self, test_fix, inventory):
@@ -1061,7 +918,7 @@ class TestDriveGroup(object):
             'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --wal-devices /dev/sdo --yes'
         ] == ret
 
-    def test_c_v_commands_10TB_size_match(self, test_fix, inventory):
+    def test_c_v_commands_1TB_size_match(self, test_fix, inventory):
         inventory(
             data_devices=3,
             human_readable_size_data='9.10 TB',
@@ -1074,7 +931,7 @@ class TestDriveGroup(object):
             'encryption': 'true'
         })
         assert [
-            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd --yes --dmcrypt',
+            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd --yes --dmcrypt',
         ] == ret
 
     def test_c_v_commands_0B_exclude(self, test_fix, inventory):
@@ -1111,7 +968,7 @@ class TestDriveGroup(object):
             })
         assert ret == {
             'wal_db_distribution':
-            "We can't guarantee proper wal/db distribution in this configuration. Please make sure to have more/equal wal_devices than db_devices"
+            "\nWe can't guarantee proper wal/db distribution in this configuration.\nPlease make sure to have more/equal wal_devices than db_devices"
         }
 
     @patch(

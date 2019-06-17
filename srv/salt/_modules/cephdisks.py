@@ -6,14 +6,27 @@ Query ceph-volume's API for devices on the node
 
 from __future__ import absolute_import
 import logging
+import re
 # pytest: disable=import-error
 log = logging.getLogger(__name__)
-try:
-    from ceph_volume.util.device import Devices, Device
-except ModuleNotFoundError:
-    log.debug("Could not load ceph_volume. Make sure to install ceph")
-except ImportError:
-    log.debug("Could not load ceph_volume. Make sure to install ceph")
+
+
+def load_ceph_volume_devices():
+    """ To simplify import mocking in the tests
+
+    ceph-volume is not present during unittesting.
+    """
+    from ceph_volume.util.device import Devices
+    return Devices
+
+
+def load_ceph_volume_device():
+    """ To simplify import mocking in the tests
+
+    ceph-volume is not present during unittesting.
+    """
+    from ceph_volume.util.device import Device
+    return Device
 
 
 class Inventory(object):
@@ -21,7 +34,9 @@ class Inventory(object):
 
     def __init__(self, **kwargs) -> None:
         self.kwargs: dict = kwargs
-        self.devices = Devices()
+        self.devices = load_ceph_volume_devices()
+        self.device = load_ceph_volume_device()
+        self.root_disk = self._find_root_disk()
 
     @property
     def exclude_available(self) -> bool:
@@ -40,15 +55,21 @@ class Inventory(object):
         """ The root_disk filter """
         return self.kwargs.get('exclude_root_disk', True)
 
-    def osd_list(self, devices=[]) -> list:
+    @property
+    def _min_osd_size(self) -> float:
+        """ Minimum disk size to be used by ceph-volume (5GB) """
+        return 5368709120.0
+
+    # pylint: disable=redefined-outer-name, not-an-iterable
+    def osd_list(self, devices: list) -> list:
         """
         Can and should probably be offloaded to ceph-volume upstream
         """
-        assert type(devices) == list
+        assert isinstance(devices, list)
         if not devices:
             devices = self.devices.devices
         else:
-            devices = [Device(path) for path in devices]
+            devices = [self.device(path) for path in devices]
         osd_ids: list = list()
         lvs: list = [x.lvs for x in devices]
         # list of all lvs of all disks
@@ -61,27 +82,42 @@ class Inventory(object):
                     osd_ids.append(osd_id)
         return osd_ids
 
-    def _is_root_disk(self, path: str) -> bool:
-        """ Return True/False if disk is root disk """
-        rc, stdout, stderr = __salt__['helper.run'](
-            "mount|grep ' / '|cut -d' ' -f 1 | sed 's/[0-9]//g'")
-        if not rc == 0:
-            log.warning("Could not determine root disk. Command failed")
-            return False
-        return stdout == path
+    @staticmethod
+    # pylint: disable=inconsistent-return-statements
+    def _find_root_disk() -> str:
+        """ Return the root disk of a device set """
+        with open('/proc/mounts', 'rb') as _fd:
+            for _line in _fd.readlines():
+                line = _line.decode()
+                mount_point = line.split(' ')[1]
+                if mount_point == '/':
+                    device_path_full = line.split(' ')[0]
+                    device_ident = device_path_full.split('/')[-1]
+                    if device_ident.startswith('nvme'):
+                        # nvme partitions are nvme0n1p1,p2,p3..
+                        return re.sub(r'p\d+$', '', device_path_full)
+                    return re.sub(r'\d+$', '', device_path_full)
 
-    def _is_cdrom(self, path: str) -> bool:
+    @staticmethod
+    def _is_cdrom(path: str) -> bool:
         """ Always skip cdrom """
         if path.split('/')[-1].startswith('sr'):
             return True
         return False
 
-    def _is_rbd(self, path: str) -> bool:
+    @staticmethod
+    def _is_rbd(path: str) -> bool:
         """ Always skip rbd """
         if path.split('/')[-1].startswith('rbd'):
             return True
         return False
 
+    def _has_sufficient_size(self, size: float) -> bool:
+        """ Skip disks that are small than a defined threshold """
+        # due to: todo http://tracker.ceph.com/issues/40776
+        if size >= self._min_osd_size:
+            return True
+        return False
 
     def filter_(self) -> list:
         """
@@ -91,23 +127,40 @@ class Inventory(object):
         for dev in self.devices.devices:
             # Apply known filters
             if self.exclude_root_disk:
-                if self._is_root_disk(dev.path):
-                    log.debug("Skipping disk due to <root_disk> filter")
+                if self.root_disk == dev.path:
+                    log.debug(
+                        f"Skipping disk <{dev.path}> due to <root_disk> filter"
+                    )
                     continue
             if self.exclude_available:
                 if dev.available:
-                    log.debug("Skipping disk due to <available> filter")
+                    log.debug(
+                        f"Skipping disk <{dev.path}> due to <available> filter"
+                    )
                     continue
             if self.exclude_used_by_ceph:
                 if dev.used_by_ceph:
-                    log.debug("Skipping disk due to <used_by_ceph> filter")
+                    log.debug(
+                        f"Skipping disk <{dev.path}> due to <used_by_ceph> filter"
+                    )
                     continue
             if self._is_cdrom(dev.path):
-                log.debug("Skipping disk due to <cdrom> filter")
+                log.debug(f"Skipping disk <{dev.path}> due to <cdrom> filter")
                 continue
             if self._is_rbd(dev.path):
-                log.debug("Skipping disk due to <rbd> filter")
+                log.debug(f"Skipping disk <{dev.path}> due to <rbd> filter")
                 continue
+            if not self._has_sufficient_size(dev.size):
+                log.debug(
+                    f"Skipping disk <{dev.path}> due to <too_small> filter")
+                continue
+            # due to: todo http://tracker.ceph.com/issues/40799
+            if dev.is_mapper and dev.is_encrypted:
+                log.debug(
+                    f"Skipping disk <{dev.path}> due to <mapper_and_encrypted> filter"
+                )
+                continue
+
             devs.append(dev)
         return devs
 
@@ -135,7 +188,8 @@ class Inventory(object):
 
 def get_(disk_path):
     """ Get a json report for a given device """
-    return Device(disk_path).json_report()
+    device = load_ceph_volume_device()
+    return device(disk_path).json_report()
 
 
 def find_by_osd_id(osd_id, **kwargs):
@@ -176,13 +230,17 @@ def all_(**kwargs):
     return [x.json_report() for x in Inventory(**kwargs).filter_()]
 
 
-def used(**kwargs):
+def _list(**kwargs):
     """ List only devices that are used by ceph """
     kwargs.update(dict(exclude_used_by_ceph=False))
     return [x.json_report() for x in Inventory(**kwargs).filter_()]
 
 
-def unsed(**kwargs):
+def used(**kwargs):
+    return _list(**kwargs)
+
+
+def unused(**kwargs):
     """ List only devices that are not used by ceph and are available """
     kwargs.update(dict(exclude_used_by_ceph=True, exclude_available=False))
     return [x.json_report() for x in Inventory(**kwargs).filter_()]
@@ -193,8 +251,10 @@ def devices(**kwargs):
     return [x.path for x in Inventory(**kwargs).filter_() if x.path]
 
 
-def osd_list(devices=[], **kwargs):
+# pylint: disable=redefined-outer-name
+def osd_list(devices, **kwargs):
     """ Get a list of osds for that node or set of devices """
+    assert isinstance(devices, list)
     return Inventory(**kwargs).osd_list(devices)
 
 
@@ -205,8 +265,7 @@ def help_():
 
 __func_alias__ = {
     'all_': 'all',
-    'used': 'list',
+    '_list': 'list',
     'help_': 'help',
-    'filter_': 'filter',
     'get_': 'get',
 }

@@ -192,6 +192,11 @@ def list_(**kwargs):
     return DriveGroups(**kwargs).call_out('report')
 
 
+def discover(**kwargs):
+    """ alias for list """
+    return list_(**kwargs)
+
+
 def c_v_commands(**kwargs):
     """ Return resulting ceph-volume command """
     return DriveGroups(**kwargs).call_out('c_v_commands')
