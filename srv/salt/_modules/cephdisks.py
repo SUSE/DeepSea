@@ -70,6 +70,19 @@ class Inventory(object):
             return False
         return stdout == path
 
+    def _is_cdrom(self, path: str) -> bool:
+        """ Always skip cdrom """
+        if path.split('/')[-1].startswith('sr'):
+            return True
+        return False
+
+    def _is_rbd(self, path: str) -> bool:
+        """ Always skip rbd """
+        if path.split('/')[-1].startswith('rbd'):
+            return True
+        return False
+
+
     def filter_(self) -> list:
         """
         Apply set filters and return list of devices
@@ -89,6 +102,12 @@ class Inventory(object):
                 if dev.used_by_ceph:
                     log.debug("Skipping disk due to <used_by_ceph> filter")
                     continue
+            if self._is_cdrom(dev.path):
+                log.debug("Skipping disk due to <cdrom> filter")
+                continue
+            if self._is_rbd(dev.path):
+                log.debug("Skipping disk due to <rbd> filter")
+                continue
             devs.append(dev)
         return devs
 
