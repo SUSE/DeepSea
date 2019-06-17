@@ -1,9 +1,10 @@
 
 
-/var/lib/ceph/mds/ceph-{{ grains['host'] }}/keyring:
+{% set name = salt['mds.get_name'](grains['host']) %}
+/var/lib/ceph/mds/ceph-{{ name }}/keyring:
   file.managed:
     - source:
-      - salt://ceph/mds/cache/{{ grains['host'] }}.keyring
+      - salt://ceph/mds/cache/{{ name }}.keyring
     - template: jinja
     - user: ceph
     - group: ceph
