@@ -859,6 +859,7 @@ copy-files:
 	# state files - subvolume
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/subvolume
 	install -m 644 srv/salt/ceph/subvolume/*.sls $(DESTDIR)/srv/salt/ceph/subvolume/
+	install -m 644 srv/salt/ceph/subvolume/README.md $(DESTDIR)/srv/salt/ceph/subvolume/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags
 	install -m 644 srv/salt/ceph/setosdflags/*.sls $(DESTDIR)/srv/salt/ceph/setosdflags
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/setosdflags/requireosdrelease
