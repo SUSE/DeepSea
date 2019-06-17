@@ -3,12 +3,12 @@ prevent empty rendering:
     - name: skip
 
 {% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles='mds', host=True) %}
-{% set client = "mds." + host %}
-{% set keyring_file = salt['keyring.file']('mds', host)  %}
+{% set name = salt['mds.get_name'](host) %}
+{% set client = "mds." + name %}
+{% set keyring_file = salt['keyring.file']('mds', name)  %}
 {{ keyring_file}}:
   file.managed:
-    - source:
-      - salt://ceph/mds/files/keyring.j2
+    - source: salt://ceph/mds/files/keyring.j2
     - template: jinja
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}

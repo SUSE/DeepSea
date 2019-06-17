@@ -1,7 +1,7 @@
 import pytest
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
-from srv.salt._modules import cephprocesses, helper
+from srv.salt._modules import cephprocesses, helper, mds
 from mock import MagicMock, patch, mock_open, mock, create_autospec, ANY
 from tests.unit.helper.output import OutputHelper
 from tests.unit.helper.fixtures import helper_specs
@@ -357,29 +357,32 @@ class TestMetaCheck():
         assert mc.report() == {'up': {'ceph-mds': [0]}, 'down': {}}
 
     def test_report_down_not_disabled(self, mc):
-        with mock.patch('srv.salt._modules.cephprocesses.SystemdUnit.is_disabled', new_callable=mock.PropertyMock) as mock_my_property:
-            mock_my_property.return_value = False
+        with mock.patch.multiple('srv.salt._modules.cephprocesses.SystemdUnit',
+                                 is_disabled=mock.PropertyMock(return_value=False),
+                                 _service_names=mock.Mock(return_value=[])):
             proc_name = 'ceph-mds'
             mc.up = []
             mc.down = [proc_name]
             assert mc.report() == {'up': {}, 'down': {'ceph-mds': 'ceph-mds'}}
 
     def test_report_down_disabled(self, mc):
-        with mock.patch('srv.salt._modules.cephprocesses.SystemdUnit.is_disabled', new_callable=mock.PropertyMock) as mock_my_property:
-            mock_my_property.return_value = True
+        with mock.patch.multiple('srv.salt._modules.cephprocesses.SystemdUnit',
+                                 is_disabled=mock.PropertyMock(return_value=True),
+                                 _service_names=mock.Mock(return_value=[])):
             proc_name = 'ceph-mds'
             mc.up = []
             mc.down = [proc_name]
             assert mc.report() == {'up': {}, 'down': {}}
 
     def test_report_up_down(self, mc):
-        role_name = 'storage'
-        proc_name = 'ceph-osd'
-        proc_name_down = 'ceph-mds'
-        proc = self.build_proc(role_name, proc_name)
-        mc.up = [proc]
-        mc.down = [proc_name_down]
-        assert mc.report() == {'up': {'ceph-osd': [0]}, 'down': {'ceph-mds': 'ceph-mds'}}
+        with mock.patch('srv.salt._modules.cephprocesses.SystemdUnit._service_names'):
+            role_name = 'storage'
+            proc_name = 'ceph-osd'
+            proc_name_down = 'ceph-mds'
+            proc = self.build_proc(role_name, proc_name)
+            mc.up = [proc]
+            mc.down = [proc_name_down]
+            assert mc.report() == {'up': {'ceph-osd': [0]}, 'down': {'ceph-mds': 'ceph-mds'}}
 
     @mock.patch('srv.salt._modules.cephprocesses.MetaCheck._missing_osds', new_callable=mock.PropertyMock)
     def test_report_up_down_down(self, missing_mock, mc):
@@ -388,15 +391,16 @@ class TestMetaCheck():
         0 is down
         """
         # 2 is blacklisted
-        missing_mock.return_value = ['1', '3']
-        role_name = 'storage'
-        proc_name = 'ceph-osd'
-        proc_name_down = 'ceph-mds'
-        mc.insufficient_osd_count = True
-        proc = self.build_proc(role_name, proc_name)
-        mc.up = [proc]
-        mc.down = [proc_name_down]
-        assert mc.report() == {'up': {'ceph-osd': [0]}, 'down': {'ceph-mds': 'ceph-mds', 'ceph-osd': ['1', '3']}}
+        with mock.patch('srv.salt._modules.cephprocesses.SystemdUnit._service_names'):
+            missing_mock.return_value = ['1', '3']
+            role_name = 'storage'
+            proc_name = 'ceph-osd'
+            proc_name_down = 'ceph-mds'
+            mc.insufficient_osd_count = True
+            proc = self.build_proc(role_name, proc_name)
+            mc.up = [proc]
+            mc.down = [proc_name_down]
+            assert mc.report() == {'up': {'ceph-osd': [0]}, 'down': {'ceph-mds': 'ceph-mds', 'ceph-osd': ['1', '3']}}
 
 
 class TestInstanceMethods():
@@ -470,6 +474,7 @@ class TestSystemdUnit():
                                            'ceph-mds'])
     def test_service_names_with_grains_default(self, proc_name):
         cephprocesses.__grains__ = {'host': 'a_host'}
+        cephprocesses.__salt__ = {'mds.get_name': mds.get_name}
         obj = cephprocesses.SystemdUnit(proc_name)
         assert obj.service_names == ['{}@{}'.format(proc_name, 'a_host')]
 
