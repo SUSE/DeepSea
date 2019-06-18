@@ -3,17 +3,17 @@ include:
   - .install
   - .profiles
 
-aa-disable /etc/apparmor.d/usr.bin.ceph-mds:
+"aa-disable /etc/apparmor.d/usr.bin.ceph-mds || true":
   cmd.run
 
-aa-disable /etc/apparmor.d/usr.bin.ceph-mgr:
+"aa-disable /etc/apparmor.d/usr.bin.ceph-mgr || true":
   cmd.run
 
-aa-disable /etc/apparmor.d/usr.bin.ceph-mon:
+"aa-disable /etc/apparmor.d/usr.bin.ceph-mon || true":
   cmd.run
 
-aa-disable /etc/apparmor.d/usr.bin.ceph-osd:
+"aa-disable /etc/apparmor.d/usr.bin.ceph-osd || true":
   cmd.run
 
-aa-disable /etc/apparmor.d/usr.bin.radosgw:
+"aa-disable /etc/apparmor.d/usr.bin.radosgw || true":
   cmd.run
