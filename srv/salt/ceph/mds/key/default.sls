@@ -9,8 +9,7 @@ prevent empty rendering:
 {% set keyring_file = salt['keyring.file']('mds', name)  %}
 {{ keyring_file}}:
   file.managed:
-    - source: 
-      - salt://ceph/mds/files/keyring.j2
+    - source: salt://ceph/mds/files/keyring.j2
     - template: jinja
     - user: salt
     - group: salt
