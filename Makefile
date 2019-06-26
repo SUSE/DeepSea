@@ -5,36 +5,40 @@ VERSION ?= $(shell (git describe --tags --long --match 'v*' 2>/dev/null || echo 
 DEEPSEA_DEPS=salt-api
 PYTHON_DEPS=python3-setuptools python3-click python3-tox python3-configobj
 PYTHON=python3
+SET_PYTHON=true
 
+## SUSE ##
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 suse=
 ifneq (,$(findstring opensuse,$(OS)))
-suse=yes
+  suse=yes
 endif
 ifeq ($(OS), sles)
-suse=yes
+  suse=yes
 endif
 ifeq ($(suse), yes)
-USER=salt
-GROUP=salt
-PKG_INSTALL=zypper -n install
+  USER=salt
+  GROUP=salt
+  PKG_INSTALL=zypper -n install
 else
-USER=root
-GROUP=root
-ifeq ($(OS), centos)
-PKG_INSTALL=yum install -y
-PYTHON_DEPS=python-setuptools python-click python-tox python-configobj
-PYTHON=python
-else
-ifeq ($(OS), fedora)
-PKG_INSTALL=yum install -y
-else
-debian := $(wildcard /etc/debian_version)
-ifneq ($(strip $(debian)),)
-PKG_INSTALL=apt-get install -y
-endif
-endif
-endif
+  ## NON-SUSE ##
+  USER=root
+  GROUP=root
+  ifeq ($(OS), centos)
+     PKG_INSTALL=yum install -y
+     PYTHON_DEPS=rh-python36-setuptools python36-click tox python36-configobj
+  else
+    ifeq ($(OS), fedora)
+       PKG_INSTALL=yum install -y
+    else
+      debian := $(wildcard /etc/debian_version)
+      ifneq ($(strip $(debian)),)
+        SET_PYTHON=rm /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python
+        PKG_INSTALL=apt-get install -y
+        PYTHON_DEPS=python3-setuptools python3-click tox python3-configobj
+      endif
+    endif
+  endif
 endif
 
 
@@ -267,7 +271,7 @@ copy-files:
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.import $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/drive_groups.yml $(DESTDIR)/srv/salt/ceph/configuration/files/
 	install -m 644 srv/salt/ceph/configuration/files/deprecated_map.yml $(DESTDIR)/srv/salt/ceph/configuration/files/
-	-chown salt:salt $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
+	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.import || true
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	install -m 644 srv/salt/ceph/configuration/files/ceph.conf.d/README $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.d
 	# state files - ganesha
@@ -946,7 +950,7 @@ copy-files:
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/osd/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/rgw/cache
 	install -d -m 700 $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum
-	# At runtime, these need to be owned by salt:salt.  This won't work
+	# At runtime, these need to be owned by $(USER):$(GROUP).  This won't work
 	# in a buildroot on OBS, hence the leading '-' to ignore failures
 	# and '|| true' to suppress some error output, but will work fine
 	# in development when root runs `make install`.
@@ -964,6 +968,7 @@ copy-files:
 
 install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
+	$(SET_PYTHON) 2>/dev/null || true
 	$(PKG_INSTALL) $(DEEPSEA_DEPS) || true
 	$(PKG_INSTALL) $(PYTHON_DEPS) || true
 
