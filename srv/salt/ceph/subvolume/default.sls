@@ -1,3 +1,6 @@
+{% set DEVICE = salt['subvolume.device']() %}
+
+{% if DEVICE != "" %}
 
 subvolume:
   cmd.run:
@@ -5,15 +8,18 @@ subvolume:
     - unless: "btrfs subvolume list / | grep -q '@/var/lib/ceph$'"
     - failhard: True
 
-{# sed is easier to explain/debug than file.replace #}
-fstab:
-  cmd.run:
-    - name: "sed -i 's!LABEL=ROOT /var btrfs defaults,subvol=@/var 0 0!&\\\nLABEL=ROOT /var/lib/ceph btrfs defaults,subvol=@/var/lib/ceph 0 0!' /etc/fstab"
-    - unless: "grep -q subvol=@/var/lib/ceph /etc/fstab"
-    - failhard: True
+fstab and mount:
+  mount.mounted:
+    - name: /var/lib/ceph
+    - device: {{ DEVICE }}
+    - fstype: btrfs
+    - opts: subvol=@/var/lib/ceph
+    - persist: True
 
-mount:
-  cmd.run:
-    - name: "mount /var/lib/ceph"
-    - unless: "mount | grep -q /var/lib/ceph"
+{% else %}
+
+root file system is not btrfs:
+  test.nop
+
+{% endif %}
 

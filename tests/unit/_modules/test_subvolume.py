@@ -84,3 +84,16 @@ class Testsubvolume():
         result = subvolume._subvol()
         assert result == False
 
+    @patch('builtins.open', new=f_open)
+    def test_device(self):
+        fs.CreateFile("/etc/fstab", contents="LABEL=ROOT / btrfs defaults 1 1\n")
+        result = subvolume.device()
+        fs.RemoveFile("/etc/fstab")
+        assert result == "LABEL=ROOT"
+
+    @patch('builtins.open', new=f_open)
+    def test_device_xfs(self):
+        fs.CreateFile("/etc/fstab", contents="LABEL=ROOT / xfs defaults 1 1\n")
+        result = subvolume.device()
+        fs.RemoveFile("/etc/fstab")
+        assert result == ""

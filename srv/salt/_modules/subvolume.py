@@ -53,3 +53,16 @@ def _subvol():
         if line.endswith("/var/lib/ceph"):
             found = True
     return found
+
+
+def device():
+    """
+    Print the device (i.e. first column) of the root filesystem for btrfs
+    """
+    with open('/etc/fstab') as fstab:
+        for line in fstab:
+            _device, path, fstype, _ = line.split()[:4]
+            if path == "/" and fstype == "btrfs":
+                return _device
+
+    return ""
