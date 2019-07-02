@@ -34,11 +34,12 @@ class UpgradeValidation(object):
         Check for shared monitor and storage roles
         """
         search = "I@cluster:{}".format(self.cluster)
-        pillar_data = self.local.cmd(search, 'pillar.items', [], tgt_type="compound")
+        pillar_data = self.local.cmd(
+            search, 'pillar.items', [], tgt_type="compound")
         for host in pillar_data:
             if 'roles' in pillar_data[host]:
                 if ('storage' in pillar_data[host]['roles']
-                   and 'mon' in pillar_data[host]['roles']):
+                        and 'mon' in pillar_data[host]['roles']):
                     msg = """
                          ************** PLEASE READ ***************
                          We currently do not support upgrading when
@@ -53,10 +54,11 @@ class UpgradeValidation(object):
         Check for shared master and storage role
         """
         search = "I@roles:master"
-        pillar_data = self.local.cmd(search, 'pillar.items', [], tgt_type="compound")
+        pillar_data = self.local.cmd(
+            search, 'pillar.items', [], tgt_type="compound")
         # in case of multimaster
         for host in pillar_data:
-            if 'roles'in pillar_data[host]:
+            if 'roles' in pillar_data[host]:
                 if 'storage' in pillar_data[host]:
                     msg = """
                          ************** PLEASE READ ***************
@@ -67,14 +69,27 @@ class UpgradeValidation(object):
                     return False, msg
         return True, ""
 
+    @staticmethod
+    def is_supported():
+        """
+        Check if the automated upgrade is supported
+        """
+        msg = """
+                ************** PLEASE READ ***************
+                The automated upgrade is currently not supported.
+                Please refer to the official documentation.
+                ******************************************"""
+        return False, msg
+
 
 def help_():
     """
     Usage
     """
-    usage = ('salt-run upgrade.check:\n\n'
-             '    Performs a series of checks to verify that upgrades are possible\n'
-             '\n\n')
+    usage = (
+        'salt-run upgrade.check:\n\n'
+        '    Performs a series of checks to verify that upgrades are possible\n'
+        '\n\n')
     print(usage)
     return ""
 
@@ -84,7 +99,8 @@ def check():
     Run upgrade checks
     """
     uvo = UpgradeValidation()
-    checks = [uvo.is_master_standalone]  # , uvo.colocated_services]
+    checks = [uvo.is_master_standalone,
+              uvo.is_supported]  # , uvo.colocated_services]
     for chk in checks:
         ret, msg = chk()
         if not ret:
@@ -92,6 +108,7 @@ def check():
             return ret
     return ret
 
+
 __func_alias__ = {
-                 'help_': 'help',
-                 }
+    'help_': 'help',
+}
