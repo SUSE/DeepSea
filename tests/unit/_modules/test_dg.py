@@ -181,8 +181,9 @@ class TestMatcher(object):
         virtual_mock.return_value = False
         disk_map = dict(path='/dev/vdb')
         with pytest.raises(
-                Exception, message="No disk_key found for foo or None"):
+                Exception):
             dg.Matcher('bar', 'foo')._get_disk_key(disk_map)
+            pytest.fail("No disk_key found for foo or None")
 
     def test_virtual(self):
         """ Test if virtual
@@ -391,8 +392,9 @@ class TestSizeMatcher(object):
         virtual_mock.return_value = False
         matcher = dg.SizeMatcher('size', 'None')
         disk_dict = dict(path='/dev/vdb', size='20.00 GB')
-        with pytest.raises(Exception, message="Couldn't parse size"):
+        with pytest.raises(Exception):
             matcher.compare(disk_dict)
+            pytest.fail("Couldn't parse size")
 
     @pytest.mark.parametrize("test_input,expected", [
         ("10G", ('10', 'GB')),
@@ -435,8 +437,9 @@ class TestSizeMatcher(object):
     def test_normalize_suffix_raises(self, virtual_mock):
         virtual_mock.return_value = False
         with pytest.raises(
-                dg.UnitNotSupported, message="Unit 'P' not supported"):
+                dg.UnitNotSupported):
             dg.SizeMatcher('10P', 'size')._normalize_suffix("P")
+            pytest.fail("Unit 'P' not supported")
 
 
 class TestDriveGroup(object):
@@ -866,9 +869,9 @@ class TestDriveGroup(object):
     def test_check_filter_raise(self, test_fix):
         test_fix = test_fix()
         with pytest.raises(
-                dg.FilterNotSupported,
-                message="Filter unknown is not supported"):
+                dg.FilterNotSupported):
             test_fix._check_filter(dict(unknown='foo'))
+            pytest.fail("Filter unknown is not supported")
 
     def test_list_devices(self):
         pass
