@@ -718,6 +718,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/stage/validate/*.sls
 %config /srv/salt/ceph/sync/*.sls
 %config /srv/salt/ceph/subvolume/*.sls
+%config /srv/salt/ceph/subvolume/README.md
 %config /srv/salt/ceph/sysctl/*.sls
 %config /srv/salt/ceph/sysctl/files/*.conf
 %config /srv/salt/ceph/setosdflags/*.sls
