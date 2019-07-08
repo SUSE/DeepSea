@@ -29,9 +29,10 @@ def osd(*args, **kwargs):
     kwargs['remove'] = 'remove'
     result = __salt__['replace.osd'](*args, called=True, **kwargs)
 
-    # Replace OSD exited early
-    if not result:
-        return ""
+    # Replace OSD exited early, continue if forced
+    if not ('force' in kwargs and kwargs['force']):
+        if not result:
+            return ""
 
     master_minion = result['master_minion']
     osds = result['osds']
