@@ -449,6 +449,7 @@ class TestDriveGroup(object):
                              data_limit=0,
                              wal_limit=0,
                              db_limit=0,
+                             osds_per_device='',
                              disk_format='bluestore'):
             raw_sample_bluestore = {
                 'target': 'data*',
@@ -472,6 +473,7 @@ class TestDriveGroup(object):
                 'block_wal_size': 500,
                 'block_db_size': 500,
                 'objectstore': 'bluestore',
+                'osds_per_device': osds_per_device,
                 'encryption': True,
             }
             raw_sample_filestore = {
@@ -487,6 +489,7 @@ class TestDriveGroup(object):
                     'size': ':20G'
                 },
                 'journal_size': '500',
+                'osds_per_device': osds_per_device,
                 'encryption': True,
             }
             if disk_format == 'filestore':
@@ -644,6 +647,15 @@ class TestDriveGroup(object):
     def test_journal_size(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
         assert test_fix.journal_size == '500'
+
+    def test_osds_per_device(self, test_fix):
+        test_fix = test_fix(osds_per_device='3')
+        assert test_fix.osds_per_device == '3'
+
+    def test_osds_per_device_default(self, test_fix):
+        test_fix = test_fix()
+        assert test_fix.osds_per_device == ''
+
 
     def test_journal_size_empty(self, test_fix):
         test_fix = test_fix(empty=True)
@@ -884,12 +896,27 @@ class TestDriveGroup(object):
             'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk /dev/vdl /dev/vdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500'
         ]
 
+    def test_c_v_commands_bluestore_osds_per_device(self, test_fix, inventory):
+        inventory()
+        test_fix = test_fix(osds_per_device=3)
+        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
+        assert ret == [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk /dev/vdl /dev/vdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500 --osds-per-device 3'
+        ]
     def test_c_v_commands_filestore(self, test_fix, inventory):
         inventory()
         test_fix = test_fix(disk_format='filestore')
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
             'ceph-volume lvm batch /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk --journal-size 500 --journal-devices /dev/vdl /dev/vdm --filestore --yes --dmcrypt'
+        ]
+
+    def test_c_v_commands_filestore_osds_per_device(self, test_fix, inventory):
+        inventory()
+        test_fix = test_fix(disk_format='filestore', osds_per_device='3')
+        ret = dg.c_v_commands(filter_args=test_fix.filter_args)
+        assert ret == [
+            'ceph-volume lvm batch /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg /dev/vdh /dev/vdi /dev/vdj /dev/vdk --journal-size 500 --journal-devices /dev/vdl /dev/vdm --filestore --yes --dmcrypt --osds-per-device 3'
         ]
 
     def test_c_v_commands_external_db(self, test_fix, inventory):
@@ -939,6 +966,29 @@ class TestDriveGroup(object):
         assert ret == [
             'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdn --wal-devices /dev/vdl --yes',
             'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdo --wal-devices /dev/vdm --yes'
+        ]
+
+    def test_c_v_commands_external_2_dbs_and_2_wals_osds_per_device(self, test_fix, inventory):
+        """ Check if osds_per_device shows up in multi commands runs """
+        inventory(db_devices=2, wal_devices=2)
+        ret = dg.c_v_commands(
+            filter_args={
+                'data_devices': {
+                    'rotational': '1'
+                },
+                'db_devices': {
+                    'rotational': '0',
+                    'limit': 2
+                },
+                'wal_devices': {
+                    'rotational': '0',
+                    'limit': 2
+                },
+                'osds_per_device': '3',
+            })
+        assert ret == [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdn --wal-devices /dev/vdl --yes --osds-per-device 3',
+            'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdo --wal-devices /dev/vdm --yes --osds-per-device 3'
         ]
 
     def test_c_v_commands_external_2_dbs_and_3_wals(self, test_fix, inventory):
