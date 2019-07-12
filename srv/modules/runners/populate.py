@@ -404,8 +404,12 @@ class CephRoles(object):
                 _create_dirs(cluster_dir, self.root_dir)
             filename = "{}/cluster.yml".format(cluster_dir)
             contents = {}
-            contents['fsid'] = str(uuid.uuid4())
-
+            fsid = str(uuid.uuid4())
+            if os.path.isfile(filename):
+                with open(filename, "r") as yml:
+                    old_contents = yaml.load(yml)
+                fsid = old_contents.get('fsid', fsid)
+            contents['fsid'] = fsid
             public_networks_str = ", ".join([str(n) for n in self.public_networks])
             cluster_networks_str = ", ".join([str(n) for n in self.cluster_networks])
 
