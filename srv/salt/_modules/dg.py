@@ -158,7 +158,12 @@ class Inventory():
         Loads the json data from ceph-volume inventory
         """
         log.debug('Loading disks from inventory')
-        return _parse_dirty_json(self.raw)
+        disks = _parse_dirty_json(self.raw)
+        filtered_disks = [
+            disk for disk in disks
+            if disk.get('sys_api', dict()).get('size', 0) > 5368709120
+        ]
+        return filtered_disks
 
 
 # pylint: disable=too-few-public-methods
@@ -548,6 +553,7 @@ class DriveGroup(object):
     # pylint: disable=too-many-instance-attributes
     def __init__(self, filter_args: dict, include_unavailable=False) -> None:
         self.filter_args: dict = filter_args
+        log.debug("Initializing DriveGroups with {}".format(self.filter_args))
         self._check_filter_support()
         self._include_unavailable = include_unavailable
         self._data_devices = None
