@@ -180,8 +180,7 @@ class TestMatcher(object):
         """
         virtual_mock.return_value = False
         disk_map = dict(path='/dev/vdb')
-        with pytest.raises(
-                Exception):
+        with pytest.raises(Exception):
             dg.Matcher('bar', 'foo')._get_disk_key(disk_map)
             pytest.fail("No disk_key found for foo or None")
 
@@ -387,6 +386,23 @@ class TestSizeMatcher(object):
         ret = matcher.compare(disk_dict)
         assert ret is expected
 
+    @pytest.mark.parametrize("test_input,expected", [
+        ("1.00 GB", False),
+        ("20.00 GB", False),
+        ("50.00 GB", False),
+        ("100.00 GB", False),
+        ("101.00 GB", False),
+        ("1101.00 GB", True),
+        ("9.10 TB", True),
+    ])
+    @patch("srv.salt._modules.dg.Matcher._virtual", autospec=True)
+    def test_compare_at_least_1TB(self, virtual_mock, test_input, expected):
+        virtual_mock.return_value = False
+        matcher = dg.SizeMatcher('size', '1TB:')
+        disk_dict = dict(path='/dev/sdz', size=test_input)
+        ret = matcher.compare(disk_dict)
+        assert ret is expected
+
     @patch("srv.salt._modules.dg.Matcher._virtual", autospec=True)
     def test_compare_raise(self, virtual_mock):
         virtual_mock.return_value = False
@@ -436,8 +452,7 @@ class TestSizeMatcher(object):
     @patch("srv.salt._modules.dg.Matcher._virtual", autospec=True)
     def test_normalize_suffix_raises(self, virtual_mock):
         virtual_mock.return_value = False
-        with pytest.raises(
-                dg.UnitNotSupported):
+        with pytest.raises(dg.UnitNotSupported):
             dg.SizeMatcher('10P', 'size')._normalize_suffix("P")
             pytest.fail("Unit 'P' not supported")
 
@@ -666,20 +681,25 @@ class TestDriveGroup(object):
         def make_sample_data(available=available,
                              data_devices=10,
                              wal_devices=0,
-                             db_devices=2):
+                             db_devices=2,
+                             human_readable_size_data='50.00 GB',
+                             human_readable_size_wal='20.00 GB',
+                             human_readable_size_db='20.00 GB'):
             factory = InventoryFactory()
             inventory_sample = []
             data_disks = factory.produce(
-                pieces=data_devices, available=available)
+                pieces=data_devices,
+                available=available,
+                human_readable_size=human_readable_size_data)
             wal_disks = factory.produce(
                 pieces=wal_devices,
-                human_readable_size='20.00 GB',
+                human_readable_size=human_readable_size_wal,
                 rotational='0',
                 model='ssd_type_model',
                 available=available)
             db_disks = factory.produce(
                 pieces=db_devices,
-                human_readable_size='20.00 GB',
+                human_readable_size=human_readable_size_db,
                 rotational='0',
                 model='ssd_type_model',
                 available=available)
@@ -880,8 +900,7 @@ class TestDriveGroup(object):
 
     def test_check_filter_raise(self, test_fix):
         test_fix = test_fix()
-        with pytest.raises(
-                dg.FilterNotSupported):
+        with pytest.raises(dg.FilterNotSupported):
             test_fix._check_filter(dict(unknown='foo'))
             pytest.fail("Filter unknown is not supported")
 
@@ -1010,6 +1029,22 @@ class TestDriveGroup(object):
         assert [
             'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdd /dev/vdf /dev/vdh /dev/vdj --db-devices /dev/vdo --wal-devices /dev/vdl /dev/vdn --yes',
             'ceph-volume lvm batch --no-auto /dev/vdc /dev/vde /dev/vdg /dev/vdi /dev/vdk --db-devices /dev/vdp --wal-devices /dev/vdm --yes'
+        ] == ret
+
+    def test_c_v_commands_10TB_size_match(self, test_fix, inventory):
+        inventory(
+            data_devices=3,
+            human_readable_size_data='9.10 TB',
+            wal_devices=0,
+            db_devices=0)
+        ret = dg.c_v_commands(filter_args={
+            'data_devices': {
+                'size': '1TB:'
+            },
+            'encryption': 'true'
+        })
+        assert [
+            'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd --yes --dmcrypt',
         ] == ret
 
     def test_c_v_commands_11_data_external_3_dbs_and_1_wals(
