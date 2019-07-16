@@ -1,3 +1,4 @@
+{% set name = salt['mds.get_name'](grains['host']) %}
 shutdown daemon:
   service.dead:
-    - name: ceph-mds@{{ grains['host'] }}
+    - name: ceph-mds@{{ name }}
