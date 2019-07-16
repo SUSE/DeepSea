@@ -36,6 +36,11 @@ deploy:
 A simple function that calls c_v_commands and executes it on the minion.
 
 
+To call from the commandline:
+
+`salt-call dg.<func> 'filter_args={'key': 'value'}'`
+
+
 """
 
 
@@ -152,18 +157,36 @@ class Inventory():
         return '{}'
 
     @property
-    def disks(self) -> list:
+    def _disks(self) -> list:
         """ All disks found on the 'target'
 
         Loads the json data from ceph-volume inventory
         """
         log.debug('Loading disks from inventory')
-        disks = _parse_dirty_json(self.raw)
-        filtered_disks = [
+        return _parse_dirty_json(self.raw)
+
+    @property
+    def disks(self):
+        """ apply filter before returning
+        Those filters are needed for various reasons
+        Explanations in comments
+        """
+        # Disks smaller than 5GB are problematic for ceph-volume
+        # todo: http://tracker.ceph.com/issues/40776
+        disks = self._disks
+
+        filtered_for_size = [
             disk for disk in disks
             if disk.get('sys_api', dict()).get('size', 0) > 5368709120
         ]
-        return filtered_disks
+        filtered_for_path = [
+            # ceph-volume inventory reads /dev/mapper (crypt devices) as valid and available devices
+            # this creates a nice little loop and needs to be excluded
+            # todo: http://tracker.ceph.com/issues/40799
+            disk for disk in filtered_for_size
+            if not disk.get('path', '').startswith('/dev/mapper')
+        ]
+        return filtered_for_path
 
 
 # pylint: disable=too-few-public-methods
