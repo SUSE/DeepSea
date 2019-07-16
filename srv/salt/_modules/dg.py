@@ -625,6 +625,13 @@ class DriveGroup(object):
         return self.filter_args.get("format", "bluestore")
 
     @property
+    def osds_per_device(self) -> str:
+        """
+        Number of OSD processes per device
+        """
+        return self.filter_args.get("osds_per_device", "")
+
+    @property
     def journal_size(self) -> int:
         """
         Journal size
@@ -928,6 +935,9 @@ def c_v_commands(**kwargs):
         if dgo.encryption:
             cmd += " --dmcrypt"
 
+        if dgo.osds_per_device:
+            cmd += " --osds-per-device {}".format(dgo.osds_per_device)
+
         return [cmd]
 
     if dgo.format == 'bluestore':
@@ -972,6 +982,9 @@ def c_v_commands(**kwargs):
 
             if dgo.block_db_size:
                 commands[i] += " --block-db-size {}".format(dgo.block_db_size)
+
+            if dgo.osds_per_device:
+                commands[i] += " --osds-per-device {}".format(dgo.osds_per_device)
 
         return commands
 
