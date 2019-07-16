@@ -101,8 +101,11 @@ class SystemdUnit(object):
         service_names = []
         if self.osd_id and self.proc_name == 'ceph-osd':
             service_names = ["{}@{}".format(self.proc_name, self.osd_id)]
-        if self.proc_name in ['ceph-mon', 'ceph-mgr', 'ceph-mds']:
+        if self.proc_name in ['ceph-mon', 'ceph-mgr']:
             service_names = ["{}@{}".format(self.proc_name, __grains__['host'])]
+        if self.proc_name == 'ceph-mds':
+            service_names = ["{}@{}".format(self.proc_name,
+                                            __salt__['mds.get_name'](__grains__['host']))]
         if self.proc_name == 'radosgw':
             service_names = ["{}@{}".format('ceph-radosgw', __grains__['host'])]
         if self.proc_name == 'ganesha.nfsd':
