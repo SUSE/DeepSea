@@ -413,7 +413,7 @@ class CephRoles(object):
             contents['cluster_network'] = cluster_networks_str
             contents['available_roles'] = self.available_roles
 
-            self.writer.write(filename, contents, True)
+            self.writer.write(filename, contents)
 
     def publicnetwork_is_ipv6(self):
         """
