@@ -56,7 +56,7 @@ class InventoryFactory(object):
                 'scheduler_mode': 'mq-deadline',
                 'sectors': 0,
                 'sectorsize': '512',
-                'size': 123,  # TODO
+                'size': self.size,
                 'support_discard': '',
                 'vendor': self.vendor
             }
@@ -77,6 +77,7 @@ class InventoryFactory(object):
         if not self.available:
             self.rejected_reason = ['locked']
         self.empty = kwargs.get('empty', False)
+        self.size = kwargs.get('size', 5368709121)
 
     def produce(self, pieces=1, **kwargs):
         if kwargs.get('path') and pieces > 1:
@@ -103,6 +104,22 @@ class TestInventory(object):
         dg.Inventory().raw
         call1 = call("ceph-volume inventory --format json")
         assert call1 in dg.__salt__['helper.run'].call_args_list
+
+    @patch("srv.salt._modules.dg.Inventory._disks", autospec=True)
+    def test_disk_exclude_mapper_devices(self, disks_mock):
+        disks_mock.return_value = InventoryFactory().produce(
+            path='/dev/mapper/foo')
+        assert not dg.Inventory().disks
+
+    @patch("srv.salt._modules.dg.Inventory._disks", autospec=True)
+    def test_disk_exclude_small_size(self, disks_mock):
+        disks_mock.return_value = InventoryFactory().produce(size=1)
+        assert not dg.Inventory().disks
+
+    @patch("srv.salt._modules.dg.Inventory._disks", new_callable=PropertyMock)
+    def test_disk_positive_test(self, disks_mock):
+        disks_mock.return_value = InventoryFactory().produce(size=10000000000000)
+        assert len(dg.Inventory().disks) == 1
 
 
 class TestDirtyJson(object):
@@ -672,23 +689,27 @@ class TestDriveGroup(object):
                              db_devices=2,
                              human_readable_size_data='50.00 GB',
                              human_readable_size_wal='20.00 GB',
+                             size=5368709121,
                              human_readable_size_db='20.00 GB'):
             factory = InventoryFactory()
             inventory_sample = []
             data_disks = factory.produce(
                 pieces=data_devices,
                 available=available,
+                size=size,
                 human_readable_size=human_readable_size_data)
             wal_disks = factory.produce(
                 pieces=wal_devices,
                 human_readable_size=human_readable_size_wal,
                 rotational='0',
                 model='ssd_type_model',
+                size=size,
                 available=available)
             db_disks = factory.produce(
                 pieces=db_devices,
                 human_readable_size=human_readable_size_db,
                 rotational='0',
+                size=size,
                 model='ssd_type_model',
                 available=available)
             inventory_sample.extend(data_disks)
@@ -696,13 +717,13 @@ class TestDriveGroup(object):
             inventory_sample.extend(db_disks)
 
             self.disks_mock = patch(
-                'srv.salt._modules.dg.Inventory.disks',
+                'srv.salt._modules.dg.Inventory._disks',
                 new_callable=PropertyMock,
                 return_value=inventory_sample)
             self.disks_mock.start()
 
             inv = dg.Inventory()
-            return inv.disks
+            return inv._disks
 
             self.disks_mock.stop()
 
@@ -996,6 +1017,21 @@ class TestDriveGroup(object):
         assert [
             'ceph-volume lvm batch --no-auto /dev/vdb /dev/vdc /dev/vdd --yes --dmcrypt',
         ] == ret
+
+    def test_c_v_commands_0B_exclude(self, test_fix, inventory):
+        inventory(
+            data_devices=3,
+            human_readable_size_data='0.00 B',
+            size=0,
+            wal_devices=0,
+            db_devices=0)
+        ret = dg.c_v_commands(filter_args={
+            'data_devices': {
+                'size': '1TB:'
+            },
+            'encryption': 'true'
+        })
+        assert '' == ret
 
     def test_c_v_commands_11_data_external_3_dbs_and_1_wals(
             self, test_fix, inventory):
