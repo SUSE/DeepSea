@@ -34,7 +34,7 @@ class Inventory(object):
 
     def __init__(self, **kwargs) -> None:
         self.kwargs: dict = kwargs
-        self.devices = load_ceph_volume_devices()
+        self.devices = load_ceph_volume_devices().devices
         self.device = load_ceph_volume_device()
         self.root_disk = self._find_root_disk()
 
@@ -124,26 +124,33 @@ class Inventory(object):
         Apply set filters and return list of devices
         """
         devs: list = list()
-        for dev in self.devices.devices:
-            # Apply known filters
+        for dev in self.devices:
+
+            # Apply customizable filters
             if self.exclude_root_disk:
+                # exclude the root (/) disk
                 if self.root_disk == dev.path:
                     log.debug(
                         f"Skipping disk <{dev.path}> due to <root_disk> filter"
                     )
                     continue
+
             if self.exclude_available:
+                # exclude disks that are marked 'available'
                 if dev.available:
                     log.debug(
                         f"Skipping disk <{dev.path}> due to <available> filter"
                     )
                     continue
             if self.exclude_used_by_ceph:
+                # exlude disks that are used by ceph
                 if dev.used_by_ceph:
                     log.debug(
                         f"Skipping disk <{dev.path}> due to <used_by_ceph> filter"
                     )
                     continue
+
+            # Apply non-customizable filters
             if self._is_cdrom(dev.path):
                 log.debug(f"Skipping disk <{dev.path}> due to <cdrom> filter")
                 continue
