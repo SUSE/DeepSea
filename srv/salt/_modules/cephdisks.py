@@ -11,22 +11,30 @@ import re
 log = logging.getLogger(__name__)
 
 
+# pylint: disable=import-error
 def load_ceph_volume_devices():
     """ To simplify import mocking in the tests
 
     ceph-volume is not present during unittesting.
     """
-    from ceph_volume.util.device import Devices
-    return Devices
+    try:
+        from ceph_volume.util.device import Devices
+        return Devices()
+    except ImportError:
+        log.error("Could not import from ceph_volume.util.device.")
 
 
+# pylint: disable=import-error
 def load_ceph_volume_device():
     """ To simplify import mocking in the tests
 
     ceph-volume is not present during unittesting.
     """
-    from ceph_volume.util.device import Device
-    return Device
+    try:
+        from ceph_volume.util.device import Device
+        return Device
+    except ImportError:
+        log.error("Could not import from ceph_volume.util.device.")
 
 
 class Inventory(object):
@@ -42,6 +50,11 @@ class Inventory(object):
     def exclude_available(self) -> bool:
         """ The available filter """
         return self.kwargs.get('exclude_available', False)
+
+    @property
+    def exclude_cephdisk_member(self) -> bool:
+        """ The available filter """
+        return self.kwargs.get('exclude_cephdisk_member', False)
 
     @property
     def exclude_used_by_ceph(self) -> bool:
@@ -132,6 +145,15 @@ class Inventory(object):
                 if self.root_disk == dev.path:
                     log.debug(
                         f"Skipping disk <{dev.path}> due to <root_disk> filter"
+                    )
+                    continue
+
+            if self.exclude_cephdisk_member:
+                # exclude disks that are used by cephdisk
+                # due to: todo http://tracker.ceph.com/issues/40817
+                if dev.is_ceph_disk_member:
+                    log.debug(
+                        f"Skipping disk <{dev.path}> due to <cephdisk_member> filter"
                     )
                     continue
 
@@ -244,12 +266,17 @@ def _list(**kwargs):
 
 
 def used(**kwargs):
+    """ Alias for list """
     return _list(**kwargs)
 
 
 def unused(**kwargs):
     """ List only devices that are not used by ceph and are available """
-    kwargs.update(dict(exclude_used_by_ceph=True, exclude_available=False))
+    kwargs.update(
+        dict(
+            exclude_used_by_ceph=True,
+            exclude_available=False,
+            exclude_cephdisk_member=True))
     return [x.json_report() for x in Inventory(**kwargs).filter_()]
 
 

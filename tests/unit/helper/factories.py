@@ -86,3 +86,23 @@ class InventoryFactory(object):
         # taken_paths
         self._init(**kwargs)
         return [self.assemble() for x in range(0, pieces)]
+
+
+class SimpleDevice(object):
+    def __init__(self, conf=dict()):
+        self.path = conf.get('path', '/dev/sdb')
+        self.size = conf.get('size', 500000000000.0)
+        self.available = conf.get('available', True)
+        self.used_by_ceph = conf.get('used_by_ceph', False)
+        self.is_mapper = conf.get('is_mapper', False)
+        self.is_encrypted = conf.get('is_encrypted', False)
+
+
+class DeviceFactory(object):
+    def __init__(self, device_setup):
+        self.device_setup = device_setup
+        self.pieces = device_setup.get('pieces', 1)
+        self.device_conf = device_setup.get('device_config', {})
+
+    def produce(self):
+        return [SimpleDevice(self.device_conf) for x in range(0, self.pieces)]

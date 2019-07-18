@@ -399,7 +399,9 @@ class TestDriveGroup(object):
             self.check_filter_support.start()
 
             dg.__salt__ = dict()
-            dg.__salt__['cephdisks.all'] = lambda kwarg: []
+            dg.__salt__['cephdisks.all'] = lambda : []
+            dg.__salt__['cephdisks.unused'] = lambda : []
+            dg.__salt__['cephdisks.used'] = lambda : []
 
             dgo = dg.DriveGroup(raw_sample)
             return dgo
@@ -933,21 +935,6 @@ class TestDriveGroup(object):
         assert [
             'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd --yes --dmcrypt',
         ] == ret
-
-    def test_c_v_commands_0B_exclude(self, test_fix, inventory):
-        inventory(
-            data_devices=3,
-            human_readable_size_data='0.00 B',
-            size=0,
-            wal_devices=0,
-            db_devices=0)
-        ret = dg.c_v_commands(filter_args={
-            'data_devices': {
-                'size': '1TB:'
-            },
-            'encryption': 'true'
-        })
-        assert '' == ret
 
     def test_c_v_commands_11_data_external_3_dbs_and_1_wals(
             self, test_fix, inventory):

@@ -16,7 +16,7 @@ from typing import Tuple
 log = logging.getLogger(__name__)
 try:
     # pylint: disable=unused-import
-    from ceph_volume.util.device import Devices, Device
+    from ceph_volume.util.device import Device
 except ModuleNotFoundError:
     log.debug("Could not load ceph_volume. Make sure to install ceph")
 except ImportError:
@@ -521,14 +521,13 @@ class Inventory(object):
     Inventory class that calls out to cephdisks
     """
 
-    def __init__(self, include_unavailable=False):
-        self.include_unavailable = include_unavailable
+    def __init__(self, cephdisks_mode='unused'):
+        self.cephdisks_mode = cephdisks_mode
 
     @property
     def disks(self) -> list:
         """ Returns a list of disks (json_report)"""
-        return __salt__['cephdisks.all'](kwarg=dict(
-            exclude_available=self.include_unavailable))
+        return __salt__[f'cephdisks.{self.cephdisks_mode}']()
 
 
 # pylint: disable=too-many-public-methods
@@ -544,13 +543,12 @@ class DriveGroup(object):
     """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, filter_args: dict, include_unavailable=False) -> None:
+    def __init__(self, filter_args: dict, cephdisks_mode='unused') -> None:
         self.filter_args: dict = filter_args
         log.debug("Initializing DriveGroups with {}".format(self.filter_args))
         self._check_filter_support()
-        self._include_unavailable = include_unavailable
         self._data_devices = None
-        self._disks = Inventory(include_unavailable=include_unavailable).disks
+        self._disks = Inventory(cephdisks_mode=cephdisks_mode).disks
         self._wal_devices = None
         self._db_devices = None
         self.prop = namedtuple("Property", 'ident can_have_osds devices')
@@ -733,7 +731,7 @@ class DriveGroup(object):
         model: Fujitsu
         rotational: 1
 
-        Question: #######inventory#######################
+        Question: #############################
         This currently acts as a OR gate. Should this be a AND gate?
         Question: #############################
 
@@ -829,11 +827,12 @@ class DriveGroup(object):
 
 
 class Disk(object):
-    """ Parent class to interface with LVM and Non-LVM disks. """
+    """ Class to interface with LVM and Non-LVM disks. """
 
     def __init__(self, path):
         self.path = path
         self.device = Device(self.path)
+        self.error = ''
 
     @property
     def is_available(self):
@@ -873,6 +872,7 @@ class LvmOSD(object):
 
     def __init__(self, device):
         self.device = device
+        self.error = ''
 
     @property
     def osd_ids(self) -> list:
@@ -901,6 +901,7 @@ class CephDiskOSD(object):
         device is a object from ceph_volume.util.Device
         """
         self.device = device
+        self.error = ''
         self._path: str = self._find_mount_point()
         self._osd_id: str = ''
         self._fsid: str = ''
@@ -911,10 +912,6 @@ class CephDiskOSD(object):
         self._block_dmcrypt: str = ''
         self._journal: str = ''
         self.discover()
-
-        if not self._path:
-            raise Exception(
-                f"Mountpoint for {self.device.path} could not be determined")
 
     def _find_data_partition(self) -> str:
         """ Find data partition in all partitions """
@@ -934,12 +931,14 @@ class CephDiskOSD(object):
             for _line in _fd.readlines():
                 line = _line.decode()
                 device_path_full = line.split(' ')[0]
-                device_ident = device_path_full.split('/')[-1]
                 mount_point = line.split(' ')[1]
-                if mount_point and device_ident == data_partition:
+                if mount_point and device_path_full == data_partition:
                     return mount_point
-            log.warning("Could not determine mount point. Command failed")
-            return ""
+            log.warning(
+                f"Could not determine mount point for {data_partition}. Command failed"
+            )
+            self.error = "No OSD detected (Could not find mountpoint)"
+            return "n/a"
 
     @property
     def path(self):
@@ -1000,7 +999,9 @@ class CephDiskOSD(object):
         It's a list since this needs to aligned with it's LvmOSD counterpart
         This list will always be len->1 since we never supported multiple OSDs on one device
         """
-        return [str(self._osd_id)]
+        if self._osd_id:
+            return [str(self._osd_id)]
+        return []
 
     def set_osd_id(self, osd_id: str) -> None:
         """ osd_id setter """
@@ -1109,15 +1110,12 @@ dmcrypt : {self.block_dmcrypt:<1}
 class Output(object):
     """ Container class for user facing functions """
 
-    def __init__(self, **kwargs):
+    def __init__(self, cephdisks_mode='unused', **kwargs):
         self.filter_args: dict = kwargs.get('filter_args', dict())
         self.bypass_pillar = kwargs.get('bypass_pillar', False)
-        self.include_unavailable: bool = kwargs.get('include_unavailable',
-                                                    True)
         self.destroyed_osds_map = kwargs.get('destroyed_osds', {})
         self.dry_run = kwargs.get('dry_run', False)
-        self.dgo = DriveGroup(
-            self.filter_args, include_unavailable=self.include_unavailable)
+        self.dgo = DriveGroup(self.filter_args, cephdisks_mode)
         self.ret: dict = dict(
             data_devices={},
             wal_devices={},
@@ -1186,8 +1184,11 @@ Please make sure to have more/equal wal_devices than db_devices"""
         return True
 
     @staticmethod
-    def _guide(osd_ids: list, can_have_osds: bool = False) -> dict:
+    def _guide(osd_ids: list, can_have_osds: bool = False, error='') -> dict:
         """ Return dict with meaningful message for a specific category """
+        if error:
+            return dict(message=error)
+
         if osd_ids and can_have_osds:
             return dict(osds=osd_ids)
         if osd_ids and not can_have_osds:
@@ -1195,6 +1196,7 @@ Please make sure to have more/equal wal_devices than db_devices"""
                 conflict=
                 f"Detected OSD(s) {' '.join(osd_ids)} in a non-admissible category."
             )
+
         if can_have_osds:
             return dict(
                 message=
@@ -1213,7 +1215,10 @@ Please make sure to have more/equal wal_devices than db_devices"""
             disk = Disk(dev_path).get_handler()
             ret.update({
                 dev_path:
-                self._guide(disk.osd_ids, can_have_osds=can_have_osds)
+                self._guide(
+                    disk.osd_ids,
+                    can_have_osds=can_have_osds,
+                    error=disk.error)
             })
         return ret
 
@@ -1397,7 +1402,7 @@ Please make sure to have more/equal wal_devices than db_devices"""
 
 def report(**kwargs):
     """ User facing report(list) call """
-    return Output(**kwargs).generate_annotated_report()
+    return Output(**kwargs, cephdisks_mode='all').generate_annotated_report()
 
 
 def list_(**kwargs):
@@ -1410,12 +1415,12 @@ def list_(**kwargs):
 
 def c_v_commands(**kwargs):
     """ User facing ceph-volume command call """
-    return Output(**kwargs).generate_c_v_commands()
+    return Output(**kwargs, cephdisks_mode='unused').generate_c_v_commands()
 
 
 def deploy(**kwargs):
     """ User facing deploy call """
-    return Output(**kwargs).deploy()
+    return Output(**kwargs, cephdisks_mode='unused').deploy()
 
 
 def _help():

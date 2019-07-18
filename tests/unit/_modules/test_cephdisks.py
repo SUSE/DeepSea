@@ -2,28 +2,8 @@ import pytest
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
 from srv.salt._modules import cephdisks
-
+from tests.unit.helper.factories import DeviceFactory, SimpleDevice
 from mock import patch, mock_open
-
-
-class SimpleDevice(object):
-    def __init__(self, conf=dict()):
-        self.path = conf.get('path', '/dev/sdb')
-        self.size = conf.get('size', 500000000000.0)
-        self.available = conf.get('available', True)
-        self.used_by_ceph = conf.get('used_by_ceph', False)
-        self.is_mapper = conf.get('is_mapper', False)
-        self.is_encrypted = conf.get('is_encrypted', False)
-
-
-class DeviceFactory(object):
-    def __init__(self, device_setup):
-        self.device_setup = device_setup
-        self.pieces = device_setup.get('pieces', 1)
-        self.device_conf = device_setup.get('device_config', {})
-
-    def produce(self):
-        return [SimpleDevice(self.device_conf) for x in range(0, self.pieces)]
 
 
 @pytest.fixture(scope='class')
@@ -131,14 +111,16 @@ class TestInventory(object):
 
     def test_filter_available_device(self, test_fix):
         """ /dev/sdb is the available_device """
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', available=True))
+        conf = dict(
+            pieces=1, device_config=dict(path='/dev/sdb', available=True))
         inv = test_fix(conf)
         ret = inv.filter_()
         assert len(ret) == 1
 
     def test_filter_available_device_exclusion(self, test_fix):
         """ /dev/sdb is the available_device but we exclude it """
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', available=True))
+        conf = dict(
+            pieces=1, device_config=dict(path='/dev/sdb', available=True))
         inv = test_fix(conf, exclude_available=True)
         ret = inv.filter_()
         assert len(ret) == 0
@@ -159,14 +141,16 @@ class TestInventory(object):
 
     def test_filter_used_by_ceph_device(self, test_fix):
         """ /dev/sdb is the used_by_ceph_device """
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', used_by_ceph=True))
+        conf = dict(
+            pieces=1, device_config=dict(path='/dev/sdb', used_by_ceph=True))
         inv = test_fix(conf)
         ret = inv.filter_()
         assert len(ret) == 1
 
     def test_filter_used_by_ceph_device_exclusion(self, test_fix):
         """ /dev/sdb is the used_by_ceph_device but we don't exclude it """
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', used_by_ceph=True))
+        conf = dict(
+            pieces=1, device_config=dict(path='/dev/sdb', used_by_ceph=True))
         inv = test_fix(conf, exclude_used_by_ceph=True)
         ret = inv.filter_()
         assert len(ret) == 0
@@ -190,19 +174,28 @@ class TestInventory(object):
         assert len(ret) == 0
 
     def test_filter_mapper_and_encrypted(self, test_fix):
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', is_mapper=True, is_encrypted=True))
+        conf = dict(
+            pieces=1,
+            device_config=dict(
+                path='/dev/sdb', is_mapper=True, is_encrypted=True))
         inv = test_fix(conf)
         ret = inv.filter_()
         assert len(ret) == 0
 
     def test_filter_encrypted(self, test_fix):
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', is_mapper=False, is_encrypted=True))
+        conf = dict(
+            pieces=1,
+            device_config=dict(
+                path='/dev/sdb', is_mapper=False, is_encrypted=True))
         inv = test_fix(conf)
         ret = inv.filter_()
         assert len(ret) == 1
 
     def test_filter_mapper(self, test_fix):
-        conf = dict(pieces=1, device_config=dict(path='/dev/sdb', is_mapper=True, is_encrypted=False))
+        conf = dict(
+            pieces=1,
+            device_config=dict(
+                path='/dev/sdb', is_mapper=True, is_encrypted=False))
         inv = test_fix(conf)
         ret = inv.filter_()
         assert len(ret) == 1
