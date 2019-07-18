@@ -4,7 +4,7 @@ clean up cache dir:
 
 {% set addrs = salt.saltutil.runner('select.minions', format='--cluster.peer={}:9094', cluster='ceph', host=False, roles='prometheus') %}
 {% set peers = addrs|join(' ')  %}
-/srv/salt/ceph/monitoring/alertmanager/cache/prometheus-alertmanager:
+/srv/salt/ceph/monitoring/alertmanager/cache/prometheus-alertmanager.fragment:
   file.managed:
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
