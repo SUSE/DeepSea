@@ -881,7 +881,7 @@ class LvmOSD(object):
         for _vol in self.device.lvs:
             # search lvolume tags for ceph.osd_id
             osd_id: str = _vol.tags.get('ceph.osd_id', '')
-            if osd_id:
+            if osd_id and _vol.tags.get('ceph.type') == 'block':
                 osd_ids.append(osd_id)
         return osd_ids
 
