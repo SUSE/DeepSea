@@ -248,7 +248,7 @@ class OSDUtil(Util):
                 print("  {}\nRetrying...".format(message))
                 log.debug(message)
                 time.sleep(3)
-                log.debug("Trying agian for {} times.".format(counter))
+                log.debug("Trying again for {} times.".format(counter))
                 counter -= 1
                 message = func()
             elif message.startswith("osd.{} is safe to destroy".format(
