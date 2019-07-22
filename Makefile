@@ -23,8 +23,7 @@ USER=root
 GROUP=root
 ifeq ($(OS), centos)
 PKG_INSTALL=yum install -y
-PYTHON_DEPS=python-setuptools python-click python-tox python-configobj
-PYTHON=python
+PYTHON_DEPS=rh-python36-setuptools python36-click tox python36-configobj
 else
 ifeq ($(OS), fedora)
 PKG_INSTALL=yum install -y
