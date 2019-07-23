@@ -31,6 +31,7 @@ else
 debian := $(wildcard /etc/debian_version)
 ifneq ($(strip $(debian)),)
 PKG_INSTALL=apt-get install -y
+PYTHON_DEPS=python3-setuptools python3-click tox python3-configobj
 endif
 endif
 endif
