@@ -58,15 +58,24 @@ prometheus_webhook_snmp_stop:
 
 {% endif %}
 
-/etc/sysconfig/prometheus-alertmanager:
+create alertmanager sysconfig file:
   file.managed:
-    - source: salt://ceph/monitoring/alertmanager/cache/prometheus-alertmanager
+    - name: /etc/sysconfig/prometheus-alertmanager
+    - source: salt://ceph/monitoring/alertmanager/cache/prometheus-alertmanager.fragment
     - template: jinja
     - user: root
     - group: root
     - mode: 644
     - makedirs: True
     - fire_event: True
+
+append listen-address to alertmanager sysconfig:
+  file.append:
+    - name: /etc/sysconfig/prometheus-alertmanager
+    - text:
+      - --cluster.listen-address={{ salt['public.address']() }}:9094"
+    - watch:
+      - file: create alertmanager sysconfig file
 
 start alertmanager:
   service.running:
@@ -75,4 +84,4 @@ start alertmanager:
     - restart: True
     - watch:
       - file: /etc/prometheus/alertmanager.yml
-      - file: /etc/sysconfig/prometheus-alertmanager
+      - file: append listen-address to alertmanager sysconfig
