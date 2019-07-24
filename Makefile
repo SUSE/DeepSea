@@ -151,8 +151,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore
 	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore2
 	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore3/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore3
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/rebuild
-	install -m 644 srv/salt/ceph/functests/1node/rebuild/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/rebuild
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/replace
 	install -m 644 srv/salt/ceph/functests/1node/replace/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/replace
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/remove
@@ -166,6 +164,11 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/symlink
 	install -m 644 srv/salt/ceph/functests/1node/symlink/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/symlink
+	# functests/3nodes
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes
+	install -m 644 srv/salt/ceph/functests/3nodes/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/3nodes/rebuild
+	install -m 644 srv/salt/ceph/functests/3nodes/rebuild/*.sls $(DESTDIR)/srv/salt/ceph/functests/3nodes/rebuild
 	# docs
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea
 	install -m 644 LICENSE $(DESTDIR)$(DOCDIR)/deepsea/
