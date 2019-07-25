@@ -52,6 +52,19 @@ class TestDiskLed:
 
     @mock.patch('srv.modules.runners.disk_led._process', autospec=True)
     @mock.patch('salt.client.LocalClient', autospec=True)
+    def test_device_udev_links_none(self, mock_localclient, mock_process):
+        mock_localclient.return_value.cmd.side_effect = [
+            grains_get_result, None
+        ]
+
+        result = disk_led.device('data1.ceph', 'SanDisk_X400_M.2_2280_512GB_26453645624767',
+                                 'ident', 'on')
+        assert not mock_process.called
+        assert result == 'Could not find device "SanDisk_X400_M.2_2280_512GB_26453645624767" '\
+                         'on host "data1.ceph"'
+
+    @mock.patch('srv.modules.runners.disk_led._process', autospec=True)
+    @mock.patch('salt.client.LocalClient', autospec=True)
     def test_device_failure(self, mock_localclient, mock_process):
         mock_localclient.return_value.cmd.return_value = {}
 

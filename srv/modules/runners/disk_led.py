@@ -4,6 +4,7 @@ This runner is used to turn on/off the ident and fault LED of a disk.
 """
 from __future__ import absolute_import
 
+from collections.abc import Iterable
 import logging
 import re
 
@@ -80,33 +81,39 @@ def device(hostname, identifier, led, status):
         #   'data1.ceph': ['dm-1', 'vdf', 'vdd', 'sdg', ...],
         #   ...
         # }
-        for disk in grains[hostname]:
-            if disk == identifier:
-                device_name = disk
-                break
 
-            # Get all udev-created device symlinks.
-            # {
-            #   'data1.ceph': [
-            #     'disk/by-id/wwn-0x4003c435a4d43cd8',
-            #     'disk/by-path/pci-0000:00:15.0-ata-3',
-            #     'disk/by-id/ata-SanDisk_X400_M.2_2280_512GB_26453645624767'
-            #   ]
-            # }
-            device_links = local_client.cmd(
-                hostname,
-                'udev.links', ['/dev/{}'.format(disk)],
-                tgt_type='compound')
+        # Is the specified identifier (device name) already listed in the
+        # grains output? If not, then we need to iterate over all listed
+        # device names and do some more stuff.
+        if identifier in grains[hostname]:
+            device_name = identifier
+        else:
+            for disk in grains[hostname]:
+                # Get all udev-created device symlinks.
+                # {
+                #   'data1.ceph': [
+                #     'disk/by-id/wwn-0x4003c435a4d43cd8',
+                #     'disk/by-path/pci-0000:00:15.0-ata-3',
+                #     'disk/by-id/ata-SanDisk_X400_M.2_2280_512GB_26453645624767'
+                #   ]
+                # }
+                device_links = local_client.cmd(
+                    hostname,
+                    'udev.links', ['/dev/{}'.format(disk)],
+                    tgt_type='compound')
 
-            for device_link in device_links[hostname]:
-                # pylint: disable=line-too-long
-                # Search for device names like:
-                # - Crucial_CT1024M550SSD1_14160C164100 (disk/by-id/(ata|scsi|.+)-Crucial_CT1024M550SSD1_14160C164100)
-                # - wwn-0x4021b384a4d42ca5 (disk/by-id/wwn-0x4021b384a4d42ca5)
-                if re.match(r'^.+\/(ata|scsi|wwn)-{}$'.format(identifier),
-                            device_link):
-                    device_name = disk
-                    break
+                if not isinstance(device_links, Iterable):
+                    continue
+
+                for device_link in device_links[hostname]:
+                    # pylint: disable=line-too-long
+                    # Search for device names like:
+                    # - Crucial_CT1024M550SSD1_14160C164100 (disk/by-id/(ata|scsi|.+)-Crucial_CT1024M550SSD1_14160C164100)
+                    # - wwn-0x4021b384a4d42ca5 (disk/by-id/wwn-0x4021b384a4d42ca5)
+                    if re.match(r'^.+\/(ata|scsi|wwn)-{}$'.format(identifier),
+                                device_link):
+                        device_name = disk
+                        break
 
     if device_name is not None:
         _process(hostname, device_name, led, status)
