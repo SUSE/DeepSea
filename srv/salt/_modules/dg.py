@@ -434,7 +434,7 @@ class SizeMatcher(Matcher):
         :return: A normalized unit ('GB')
         :rtype: str
         """
-        return self._normalize_suffix(re.findall(r"[a-zA-Z]+", obj)[0])
+        return self._normalize_suffix(re.findall(r"[a-zA-Z]+", obj)[0].upper())
 
     def _get_k_v(self, data: str) -> Tuple:
         """ Helper method to extract data from a string
