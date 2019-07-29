@@ -1,5 +1,5 @@
-# default:
-#   target: 'data*'
+# default:  <- just a name - can be anything
+#   target: 'data*' <- must be resolvable by salt's targeting processor
 #   data_devices:
 #     size: 20G
 #   db_devices:

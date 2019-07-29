@@ -432,6 +432,8 @@ class TestSizeMatcher(object):
     @pytest.mark.parametrize("test_input,expected", [
         ("10G", ('10', 'GB')),
         ("20GB", ('20', 'GB')),
+        ("10g", ('10', 'GB')),
+        ("20gb", ('20', 'GB')),
     ])
     @patch("srv.salt._modules.dg.Matcher._virtual", autospec=True)
     def test_get_k_v(self, virtual_mock, test_input, expected):
@@ -440,11 +442,17 @@ class TestSizeMatcher(object):
 
     @pytest.mark.parametrize("test_input,expected", [
         ("10G", ('GB')),
+        ("10g", ('GB')),
         ("20GB", ('GB')),
+        ("20gb", ('GB')),
         ("20TB", ('TB')),
+        ("20tb", ('TB')),
         ("20T", ('TB')),
+        ("20t", ('TB')),
         ("20MB", ('MB')),
+        ("20mb", ('MB')),
         ("20M", ('MB')),
+        ("20m", ('MB')),
     ])
     @patch("srv.salt._modules.dg.Matcher._virtual", autospec=True)
     def test_parse_suffix(self, virtual_mock, test_input, expected):
