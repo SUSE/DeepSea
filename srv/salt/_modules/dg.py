@@ -291,7 +291,66 @@ class EqualityMatcher(Matcher):
         return False
 
 
-class SizeMatcher(Matcher):
+class UnitHelper(object):
+    """ Container class for sizing related methods """
+
+    @property
+    def supported_suffixes(self) -> list:
+        """ Only power of 10 notation is supported
+        """
+        return ["MB", "GB", "TB", "M", "G", "T"]
+
+    def _normalize_suffix(self, suffix: str) -> str:
+        """ Normalize any supported suffix
+        Since the Drive Groups are user facing, we simply
+        can't make sure that all users type in the requested
+        form. That's why we have to internally agree on one format.
+        It also checks if any of the supported suffixes was used
+        and raises an Exception otherwise.
+        :param str suffix: A suffix ('G') or ('M')
+        :return: A normalized output
+        :rtype: str
+        """
+        if suffix not in self.supported_suffixes:
+            raise UnitNotSupported("Unit '{}' not supported".format(suffix))
+        if suffix == "G":
+            return "GB"
+        if suffix == "T":
+            return "TB"
+        if suffix == "M":
+            return "MB"
+        return suffix
+
+    def parse_suffix(self, obj: str) -> str:
+        """ Wrapper method to find and normalize a prefix
+        :param str obj: A size filtering string ('10G')
+        :return: A normalized unit ('GB')
+        :rtype: str
+        """
+        return self._normalize_suffix(re.findall(r"[a-zA-Z]+", obj)[0].upper())
+
+    @staticmethod
+    # pylint: disable=inconsistent-return-statements
+    def to_byte(tpl: Tuple) -> float:
+        """ Convert any supported unit to bytes
+        :param tuple tpl: A tuple with ('10', 'GB')
+        :return: The converted byte value
+        :rtype: float
+        """
+        value = float(tpl[0])
+        suffix = tpl[1]
+        if suffix == "MB":
+            return value * 1e+6
+        elif suffix == "GB":
+            return value * 1e+9
+        elif suffix == "TB":
+            return value * 1e+12
+        # checkers force me to return something, although
+        # it's not quite good to return something here.. ignore?
+        return 0.00
+
+
+class SizeMatcher(Matcher, UnitHelper):
     """ Size matcher subclass
     """
 
@@ -302,6 +361,7 @@ class SizeMatcher(Matcher):
         # correspond to the desired attribute
         # requested from the inventory output
         Matcher.__init__(self, key, value)
+        UnitHelper.__init__(self)
         self.key: str = "human_readable_size"
         self.fallback_key: str = "size"
         self._high = None
@@ -348,48 +408,10 @@ class SizeMatcher(Matcher):
         """
         self._exact, self._exact_suffix = exact
 
-    @property
-    def supported_suffixes(self) -> list:
-        """ Only power of 10 notation is supported
-        """
-        return ["MB", "GB", "TB", "M", "G", "T"]
-
-    def _normalize_suffix(self, suffix: str) -> str:
-        """ Normalize any supported suffix
-
-        Since the Drive Groups are user facing, we simply
-        can't make sure that all users type in the requested
-        form. That's why we have to internally agree on one format.
-        It also checks if any of the supported suffixes was used
-        and raises an Exception otherwise.
-
-        :param str suffix: A suffix ('G') or ('M')
-        :return: A normalized output
-        :rtype: str
-        """
-        if suffix not in self.supported_suffixes:
-            raise UnitNotSupported("Unit '{}' not supported".format(suffix))
-        if suffix == "G":
-            return "GB"
-        if suffix == "T":
-            return "TB"
-        if suffix == "M":
-            return "MB"
-        return suffix
-
-    def _parse_suffix(self, obj: str) -> str:
-        """ Wrapper method to find and normalize a prefix
-
-        :param str obj: A size filtering string ('10G')
-        :return: A normalized unit ('GB')
-        :rtype: str
-        """
-        return self._normalize_suffix(re.findall(r"[a-zA-Z]+", obj)[0].upper())
-
     def _get_k_v(self, data: str) -> Tuple:
         """ Helper method to extract data from a string
 
-        It uses regex to extract all digits and calls _parse_suffix
+        It uses regex to extract all digits and calls parse_suffix
         which also uses a regex to extract all letters and normalizes
         the resulting suffix.
 
@@ -397,7 +419,7 @@ class SizeMatcher(Matcher):
         :return: A Tuple with normalized output (10, 'GB')
         :rtype: tuple
         """
-        return (re.findall(r"\d+", data)[0], self._parse_suffix(data))
+        return (re.findall(r"\d+", data)[0], self.parse_suffix(data))
 
     def _parse_filter(self):
         """ Identifies which type of 'size' filter is applied
@@ -440,27 +462,6 @@ class SizeMatcher(Matcher):
         if not self.low and not self.high and not self.exact:
             raise Exception("Couldn't parse {}".format(self.value))
 
-    @staticmethod
-    # pylint: disable=inconsistent-return-statements
-    def to_byte(tpl: Tuple) -> float:
-        """ Convert any supported unit to bytes
-
-        :param tuple tpl: A tuple with ('10', 'GB')
-        :return: The converted byte value
-        :rtype: float
-        """
-        value = float(tpl[0])
-        suffix = tpl[1]
-        if suffix == "MB":
-            return value * 1e+6
-        elif suffix == "GB":
-            return value * 1e+9
-        elif suffix == "TB":
-            return value * 1e+12
-        # checkers force me to return something, although
-        # it's not quite good to return something here.. ignore?
-        return 0.00
-
     # pylint: disable=inconsistent-return-statements, too-many-return-statements
     def compare(self, disk: dict) -> bool:
         """ Convert MB/GB/TB down to bytes and compare
@@ -485,7 +486,7 @@ class SizeMatcher(Matcher):
             return False
 
         disk_size = float(re.findall(r"\d+\.\d+", disk_value)[0])
-        disk_suffix = self._parse_suffix(disk_value)
+        disk_suffix = self.parse_suffix(disk_value)
         disk_size_in_byte = self.to_byte((disk_size, disk_suffix))
 
         if all(self.high) and all(self.low):
@@ -604,16 +605,41 @@ class DriveGroup(object):
         return self.filter_args.get("journal_devices", dict())
 
     @property
+    def journal_size(self) -> int:
+        """
+        Journal size
+        """
+        raw_value = self.filter_args.get("journal_size", '')
+        return self.parse_sizes(raw_value, ident='journal_size')
+
+    @staticmethod
+    def parse_sizes(raw_inp: str, ident='') -> int:
+        """ receives a size (either raw or with tb,mb suffixes)
+            and returns it in byte respresentation
+        """
+        try:
+            size = re.findall(r"\d+", raw_inp)[0]
+            suffix = UnitHelper().parse_suffix(raw_inp)
+        except IndexError:
+            log.info(f"Looks like {ident} was defined using bytes.")
+            if raw_inp:
+                return int(raw_inp)
+            return ''
+        return int(UnitHelper().to_byte((size, suffix)))
+
+    @property
     def block_wal_size(self) -> int:
         """ Wal Device attributes
         """
-        return self.filter_args.get("block_wal_size", 0)
+        raw_value = self.filter_args.get("block_wal_size", '')
+        return self.parse_sizes(raw_value, ident='wal_size')
 
     @property
     def block_db_size(self) -> int:
         """ Wal Device attributes
         """
-        return self.filter_args.get("block_db_size", 0)
+        raw_value = self.filter_args.get("block_db_size", '')
+        return self.parse_sizes(raw_value, ident='db_size')
 
     @property
     def format(self) -> str:
@@ -628,13 +654,6 @@ class DriveGroup(object):
         Number of OSD processes per device
         """
         return self.filter_args.get("osds_per_device", "")
-
-    @property
-    def journal_size(self) -> int:
-        """
-        Journal size
-        """
-        return self.filter_args.get("journal_size", 0)
 
     @property
     def data_devices(self) -> list:
