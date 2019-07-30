@@ -80,7 +80,7 @@ class Inventory(object):
         """
         assert isinstance(devices, list)
         if not devices:
-            devices = self.devices.devices
+            devices = self.devices
         else:
             devices = [self.device(path) for path in devices]
         osd_ids: list = list()
@@ -199,7 +199,7 @@ class Inventory(object):
         osd_ids. This may also be offloaded to c-v in the future.
         """
         devs = list()
-        for dev in self.devices.devices:
+        for dev in self.devices:
             for _lv in dev.lvs:
                 # each lv can have multiple volumes
                 if not isinstance(_lv, list):
