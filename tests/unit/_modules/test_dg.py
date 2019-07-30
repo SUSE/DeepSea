@@ -317,7 +317,7 @@ class TestSizeMatcher(object):
     def test_parse_suffix(self, virtual_mock, test_input, expected):
         virtual_mock.return_value = False
         assert dg.SizeMatcher('size',
-                              '10G')._parse_suffix(test_input) == expected
+                              '10G').parse_suffix(test_input) == expected
 
     @pytest.mark.parametrize("test_input,expected", [
         ("G", 'GB'),
@@ -369,8 +369,8 @@ class TestDriveGroup(object):
                 },
                 'db_slots': 5,
                 'wal_slots': 5,
-                'block_wal_size': 500,
-                'block_db_size': 500,
+                'block_wal_size': '5G',
+                'block_db_size': '10G',
                 'objectstore': disk_format,
                 'osds_per_device': osds_per_device,
                 'encryption': True,
@@ -387,7 +387,7 @@ class TestDriveGroup(object):
                 'journal_devices': {
                     'size': ':20G'
                 },
-                'journal_size': '500',
+                'journal_size': '5G',
                 'osds_per_device': osds_per_device,
                 'encryption': True,
             }
@@ -448,19 +448,19 @@ class TestDriveGroup(object):
 
     def test_block_wal_size_prop(self, test_fix):
         test_fix = test_fix()
-        assert test_fix.block_wal_size == 500
+        assert test_fix.block_wal_size == 5000000000
 
     def test_block_wal_size_prop_empty(self, test_fix):
         test_fix = test_fix(empty=True)
-        assert test_fix.block_wal_size == 0
+        assert test_fix.block_wal_size == ''
 
     def test_block_db_size_prop(self, test_fix):
         test_fix = test_fix()
-        assert test_fix.block_db_size == 500
+        assert test_fix.block_db_size == 10000000000
 
     def test_block_db_size_prop_empty(self, test_fix):
         test_fix = test_fix(empty=True)
-        assert test_fix.block_db_size == 0
+        assert test_fix.block_db_size == ''
 
     def test_data_devices_prop(self, test_fix):
         test_fix = test_fix()
@@ -550,7 +550,7 @@ class TestDriveGroup(object):
 
     def test_journal_size(self, test_fix):
         test_fix = test_fix(disk_format='filestore')
-        assert test_fix.journal_size == '500'
+        assert test_fix.journal_size == 5000000000
 
     def test_osds_per_device(self, test_fix):
         test_fix = test_fix(osds_per_device='3')
@@ -562,7 +562,7 @@ class TestDriveGroup(object):
 
     def test_journal_size_empty(self, test_fix):
         test_fix = test_fix(empty=True)
-        assert test_fix.journal_size == 0
+        assert test_fix.journal_size == ''
 
     @pytest.fixture
     def inventory(self, available=True):
@@ -804,15 +804,14 @@ class TestDriveGroup(object):
 
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500'
-        ]
+            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 5000000000 --block-db-size 10000000000']
 
     def test_c_v_commands_bluestore_osds_per_device(self, test_fix, inventory):
         inventory()
         test_fix = test_fix(osds_per_device=3)
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 500 --block-db-size 500 --osds-per-device 3'
+            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 5000000000 --block-db-size 10000000000 --osds-per-device 3'
         ]
 
     def test_c_v_commands_filestore_osds_per_device(self, test_fix, inventory):
@@ -820,7 +819,7 @@ class TestDriveGroup(object):
         test_fix = test_fix(disk_format='filestore', osds_per_device='3')
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
-            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 500 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt --osds-per-device 3'
+            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 5000000000 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt --osds-per-device 3'
         ]
 
     def test_c_v_commands_filestore(self, test_fix, inventory):
@@ -828,7 +827,7 @@ class TestDriveGroup(object):
         test_fix = test_fix(disk_format='filestore')
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
         assert ret == [
-            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 500 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt'
+            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 5000000000 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt'
         ]
 
     def test_c_v_commands_external_db(self, test_fix, inventory):
