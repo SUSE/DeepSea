@@ -71,6 +71,20 @@ class Util(object):
 
         return __salt_master__["master.minion"]()
 
+    def find_by_osd_id(self, target: str, osd_id: int) -> dict:
+        """ Find by osd_id and return details about disk """
+        osd_metadata: dict = self.local.cmd(
+            target, 'cephdisks.find_by_osd_id', [osd_id],
+            tgt_type="compound")[target]
+        if isinstance(osd_metadata, str):
+            if osd_metadata.startswith(
+                    'The minion function caused an exception'):
+                log.error(osd_metadata)
+                return dict()
+        if isinstance(osd_metadata, list):
+            return osd_metadata[0]
+        return dict()
+
 
 class OSDUtil(Util):
     """ Util class for OSD handling """
@@ -85,6 +99,27 @@ class OSDUtil(Util):
         self.osd_state = self._get_osd_state()
         self.force: bool = kwargs.get('force', False)
         self.operation: str = kwargs.get('operation', 'None')
+        self.osd_metadata = self.get_osd_metadata()
+
+    def get_osd_metadata(self) -> dict:
+        """ Get metadata for OSD """
+        if self.host and self.osd_id:
+            return self.find_by_osd_id(self.host, self.osd_id)
+        return dict()
+
+    @property
+    def path_for_osd(self) -> str:
+        """ Retrieve path for OSD """
+        return self.osd_metadata.get('path', 'n/a')
+
+    @property
+    def model_for_osd(self) -> str:
+        """ Retrieve model for OSD """
+        return self.osd_metadata.get('sys_api', dict()).get('model', 'n/a')
+
+    def serial_for_osd(self) -> str:
+        """ Not implemented """
+        pass
 
     def replace(self):
         """
@@ -160,9 +195,6 @@ class OSDUtil(Util):
                 self._service('enable')
                 self._service('start')
                 return False
-        elif self.force:
-            print("The 'force' flag is set. Deepsea will not drain the "
-                  "osd before removal. Please use with caution.")
 
         if self.operation == 'replace' and not self.force:
             print("Checking if OSD can be destroyed")
@@ -461,8 +493,15 @@ def remove(*args, **kwargs):
         return False
     pre_check(osd_list, kwargs.get('force', False))
     for osd_id in osd_list:
-        _rc = OSDUtil(osd_id, **kwargs).remove()
-        results.update({osd_id: _rc})
+        osd_obj = OSDUtil(osd_id, **kwargs)
+        _rc = osd_obj.remove()
+        results.update({
+            str(osd_id): {
+                'returncode': _rc,
+                'path': osd_obj.path_for_osd,
+                'model': osd_obj.model_for_osd
+            }
+        })
     return results
 
 
@@ -475,8 +514,15 @@ def replace(*args, **kwargs):
         return False
     pre_check(osd_list, kwargs.get('force', False))
     for osd_id in osd_list:
-        _rc = OSDUtil(osd_id, **kwargs).replace()
-        results.update({osd_id: _rc})
+        osd_obj = OSDUtil(osd_id, **kwargs)
+        _rc = osd_obj.replace()
+        results.update({
+            str(osd_id): {
+                'returncode': _rc,
+                'path': osd_obj.path_for_osd,
+                'model': osd_obj.model_for_osd
+            }
+        })
     return results
 
 
