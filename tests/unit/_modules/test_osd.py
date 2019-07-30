@@ -31,14 +31,6 @@ class TestOSDInstanceMethods():
     f_open = fake_fs.FakeFileOpen(fs)
 
     @mock.patch('srv.salt._modules.osd.glob')
-    def test_paths(self, glob):
-        glob.return_value.glob = []
-        ret = osd.paths()
-        glob.glob.assert_called_once()
-        glob.glob.assert_called_with('/var/lib/ceph/osd/*')
-        assert type(ret) is list
-
-    @mock.patch('srv.salt._modules.osd.glob')
     def test_devices(self, glob):
         glob.return_value.glob = []
         ret = osd.devices()

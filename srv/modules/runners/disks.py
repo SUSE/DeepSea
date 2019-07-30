@@ -111,8 +111,6 @@ class DriveGroups(object):
     def __init__(self, **kwargs: dict) -> None:
         self.local_client = salt.client.LocalClient()
         self.dry_run: bool = kwargs.get('dry_run', False)
-        self.include_unavailable: bool = kwargs.get('include_unavailable',
-                                                    False)
         self.bypass_pillar: bool = kwargs.get('bypass_pillar', False)
         self.target: str = kwargs.get('target', '')
         self.drive_groups_path: str = '/srv/salt/ceph/configuration/files/drive_groups.yml'
@@ -180,7 +178,6 @@ class DriveGroups(object):
                 'filter_args': filter_args,
                 'dry_run': self.dry_run,
                 'bypass_pillar': self.bypass_pillar,
-                'include_unavailable': self.include_unavailable,
                 'destroyed_osds': destroyed()
             },
             tgt_type='compound')
@@ -189,7 +186,12 @@ class DriveGroups(object):
 
 def list_(**kwargs):
     """ List matching drives """
-    return DriveGroups(**kwargs).call_out('list_drives')
+    return DriveGroups(**kwargs).call_out('report')
+
+
+def discover(**kwargs):
+    """ alias for list """
+    return list_(**kwargs)
 
 
 def c_v_commands(**kwargs):
@@ -247,36 +249,6 @@ def report(**kwargs):
     """ Get the OSD deployment report """
     kwargs.update({'dry_run': True})
     return DriveGroups(**kwargs).call_out('deploy', alias='report')
-
-
-def discover(**kwargs):
-    """ Discover OSDs on known hosts """
-    discover_map = DriveGroups(**kwargs).call_out('discover', module='osd')[0]
-    for host, osds in discover_map.items():
-        if not osds:
-            continue
-        if isinstance(osds, str) and osds.startswith('The minion function caused'):
-            log.warning(f"Couldn't retrieve OSD information for host {host}")
-            continue
-        print(f"Found the following OSDs on host {host}")
-        for osd in osds:
-            print(_format_osd_map(osd))
-    return ''
-
-
-def _format_osd_map(osd: dict) -> str:
-    """ Format return from osd.discover return """
-    message: str = f"""
-osd_id  : {osd.get('_osd_id',''):<1}
-osd_fsid: {osd.get('_fsid',''):<1}
-backend : {osd.get('_backend',''):<1}
-data    : {osd.get('_block_data',''):<1}
-db      : {osd.get('_block_db',''):<1}
-wal     : {osd.get('_block_wal',''):<1}
-journal : {osd.get('_journal',''):<1}
-dmcrypt : {osd.get('_block_dmcrypt',''):<1}
-    """
-    return message
 
 
 def help_():
