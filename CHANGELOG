@@ -1,4 +1,44 @@
 -------------------------------------------------------------------
+Wed Jul 31 09:50:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.23
+- fix for .devices access on Devices object
+- remove/replace: add path to status report for better identification (bsc#1142663)
+- tests: adapt tests for literal wal/db/journal sizes
+- dg: allow literal wal/db/journal sizes
+- tests: add lower case test params
+- dg: allow lower case sizing units
+- The disk_led runner crashes (bsc#1142821)
+- makefile: update for ubuntu/python 3
+- fix(makefile): remove hardcoded user:group
+- fix(makefile): update for centos/python3
+- dg: tie lvm.osd detection to block type
+- monitoring: alertmanager sysconfig needs --cluster.listen-address (bsc#1141956)
+- re-work include_unavailable
+- add tests for cephdisks.py
+- dg: Fix non-lvm osd detection
+- cephdisks: ignore sr & rbd devices (bsc#1137587)
+- tests: adapt and add tests for dg/osd
+- osd: move discovery code to dg.py (bsc#1135179)
+- dg: refactor public functions
+- cephdisks: restructure public funcs
+- disks: adapt to func-rename
+- tests: add tests for /dev/mapper and size exclusion
+- dg: exclude /dev/mapper/ disks from c-v output (bsc#1141503)
+- mds: numerical mds names are forbidden (have been deprecated since 2014) (bsc#1138442)
+- populate: don't overwrite cluster config by default (bsc#1140932)
+- dg: exclude disks < 5GB (bsc#1141367)
+- try to simulate failure for dg bug
+- tests: add testcases for osd_per_device
+- dg: add osds_per_device to specs (bsc#1141368)
+- Fix subvolume mount for generic device or label
+- tests: adapt to new pytest syntax (pytest.raises)
+- apparmor: ignore aa-disabled return code (bsc#1130930)
+- disable the automated upgrade (bsc#1135913)
+- Include missing README (bsc#1138325)
+- rescind/ntp: remove the correct RPM
+
+-------------------------------------------------------------------
 Wed Jun 12 11:32:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.22
