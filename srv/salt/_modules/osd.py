@@ -511,6 +511,16 @@ def ceph_quiescent(**kwargs):
     return ceph_pgs.quiescent()
 
 
+def vacate(*args, **kwargs):
+    """
+    Set the weight to zero on a list of osds
+    """
+    results = {}
+    for osd_id in args:
+        results[osd_id] = zero_weight(osd_id, wait=False, **kwargs)
+    return results
+
+
 def zero_weight(osd_id, wait=True, **kwargs):
     """
     Set weight to zero and wait until PGs are moved
@@ -525,6 +535,16 @@ def zero_weight(osd_id, wait=True, **kwargs):
     if wait:
         return osdweight.wait()
     return ""
+
+
+def restore_weights(*args, **kwargs):
+    """
+    Restore the previous setting for a list of osds
+    """
+    results = {}
+    for osd_id in args:
+        results[osd_id] = restore_weight(osd_id, wait=False, **kwargs)
+    return results
 
 
 def restore_weight(osd_id, **kwargs):
