@@ -7,7 +7,7 @@ Heath related checks for Ceph
 from __future__ import absolute_import
 import json
 import time
-import logging
+import logging 
 # pylint: disable=import-error,3rd-party-module-not-gated
 import salt.ext.six as six
 try:

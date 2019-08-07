@@ -47,9 +47,9 @@ class Inventory(object):
         self.root_disk = self._find_root_disk()
 
     @property
-    def exclude_available(self) -> bool:
+    def exclude_unavailable(self) -> bool:
         """ The available filter """
-        return self.kwargs.get('exclude_available', False)
+        return self.kwargs.get('exclude_unavailable', False)
 
     @property
     def exclude_cephdisk_member(self) -> bool:
@@ -157,9 +157,9 @@ class Inventory(object):
                     )
                     continue
 
-            if self.exclude_available:
-                # exclude disks that are marked 'available'
-                if dev.available:
+            if self.exclude_unavailable:
+                # exclude disks that are marked not 'available'
+                if not dev.available:
                     log.debug(
                         f"Skipping disk <{dev.path}> due to <available> filter"
                     )
@@ -277,7 +277,7 @@ def unused(**kwargs):
     kwargs.update(
         dict(
             exclude_used_by_ceph=True,
-            exclude_available=False,
+            exclude_unavailable=True,
             exclude_cephdisk_member=True))
     return [x.json_report() for x in Inventory(**kwargs).filter_()]
 

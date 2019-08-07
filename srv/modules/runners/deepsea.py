@@ -6,7 +6,7 @@ This runner implements helper functions for DeepSea in general
 from __future__ import absolute_import
 import re
 
-DEEPSEA_VERSION = 'DEVVERSION'
+DEEPSEA_VERSION = '0.0.0'
 
 
 # pylint: disable=redefined-builtin
