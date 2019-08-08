@@ -29,27 +29,22 @@ def osd(*args, **kwargs):
     kwargs['remove'] = 'remove'
     result = __salt__['replace.osd'](*args, called=True, **kwargs)
 
-    # Replace OSD exited early
-    if not result:
+    if result == "":
         return ""
 
     master_minion = result['master_minion']
-    osds = result['osds']
 
     local = salt.client.LocalClient()
 
-    all_osds = local.cmd(master_minion,
-                         'cmd.run',
-                         ['ceph osd ls -f json'],
-                         expr_form='compound')
-    all_osds = all_osds[master_minion].strip()
-
-    for osd_id in osds:
-        if osd_id not in all_osds:
-            print("Couldn't find osd {} in cluster".format(osd_id))
-            continue
+    for osd_id in args:
+        # All of these commands return success whether the operation succeeds
+        # or fails.  For addressing race conditions and slow responding
+        # clusters, run each twice.
         cmds = ['ceph osd crush remove osd.{}'.format(osd_id),
+                'ceph osd crush remove osd.{}'.format(osd_id),
                 'ceph auth del osd.{}'.format(osd_id),
+                'ceph auth del osd.{}'.format(osd_id),
+                'ceph osd rm {}'.format(osd_id),
                 'ceph osd rm {}'.format(osd_id)]
 
         print("Removing osd {} from Ceph".format(osd_id))
