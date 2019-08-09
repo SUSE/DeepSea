@@ -118,7 +118,6 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/tuned/off
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/symlink
 	install -m 644 srv/salt/ceph/tests/restart/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart
 	install -m 644 srv/salt/ceph/tests/restart/mon/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/mon
@@ -138,7 +137,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/tests/restart/rgw/forced/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/forced
 	install -m 644 srv/salt/ceph/tests/restart/rgw/nochange/*.sls $(DESTDIR)/srv/salt/ceph/tests/restart/rgw/nochange
 	install -m 644 srv/salt/ceph/tests/tuned/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned
-	install -m 644 srv/salt/ceph/tests/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/tests/tuned/off
 	install -m 644 srv/salt/ceph/tests/symlink/*.sls $(DESTDIR)/srv/salt/ceph/tests/symlink
 	# functests/1node
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node
@@ -164,9 +162,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/restart/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/restart
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/terminate
 	install -m 644 srv/salt/ceph/functests/1node/terminate/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/terminate
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
 	install -m 644 srv/salt/ceph/functests/1node/tuned/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned
-	install -m 644 srv/salt/ceph/functests/1node/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/tuned/off
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/symlink
 	install -m 644 srv/salt/ceph/functests/1node/symlink/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/symlink
 	# functests/3nodes
@@ -764,20 +761,15 @@ copy-files:
 	install -m 644 srv/salt/ceph/terminate/storage/*.sls $(DESTDIR)/srv/salt/ceph/terminate/storage
 	# state files - tuned
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/osd
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/mon
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/mgr
-	install -m 644 srv/salt/ceph/tuned/osd/*.sls $(DESTDIR)/srv/salt/ceph/tuned/osd
-	install -m 644 srv/salt/ceph/tuned/mon/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mon
-	install -m 644 srv/salt/ceph/tuned/mgr/*.sls $(DESTDIR)/srv/salt/ceph/tuned/mgr
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/latency
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/throughput
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/off
+	install -m 644 srv/salt/ceph/tuned/latency/*.sls $(DESTDIR)/srv/salt/ceph/tuned/latency
+	install -m 644 srv/salt/ceph/tuned/throughput/*.sls $(DESTDIR)/srv/salt/ceph/tuned/throughput
+	install -m 644 srv/salt/ceph/tuned/off/*.sls $(DESTDIR)/srv/salt/ceph/tuned/off
 	# conf files - tuned
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-osd
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mon
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mgr
-	install -m 644 srv/salt/ceph/tuned/files/ceph-osd/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-osd
-	install -m 644 srv/salt/ceph/tuned/files/ceph-mon/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mon
-	install -m 644 srv/salt/ceph/tuned/files/ceph-mgr/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files/ceph-mgr
+	install -m 644 srv/salt/ceph/tuned/files/*.conf $(DESTDIR)/srv/salt/ceph/tuned/files
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
