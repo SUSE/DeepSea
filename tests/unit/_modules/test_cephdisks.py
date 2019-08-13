@@ -27,16 +27,16 @@ def test_fix():
 class TestInventory(object):
     def test_inventory_init_defaults(self, test_fix):
         inv = test_fix()
-        assert inv.exclude_available is False
+        assert inv.exclude_unavailable is False
         assert inv.exclude_used_by_ceph is False
         assert inv.exclude_root_disk is True
 
     def test_inventory_init_kwargs(self, test_fix):
         inv = test_fix(
-            exclude_available=True,
+            exclude_unavailable=True,
             exclude_used_by_ceph=True,
             exclude_root_disk=False)
-        assert inv.exclude_available is True
+        assert inv.exclude_unavailable is True
         assert inv.exclude_used_by_ceph is True
         assert inv.exclude_root_disk is False
         assert inv._min_osd_size == 5368709120.0
@@ -120,8 +120,8 @@ class TestInventory(object):
     def test_filter_available_device_exclusion(self, test_fix):
         """ /dev/sdb is the available_device but we exclude it """
         conf = dict(
-            pieces=1, device_config=dict(path='/dev/sdb', available=True))
-        inv = test_fix(conf, exclude_available=True)
+            pieces=1, device_config=dict(path='/dev/sdb', available=False))
+        inv = test_fix(conf, exclude_unavailable=True)
         ret = inv.filter_()
         assert len(ret) == 0
 
