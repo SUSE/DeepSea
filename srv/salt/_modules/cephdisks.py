@@ -204,15 +204,17 @@ class Inventory(object):
                 # each lv can have multiple volumes
                 if not isinstance(_lv, list):
                     osd_id = _lv.tags.get('ceph.osd_id', '')
-                    if str(osd_id_search) == str(osd_id) and _lv.tags.get(
-                            'ceph.type') == 'block':
+                    if str(osd_id_search) == str(osd_id) and \
+                            (_lv.tags.get('ceph.type') == 'block' or
+                             _lv.tags.get('ceph.type') == 'data'):
                         devs.append(dev)
                 if isinstance(_lv, list):
                     for _vol in _lv:
                         # search volume's tags for ceph.osd_id
                         osd_id = _vol.tags.get('ceph.osd_id', '')
-                        if str(osd_id_search) == str(osd_id) and _lv.tags.get(
-                                'ceph.type') == 'block':
+                        if str(osd_id_search) == str(osd_id) and \
+                                (_lv.tags.get('ceph.type') == 'block' or
+                                 _lv.tags.get('ceph.type') == 'data'):
                             devs.append(dev)
         return devs
 
