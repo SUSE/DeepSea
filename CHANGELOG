@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Aug 15 16:27:00 UTC 2019 - jschmid@suse.com
+
+- Version: 0.8.12
+- Remove the OSD entry from Ceph regardless of the results from the minion (bsc#1133826)
+
+-------------------------------------------------------------------
 Thu Jul 31 10:20:00 UTC 2019 - jschmid@suse.com
 
 - Version: 0.8.11
@@ -99,7 +105,7 @@ Fri Sep 27 16:16:45 UTC 2018 - jschmid@suse.com
 - build: Add %pretrans script to deal with dir->symlink change
 - fix: Only restart with a running cluster
 - fix: problem in stage.0 with error message no minion found in metapackage
-- fix: stage 0: update salt mines correctly without restarting minion 
+- fix: stage 0: update salt mines correctly without restarting minion
 
 -------------------------------------------------------------------
 Fri Sep 07 12:17:03 UTC 2018 - jschmid@suse.com
@@ -114,13 +120,13 @@ Fri Sep 07 12:17:03 UTC 2018 - jschmid@suse.com
 - fix: Fix wait.py duplications and wrong class invocation (bsc#1104801)
 - fix: Refactor device detection, allow override (bsc#1097914)
 - fix: Do not create untracked partition
-- fix: populate: don't create role-mon yml line during engulf (bsc#1104781) 
+- fix: populate: don't create role-mon yml line during engulf (bsc#1104781)
 - fix: Use fqdn for default minion name in template (bsc#1102455)
 - fix: cephinspector: use cephdisks.device in engulf (bsc#1082994)
 - fix: NFS-Ganesha + Cephfs: Add cache config options (bsc#1103418)
 - fix: Reloading igw with separate state (bsc#1106084)
 - fix: fixup man deepsea-minions
-- fix: Stage 5: delete CRUSH host buckets orphaned when storage node is deleted 
+- fix: Stage 5: delete CRUSH host buckets orphaned when storage node is deleted
 - feature: Reuse OSD ID in migrations, support replace.osds
 - feature: Add tuned profile
 - feature: Added alerting and smoketests for it
@@ -138,7 +144,7 @@ Thu Jun  7 12:31:08 UTC 2018 - jschmid@suse.com
 
 - qa: ensure ceph-test RPM is installed
 - fix: Add missing role to cephprocesses map (bsc#1089900)
-- cleanup: runners/populate: don't create public_address proposals for mon/igw 
+- cleanup: runners/populate: don't create public_address proposals for mon/igw
 - fix: Fix salt-api validation
 - qa: add smoketests
 - improvement/fix: accomodate mds update/restart issues (bsc#1085385)
@@ -149,30 +155,30 @@ Thu Jun  7 12:31:08 UTC 2018 - jschmid@suse.com
 -------------------------------------------------------------------
 Thu Apr 17 16:50:50 UTC 2018 - jschmid@suse.de
 
-- Version 0.8.4 a58d1c5 
-- qa: health-ok: fix --mini option 
-- Prefer underscore device names 
-- Add active+clean wait for migrations 
-- Support kwargs in orchestrations 
+- Version 0.8.4 a58d1c5
+- qa: health-ok: fix --mini option
+- Prefer underscore device names
+- Add active+clean wait for migrations
+- Support kwargs in orchestrations
 - fix: Stage 4 fails when using the example NFS Ganesha deployment (bsc#1077168)
 - fix: DeepSea Bug during Removal of an OSD Node (Stage 5) (bsc#1078508)
 - fix: deepsea engulf: three devices listed for "journal" in profile-import yaml files (bsc#1080102)
-- Fix arg name passed to changed.config 
-- Add config change detction support for igw 
-- Revert apparmor 
-- Check for WAL/DB present but not configured 
-- Add a --mini switch to the health-ok 
-- Include /dev/disk/by-id/scsi* 
-- Handle missing wal/db, add unit tests 
-- Add restart mechanism to stage.4 related services 
-- Avoid random _client_node name  
-- QA Sync modules before deploying salt-api 
-- Sync modules before deploying salt-api 
-- qa: pre-create pools before running Stage 4 
+- Fix arg name passed to changed.config
+- Add config change detction support for igw
+- Revert apparmor
+- Check for WAL/DB present but not configured
+- Add a --mini switch to the health-ok
+- Include /dev/disk/by-id/scsi*
+- Handle missing wal/db, add unit tests
+- Add restart mechanism to stage.4 related services
+- Avoid random _client_node name
+- QA Sync modules before deploying salt-api
+- Sync modules before deploying salt-api
+- qa: pre-create pools before running Stage 4
 - qa: use correct path to rbd.conf custom configuration file  QA
-- qa: test script fixes needed to revive pynfs.sh 
-- Refactor Prometheus RGW exporter #847 
-- stage 3: don't update ceph packages, only install 
+- qa: test script fixes needed to revive pynfs.sh
+- Refactor Prometheus RGW exporter #847
+- stage 3: don't update ceph packages, only install
 - populate: support multiple public, cluster networks in engulf (bsc#1076010)
 
 -------------------------------------------------------------------
@@ -188,12 +194,12 @@ Wed Dec 21 16:27:04 UTC 2017 - jschmid@suse.de
 - packaging related fixes
 - deepsea.version returns proper struct
 - Display '0 s' instead of 'N/A' in grafana dashboard
-- Refactor Prometheus RGW exporter 
+- Refactor Prometheus RGW exporter
 
 -------------------------------------------------------------------
 Wed Dec 20 13:25:04 UTC 2017 - jschmid@suse.de
 
-- Version 0.8.1 
+- Version 0.8.1
 - fix: fail hard if osd drain fails to prevent data loss
 - fix: "NaN ns" in Dashboard bsc#1065590
 - fix: Add db/wal/journal idents for encrypted disks
@@ -284,7 +290,7 @@ Tue Sep 26 17:59:26 UTC 2017 - ejackson@suse.com
 - Version 0.7.28
 - Fix ganesha config parsing
 - cli: use ascii on unsupported UTF-8 terminals
-- cli: render/substate/privilege fixes, run as salt user 
+- cli: render/substate/privilege fixes, run as salt user
 - grafana dashboard corrections, top 10 stats
 - remove unused iperf directory
 - select.minions support multiple values
@@ -332,7 +338,7 @@ Wed Aug 30 22:39:52 UTC 2017 - ejackson@suse.com
 
 - Version 0.7.24
 - Fix ceph.conf generation
-- Fix proposal runner 
+- Fix proposal runner
 
 -------------------------------------------------------------------
 Mon Aug 28 21:55:36 UTC 2017 - ejackson@suse.com
@@ -346,7 +352,7 @@ Mon Aug 28 21:55:36 UTC 2017 - ejackson@suse.com
 - Fix Stage 5 storage node removal
 - Reimplement mon_host and mon_initial_members
 - Fixes for test environment
-- Notify admin about public, cluster setting 
+- Notify admin about public, cluster setting
 - Minor corrections, updates to monitoring, runners
 
 -------------------------------------------------------------------
@@ -425,7 +431,7 @@ Fri Jul  7 00:02:28 UTC 2017 - ejackson@suse.com
 - Change Stage 5 default to not remove pools
 - Add alternate Stage 0 states for no reboot/update
 - Improve filestore to bluestore migration, multiple wait states
-- Migrate policy.cfg and hardware profiles 
+- Migrate policy.cfg and hardware profiles
 - Cleanup, remove unnecessary sls files
 
 -------------------------------------------------------------------
@@ -468,7 +474,7 @@ Wed Jun 14 08:04:07 UTC 2017 - jan.fajerski@suse.com
 Tue Jun 13 08:16:50 UTC 2017 - jan.fajerski@suse.com
 
 - Version 0.7.11.1
-- do not deploy any monitoring be default, avoid MON regression in 12.0.2 
+- do not deploy any monitoring be default, avoid MON regression in 12.0.2
 
 -------------------------------------------------------------------
 Thu Jun  8 20:40:40 UTC 2017 - ejackson@suse.com
@@ -483,7 +489,7 @@ Thu Jun  8 20:40:40 UTC 2017 - ejackson@suse.com
 -------------------------------------------------------------------
 Wed May 31 08:24:16 UTC 2017 - jschmid@suse.com
 
-- Version 0.7.10 8173ccabc62729981ccc876966231aee0ba4b9d4- 
+- Version 0.7.10 8173ccabc62729981ccc876966231aee0ba4b9d4-
 - Fix is_activate and is_prepared with by-id devices
 - Wal and db partuuid awareness
 - Fix osds+journal deployments
@@ -491,7 +497,7 @@ Wed May 31 08:24:16 UTC 2017 - jschmid@suse.com
 -------------------------------------------------------------------
 Mon May 29 15:03:51 UTC 2017 - jschmid@suse.com
 
-- Version 0.7.9.1 48c933d0e9405198fe8873e7fe3a61d8cd54fa73- 
+- Version 0.7.9.1 48c933d0e9405198fe8873e7fe3a61d8cd54fa73-
 - Fixed bug in osd module internal targeting
 - Fixed conversion of bytes to gigabytes for disk size detection
 
@@ -618,13 +624,13 @@ Tue Jan 24 10:45:21 UTC 2017 - ejackson@suse.com
 Mon Jan  9 14:46:14 UTC 2017 - ejackson@suse.com
 
 - Version 0.6.11 git 3b8e493eac552ee6b3051fb513704aff2fcbd5e8
-- Renamed "name" parameter 
+- Renamed "name" parameter
 
 -------------------------------------------------------------------
 Tue Nov 15 20:32:53 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.10 git 73f55a985b62c171ef4d6af29d94dc458cd00733
-- Fix ordering of Storage node removal 
+- Fix ordering of Storage node removal
 
 -------------------------------------------------------------------
 Sat Nov  5 13:58:21 UTC 2016 - ejackson@suse.com
@@ -636,26 +642,26 @@ Sat Nov  5 13:58:21 UTC 2016 - ejackson@suse.com
 - Remove stack/default before writing
 - Use only first device from hwinfo
 - Create pools from master
-- Change Salt state_output to mixed 
+- Change Salt state_output to mixed
 
 -------------------------------------------------------------------
 Tue Nov  1 14:01:10 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.7 git d4ea8857fffa1a9da4c19285506266d5ea30f3c9
-- Rename custom.sls, add comments and general cleanup 
+- Rename custom.sls, add comments and general cleanup
 
 -------------------------------------------------------------------
 Sun Oct 30 14:30:20 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.6 git f20b1bd040e2f3674c1c255340fa26716cafe972
 - Added baseline benchmarks
-- Fixed proposals for nice ratio and unused OSDs 
+- Fixed proposals for nice ratio and unused OSDs
 
 -------------------------------------------------------------------
 Thu Oct 27 21:56:50 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.5 git ad8b6991805a6c2037ad90205ae504330cb29b68
-- Add graceful restart functionality 
+- Add graceful restart functionality
 
 -------------------------------------------------------------------
 Thu Oct 27 20:12:50 UTC 2016 - ejackson@suse.com
@@ -664,19 +670,19 @@ Thu Oct 27 20:12:50 UTC 2016 - ejackson@suse.com
 - Renamed rescind directories to match client roles
 
 - Version 0.6.3 git 6e416b6a2c68b40bdbb90482a1ac8295670a97fb
-- Migrated install from spec to Makefile 
+- Migrated install from spec to Makefile
 
 -------------------------------------------------------------------
 Wed Oct 26 15:27:41 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.2 git da5939238bdd5a807f8400f11152601408ef6d44
-- Proposal corrections for OSDs with separate journals 
+- Proposal corrections for OSDs with separate journals
 
 -------------------------------------------------------------------
 Tue Oct 25 23:05:13 UTC 2016 - ejackson@suse.com
 
 - Version 0.6.1 git 0dcb54000c874299d0dfbeae0e286595de34c779
-- Rename profile, clients and zypper commands 
+- Rename profile, clients and zypper commands
 
 -------------------------------------------------------------------
 Thu Oct 20 10:04:43 UTC 2016 - ejackson@suse.com
@@ -684,7 +690,7 @@ Thu Oct 20 10:04:43 UTC 2016 - ejackson@suse.com
 - Version 0.6 git b5a23522ecf114e90d9fea578e6648b3a04a41f6
 - Rename variables from _method to _init
 - Rework stage directory to allow overriding
-- Add valdiation checks 
+- Add valdiation checks
 
 -------------------------------------------------------------------
 Mon Oct 17 15:30:30 UTC 2016 - ejackson@suse.com
@@ -692,44 +698,44 @@ Mon Oct 17 15:30:30 UTC 2016 - ejackson@suse.com
 - Version 0.5.8 git 538dbbdee4b0f16f05ab1ca05087480162595f79
 - Create default iSCSI setup
 - Restart apache2 for OpenATTIC
-- Add iperf/ping diagnostics 
+- Add iperf/ping diagnostics
 
 -------------------------------------------------------------------
 Fri Oct 14 11:04:24 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.7 git dd22795643e4785de7f7e6bfc5a76a8bde39b212
 - Add validate check for no responding minions
-- Finish removal of monitors, iSCSI, CephFS and RGW 
+- Finish removal of monitors, iSCSI, CephFS and RGW
 
 -------------------------------------------------------------------
 Wed Oct 12 15:20:04 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.6 git 7da15965480dcfe901b1814cd077a6e523f8c5ec
-- Automatically install openattic 
+- Automatically install openattic
 
 -------------------------------------------------------------------
 Tue Oct 11 09:16:18 UTC 2016 - ejackson@suse.com
 
-- Add missing directories to spec file 
+- Add missing directories to spec file
 
 -------------------------------------------------------------------
 Tue Oct 11 09:07:10 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.5 git 45e2c13ea7159678f1bbc63efdf6d694824776ea
-- Add rescind functionality 
+- Add rescind functionality
 
 -------------------------------------------------------------------
 Fri Oct  7 11:33:54 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.4 git 92b8e8b9dda29aa0a0125ae41b88387055f88a9a
-- Correct generation of hardware profiles 
+- Correct generation of hardware profiles
 
 -------------------------------------------------------------------
 Wed Oct  5 19:44:39 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.3 git 3fc096d39d187efd87945cfddd937d561379cdde
 - Generate ceph.conf correctly for custom rgw configurations
-- Auto accept licenses for updates 
+- Auto accept licenses for updates
 
 -------------------------------------------------------------------
 Sun Oct  2 11:59:56 UTC 2016 - ejackson@suse.com
@@ -738,77 +744,76 @@ Sun Oct  2 11:59:56 UTC 2016 - ejackson@suse.com
 - Messages at startup and reboot
 - skip CephFS pool creation if no minion has an mds role
 - Validate has JSON output option
-- Install sgdisk during Stage 0 
+- Install sgdisk during Stage 0
 
 -------------------------------------------------------------------
 Wed Sep 28 13:14:57 UTC 2016 - ejackson@suse.com
 
 - Version 0.5.1 git b7465074cb36d304063589db3c9e2b85ebbc0c76
-- Handle unassigned roles 
+- Handle unassigned roles
 
 -------------------------------------------------------------------
 Tue Sep 27 14:06:50 UTC 2016 - ejackson@suse.com
 
 - Version 0.5 git 7d541d14d7c8de5b095977d398ffd1d6ea3284f9
-- Reimplementation of keyrings, secrets are no longer in pillar 
+- Reimplementation of keyrings, secrets are no longer in pillar
 
 -------------------------------------------------------------------
 Mon Sep 26 13:53:13 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.5 git 92185470ef471eb07b6afc655b43c5928337b0ba
-- Add BuildRequires, remove conflicts 
+- Add BuildRequires, remove conflicts
 
 -------------------------------------------------------------------
 Sun Sep 25 18:28:00 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.4 git 9fffc7e2aa6776c9a7d1bf585fe02f519f1d49a8
-- Restart salt-master during installation 
+- Restart salt-master during installation
 
 -------------------------------------------------------------------
 Fri Sep 23 14:31:17 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.3 git 1fc618a8c4af50745f2e52d464b32c3a5cd329d3
-- Fix spec file permissions and globbing 
+- Fix spec file permissions and globbing
 
 -------------------------------------------------------------------
 Fri Sep 23 10:30:59 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.2 git 2b0503d67322788e4490f28268025757a6e797be
-- handle missing keys gracefully 
+- handle missing keys gracefully
 
 -------------------------------------------------------------------
 Thu Sep 22 21:30:17 UTC 2016 - ejackson@suse.com
 
 - Version 0.4.1 git cfb472439a09ee470b3a95d73d98b952d95e7b3a
 - Validate ceph version in every minion repo
-- extend README, detail policy.cfg 
+- extend README, detail policy.cfg
 
 -------------------------------------------------------------------
 Wed Sep 21 21:26:26 UTC 2016 - ejackson@suse.com
 
 - Version 0.4 git ca66ab6df47e3ec2d5a4715e1517c4eb568ddce9
-- Add validation of master_minion setting in Stage 0 
+- Add validation of master_minion setting in Stage 0
 
 -------------------------------------------------------------------
 Wed Sep 21 09:57:47 UTC 2016 - ejackson@suse.com
 
 - Version 0.3.1 git 48608e8b6c0fece0c3d1367138c909e1f001ad2d
-- Fixed additional misplaced files 
+- Fixed additional misplaced files
 
 -------------------------------------------------------------------
 Wed Sep 21 03:15:40 UTC 2016 - ejackson@suse.com
 
 - Version 0.3 git 2dd422ae5ff3fbf289f52c390faaa1ddd5712047
-- Fixed misplaced files 
+- Fixed misplaced files
 
 -------------------------------------------------------------------
 Mon Sep 19 15:57:44 UTC 2016 - ejackson@suse.com
 
-- Correct LICENSE file 
+- Correct LICENSE file
 
 -------------------------------------------------------------------
 Wed Sep 14 11:55:13 UTC 2016 - ejackson@suse.com
 
 - Version 0.2 git 9eaa8484b53ba1cb2514c8edbb25addfd3451891
-- first package 
-
+- first package
