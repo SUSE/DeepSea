@@ -26,6 +26,16 @@ def osd(*args, **kwargs):
     Remove an OSD gracefully or forcefully.  Always attempt to remove
     ID from Ceph even if OSD has been removed from the minion.
     """
+    # Specifically for Salt integration testing
+    # The 'arg' keyword is passed as a kwarg to the salt.runner
+    # See delay.sls and multiple.sls for examples
+    if not args:
+        if 'arg' in kwargs and kwargs['arg']:
+            args = kwargs['arg']
+
+    if not args:
+        help()
+        return ""
     kwargs['remove'] = 'remove'
     result = __salt__['replace.osd'](*args, called=True, **kwargs)
 
@@ -35,6 +45,7 @@ def osd(*args, **kwargs):
     master_minion = result['master_minion']
 
     local = salt.client.LocalClient()
+
 
     for osd_id in args:
         # All of these commands return success whether the operation succeeds
