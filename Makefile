@@ -186,6 +186,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/modules/runners
 	install -m 644 srv/modules/runners/*.py* $(DESTDIR)/srv/modules/runners/
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(DESTDIR)/srv/modules/runners/deepsea.py
+	install -d -m 755 $(DESTDIR)/srv/modules/runners/ext_lib
+	install -m 644 srv/modules/runners/ext_lib/*.py* $(DESTDIR)/srv/modules/runners/ext_lib
 	# utils
 	install -d -m 755 $(DESTDIR)/srv/modules/utils
 	install -m 644 srv/modules/utils/*.py* $(DESTDIR)/srv/modules/utils
