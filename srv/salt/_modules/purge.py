@@ -20,6 +20,7 @@ def configuration():
     """
     roles()
     default()
+    igw_config()
 
 
 def roles():
@@ -83,3 +84,29 @@ def default():
     gid = grp.getgrnam("salt").gr_gid
     for path in [ stack_default, "{}/{}".format(stack_default, 'ceph'), pathname ]:
         os.chown(path, uid, gid)
+
+
+def igw_config(cluster='ceph', **kwargs):
+    """
+    Remove the igw_config setting, if present
+    """
+    # Keep yaml human readable/editable
+    friendly_dumper = yaml.SafeDumper
+    friendly_dumper.ignore_aliases = lambda self, data: True
+
+    if 'filename' in kwargs:
+        filename = kwargs['filename']
+    else:
+        filename = '/srv/pillar/ceph/stack/{}/cluster.yml'.format(cluster)
+    contents = {}
+    with open(filename, 'r') as yml:
+        contents = yaml.safe_load(yml)
+        if not contents:
+            contents = {}
+    if 'igw_config' in contents:
+        del contents['igw_config']
+    with open(filename, 'w') as yml:
+        yml.write(yaml.dump(contents,
+                            Dumper=friendly_dumper,
+                            default_flow_style=False))
+
