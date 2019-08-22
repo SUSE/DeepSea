@@ -1,19 +1,21 @@
-from ext_lib.utils import runner
-from ext_lib.hash_dir import pillar_questioneer
+from ext_lib.utils import runner, prompt
+from ext_lib.hash_dir import pillar_questioneer, module_questioneer
 from pydoc import pager
 from os.path import exists
+from salt.client import LocalClient
 
 import signal
 import sys
 
 # We have to take care of the one-time operations that need to be done before a deployment
 
+
 def handle_ctrl_c(signal, frame):
     print("Got ctrl+c, going down!")
     sys.exit(1)
+
+
 signal.signal(signal.SIGINT, handle_ctrl_c)
-
-
 """
 
 TODO: Make the time-server thing separate
@@ -29,19 +31,27 @@ TODO: Make the time-server thing separate
 proposals_dir = '/srv/pillar/ceph/proposals'
 policy_path = f'{proposals_dir}/policy.cfg'
 
+
 def _read_policy_cfg():
     with open(policy_path, 'r') as _fd:
         return _fd.read()
 
+
 def _get_public_address():
     __salt__['public.address']
 
-def ceph():
+
+def ceph(non_interactive=False):
+    module_questioneer(non_interactive=non_interactive)
     print("TODO make sure that podman is installed")
     print("TODO zypper in -t pattern apparmor")
     # or add suse-certs repo and install SUSE-CA
-    print("TODO podman pull registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph --tls-verify=false")
-    print("Print a basic help thing explaining the steps and asking for a timeserver")
+    print(
+        "TODO podman pull registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph --tls-verify=false"
+    )
+    print(
+        "Print a basic help thing explaining the steps and asking for a timeserver"
+    )
     qrunner = runner(__opts__)
     if not exists(proposals_dir):
         print("Creating proposals directory.")
@@ -50,29 +60,44 @@ def ceph():
         print("Found a proposals directory")
 
     if not exists(policy_path):
-        print(f"You don't appear to have a policy.cfg. Please create it under the proposals directory '{proposals_dir}' and re-run this command")
+        print(
+            f"You don't appear to have a policy.cfg. Please create it under the proposals directory '{proposals_dir}' and re-run this command"
+        )
         print(f"You can find guidance on how to do that here: TODO")
         return False
     else:
         print("Found a policy.cfg.")
-        answer = input("Do you want to verify it's content?  (y/n)")
-        if answer.lower() == 'y':
+        if prompt(
+                "Do you want to verify the content?",
+                non_interactive=non_interactive,
+                default_answer=False):
             pager(_read_policy_cfg())
-            answer = input("Continue? (y/n)")
-            if answer.lower() != 'y':
+            if not prompt("Do you want to continue?"):
                 return 'aborted'
     print("We'll now we update the pillar with the your changes.")
-    pillar_questioneer(non_interactive=True)
+    pillar_questioneer(non_interactive=non_interactive)
     print("Ok, let's verify the network settings")
     print("This is the network configuration we detected.")
     qrunner.cmd('advise.networks')
-    answer = input("Do you want to change it? (y/n)")
-    if answer.lower() == 'y':
-        print('dummy for proposals/config/stack/default/ceph/cluster.yml:public_network manipulation')
+    if prompt(
+            "Do you want to adapt this setting?",
+            non_interactive=non_interactive,
+            default_answer=False):
+        print(
+            'dummy for proposals/config/stack/default/ceph/cluster.yml:public_network manipulation'
+        )
         print("We'll now we update the pillar with the your changes.")
-        pillar_questioneer(non_interactive=True)
+        pillar_questioneer(non_interactive=non_interactive)
+    print("TEMP: Creating the ceph.conf (will go away in further releases)")
+    qrunner.cmd('config.create_and_distribute_ceph_conf')
 
-
+    # TODO: Break all(sysexit) on SIGINT
+    print("Bootstrapping monitors..")
+    qrunner.cmd('mon.deploy',
+                ["bootstrap=True", f"non_interactive={non_interactive}"])
+    # if the answer in mon.deploy is 'no'. It will still deploy the managers.. Handle global signals/returns
+    print("Bootstrapping mgrs..")
+    qrunner.cmd('mgr.deploy', [f"non_interactive={non_interactive}"])
 
 
 #     print("If policty.cfg and proposals dir is not present")
