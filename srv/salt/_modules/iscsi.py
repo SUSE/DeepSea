@@ -201,6 +201,25 @@ class CephIscsiConfig(object):
                 'controls': target_controls
              }
 
+    def add_target_auth(self, target_iqn,
+                        userid, password, mutual_userid,
+                        mutual_password):
+        log.debug('Adding target auth for %s', target_iqn)
+        auth = {
+                    'username': userid,
+                    'password': password,
+                    'password_encryption_enabled': False,
+                    'mutual_username': mutual_userid,
+                    'mutual_password': mutual_password,
+                    'mutual_password_encryption_enabled': False
+        }
+        target_config = self.config['targets'][target_iqn]
+        if 'auth' in target_config.keys():
+            if target_config['auth'] != auth:
+                raise Exception("{} auth settings not uniform across all TPGs".format(target_iqn))
+        else:
+            target_config['auth'] = auth
+
     def _get_controls(self, pool, image):
         backstore_object_name = '{}-{}'.format(pool, image)
         glob_path = "{}/{}/{}".format('/sys/kernel/config/target',
@@ -467,6 +486,11 @@ def generate_config(lio_root, pool_name):
             ceph_iscsi_config.add_target(target.wwn, acl_enabled, target_controls)
             for tpg in target.tpgs:
                 log.info('Processing tpg - %s', tpg)
+                ceph_iscsi_config.add_target_auth(target.wwn,
+                                                  tpg.chap_userid,
+                                                  tpg.chap_password,
+                                                  tpg.chap_mutual_userid,
+                                                  tpg.chap_mutual_password)
                 for network_portal in tpg.network_portals:
                     portal_name = _get_portal_name(network_portal.ip_address)
                     if portal_name:
