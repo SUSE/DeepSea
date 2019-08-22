@@ -57,21 +57,24 @@ class CephContainer(object):
 
     # TODO: if entrypoint == 'ceph' -> set timeout
 
-    def run(self):
+    def run(self, out=False):
         print(' '.join(self.run_cmd))
-        print(check_output(self.run_cmd))
-
+        ret = check_output(self.run_cmd)
+        print(ret)
+        if out:
+            return ret
 
 def get_ceph_version(image):
     CephContainer(image, 'ceph', ['--version']).run()
 
 
-def ceph_cli(image, passed_args=['--version']):
+def ceph_cli(image, passed_args):
+    # TODO: Change the way we pass ceph output up to the runner
     try:
-        CephContainer(
+        out = CephContainer(
             image,
             entrypoint='ceph',
-            args=passed_args,
+            args=shlex_split(passed_args),
             volume_mounts={
                 '/var/lib/ceph': '/var/lib/ceph:z',
                 '/var/run/ceph': '/var/run/ceph:z',
@@ -79,7 +82,9 @@ def ceph_cli(image, passed_args=['--version']):
                 '/etc/localtime': '/etc/localtime:ro',
                 '/var/log/ceph': '/var/log/ceph:z'
             },
-        ).run()
+        ).run(out=True)
+        return out
+
     except CalledProcessError as e:
         logger.info(f'{e}')
         sys.exit(1)
@@ -331,6 +336,7 @@ def create_mgr(image, uid=0, gid=0, start=True):
 
     if start:
         start_mgr(image, mgr_name)
+    return True
 
 
 def remove_mon(image):

@@ -1,6 +1,6 @@
 from ext_lib.hash_dir import pillar_questioneer, module_questioneer
 from salt.client import LocalClient
-from ext_lib.utils import prompt
+from ext_lib.utils import prompt, evaluate_module_return
 
 # TODO: implement non-interactive mode
 
@@ -30,33 +30,31 @@ def deploy(bootstrap=False, non_interactive=False):
     if mon_candidates:
         if prompt(
                 f"""These minions will be mons: {', '.join(mon_candidates)}
-Continue?""", non_interactive=non_interactive, default_answer=True
-        ):
+Continue?""",
+                non_interactive=non_interactive,
+                default_answer=True):
             print("Deploying..")
-            ret: str = LocalClient().cmd(
-                mon_candidates,
-                'podman.generate_osd_bootstrap_keyring',
-                ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph'],
-                tgt_type='list')
 
-            ret: str = LocalClient().cmd(
-                mon_candidates,
-                'podman.create_initial_keyring',
-                ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph'],
-                tgt_type='list')
-
+            ############################################################
+            # Should this be combined into one execution&eval function?
             ret: str = LocalClient().cmd(
                 mon_candidates,
                 'podman.create_mon',
                 ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph'],
                 kwarg={'bootstrap': bootstrap},
                 tgt_type='list')
-            # improve returncode reporting
+
+            if not evaluate_module_return(ret):
+                return False
+            ###########################################################
+
             print(f"Mon(s) created on {', '.join(mon_candidates)}")
             return True
-        return "Aborted."
+        print("Aborted.")
+        return False
     else:
         print("No candidates for a mon deployment found")
+        return True
 
 
 def remove():

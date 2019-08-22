@@ -1,5 +1,8 @@
-from ext_lib.utils import cluster_minions
+from ext_lib.utils import cluster_minions, evaluate_state_return
 from salt.client import LocalClient
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def update(*args, **kwargs):
@@ -54,3 +57,15 @@ def update(*args, **kwargs):
         print(f"salt said: {upgrade_metadata[0].get('comment', '')}")
         print(f"Updated {minion}")
     return True
+
+
+def install_common_packages():
+    # Is this deepsea_minion targeting correct?
+    print(
+        "Installing required packages on all hosts marked with the 'deepsea_minions' grain."
+    )
+    ret = LocalClient().cmd(
+        'I@deepsea_minions:*',
+        'state.apply', ['ceph.packages.common'],
+        tgt_type='compound')
+    return evaluate_state_return(ret)

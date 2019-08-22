@@ -88,16 +88,22 @@ def networks():
     Advise the installer the current network settings.
     """
     local = salt.client.LocalClient()
-    public = set(local.cmd('*', 'pillar.get', ['public_network']).values())
-    cluster = set(local.cmd('*', 'pillar.get', ['cluster_network']).values())
+    public = set(local.cmd('I@deepsea_minions:*', 'pillar.get', ['public_network'], tgt_type="compound").values())
+    cluster = set(local.cmd('I@deepsea_minions:*', 'pillar.get', ['cluster_network'], tgt_type="compound").values())
 
-    bold = '\033[1m'
-    endc = '\033[0m'
+    if not public and not cluster:
+        print("Couldn't detect networks. Please verify your network settings.")
+        return False
+    if not public:
+        print("Couldn't detect the public network.")
+        return False
+    if not cluster:
+        print("Couldn't detect the cluster network.")
+        return False
 
-    # pylint: disable=line-too-long
-    print("{:25}: {}{}{}".format('public network', bold, ", ".join([_f for _f in public if _f]), endc))
-    print("{:25}: {}{}{}".format('cluster network', bold, ", ".join([_f for _f in cluster if _f]), endc))
-    return ""
+    print(f"public network: {list(public)[0]}")
+    print(f"cluster network: {list(cluster)[0]}")
+    return True
 
 __func_alias__ = {
                  'help_': 'help',
