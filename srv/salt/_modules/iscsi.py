@@ -176,7 +176,7 @@ class CephIscsiConfig(object):
                                'mutual_username': '',
                                'mutual_password': '',
                                'mutual_password_encryption_enabled': False},
-            "version": 9,
+            "version": 11,
             "epoch": 0,
             "created": now,
             "updated": now
