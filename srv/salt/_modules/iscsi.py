@@ -193,7 +193,7 @@ class CephIscsiConfig(object):
         if target_iqn not in self.config['targets']:
             self.config['targets'][target_iqn] = {
                 'created': now,
-                'disks': [],
+                'disks': {},
                 'acl_enabled': acl_enabled,
                 'clients': {},
                 'portals': {},
@@ -310,13 +310,16 @@ class CephIscsiConfig(object):
                 owner = portal_name
         return owner
 
-    def add_disk(self, target_iqn, pool, image, wwn):
+    def add_disk(self, target_iqn, pool, image, wwn, tpg_lun_id):
         log.debug('Adding disk %s / %s / %s / %s', target_iqn, pool, image, wwn)
         now = CephIscsiConfig._get_time()
         disk_id = '{}/{}'.format(pool, image)
         if disk_id in self.config['disks']:
-            if disk_id not in self.config['targets'][target_iqn]['disks']:
+            if disk_id not in self.config['targets'][target_iqn]['disks'].keys():
                 raise Exception("Disk {} cannot be exported by multiple targets".format(disk_id))
+            # backstore config already exists. sanity check for matching wwn
+            if self.config['disks'][disk_id]['wwn'] != wwn:
+                raise Exception("Duplicate backstore for {} with differing wwn".format(disk_id))
             return
         owner = self._get_owner(target_iqn)
         self.config['disks'][disk_id] = {
@@ -330,7 +333,16 @@ class CephIscsiConfig(object):
             'pool_id': self.cluster.get_pool_id(pool),
             'wwn': wwn
         }
-        self.config['targets'][target_iqn]['disks'].append(disk_id)
+        for disk_k, disk_v in self.config['targets'][target_iqn]['disks'].items():
+            if disk_k == disk_id:
+                if disk_v['lun_id'] != tpg_lun_id:
+                    raise Exception("disk {} has differing LUN".format(disk_id))
+                log.debug('%s already exists with matching LUN', disk_id)
+                return
+            if disk_v['lun_id'] == tpg_lun_id:
+                raise Exception("disks {} and {} have clashing LUN {}".format(
+                                disk_id, disk_k, tpg_lun_id))
+        self.config['targets'][target_iqn]['disks'][disk_id] = {'lun_id': tpg_lun_id}
         self.config['gateways'][owner]['active_luns'] += 1
 
     def add_client(self, target_iqn, client_iqn):
@@ -503,7 +515,8 @@ def generate_config(lio_root, pool_name):
                         pool = udev_path_list[len(udev_path_list) - 2]
                         image = udev_path_list[len(udev_path_list) - 1]
                         disks_by_lun[lun.lun] = (pool, image)
-                        ceph_iscsi_config.add_disk(target.wwn, pool, image, lun.storage_object.wwn)
+                        ceph_iscsi_config.add_disk(target.wwn, pool, image,
+                                                   lun.storage_object.wwn, lun.lun)
                     for node_acl in tpg.node_acls:
                         ceph_iscsi_config.add_client(target.wwn, node_acl.node_wwn)
                         userid = node_acl.chap_userid
