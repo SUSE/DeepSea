@@ -485,14 +485,26 @@ def validate(lio_root):
                 pool = udev_path_list[len(udev_path_list) - 2]
                 image = udev_path_list[len(udev_path_list) - 1]
                 disk_id = '{}/{}'.format(pool, image)
+                disk_details = {
+                        'target_iqn': target.wwn,
+                        'lun_id': lun.lun
+                }
                 if disk_id not in targets_by_disk:
-                    targets_by_disk[disk_id] = []
-                if target.wwn not in targets_by_disk[disk_id]:
-                    targets_by_disk[disk_id].append(target.wwn)
-                if len(targets_by_disk[disk_id]) > 1:
+                    targets_by_disk[disk_id] = disk_details
+                    continue
+                if targets_by_disk[disk_id]['target_iqn'] != disk_details['target_iqn']:
                     raise Exception(
-                        'Unsupported LIO configuration: Disk {} belongs to more than one '
-                        'target ({})'.format(disk_id, targets_by_disk[disk_id]))
+                        'Unsupported LIO configuration: Disk {} belongs to more '
+                        'than one target ({} and {}). Remove duplicate lrbd '
+                        'export to proceed.'.format(
+                            disk_id, targets_by_disk[disk_id]['target_iqn'],
+                            disk_details['target_iqn']))
+                if targets_by_disk[disk_id]['lun_id'] != disk_details['lun_id']:
+                    raise Exception(
+                        'Unsupported LIO configuration: Disk {} LUN differs '
+                        'between target ({}) TPGs. Configure uniform lrbd LUN '
+                        'IDs to proceed.'.format(
+                            disk_id, disk_details['target_iqn']))
 
 
 def generate_config(lio_root, pool_name):
