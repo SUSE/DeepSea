@@ -112,7 +112,7 @@ def ceph(non_interactive=False):
     return True
 
 
-#   print(""" Open questions:
+# TODO:
 #   When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation
 #   We may keep track of the salt-key -L ('inventory')
 

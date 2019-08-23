@@ -1,19 +1,22 @@
 from ext_lib.hash_dir import pillar_questioneer, module_questioneer
-from ext_lib.utils import evaluate_module_return
+from ext_lib.utils import _deploy_role, _remove_role
 from salt.client import LocalClient
 
+# TODO: The non_interactive passing is weird..
+# change that by abstracting to a class or a config option
 
 def deploy(non_interactive=False):
-    pillar_questioneer(non_interactive=False)
-    module_questioneer(non_interactive=False)
-    print("Deploying mgrs..")
-    ret: str = LocalClient().cmd(
-        "I@roles:mgr",
-        'podman.create_mgr',
-        ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph'],
-        tgt_type='compound')
+    pillar_questioneer(non_interactive=non_interactive)
+    module_questioneer(non_interactive=non_interactive)
+    return _deploy_role(role='mgr', non_interactive=non_interactive)
 
-    if not evaluate_module_return(ret):
-        return False
-    print("Mgr created")
-    return True
+
+def remove(non_interactive=False):
+    pillar_questioneer(non_interactive=non_interactive)
+    return _remove_role(role='mgr', non_interactive=non_interactive)
+
+
+def update():
+    # TODO: implementation
+    """ How to query/pull from the registry? """
+    pass

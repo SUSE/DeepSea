@@ -47,7 +47,6 @@ class CephContainer(object):
         name = ['--name', self.name] if self.name else []
         return [
             find_program('podman'),
-            # TODO: remove later <- what a bullshit..
             'run',
             '--rm',
             '--net=host',
@@ -56,6 +55,7 @@ class CephContainer(object):
         ] + self.args
 
     # TODO: if entrypoint == 'ceph' -> set timeout
+    # --connect-timeout (in seconds)
 
     def run(self, out=False):
         print(' '.join(self.run_cmd))
@@ -63,6 +63,7 @@ class CephContainer(object):
         print(ret)
         if out:
             return ret
+
 
 def get_ceph_version(image):
     CephContainer(image, 'ceph', ['--version']).run()
@@ -311,32 +312,30 @@ def create_mon(image, fsid=None, uid=0, gid=0, start=True, bootstrap=False):
     return True
 
 
-def create_mgr_keyring(image, name, path):
+def create_mgr_keyring(image, mgr_name):
     assert image
-    assert name
+    assert mgr_name
+    mgr_path = f'/srv/salt/ceph/mgr/cache'
+    makedirs(mgr_path)
     CephContainer(
         image=image,
         entrypoint='ceph',
         args=shlex_split(
-            f"auth get-or-create mgr.{name} mon 'allow profile mgr' osd 'allow *' mds 'allow *' -o {path}/keyring"
+            f"auth get-or-create mgr.{mgr_name} mon 'allow profile mgr' osd 'allow *' mds 'allow *' -o {mgr_path}/{mgr_name}.keyring"
         ),
         volume_mounts={
             '/var/lib/ceph/': '/var/lib/ceph',
+            '/srv/salt/ceph/mgr/cache': '/srv/salt/ceph/mgr/cache',
             # etc ceph needs to go away, how does one query ceph auth get mon without the ceph.conf needs?
             '/etc/ceph/': '/etc/ceph'
         }).run()
 
-
-def create_mgr(image, uid=0, gid=0, start=True):
-    mgr_name = __grains__.get('host', '')
-    assert mgr_name
-    mgr_path = f'/var/lib/ceph/mgr/ceph-{mgr_name}'
-    makedirs(mgr_path)
-    create_mgr_keyring(image, mgr_name, mgr_path)
-
-    if start:
-        start_mgr(image, mgr_name)
+    # TODO: Improve returnchecks
     return True
+
+
+def create_mgr(image):
+    return start_mgr(image)
 
 
 def remove_mon(image):
@@ -378,7 +377,10 @@ def remove_mgr(image):
     return True
 
 
-def start_mgr(image, mgr_name):
+def start_mgr(image):
+    mgr_name = __grains__.get('host', '')
+    makedirs('/var/log/ceph')
+    makedirs('/var/run/ceph')
     mgr_container = CephContainer(
         image=image,
         entrypoint='ceph-mgr',
@@ -418,11 +420,15 @@ TimeoutStopSec=15
 [Install]
 WantedBy=multi-user.target
 """)
+        #TODO: This should *maybe* handled with salt's serivce.running module?
+        # or even offloaded to a state entirely? maybe just the starting of a service?
+        # This offload the returncode checking - making it consistent..
     check_output(['systemctl', 'disable', f'ceph-mgr@{mgr_name}.service'])
     check_output(['systemctl', 'enable', f'ceph-mgr@{mgr_name}.service'])
     check_output(['systemctl', 'start', f'ceph-mgr@{mgr_name}.service'])
     logger.info(f'See > journalctl --user -f -u ceph-mgr@{mgr_name}.service')
     print(f'See > journalctl --user -f -u ceph-mgr@{mgr_name}.service')
+    return True
 
 
 def start_mon(
