@@ -457,6 +457,7 @@ def validate(lio_root):
     targets_by_disk = {}
     for target in lio_root.targets:
         tpg_auth_prev = None
+        tpg_acls_prev = None
         for tpg in target.tpgs:
             tpg_auth = {tpg.get_attribute('generate_node_acls'),
                         tpg.get_attribute('authentication'),
@@ -470,6 +471,13 @@ def validate(lio_root):
             elif tpg_auth_prev != tpg_auth:
                 raise Exception(
                     'Unsupported LIO configuration: Authentication settings '
+                    'differ between TPGs for target ({}). Switch lrbd to target'
+                    'based authentication to proceed.'.format(target.wwn))
+            if tpg_acls_prev is None:
+                tpg_acls_prev = tpg.node_acls
+            elif tpg_acls_prev != tpg.node_acls:
+                raise Exception(
+                    'Unsupported LIO configuration: ACL settings '
                     'differ between TPGs for target ({}). Switch lrbd to target'
                     'based authentication to proceed.'.format(target.wwn))
             for lun in tpg.luns:
