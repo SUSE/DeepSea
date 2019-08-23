@@ -456,7 +456,22 @@ def validate(lio_root):
     """
     targets_by_disk = {}
     for target in lio_root.targets:
+        tpg_auth_prev = None
         for tpg in target.tpgs:
+            tpg_auth = {tpg.get_attribute('generate_node_acls'),
+                        tpg.get_attribute('authentication'),
+                        tpg.chap_userid,
+                        tpg.chap_password,
+                        tpg.chap_mutual_userid,
+                        tpg.chap_mutual_password,
+                        tpg.authenticate_target}
+            if tpg_auth_prev is None:
+                tpg_auth_prev = tpg_auth
+            elif tpg_auth_prev != tpg_auth:
+                raise Exception(
+                    'Unsupported LIO configuration: Authentication settings '
+                    'differ between TPGs for target ({}). Switch lrbd to target'
+                    'based authentication to proceed.'.format(target.wwn))
             for lun in tpg.luns:
                 udev_path_list = lun.storage_object.udev_path.split('/')
                 pool = udev_path_list[len(udev_path_list) - 2]
