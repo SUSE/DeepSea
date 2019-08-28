@@ -8,6 +8,8 @@ PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click python${PY_VER}-tox
 RPMBUILD_DEPS=rpm-build
 TARBALL_DEPS=bzip2 git tar
 
+SUDO=sudo --preserve-env
+
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 suse=
 ifneq (,$(findstring opensuse,$(OS)))
@@ -977,7 +979,7 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 $(DEEPSEA_DEPS):
-	([ -z "$(DEEPSEA_DEPS)" ] || $(PKG_INSTALL) $(DEEPSEA_DEPS))
+	([ -z "$(DEEPSEA_DEPS)" ] || $(SUDO) $(PKG_INSTALL) $(DEEPSEA_DEPS))
 
 install: pyc $(DEEPSEA_DEPS) copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
@@ -990,9 +992,9 @@ install: pyc $(DEEPSEA_DEPS) copy-files
 	python$(PY_VER) setup.py install --root=$(DESTDIR)/
 
 $(RPMBUILD_DEPS):
-	$(PKG_INSTALL) $(RPMBUILD_DEPS)
+	$(SUDO) $(PKG_INSTALL) $(RPMBUILD_DEPS)
 	$(eval RPMBUILD_REQUIRES := $(shell rpmspec -q --srpm --requires deepsea.spec.in))
-	$(PKG_INSTALL) $(RPMBUILD_REQUIRES)
+	$(SUDO) $(PKG_INSTALL) $(RPMBUILD_REQUIRES)
 
 rpm: tarball $(RPMBUILD_DEPS)
 	$(eval _SOURCEDIR := $(shell rpm -E "%{_sourcedir}"))
@@ -1003,7 +1005,7 @@ rpm: tarball $(RPMBUILD_DEPS)
 	rpmbuild -ba $(_SPECDIR)/deepsea.spec
 
 $(TARBALL_DEPS):
-	$(PKG_INSTALL) $(TARBALL_DEPS)
+	$(SUDO) $(PKG_INSTALL) $(TARBALL_DEPS)
 
 # Removing test dependency until resolved
 tarball: $(TARBALL_DEPS)
