@@ -995,8 +995,12 @@ $(RPMBUILD_DEPS):
 	$(PKG_INSTALL) $(RPMBUILD_REQUIRES)
 
 rpm: tarball $(RPMBUILD_DEPS)
-	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
-	rpmbuild -bb deepsea.spec
+	$(eval _SOURCEDIR := $(shell rpm -E "%{_sourcedir}"))
+	$(eval _SPECDIR := $(shell rpm -E "%{_specdir}"))
+	mkdir -p $(_SOURCEDIR) $(_SPECDIR)
+	cp deepsea-$(VERSION).tar.bz2 $(_SOURCEDIR)
+	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > $(_SPECDIR)/deepsea.spec
+	rpmbuild -ba $(_SPECDIR)/deepsea.spec
 
 $(TARBALL_DEPS):
 	$(PKG_INSTALL) $(TARBALL_DEPS)
@@ -1009,9 +1013,8 @@ tarball: $(TARBALL_DEPS)
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in > $(TEMPDIR)/deepsea-$(VERSION)/setup.py
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec.in > $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
-	mkdir -p ~/rpmbuild/SOURCES
 	cp $(TEMPDIR)/deepsea-$(VERSION)/setup.py .
-	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
+	tar -cjf deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
 	rm -r $(TEMPDIR)
 
 test: setup.py
