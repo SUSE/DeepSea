@@ -368,13 +368,16 @@ def _deploy_in_minions(minions):
 
     # iterate over each minion to restart igw nodes sequentially
     for minion in minion_list:
-        log.info("Restarting IGW minion: %s", minion)
-        state_res = local.cmd(minion, 'state.apply', ['ceph.igw.restart.force'])
-        result['minions'][minion] = _check_state_result(state_res[minion])
-        log.info("Restarted IGW minion: %s result: %s", minion,
-                 result['minions'][minion])
-        if not result['minions'][minion]:
-            result['success'] = False
+        if result['success']:
+            log.info("Restarting IGW minion: %s", minion)
+            state_res = local.cmd(minion, 'state.apply', ['ceph.igw.restart.force'])
+            result['minions'][minion] = _check_state_result(state_res[minion])
+            log.info("Restarted IGW minion: %s result: %s", minion,
+                     result['minions'][minion])
+            if not result['minions'][minion]:
+                result['success'] = False
+        else:
+            result['minions'][minion] = False
 
     if not result['success']:
         result['message'] = 'Some minions failed to restart the lrbd service.'
