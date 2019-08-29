@@ -4,6 +4,7 @@ from pathlib import Path
 import salt.client
 import logging
 from .pillar import proposal
+from .utils import prompt
 
 
 def update_pillar(directory, checksum):
@@ -11,7 +12,9 @@ def update_pillar(directory, checksum):
     print('Updating the pillar')
     proposal()
     ret: str = local_client.cmd(
-        "I@deepsea_minions:*", 'state.apply', ['ceph.refresh'], tgt_type='compound')
+        "I@deepsea_minions:*",
+        'state.apply', ['ceph.refresh'],
+        tgt_type='compound')
     # if (accumulated)ret == 0:
     # update md5()
     # TODO catch errors here
@@ -87,18 +90,16 @@ def pillar_questioneer(non_interactive=False):
     directory = '/srv/pillar/ceph'
     checksum_path = f'{directory}/.md5.save'
     if pillar_has_changes(directory, checksum_path):
-        print(
+        message = (
             "You have pending changes in the pillar that needs to be synced to the minions. Would you like to sync now?"
         )
-        if non_interactive:
-            answer = 'y'
-        else:
-            answer = input("(y/n)")
-        if answer.lower() == 'y':
+
+        if prompt(
+                message, non_interactive=non_interactive, default_answer=True):
             update_pillar(directory, checksum_path)
         else:
             print(
-                "\nNot updating the pillar, please keep in mind that lalalalala"
+                "\nNot updating the pillar, please keep in mind that #TOOD write text"
             )
 
 
@@ -106,14 +107,12 @@ def module_questioneer(non_interactive=False):
     directory = '/srv/salt/_modules'
     checksum_path = '/srv/salt/ceph/.modules.md5.save'
     if minion_modules_have_changes(directory, checksum_path):
-        print(
+        message = (
             "You have pending changes in the modules direcotry that needs to be synced to the minions. Would you like to sync now?"
         )
-        if non_interactive:
-            answer = 'y'
-        else:
-            answer = input("(y/n)")
-        if answer.lower() == 'y':
+
+        if prompt(
+                message, non_interactive=non_interactive, default_answer=True):
             sync_modules(directory, checksum_path)
         else:
             print(

@@ -359,6 +359,18 @@ def check(results=False, **kwargs):
     return res.report() if results else res.running
 
 
+def check_role(role=None, results=False, **kwargs):
+    res = MetaCheck(**kwargs)
+    for running_proc in psutil.process_iter():
+        res.add(ProcInfo(running_proc), role)
+    #res.check_inverts(role)
+    res.check_absents(role)
+    if role == 'storage':
+        res.check_osds()
+
+    return res.report() if results else res.running
+
+
 def down():
     """
     Based on check(), return True/False if all Ceph processes that are meant
@@ -392,6 +404,58 @@ def wait(**kwargs):
     log.error("Timeout expired")
     return False
 
+# TODO: refactor wait_role_up/down
+def wait_role_up(role=None):
+    """
+    Periodically check until all services are up or until the timeout is
+    reached.  Use a backoff for the delay to avoid filling logs.
+    """
+    settings = {
+        'timeout': _timeout(),
+        'delay': 3
+    }
+    assert role
+
+    end_time = time.time() + settings['timeout']
+    current_delay = settings['delay']
+    while end_time > time.time():
+        if check_role(role=role):
+            log.debug("Services are up")
+            return True
+        time.sleep(current_delay)
+        if current_delay < 60:
+            current_delay += settings['delay']
+        else:
+            current_delay = 60
+    log.error("Timeout expired")
+    return False
+
+def wait_role_down(role=None):
+    """
+    Periodically check until all services are down or until the timeout is
+    reached.  Use a backoff for the delay to avoid filling logs.
+    """
+    settings = {
+        'timeout': _timeout(),
+        'delay': 3
+    }
+    assert role
+
+    end_time = time.time() + settings['timeout']
+    current_delay = settings['delay']
+    while end_time > time.time():
+        if not check_role(role=role):
+            log.debug("Services are down")
+            return True
+        time.sleep(current_delay)
+        if current_delay < 60:
+            current_delay += settings['delay']
+        else:
+            current_delay = 60
+    log.error("Timeout expired")
+    return False
+
+
 
 def _process_map():
     """
@@ -418,68 +482,6 @@ def _process_map():
     return procs
 
 
-def zypper_ps(role, lsof_map):
-    """
-    Gets services that need a restart from zypper
-    """
-    assert role
-    proc1 = Popen(shlex.split('zypper ps -sss'), stdout=PIPE)
-    stdout, _ = proc1.communicate()
-    stdout = __salt__['helper.convert_out'](stdout)
-    processes_ = processes
-    # adding instead of overwriting, eh?
-    # radosgw is ceph-radosgw in zypper ps.
-    processes_['rgw'] = ['ceph-radosgw', 'radosgw', 'rgw']
-    # ganesha is called nfs-ganesha
-    processes_['ganesha'] = ['ganesha.nfsd', 'rpcbind', 'rpc.statd', 'nfs-ganesha']
-    # igw we need to get the current iSCSI daemon deployed
-    processes_['igw'] = __pillar__.get('igw_service_daemons', ['lrbd'])
-    for proc_l in stdout.split('\n'):
-        if '@' in proc_l:
-            proc_l = proc_l.split('@')[0]
-        if proc_l in processes_[role]:
-            lsof_map.append({'name': proc_l})
-    return lsof_map
-
-
-def need_restart_lsof(role=None):
-    """
-    Use the process map to determine if a service restart is required.
-    """
-    assert role
-    lsof_proc_map = _process_map()
-    proc_map = zypper_ps(role, lsof_proc_map)
-    for proc in proc_map:
-        if proc['name'] in processes[role]:
-            log.info("Found deleted file for ceph service: {} -> Queuing a restart".format(role))
-            return True
-    return False
-
-
-def need_restart_config_change(role=None):
-    """
-    Check for a roles restart grain, i.e. is a restart required due to a config
-    change.
-    """
-    assert role
-    grain_name = "restart_{}".format(role)
-    if grain_name in __grains__ and __grains__[grain_name]:
-        log.debug("Found {}: True in the grains.".format(grain_name))
-        return True
-    return False
-
-
-def need_restart(role=None):
-    """
-    Condensed call for lsof and config change
-    TODO: Theoretically you can make config changes for individual
-          OSDs. We currently do not support that.
-    """
-    assert role
-    if need_restart_config_change(role=role) or need_restart_lsof(role=role):
-        log.info("Restarting ceph service: {} -> Queuing a restart".format(role))
-        return True
-    return False
 
 
 def _timeout():

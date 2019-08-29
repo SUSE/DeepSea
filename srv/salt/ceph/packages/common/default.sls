@@ -19,9 +19,9 @@ stage prep dependencies suse:
       - hwinfo
       - pciutils
       - gptfdisk
-      - python3-boto
-      - python3-rados
-      - python3-netaddr
+      # - python3-boto
+      # - python3-rados
+      # - python3-netaddr
       - iperf
       - lsof
       - jq
@@ -30,7 +30,10 @@ stage prep dependencies suse:
       - polkit
       - libstoragemgmt
       - curl
-      - ceph
+      - podman
+      - patterns-base-apparmor
+      - apparmor-utils
+
     - fire_event: True
     - refresh: True
 
@@ -49,7 +52,8 @@ stage prep dependencies ubuntu:
       - iperf
       - jq
       - curl
-      - ceph
+      - podman
+      # apparmor?
     - fire_event: True
     - refresh: True
 
@@ -80,7 +84,8 @@ stage prep dependencies CentOS:
       - jq
       - libstoragemgmt
       - curl
-      - ceph
+      - podman
+      # apparmor?
     - fire_event: True
     - refresh: True
 
