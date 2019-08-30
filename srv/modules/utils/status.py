@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # vim: ts=8 et sw=4 sts=4
-
+"""
+Helper for upgrade.status and status.report runners
+"""
+from __future__ import absolute_import
 import salt.client
 
 
@@ -26,7 +29,9 @@ def get_sys_versions(cluster_name='ceph'):
         search += " and not ( {} )".format("or ".join(down_nodes))
 
     salt_version = local.cmd(search, 'grains.get', ['saltversion'], tgt_type="compound")
-    ceph_version = local.cmd(search, 'cmd.shell', ['test -e /usr/bin/ceph && ceph --version || echo "Not installed"'], tgt_type="compound")
+    ceph_version = local.cmd(search, 'cmd.shell',
+                             ['test -e /usr/bin/ceph && ceph --version || echo "Not installed"'],
+                             tgt_type="compound")
 
     # Better to indicate the node is down or inaccessible than just the bool False
     for node in down_nodes:
