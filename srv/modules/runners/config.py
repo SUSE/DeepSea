@@ -268,7 +268,7 @@ def deploy_global():
 
 def distribute():
     ret = LocalClient().cmd(
-        "cluster:ceph",
+        __utils__['deepsea_minions.show'](),
         'state.apply', ['ceph.configuration'],
         tgt_type='pillar')
     return evaluate_state_return(ret)

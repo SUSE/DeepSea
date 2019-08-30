@@ -24,7 +24,8 @@ def cluster_minions():
     """
     log.debug("Searching for cluster_minions")
     potentials = LocalClient().cmd(
-        "I@cluster:ceph", 'test.ping', tgt_type='compound')
+        __utils__['deepsea_minions.show'](),
+        'test.ping', tgt_type='compound')
     minions = list()
     for k, v in potentials.items():
         if v:
@@ -144,7 +145,7 @@ def _remove_role(role=None, non_interactive=False):
     """ TODO: docstring """
     assert role
     already_running = LocalClient().cmd(
-        f"I@cluster:ceph and not I@roles:{role}",
+        f"not I@roles:{role}",
         f'{role}.already_running',
         tgt_type='compound')
     to_remove = [k for (k, v) in already_running.items() if v]

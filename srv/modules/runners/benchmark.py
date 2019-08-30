@@ -208,7 +208,7 @@ def rbd(**kwargs):
     """
 
     client_glob = kwargs.get('client_glob',
-        'I@roles:benchmark-rbd and I@cluster:ceph')
+        'I@roles:benchmark-rbd')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
@@ -234,7 +234,7 @@ def cephfs(**kwargs):
     """
 
     client_glob = kwargs.get('client_glob',
-                             'I@roles:client-cephfs and I@cluster:ceph')
+                             'I@roles:client-cephfs')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
@@ -260,7 +260,7 @@ def baseline(margin=10, verbose=False, **kwargs):
     slow outliers
     '''
     client_glob = kwargs.get('client_glob',
-                             'I@roles:storage and I@cluster:ceph')
+                             'I@roles:storage')
     log.info('client glob is {}'.format(client_glob))
 
     # gotta get the master_minion...not pretty but works
@@ -313,7 +313,7 @@ def blockdev(**kwargs):
     """
 
     client_glob = kwargs.get('client_glob',
-                             'I@roles:benchmark-blockdev and I@cluster:ceph')
+                             'I@roles:benchmark-blockdev')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)
@@ -339,7 +339,7 @@ def fs(**kwargs):
     """
 
     client_glob = kwargs.get('client_glob',
-                             'I@roles:benchmark-fs and I@cluster:ceph')
+                             'I@roles:benchmark-fs')
     log.info('client glob is {}'.format(client_glob))
 
     dir_options = __parse_and_set_dirs(kwargs)

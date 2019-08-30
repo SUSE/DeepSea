@@ -46,7 +46,7 @@ def get_inventory(nodes=None, roles=None):
     """
 
     # The cluster is always named 'ceph'
-    search = "I@cluster:ceph"
+    search = __utils__['deepsea_minions.show']()
 
     if nodes is None:
         nodes = []
@@ -99,7 +99,7 @@ def describe_service(role=None, service_id=None, node=None):
     salt-run mgr_orch.describe_service node=data1
     """
 
-    search = "I@cluster:ceph"
+    search = __utils__['deepsea_minions.show']()
 
     supported_roles = ['mon', 'mgr', 'mds', 'rgw', 'ganesha', 'igw']
 

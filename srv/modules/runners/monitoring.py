@@ -28,7 +28,7 @@ def install_setup_node_exporter():
     print("Setting up and installing node_exporter")
     local_client = LocalClient()
     ret = local_client.cmd(
-        'I@cluster:ceph', # TODO change to deepsea_minions?
+        __utils__['deepsea_minions.show'](),
         'state.apply', ['ceph.monitoring.prometheus.exporters.node_exporter'],
         tgt_type='compound')
     return True

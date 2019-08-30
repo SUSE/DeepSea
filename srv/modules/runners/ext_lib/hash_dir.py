@@ -28,7 +28,8 @@ def sync_modules(directory, checksum):
     print('Updating the modules')
     proposal()
     ret: str = local_client.cmd(
-        "cluster:ceph", 'saltutil.sync_modules', tgt_type='pillar')
+        __utils__['deepsea_minions.show'](),
+        'saltutil.sync_modules', tgt_type='pillar')
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
     print("The modules should be in sync now")
