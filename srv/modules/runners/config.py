@@ -145,7 +145,12 @@ class Policy(object):
         ''' Expand each Salt target '''
         for role in self.raw:
             if role.startswith("role-"):
-                self.yaml[role] = self._expand(self.raw[role])
+                if isinstance(self.raw[role], list):
+                    self.yaml[role] = []
+                    for entry in self.raw[role]:
+                        self.yaml[role].extend(self._expand(entry))
+                else:
+                    self.yaml[role] = self._expand(self.raw[role])
             else:
                 # custom entry
                 for custom_role in self.raw[role]:

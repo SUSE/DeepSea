@@ -1,0 +1,28 @@
+role-master: admin*
+role-admin: mon*
+role-igw: igw*
+role-rgw: rgw*
+role-mon: mon*
+role-mds: mds*
+role-mgr: mon*
+role-storage:
+- data1*
+- data2*
+- data3*
+- data4*
+- data5*
+rgw:
+  role-red: rgw*
+  role-blue: rgw*
+ganesha:
+  role-alpha: ganesha1*
+  role-beta: ganesha2*
+
+role-client-cephfs: client1*
+role-client-radosgw: client1*
+role-client-iscsi: client1*
+role-client-nfs: client1*
+
+role-benchmark-rbd: client2*
+role-benchmark-blockdev: client2*
+role-benchmark-fs: client2*
