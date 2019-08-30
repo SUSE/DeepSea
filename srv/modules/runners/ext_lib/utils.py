@@ -1,4 +1,4 @@
-from salt.client import LocalClient
+from salt.client import LocalClient, salt
 from salt.runner import RunnerClient
 from salt.config import client_config
 import logging
@@ -241,3 +241,15 @@ def is_running(minion, role_name=None, func='wait_role_up'):
     if _is_running(role_name=role_name, minion=minion, func=func):
         return True
     return False
+
+
+def master_minion():
+    '''
+    Load the master modules
+    '''
+    __master_opts__ = salt.config.client_config("/etc/salt/master")
+    __master_utils__ = salt.loader.utils(__master_opts__)
+    __salt_master__ = salt.loader.minion_mods(
+        __master_opts__, utils=__master_utils__)
+
+    return __salt_master__["master.minion"]()
