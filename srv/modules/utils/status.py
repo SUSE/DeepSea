@@ -15,5 +15,5 @@ def get_sys_versions(cluster_name='ceph'):
     # data will change.  grains are refreshed on reboot(restart of the service).
     os_codename = local.cmd(search, 'grains.get', ['oscodename'], tgt_type="compound")
     salt_version = local.cmd(search, 'grains.get', ['saltversion'], tgt_type="compound")
-    ceph_version = local.cmd(search, 'cmd.shell', ['ceph --version'], tgt_type="compound")
+    ceph_version = local.cmd(search, 'cmd.shell', ['test -e /usr/bin/ceph && ceph --version || echo "Not installed"'], tgt_type="compound")
     return os_codename, salt_version, ceph_version
