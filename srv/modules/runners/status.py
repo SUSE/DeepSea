@@ -16,16 +16,13 @@ def _get_data(cluster_name='ceph'):
     """
     Query grains, run commands for current versions
     """
-    local = salt.client.LocalClient()
-    search = "I@cluster:{}".format(cluster_name)
-    # grains might be inaccurate or not up to date because they are designed
-    # to hold static data about the minion. In case of an update though, the
-    # data will change.  grains are refreshed on reboot(restart of the service).
-    os_codename = local.cmd(search, 'grains.get', ['oscodename'], tgt_type="compound")
-    salt_version = local.cmd(search, 'grains.get', ['saltversion'], tgt_type="compound")
-    ceph_version = local.cmd(search, 'cmd.shell', ['ceph --version'], tgt_type="compound")
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
 
-    return os_codename, salt_version, ceph_version
+    return __utils__['status.get_sys_versions'](cluster_name)
 
 
 def help_():
