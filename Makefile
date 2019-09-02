@@ -28,10 +28,16 @@ else
 ifeq ($(OS), fedora)
 PKG_INSTALL=yum install -y
 else
+ifeq ($(OS), arch)
+PKG_INSTALL=pacman -Syyu --noconfirm  && /usr/bin/pacman -S --noconfirm
+SALT_API=
+PYTHON_DEPS=python-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj
+else
 debian := $(wildcard /etc/debian_version)
 ifneq ($(strip $(debian)),)
 PKG_INSTALL=apt-get install -y
 PYTHON_DEPS=python3-setuptools python3-click tox python3-configobj
+endif
 endif
 endif
 endif
