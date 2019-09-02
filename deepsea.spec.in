@@ -106,6 +106,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/modules
 %dir /srv/modules/modules
 %dir /srv/modules/runners
+%dir /srv/modules/runners/ext_lib
 %dir /srv/modules/utils/
 %dir /srv/modules/pillar
 %dir %attr(0755, salt, salt) /srv/salt/ceph
@@ -452,6 +453,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /etc/salt/master.d/*.conf
 /srv/modules/modules/*.py*
 /srv/modules/runners/*.py*
+/srv/modules/runners/ext_lib/*.py*
 %exclude /srv/modules/runners/smoketests.py
 /srv/modules/utils/*.py*
 %config %attr(-, salt, salt) /srv/pillar/top.sls
