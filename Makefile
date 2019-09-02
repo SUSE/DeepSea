@@ -37,6 +37,7 @@ else
 debian := $(wildcard /etc/debian_version)
 ifneq ($(strip $(debian)),)
 PKG_INSTALL=apt-get install -y
+PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click tox python${PY_VER}-configobj
 endif
 endif
 endif
@@ -975,8 +976,8 @@ copy-files:
 
 install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
-	([ -n "${DEEPSEA_DEPS}" ] && $(PKG_INSTALL) $(DEEPSEA_DEPS)) || true
-	([ -n "${PYTHON_DEPS}" ] && $(PKG_INSTALL) $(PYTHON_DEPS)) || true
+	([ -n "$(DEEPSEA_DEPS)" ] && $(PKG_INSTALL) $(DEEPSEA_DEPS)) || true
+	([ -n "$(PYTHON_DEPS)" ] && $(PKG_INSTALL) $(PYTHON_DEPS)) || true
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
@@ -985,7 +986,7 @@ install: pyc install-deps copy-files
 	chown -R $(USER) $(DESTDIR)/srv/pillar/ceph
 	# Use '|| true' to suppress some error output in corner cases
 	systemctl restart salt-master
-	([ -n "${SALT_API}" ] && systemctl restart ${SALT_API}) || true
+	([ -n "$(SALT_API)" ] && systemctl restart $(SALT_API)) || true
 	# deepsea-cli
 	python$(PY_VER) setup.py install --root=$(DESTDIR)/
 
