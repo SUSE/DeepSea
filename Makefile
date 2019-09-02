@@ -204,6 +204,7 @@ copy-files:
 	install -m 644 srv/pillar/ceph/benchmarks/templates/*.j2 $(DESTDIR)/srv/pillar/ceph/benchmarks/templates/
 	install -m 644 srv/pillar/ceph/README $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/init.sls $(DESTDIR)/srv/pillar/ceph/
+	install -m 644 srv/pillar/ceph/internal.yml $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/deepsea_minions.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/blacklist.sls $(DESTDIR)/srv/pillar/ceph/
 	install -m 644 srv/pillar/ceph/disk_led.sls $(DESTDIR)/srv/pillar/ceph/
@@ -230,6 +231,11 @@ copy-files:
 	install -m 644 srv/salt/ceph/admin/key/*.sls $(DESTDIR)/srv/salt/ceph/admin/key/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin/files
 	install -m 644 srv/salt/ceph/admin/files/*.j2 $(DESTDIR)/srv/salt/ceph/admin/files/
+	# state files permissions
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/permissions
+	install -m 644 srv/salt/ceph/permissions/*.sls $(DESTDIR)/srv/salt/ceph/permissions
+	# state files bootstrap
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/bootstrap
 	# state files apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files

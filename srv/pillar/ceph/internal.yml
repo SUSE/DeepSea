@@ -1,0 +1,9 @@
+# INTERNALS_DO_NOT_MODIFY:
+
+ceph_image: registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph
+ceph_etc_dir: /etc/ceph
+ceph_tmp_dir: /var/lib/ceph/tmp
+ceph_base_dir: /var/lib/ceph
+ceph_run_dir: /var/run/ceph
+ceph_osd_bootstrap_dir: /var/lib/ceph/bootstrap-osd
+ceph_bootstrap_master_dir: /srv/salt/ceph/bootstrap

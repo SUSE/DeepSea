@@ -1,12 +1,25 @@
-from salt.client import LocalClient, salt
+from salt.client import LocalClient
 from salt.runner import RunnerClient
 from salt.config import client_config
+from salt.loader import utils, minion_mods
+from subprocess import check_output
 import logging
+
+
+def master_minion():
+    '''
+    Load the master modules
+    '''
+    __master_opts__ = client_config("/etc/salt/master")
+    __master_utils__ = utils(__master_opts__)
+    __salt_master__ = minion_mods(__master_opts__, utils=__master_utils__)
+    return __salt_master__["master.minion"]()
+
 
 log = logging.getLogger(__name__)
 
 
-def runner(opts):
+def runner(opts=None):
     """ TODO: docstring """
     log.debug("Initializing runner")
     runner = RunnerClient(opts)
@@ -24,7 +37,7 @@ def cluster_minions():
     """
     log.debug("Searching for cluster_minions")
     potentials = LocalClient().cmd(
-        "I@cluster:ceph", 'test.ping', tgt_type='compound')
+        "I@deepsea_minions:*", 'test.ping', tgt_type='compound')
     minions = list()
     for k, v in potentials.items():
         if v:
@@ -52,12 +65,14 @@ def prompt(message,
         prompt(message, options=options)
 
 
-def evaluate_module_return(job_data):
+def evaluate_module_return(job_data, context=''):
     failed = False
     for minion_id, result in job_data.items():
         log.debug(f"results for job on minion: {minion_id} is: {result}")
         if not result:
-            print(f"Module call failed on {minion_id}")
+            print(
+                f"Module call failed on {minion_id} with {result if result else 'n/a'} and context: {context}"
+            )
             failed = True
 
     if failed:
@@ -71,6 +86,17 @@ def evaluate_state_return(job_data):
     failed = False
     for minion_id, job_data in job_data.items():
         log.debug(f"{job_data} ran on {minion_id}")
+        if isinstance(job_data, list):
+            # if a _STATE_ is not available, salt returns a list with an error in idx0
+            # thanks salt for staying consistent..
+            log_n_print(job_data)
+            return False
+        if isinstance(job_data, str):
+            # In this case, it's a _MODULE_ that salt can't find..
+            # again, thanks salt for staying consistent..
+            log_n_print(job_data)
+            return False
+
         for jid, metadata in job_data.items():
             log.debug(f"Job {jid} run under: {metadata.get('name', 'n/a')}")
             log.debug(
@@ -98,7 +124,10 @@ def log_n_print(message):
 
 def _get_candidates(role=None):
     """ TODO: docstring """
+
     # Is this the right appracoh or should cephprocesses be used again?
+    # TODO: This needs to be improved
+
     assert role
     all_minions = LocalClient().cmd(
         f"roles:{role}", f'{role}.already_running', tgt_type='pillar')
@@ -127,9 +156,13 @@ def _is_running(role_name=None, minion=None, func='wait_role_up'):
         # TODO: Refactor the 'wait_role_down' function. This is horrible
         if status:
             log_n_print(f"role-{role_name} is running on {minion}")
-            log_n_print(f"This is showing the wrong status for role deletion currently")
+            log_n_print(
+                f"This is showing the wrong status for role deletion currently"
+            )
         if not status:
-            log_n_print(f"This is showing the wrong status for role deletion currently")
+            log_n_print(
+                f"This is showing the wrong status for role deletion currently"
+            )
             log_n_print(f"role-{role_name} is *NOT* running on {minion}")
             running = False
     return running
@@ -144,7 +177,7 @@ def _remove_role(role=None, non_interactive=False):
     """ TODO: docstring """
     assert role
     already_running = LocalClient().cmd(
-        f"I@cluster:ceph and not I@roles:{role}",
+        f"not I@roles:{role}",
         f'{role}.already_running',
         tgt_type='compound')
     to_remove = [k for (k, v) in already_running.items() if v]
@@ -165,75 +198,190 @@ Continue?""",
         if not evaluate_module_return(ret):
             return False
 
-        ret = [is_running(minion, role_name=role, func='wait_role_down') for minion in to_remove]
+        ret = [
+            is_running(minion, role_name=role, func='wait_role_down')
+            for minion in to_remove
+        ]
         # TODO: do proper checks here:
         if all(ret):
             print(f"{role} deletion was successful.")
             return True
         return False
 
-
     else:
         return 'aborted'
 
 
-def _deploy_role(role=None, non_interactive=False):
-    assert role
-    candidates = _get_candidates(role=role)
-    if candidates:
-        if prompt(
-                f"""These minions will be {role}: {', '.join(candidates)}
-Continue?""",
-                non_interactive=non_interactive,
-                default_answer=True):
-            print("Deploying..")
-
-            if role == 'mgr':
-                for candidate in candidates:
-                    # create and register keyring
-                    ret: str = LocalClient().cmd(
-                        "roles:master",
-                        f'podman.create_mgr_keyring',
-                        ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph', candidate],
-                        tgt_type='pillar')
-
-
-                if not evaluate_module_return(ret):
-                    return False
-
-                # distrubute keyring
-                ret: str = LocalClient().cmd(
-                    "roles:mgr",
-                    'state.apply',
-                    ['ceph.mgr.keyring'],
-                    tgt_type='pillar')
-
-                if not evaluate_state_return(ret):
-                    return False
-
-
-            ret: str = LocalClient().cmd(
-                candidates,
-                f'podman.create_{role}',
-                ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph'],
-                tgt_type='list')
-
-            if not evaluate_module_return(ret):
-                return False
-
-            # TODO: query in a loop with a timeout
-            # TODO: Isn't that what we have in cephproceses.wait?
-            # TODO: Check that.
-            ret = [is_running(minion, role_name=role) for minion in candidates]
-            if not all(ret):
-                print(f"{role} deployment was not successful.")
-                return False
-            return True
-
+def _create_bootstrap_items():
+    """ TODO docstring """
+    log_n_print("Creating bootstrap items..")
+    ret: str = LocalClient().cmd(
+        'roles:master', 'podman.create_bootstrap_items', tgt_type='pillar')
+    if not evaluate_module_return(ret):
         return False
-    else:
+
+
+def _create_mgr_keyring(name):
+    """ TODO docstring """
+    log_n_print("Creating mgr keyring..")
+    ret: str = LocalClient().cmd(
+        'roles:master', 'podman.create_mgr_keyring', [name], tgt_type='pillar')
+
+    if not evaluate_module_return(ret):
+        return False
+    return ret
+
+
+def _create_mon_keyring(name):
+    """ TODO docstring """
+
+    # TODO: refactor keyring methods, can be only once with parameters
+
+    log_n_print("Creating mon keyring..")
+    ret: str = LocalClient().cmd(
+        'roles:master', 'podman.create_mon_keyring', [name], tgt_type='pillar')
+
+    if not evaluate_module_return(ret):
+        return False
+    return ret
+
+
+def _get_monmap(name):
+    """ TODO docstring """
+
+    log_n_print(f"Retrieving monmap for {name}..")
+    ret: str = LocalClient().cmd(
+        'roles:master', 'podman.get_monmap', [name], tgt_type='pillar')
+
+    if not evaluate_module_return(ret):
+        return False
+    return ret
+
+
+def _distribute_file(file_name='',
+                     dest='',
+                     candidate='',
+                     target_name='keyring'):
+    """ TODO docstring """
+    assert candidate
+    assert file_name
+    assert dest
+
+    ensure_permissions()
+    ensure_dirs_exist()
+
+    print(f"Distributing file: {file_name} to {candidate}")
+
+    # TODO: be more specific in debug logging
+
+    ret: str = LocalClient().cmd(
+        candidate, 'file.mkdir', [dest], tgt_type='glob')
+    if not evaluate_module_return(ret, context=f'file.mkdir {dest}'):
+        return False
+
+    ret: str = LocalClient().cmd(
+        candidate,
+        'cp.get_file',
+        [f'salt://ceph/bootstrap/{file_name}', f'{dest}/{target_name}'],
+        tgt_type='glob')
+
+    # TODO: Improve evaluate_module_return func
+    if not evaluate_module_return(
+            ret, context=f'cp.get_file {file_name} to {dest}'):
+        return False
+    return True
+
+
+def ensure_dirs_exist():
+    ret: str = LocalClient().cmd(
+        # TODO: 1) don't rely on podman to create dirs
+        # TODO: 2) Change targeting from * to individual roles
+        '*',
+        'podman.ensure_dirs_exist',
+        tgt_type='glob')
+    if not evaluate_module_return(ret, context='ensure_dirs_exist'):
+        return False
+
+
+def ensure_permissions():
+    # TODO: do I need to have that in a state?
+    ret: str = LocalClient().cmd(
+        'roles:master', 'state.apply', ['ceph.permissions'], tgt_type='pillar')
+    if not evaluate_state_return(ret):
+        return False
+
+
+def _distribute_bootstrap_items():
+    """ TODO docstring """
+    # TODO: evaluate returns
+    log_n_print("Copying bootstrap items to respective minions..")
+
+    ensure_permissions()
+    ensure_dirs_exist()
+
+    ret: str = LocalClient().cmd(
+        'roles:mon',
+        'cp.get_file', ['salt://ceph/bootstrap/monmap', '/var/lib/ceph/tmp/'],
+        tgt_type='pillar')
+
+    #TODO replace /var/lib/ceph/tmp with pillar variable
+    # TODO: Improve evaluate_module_return func
+    if not evaluate_module_return(ret, context='cp.get_file monmap'):
+        return False
+
+    ret: str = LocalClient().cmd(
+        'roles:mon',
+        'cp.get_file', ['salt://ceph/bootstrap/keyring', '/var/lib/ceph/tmp/'],
+        tgt_type='pillar')
+    if not evaluate_module_return(ret, context='cp.get_file keyring'):
+        return False
+
+    ret: str = LocalClient().cmd(
+        'roles:mon',
+        'cp.get_file',
+        ['salt://ceph/bootstrap/ceph.keyring', '/var/lib/ceph/tmp/'],
+        tgt_type='pillar')
+    if not evaluate_module_return(ret, context='cp.get_file ceph.keyring'):
+        return False
+
+    ret: str = LocalClient().cmd(
+        'roles:mon',
+        'cp.get_file',
+        ['salt://ceph/bootstrap/ceph.client.admin.keyring', '/etc/ceph/'],
+        tgt_type='pillar')
+    if not evaluate_module_return(ret, context='cp.get_file admin.keyring'):
+        return False
+
+
+def _deploy_role(role=None, candidates=[], non_interactive=False):
+    assert role
+    if not candidates:
         print(f"No candidates for a {role} deployment found")
         return True
+
+    if not prompt(
+            f"""These minions will be {role}s: {', '.join(candidates)}
+Continue?""",
+            non_interactive=non_interactive,
+            default_answer=True):
+        print("Aborted..")
+        return False
+
+    print("Deploying..")
+    ret: str = LocalClient().cmd(
+        candidates, f'podman.create_{role}', tgt_type='list')
+
+    if not evaluate_module_return(ret):
+        return False
+
+    # TODO: query in a loop with a timeout
+    # TODO: Isn't that what we have in cephproceses.wait?
+    # TODO: Check that.
+    ret = [is_running(minion, role_name=role) for minion in candidates]
+    if not all(ret):
+        print(f"{role} deployment was not successful.")
+        return False
+    return True
 
 
 def is_running(minion, role_name=None, func='wait_role_up'):
@@ -242,14 +390,26 @@ def is_running(minion, role_name=None, func='wait_role_up'):
         return True
     return False
 
+def run_and_eval(runner_name, extra_args=None, opts={}):
+    # TODO: maybe supress the 'True' output from the screen
+    qrunner = runner(opts)
+    if not qrunner.cmd(runner_name, extra_args):
+        log_n_print(f"{runner_name} failed.")
+        raise Exception()
 
-def master_minion():
-    '''
-    Load the master modules
-    '''
-    __master_opts__ = salt.config.client_config("/etc/salt/master")
-    __master_utils__ = salt.loader.utils(__master_opts__)
-    __salt_master__ = salt.loader.minion_mods(
-        __master_opts__, utils=__master_utils__)
 
-    return __salt_master__["master.minion"]()
+def _read_policy_cfg():
+    policy_path = LocalClient().cmd(
+        "", 'test.ping', tgt_type='compound')
+    with open(policy_path, 'r') as _fd:
+        return _fd.read()
+
+def _query_master_pillar(key=None):
+    assert key
+    ret = LocalClient().cmd(
+        "roles:master", 'pillar.get', [key], tgt_type='pillar')
+    values = list(ret.values())
+    if not values:
+        # TODO: really false?
+        return False
+    return values[0]

@@ -1,4 +1,4 @@
-from ext_lib.utils import runner, prompt, log_n_print
+from ext_lib.utils import runner, prompt, log_n_print, run_and_eval, _query_master_pillar
 from ext_lib.hash_dir import pillar_questioneer, module_questioneer
 from pydoc import pager
 from os.path import exists
@@ -16,32 +16,21 @@ def handle_ctrl_c(signal, frame):
 
 
 signal.signal(signal.SIGINT, handle_ctrl_c)
-
 """
-TODO: Make the time-server thing separate
+
+TODO:
+Make the time-server thing separate
 * SSL-certificates
+
 """
 
-proposals_dir = '/srv/pillar/ceph/proposals'
-policy_path = f'{proposals_dir}/policy.cfg'
-
-
-# maybe outsource
+policy_path = _query_master_pillar('deepsea_policy_path')
 def _read_policy_cfg():
     with open(policy_path, 'r') as _fd:
         return _fd.read()
 
 
-# outsource
-def run_and_eval(runner_name, extra_args=None):
-    # maybe supress the 'True' output from the screen
-    qrunner = runner(__opts__)
-    if not qrunner.cmd(runner_name, extra_args):
-        log_n_print(f"{runner_name} failed.")
-        raise Exception()
-
-
-def ceph(non_interactive=False):
+def initialize(non_interactive=False):
     module_questioneer(non_interactive=non_interactive)
     log_n_print(
         "TODO: check for deepsea_minions, There is a validate.deepsea_minions, check that"
@@ -55,12 +44,9 @@ def ceph(non_interactive=False):
     log_n_print(
         "TODO: print a basic help thing explaining the steps and asking for a timeserver"
     )
-    if not exists(proposals_dir):
-        log_n_print("Creating proposals directory.")
-        run_and_eval('populate.proposals')
-    else:
-        log.debug("Found a proposals directory")
 
+
+def setup(non_interactive=False):
     if not exists(policy_path):
         log_n_print(
             f"You don't appear to have a policy.cfg. Please create it under the proposals directory '{proposals_dir}' and re-run this command"
@@ -76,11 +62,10 @@ def ceph(non_interactive=False):
             pager(_read_policy_cfg())
             if not prompt("Do you want to continue?"):
                 return 'aborted'
-    log_n_print("We'll now we update the pillar with the your changes.")
+    run_and_eval("config.deploy_salt_conf")
+    log_n_print("Updating the pillar with your changes.")
     pillar_questioneer(non_interactive=non_interactive)
-    log_n_print("Ok, let's verify the network settings")
-    log_n_print("This is the network configuration we detected.")
-    run_and_eval('advise.networks')
+    log_n_print("TODO: pillarquery the network interfaces")
     if prompt(
             "Do you want to adapt this setting?",
             non_interactive=non_interactive,
@@ -91,15 +76,18 @@ def ceph(non_interactive=False):
         log_n_print("We'll now we update the pillar with the your changes.")
         pillar_questioneer(non_interactive=non_interactive)
     log_n_print(
-        "TEMP: Creating the ceph.conf (will go away in further releases)")
-    run_and_eval('config.deploy')
+        "TEMP: Creating and distributing the ceph.conf (will go away in further releases)"
+    )
+    run_and_eval("config.deploy_ceph_conf")
 
+
+def core(non_interactive=False):
     # TODO: Break all(sysexit) on SIGINT
     print("Bootstrapping monitors..")
     run_and_eval('mon.deploy',
-                 [f'bootstrap=True, non_interactive={non_interactive}'])
+                 [f'bootstrap=True', f'non_interactive={non_interactive}'])
 
-    # if the answer in mon.deploy is 'no'. It will still deploy the managers.. Handle global signals/returns
+    # FIXME: if the answer in mon.deploy is 'no'. It will still deploy the managers.. Handle global signals/returns
     print("Bootstrapping mgrs..")
     run_and_eval("mgr.deploy", [f'non_interactive={non_interactive}'])
 
@@ -112,9 +100,17 @@ def ceph(non_interactive=False):
     return True
 
 
-# TODO:
-#   When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation
-#   We may keep track of the salt-key -L ('inventory')
+def ceph(non_interactive=False):
+    # TODO: uncomment when done with devel
+    #initialize(non_interactive=non_interactive)
+    _query_master_pillar('deepsea_proposal_dir')
+    setup(non_interactive=non_interactive)
+    core(non_interactive=non_interactive)
+    # TODO: When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation
+    # We may keep track of the salt-key -L ('inventory') periodically
+
+    # TODO: return correct status
+    return True
 
 
 def cluster():

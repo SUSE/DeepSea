@@ -2,6 +2,7 @@ import os
 import logging
 import shutil
 import sys
+import uuid
 from distutils.spawn import find_executable
 from os.path import expanduser
 from subprocess import check_output, CalledProcessError, Popen, PIPE
@@ -59,6 +60,7 @@ class CephContainer(object):
 
     def run(self, out=False):
         print(' '.join(self.run_cmd))
+        # TODO improve output checks
         ret = check_output(self.run_cmd)
         print(ret)
         if out:
@@ -91,251 +93,435 @@ def ceph_cli(image, passed_args):
         sys.exit(1)
 
 
-def _get_public_network():
-    # need validation?
-    return __salt__['pillar.get']('public_network', '')
+class Deploy(object):
+    """ TODO docstring """
 
-
-def _get_cluster_network():
-    # need validation?
-    return __salt__['pillar.get']('cluster_network', '')
-
-
-def _get_public_address():
-    # need validation?
-    return __salt__['public.address']()
-
-
-def make_monmap(image, fsid=None):
-    hostname = get_hostname()
-    ip_address = _get_public_address()
-    dest = '/tmp/bootstrap_monmap'
-    CephContainer(
-        image,
-        entrypoint='monmaptool',
-        args=shlex_split(
-            f'--create --add {hostname} {ip_address} --fsid {fsid} {dest} --clobber'
-        ),
-        volume_mounts={
-            '/tmp': '/tmp'
-        }).run()
-
-    logger.info(f'Initial mon_map created here: {dest}')
-    return dest
-
-
-def create_initial_keyring(image):
-    mon_keyring_path = '/var/lib/ceph/tmp'
-    mon_keyring = f'{mon_keyring_path}/bootstrap_keyring'
-    admin_keyring = '/etc/ceph/ceph.client.admin.keyring'
-    makedirs(mon_keyring_path)
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph-authtool',
-        args=shlex_split(
-            f"--create-keyring {mon_keyring} --gen-key -n mon. --cap mon 'allow *'"
-        ),
-        volume_mounts={
-            '/var/lib/ceph/tmp': '/var/lib/ceph/tmp',
-            # '/var/lib/ceph': '/var/lib/ceph',
-            # '/etc/ceph': '/etc/ceph'
-        }).run()
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph-authtool',
-        args=shlex_split(
-            f"--create-keyring {admin_keyring} --gen-key -n client.admin --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow *' --cap mgr 'allow *'"
-        ),
-        volume_mounts={
-            '/tmp': '/tmp',
-            '/var/lib/ceph': '/var/lib/ceph',
-            '/etc/ceph': '/etc/ceph'
-        }).run()
-
-    return mon_keyring
-
-
-def generate_osd_bootstrap_keyring(image):
-    osd_bootstrap_path = '/var/lib/ceph/bootstrap-osd'
-    osd_bootstrap_keyring = f'{osd_bootstrap_path}/ceph.keyring'
-
-    makedirs(osd_bootstrap_path)
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph-authtool',
-        args=shlex_split(
-            f"--create-keyring {osd_bootstrap_keyring} --gen-key -n client.bootstrap-osd --cap mon 'profile bootstrap-osd'"
-        ),
-        volume_mounts={
-            '/tmp': '/tmp',
-            '/var/lib/ceph': '/var/lib/ceph',
-            '/etc/ceph': '/etc/ceph'
-        }).run()
-
-    return osd_bootstrap_keyring
-
-
-def add_generated_keys(image):
-    mon_keyring_path = '/var/lib/ceph/tmp'
-    osd_bootstrap_path = '/var/lib/ceph/bootstrap-osd'
-    mon_keyring = f'{mon_keyring_path}/bootstrap_keyring'
-
-    makedirs(osd_bootstrap_path)
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph-authtool',
-        args=shlex_split(
-            f"{mon_keyring} --import-keyring /etc/ceph/ceph.client.admin.keyring "
-        ),
-        volume_mounts={
-            '/tmp': '/tmp',
-            '/var/lib/ceph': '/var/lib/ceph',
-            '/etc/ceph': '/etc/ceph'
-        }).run()
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph-authtool',
-        args=shlex_split(
-            f"{mon_keyring} --import-keyring /var/lib/ceph/bootstrap-osd/ceph.keyring"
-        ),
-        volume_mounts={
-            '/tmp': '/tmp',
-            '/var/lib/ceph': '/var/lib/ceph',
-            '/etc/ceph': '/etc/ceph'
-        }).run()
-
-    # TODO
-    return True
-
-
-def extract_keyring(image):
-    keyring_path = '/var/lib/ceph/tmp'
-    keyring = f'{keyring_path}/mon.keyring'
-    makedirs(keyring_path)
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph',
-        args=shlex_split(f'auth get-or-create mon. -o {keyring}'),
-        volume_mounts={
-            '/var/lib/ceph/': '/var/lib/ceph',
-            # etc ceph needs to go away, how does one query ceph auth get mon without the ceph.conf needs?
-            '/etc/ceph/': '/etc/ceph'
-        }).run()
-
-    logger.info(f'{keyring} extracted')
-    return keyring
-
-
-def extract_mon_map(image):
-    mon_map_path = '/var/lib/ceph/tmp'
-    mon_map = f'{mon_map_path}/mon_map'
-
-    makedirs(mon_map_path)
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph',
-        args=shlex_split(f'mon getmap -o {mon_map}'),
-        volume_mounts={
-            '/var/lib/ceph/tmp': '/var/lib/ceph/tmp',
-            # etc ceph needs to go away, how does one query ceph mon getmap without the ceph.conf needs?
-            '/etc/ceph/': '/etc/ceph'
-        }).run()
-    return mon_map
-
-
-def create_mon(image, fsid=None, uid=0, gid=0, start=True, bootstrap=False):
-    mon_name = get_hostname()
-    fsid = fsid or make_or_get_fsid()
-
-    makedirs('/var/lib/ceph')
-
-    if bootstrap:
-        logger.warning(f"bootstrap is: {bootstrap}")
-        mon_keyring_path = create_initial_keyring(image)
-        generate_osd_bootstrap_keyring(image)
-        add_generated_keys(image)
-        map_filename = make_monmap(image, fsid=fsid)  #TODO
-    else:
-        logger.warning(f"bootstrap is: {bootstrap}")
-        map_filename = extract_mon_map(image)
-        mon_keyring_path = extract_keyring(image)
-
-    makedirs(f'/var/lib/ceph/mon/ceph-{mon_name}')
-    makedirs(f'/var/log/ceph')
-    # TODO: change ownership to ceph:ceph
-    cluster_network = _get_cluster_network()
-    public_network = _get_public_network()
-
-    assert cluster_network
-    assert public_network
-    assert map_filename
-    assert mon_keyring_path
-    assert mon_name
-
-    CephContainer(
-        image=image,
-        entrypoint='ceph-mon',
-        args=[
-            '--mkfs',
-            '-i',
-            mon_name,
-            '--keyring',
-            mon_keyring_path,
-            '--monmap',
-            map_filename  #'--public-network', public_network, #'--cluster_network', cluster_network # Not needed when ceph.conf is in place
-        ] + user_args(uid, gid),
-        volume_mounts={
-            '/var/lib/ceph/': '/var/lib/ceph',
-            '/tmp': '/tmp',
-            '/etc/ceph/': '/etc/ceph'
-        }).run()
-
-    # source this (hardcoded) information from somewhere else
-    if start:
-        start_mon(
-            image,
-            mon_name,
-            #mon_keyring_path,
-            #'172.16.2.254',
-            #'172.16.1.254',
-            #mon_initial_members=_get_public_address(),
-            #fsid=fsid,
+    def __init__(self):
+        self.ceph_tmp_dir: str = self._get_ceph_tmp_dir()
+        self.ceph_base_dir: str = self._get_ceph_base_dir()
+        self.ceph_run_dir: str = self._get_ceph_run_dir()
+        self.ceph_etc_dir: str = self._get_ceph_etc_dir()
+        self.ceph_osd_bootstrap_dir: str = self._get_ceph_osd_bootstrap_dir()
+        self.ceph_bootstrap_master_dir: str = self._get_ceph_bootstrap_master_dir(
         )
+        self.ceph_image: str = self._get_ceph_image()
+
+        self.public_address = self._get_public_address()
+        self.hostname = self._get_hostname()
+        self.fsid = self._make_or_get_fsid()
+        self.cluster_network = self._get_cluster_network()
+        self.public_network = self._get_public_network()
+
+        self._ensure_dirs_exist()
+
+    @property
+    def keyring(self) -> str:
+        return f'{self.ceph_bootstrap_master_dir}/keyring'
+
+    @property
+    def admin_keyring(self) -> str:
+        return f'{self.ceph_bootstrap_master_dir}/ceph.client.admin.keyring'
+
+    @property
+    def osd_bootstrap_keyring(self) -> str:
+        return f'{self.ceph_bootstrap_master_dir}/ceph.keyring'
+
+    @property
+    def monmap(self) -> str:
+        return f'{self.ceph_bootstrap_master_dir}/monmap'
+
+    @property
+    def monmap_on_minion(self) -> str:
+        return f'{self.ceph_tmp_dir}/monmap'
+
+    # TODO: change the horrbible naming
+    @property
+    def admin_keyring_on_minion(self) -> str:
+        return f'{self.ceph_etc_dir}/ceph.client.admin.keyring'
+
+    @property
+    def osd_bootstrap_keyring_on_minion(self) -> str:
+        return f'{self.ceph_tmp_dir}/ceph.keyring'
+
+    @property
+    def keyring_on_minion(self) -> str:
+        return f'{self.ceph_tmp_dir}/keyring'
+
+    @staticmethod
+    def _get_ceph_osd_bootstrap_dir() -> str:
+        return __salt__['pillar.get']('ceph_osd_bootstrap_dir', '')
+
+    @staticmethod
+    def _get_ceph_bootstrap_master_dir() -> str:
+        return __salt__['pillar.get']('ceph_bootstrap_master_dir', '')
+
+    @staticmethod
+    def _get_ceph_tmp_dir() -> str:
+        return __salt__['pillar.get']('ceph_tmp_dir', '')
+
+    @staticmethod
+    def _get_ceph_image() -> str:
+        return __salt__['pillar.get']('ceph_image', '')
+
+    @staticmethod
+    def _get_ceph_base_dir() -> str:
+        return __salt__['pillar.get']('ceph_base_dir', '')
+
+    @staticmethod
+    def _get_ceph_run_dir() -> str:
+        return __salt__['pillar.get']('ceph_run_dir', '')
+
+    @staticmethod
+    def _get_ceph_etc_dir() -> str:
+        return __salt__['pillar.get']('ceph_etc_dir', '')
+
+    @staticmethod
+    def _get_hostname():
+        return __salt__['grains.get']('host', '')
+
+    @staticmethod
+    def _make_or_get_fsid():
+        return __salt__['pillar.get']('fsid', str(uuid.uuid1()))
+
+    @staticmethod
+    def _get_public_network():
+        return __salt__['pillar.get']('public_network', '')
+
+    @staticmethod
+    def _get_cluster_network():
+        return __salt__['pillar.get']('cluster_network', '')
+
+    @staticmethod
+    def _get_public_address():
+        # TODO: need validation?
+        return __salt__['public.address']()
+
+    def _ensure_dirs_exist(self):
+        makedirs(self.ceph_base_dir)
+        makedirs(self.ceph_tmp_dir)
+        makedirs(self.ceph_run_dir)
+        makedirs(self.ceph_etc_dir)
         return True
-    return True
+
+    # TODO: improve return checks
+    def create_initial_keyring(self) -> str:
+        """ TODO docstring """
+        ret = CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-authtool',
+            args=shlex_split(
+                f"--create-keyring {self.keyring} --gen-key -n mon. --cap mon 'allow *'"
+            ),
+            volume_mounts={
+                f'{self.ceph_bootstrap_master_dir}':
+                f'{self.ceph_bootstrap_master_dir}'
+            }).run(out=True)
+
+        return self.keyring
+
+    # TODO: improve return checks
+    def create_admin_keyring(self) -> str:
+        """ TODO docstring """
+        ret = CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-authtool',
+            args=shlex_split(
+                f"--create-keyring {self.admin_keyring} --gen-key -n client.admin --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow *' --cap mgr 'allow *'"
+            ),
+            volume_mounts={
+                f'{self.ceph_bootstrap_master_dir}':
+                f'{self.ceph_bootstrap_master_dir}'
+            }).run(out=True)
+
+        return self.admin_keyring
+
+    def create_osd_bootstrap_keyring(self) -> str:
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-authtool',
+            args=shlex_split(
+                f"--create-keyring {self.osd_bootstrap_keyring} --gen-key -n client.bootstrap-osd --cap mon 'profile bootstrap-osd'"
+            ),
+            volume_mounts={
+                f'{self.ceph_bootstrap_master_dir}':
+                f'{self.ceph_bootstrap_master_dir}'
+            }).run(out=True)
+
+        return self.osd_bootstrap_keyring
+
+    def add_generated_keys(self) -> bool:
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-authtool',
+            args=shlex_split(
+                f"{self.keyring} --import-keyring {self.admin_keyring}"),
+            volume_mounts={
+                f'{self.ceph_bootstrap_master_dir}':
+                f'{self.ceph_bootstrap_master_dir}'
+            }).run()
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-authtool',
+            args=shlex_split(
+                f"{self.keyring} --import-keyring {self.osd_bootstrap_keyring}"
+            ),
+            volume_mounts={
+                f'{self.ceph_bootstrap_master_dir}':
+                f'{self.ceph_bootstrap_master_dir}'
+            }).run()
+
+        # TODO
+        return True
+
+    def create_initial_monmap(self) -> str:
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='monmaptool',
+            args=shlex_split(
+                f'--create --add {self.hostname} {self.public_address} --fsid {self.fsid} {self.monmap} --clobber'
+            ),
+            volume_mounts={
+                f'{self.ceph_bootstrap_master_dir}':
+                f'{self.ceph_bootstrap_master_dir}'
+            }).run()
+
+        logger.info(f'Initial mon_map created here: {self.monmap}')
+        return self.monmap
+
+    def _create_mon(self, uid=0, gid=0, start=True):
+
+        makedirs(f'/var/lib/ceph/mon/ceph-{self.hostname}')
+        makedirs(f'/var/log/ceph')
+        # TODO: change ownership to ceph:ceph
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-mon',
+            args=[
+                '--mkfs', '-i', self.hostname, '--keyring',
+                self.keyring_on_minion, '--monmap', self.monmap_on_minion
+            ] + user_args(uid, gid),
+            volume_mounts={
+                '/var/lib/ceph/': '/var/lib/ceph',
+                '/etc/ceph/': '/etc/ceph'
+            }).run()
+
+        if start:
+            self._start_mon()
+            return True
+        return True
+
+    def _start_mon(self, uid=0, gid=0):
+        mon_container = CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-mon',
+            args=[
+                '-i',
+                self.hostname,
+                '-f',  # foreground
+                '-d'  # log to stderr
+            ] + user_args(uid, gid),
+            volume_mounts={
+                '/var/lib/ceph': '/var/lib/ceph:z',
+                '/var/run/ceph': '/var/run/ceph:z',
+                '/etc/ceph/': '/etc/ceph',
+                '/etc/localtime': '/etc/localtime:ro',
+                '/var/log/ceph': '/var/log/ceph:z'
+            },
+            name='ceph-mon-%i',
+        )
+        unit_path = expanduser('/usr/lib/systemd/system')
+        makedirs(unit_path)
+        logger.info(mon_container.run_cmd)
+        print(" ".join(mon_container.run_cmd))
+        with open(f'{unit_path}/ceph-mon@.service', 'w') as f:
+            f.write(f"""[Unit]
+    Description=Ceph Monitor
+    After=network.target
+    [Service]
+    EnvironmentFile=-/etc/environment
+    ExecStartPre=-/usr/bin/podman rm ceph-mon-%i
+    ExecStart={' '.join(mon_container.run_cmd)}
+    ExecStop=-/usr/bin/podman stop ceph-mon-%i
+    ExecStopPost=-/bin/rm -f /var/run/ceph/ceph-mon.%i.asok
+    Restart=always
+    RestartSec=10s
+    TimeoutStartSec=120
+    TimeoutStopSec=15
+    [Install]
+    WantedBy=multi-user.target
+    """)
+        check_output(
+            ['systemctl', 'disable', f'ceph-mon@{self.hostname}.service'])
+        check_output(
+            ['systemctl', 'enable', f'ceph-mon@{self.hostname}.service'])
+        check_output(
+            ['systemctl', 'start', f'ceph-mon@{self.hostname}.service'])
+        logger.info(f'See > journalctl -f -u ceph-mon@{self.hostname}.service')
+        print(f'See > journalctl -f -u ceph-mon@{self.hostname}.service')
+
+    def _create_mgr_keyring(self, name):
+        keyring_name = f'mgr_keyring.{name}'
+        keyring_path = f"{self.ceph_bootstrap_master_dir}/{keyring_name}"
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph',
+            args=shlex_split(
+                f"auth get-or-create mgr.{name} mon 'allow profile mgr' osd 'allow *' mds 'allow *' -o {keyring_path}"
+            ),
+            volume_mounts={
+                '/etc/ceph/': '/etc/ceph',
+                self.ceph_bootstrap_master_dir: self.ceph_bootstrap_master_dir
+            }).run(out=True)
+
+        # TODO: Improve returnchecks
+        return keyring_name
+
+    def _start_mgr(self):
+        mgr_container = CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph-mgr',
+            args=[
+                '-i',
+                self.hostname,
+                '-f',  # foreground
+                '-d'  # log to stderr
+            ],
+            volume_mounts={
+                '/var/lib/ceph': '/var/lib/ceph:z',
+                '/var/run/ceph': '/var/run/ceph:z',
+                '/etc/ceph/': '/etc/ceph',
+                '/etc/localtime': '/etc/localtime:ro',
+                '/var/log/ceph': '/var/log/ceph:z'
+            },
+            name='ceph-mgr-%i',
+        )
+        unit_path = expanduser('/usr/lib/systemd/system')
+        makedirs(unit_path)
+        logger.info(mgr_container.run_cmd)
+        print(" ".join(mgr_container.run_cmd))
+        with open(f'{unit_path}/ceph-mgr@.service', 'w') as f:
+            f.write(f"""[Unit]
+    Description=Ceph Manager
+    After=network.target
+    [Service]
+    EnvironmentFile=-/etc/environment
+    ExecStartPre=-/usr/bin/podman rm ceph-mgr-%i
+    ExecStart={' '.join(mgr_container.run_cmd)}
+    ExecStop=-/usr/bin/podman stop ceph-mgr-%i
+    ExecStopPost=-/bin/rm -f /var/run/ceph/ceph-mgr.%i.asok
+    Restart=always
+    RestartSec=10s
+    TimeoutStartSec=120
+    TimeoutStopSec=15
+    [Install]
+    WantedBy=multi-user.target
+    """)
+            #TODO: This should *maybe* handled with salt's serivce.running module?
+            # or even offloaded to a state entirely? maybe just the starting of a service?
+            # This offload the returncode checking - making it consistent..
+        check_output(
+            ['systemctl', 'disable', f'ceph-mgr@{self.hostname}.service'])
+        check_output(
+            ['systemctl', 'enable', f'ceph-mgr@{self.hostname}.service'])
+        check_output(
+            ['systemctl', 'start', f'ceph-mgr@{self.hostname}.service'])
+        logger.info(
+            f'See > journalctl --user -f -u ceph-mgr@{self.hostname}.service')
+        print(
+            f'See > journalctl --user -f -u ceph-mgr@{self.hostname}.service')
+        return True
+
+    def _create_mon_keyring(self, name):
+        keyring_name = f'mon_keyring.{name}'
+        keyring_path = f"{self.ceph_bootstrap_master_dir}/{keyring_name}"
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph',
+            args=shlex_split(f"auth get mon. -o {keyring_path}"),
+            volume_mounts={
+                '/etc/ceph/': '/etc/ceph',
+                self.ceph_bootstrap_master_dir: self.ceph_bootstrap_master_dir
+            }).run()
+
+        # TODO: Improve returnchecks
+        return keyring_name
+
+    def _extract_mon_map(self, name):
+        monmap_name = f'mon_monmap.{name}'
+        monmap_path = f"{self.ceph_bootstrap_master_dir}/{monmap_name}"
+
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph',
+            args=shlex_split(f'mon getmap -o {monmap_path}'),
+            volume_mounts={
+                '/etc/ceph/': '/etc/ceph',
+                self.ceph_bootstrap_master_dir: self.ceph_bootstrap_master_dir
+            }).run()
+
+        return monmap_name
 
 
-def create_mgr_keyring(image, mgr_name):
-    assert image
-    assert mgr_name
-    mgr_path = f'/srv/salt/ceph/mgr/cache'
-    makedirs(mgr_path)
-    CephContainer(
-        image=image,
-        entrypoint='ceph',
-        args=shlex_split(
-            f"auth get-or-create mgr.{mgr_name} mon 'allow profile mgr' osd 'allow *' mds 'allow *' -o {mgr_path}/{mgr_name}.keyring"
-        ),
-        volume_mounts={
-            '/var/lib/ceph/': '/var/lib/ceph',
-            '/srv/salt/ceph/mgr/cache': '/srv/salt/ceph/mgr/cache',
-            # etc ceph needs to go away, how does one query ceph auth get mon without the ceph.conf needs?
-            '/etc/ceph/': '/etc/ceph'
-        }).run()
-
-    # TODO: Improve returnchecks
-    return True
+def get_monmap(name):
+    return Deploy()._extract_mon_map(name)
 
 
-def create_mgr(image):
-    return start_mgr(image)
+def create_mgr_keyring(name):
+    return Deploy()._create_mgr_keyring(name)
+
+
+def create_mon_keyring(name):
+    return Deploy()._create_mon_keyring(name)
+
+
+def create_mgr():
+    return Deploy()._start_mgr()
+
+
+def create_mon():
+    return Deploy()._create_mon()
+
+
+def ensure_dirs_exist():
+    return Deploy()._ensure_dirs_exist()
+
+
+def create_initial_keyring():
+    return Deploy().create_initial_keyring()
+
+
+def create_admin_keyring():
+    return Deploy().create_admin_keyring()
+
+
+def create_osd_bootstrap_keyring():
+    return Deploy().create_osd_bootstrap_keyring()
+
+
+def add_generated_keys():
+    return Deploy().add_generated_keys()
+
+
+def create_initial_monmap():
+    return Deploy().create_initial_monmap()
+
+
+def create_bootstrap_items():
+    if all([
+            create_initial_keyring(),
+            create_admin_keyring(),
+            create_osd_bootstrap_keyring(),
+            add_generated_keys(),
+            create_initial_monmap()
+    ]):
+        return True
+    return False
 
 
 def remove_mon(image):
@@ -375,124 +561,6 @@ def remove_mgr(image):
     rmfile(f'/usr/lib/systemd/system/ceph-mgr@.service')
     check_output(['systemctl', 'daemon-reload'])
     return True
-
-
-def start_mgr(image):
-    mgr_name = __grains__.get('host', '')
-    makedirs('/var/log/ceph')
-    makedirs('/var/run/ceph')
-    mgr_container = CephContainer(
-        image=image,
-        entrypoint='ceph-mgr',
-        args=[
-            '-i',
-            mgr_name,
-            '-f',  # foreground
-            '-d'  # log to stderr
-        ],
-        volume_mounts={
-            '/var/lib/ceph': '/var/lib/ceph:z',
-            '/var/run/ceph': '/var/run/ceph:z',
-            '/etc/ceph/': '/etc/ceph',
-            '/etc/localtime': '/etc/localtime:ro',
-            '/var/log/ceph': '/var/log/ceph:z'
-        },
-        name='ceph-mgr-%i',
-    )
-    unit_path = expanduser('/usr/lib/systemd/system')
-    makedirs(unit_path)
-    logger.info(mgr_container.run_cmd)
-    print(" ".join(mgr_container.run_cmd))
-    with open(f'{unit_path}/ceph-mgr@.service', 'w') as f:
-        f.write(f"""[Unit]
-Description=Ceph Manager
-After=network.target
-[Service]
-EnvironmentFile=-/etc/environment
-ExecStartPre=-/usr/bin/podman rm ceph-mgr-%i
-ExecStart={' '.join(mgr_container.run_cmd)}
-ExecStop=-/usr/bin/podman stop ceph-mgr-%i
-ExecStopPost=-/bin/rm -f /var/run/ceph/ceph-mgr.%i.asok
-Restart=always
-RestartSec=10s
-TimeoutStartSec=120
-TimeoutStopSec=15
-[Install]
-WantedBy=multi-user.target
-""")
-        #TODO: This should *maybe* handled with salt's serivce.running module?
-        # or even offloaded to a state entirely? maybe just the starting of a service?
-        # This offload the returncode checking - making it consistent..
-    check_output(['systemctl', 'disable', f'ceph-mgr@{mgr_name}.service'])
-    check_output(['systemctl', 'enable', f'ceph-mgr@{mgr_name}.service'])
-    check_output(['systemctl', 'start', f'ceph-mgr@{mgr_name}.service'])
-    logger.info(f'See > journalctl --user -f -u ceph-mgr@{mgr_name}.service')
-    print(f'See > journalctl --user -f -u ceph-mgr@{mgr_name}.service')
-    return True
-
-
-def start_mon(
-        image,
-        mon_name,
-        #mon_keyring_path,
-        #cluster_addr,
-        #public_addr,
-        #mon_initial_members=None,
-        #fsid=None,
-        uid=0,
-        gid=0):
-    makedirs('/var/run/ceph')
-    mon_container = CephContainer(
-        image=image,
-        entrypoint='ceph-mon',
-        args=[
-            '-i',
-            mon_name,
-            #'--fsid',
-            #fsid,
-            #'--keyring',
-            #mon_keyring_path,
-            #f'--cluster_addr={cluster_addr}',
-            #f'--public_addr={public_addr}',
-            #f'--mon_initial_members={mon_initial_members}',
-            '-f',  # foreground
-            '-d'  # log to stderr
-        ] + user_args(uid, gid),
-        volume_mounts={
-            '/var/lib/ceph': '/var/lib/ceph:z',
-            '/var/run/ceph': '/var/run/ceph:z',
-            #'/etc/ceph/': '/etc/ceph',
-            '/etc/localtime': '/etc/localtime:ro',
-            '/var/log/ceph': '/var/log/ceph:z'
-        },
-        name='ceph-mon-%i',
-    )
-    unit_path = expanduser('/usr/lib/systemd/system')
-    makedirs(unit_path)
-    logger.info(mon_container.run_cmd)
-    print(" ".join(mon_container.run_cmd))
-    with open(f'{unit_path}/ceph-mon@.service', 'w') as f:
-        f.write(f"""[Unit]
-Description=Ceph Monitor
-After=network.target
-[Service]
-EnvironmentFile=-/etc/environment
-ExecStartPre=-/usr/bin/podman rm ceph-mon-%i
-ExecStart={' '.join(mon_container.run_cmd)}
-ExecStop=-/usr/bin/podman stop ceph-mon-%i
-ExecStopPost=-/bin/rm -f /var/run/ceph/ceph-mon.%i.asok
-Restart=always
-RestartSec=10s
-TimeoutStartSec=120
-TimeoutStopSec=15
-[Install]
-WantedBy=multi-user.target
-""")
-    check_output(['systemctl', 'disable', f'ceph-mon@{mon_name}.service'])
-    check_output(['systemctl', 'enable', f'ceph-mon@{mon_name}.service'])
-    check_output(['systemctl', 'start', f'ceph-mon@{mon_name}.service'])
-    logger.info(f'See > journalctl -f -u ceph-mon@{mon_name}.service')
-    print(f'See > journalctl -f -u ceph-mon@{mon_name}.service')
 
 
 # Utils

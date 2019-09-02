@@ -3,35 +3,34 @@ import os
 from pathlib import Path
 import salt.client
 import logging
-from .pillar import proposal
-from .utils import prompt
+from .utils import prompt, run_and_eval
 
 
 def update_pillar(directory, checksum):
     local_client = salt.client.LocalClient()
     print('Updating the pillar')
-    proposal()
+
+    # TODO use the eval_and_run method form bootstrap
+    run_and_eval('config.deploy_roles')
+
     ret: str = local_client.cmd(
-        "I@deepsea_minions:*",
-        'state.apply', ['ceph.refresh'],
-        tgt_type='compound')
-    # if (accumulated)ret == 0:
-    # update md5()
-    # TODO catch errors here
+        # TODO: target deepsea_minions
+        "*", 'saltutil.refresh_pillar', tgt_type='glob')
+
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
-    print("The pillar should be in sync now")
+    print("The pillar is up to date.")
 
 
 def sync_modules(directory, checksum):
     local_client = salt.client.LocalClient()
     print('Updating the modules')
-    proposal()
     ret: str = local_client.cmd(
-        "cluster:ceph", 'saltutil.sync_modules', tgt_type='pillar')
+        # TODO: target deepsea_minions
+        "*", 'saltutil.sync_modules', tgt_type='glob')
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
-    print("The modules should be in sync now")
+    print("The modules are up to date.")
 
 
 def md5_update_from_dir(directory, hash):

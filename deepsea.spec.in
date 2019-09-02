@@ -180,6 +180,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mgr/restart
 %dir /srv/salt/ceph/mgr/restart/force
 %dir /srv/salt/ceph/mgr/restart/controlled
+%dir /srv/salt/ceph/bootstrap
+%dir /srv/salt/ceph/permissions
 %dir /srv/salt/ceph/migrate
 %dir /srv/salt/ceph/migrate/nodes
 %dir /srv/salt/ceph/migrate/osds
@@ -459,6 +461,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/top.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/init.sls
 /srv/pillar/ceph/README
+%config %attr(-, salt, salt) /srv/pillar/ceph/internal.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/config.yml
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/benchmark.cfg
 %config %attr(-, salt, salt) /srv/pillar/ceph/benchmarks/collections/*.yml
@@ -470,6 +473,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 /srv/salt/_modules/*.py*
 /srv/salt/_states/*.py*
+%config /srv/salt/ceph/permissions/*.sls
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
