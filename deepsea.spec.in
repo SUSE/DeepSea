@@ -130,7 +130,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/configuration
 %dir /srv/salt/ceph/configuration/files
 %dir /srv/salt/ceph/configuration/files/ceph.conf.d
-%dir /srv/salt/ceph/configuration/files/ceph.conf.checksum
 %dir %attr(0700, salt, salt) /srv/salt/ceph/configuration/files/ceph.conf.checksum
 %dir /srv/salt/ceph/configuration/check
 %dir /srv/salt/ceph/configuration/create
@@ -472,7 +471,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/admin/files/*.j2
 %config /srv/salt/ceph/admin/key/*.sls
 %config /srv/salt/ceph/apparmor/*.sls
-%config /srv/salt/ceph/apparmor/files/*
+%config /srv/salt/ceph/apparmor/files/usr.bin.ceph-*
+%config /srv/salt/ceph/apparmor/files/usr.bin.radosgw
 %config /srv/salt/ceph/apparmor/files/ceph.d/*
 %config /srv/salt/ceph/apparmor/install/*
 %config /srv/salt/ceph/benchmarks/*.sls
@@ -801,9 +801,8 @@ orchestration completes.
 
 %files cli
 %{_bindir}/deepsea
-%{python3_sitelib}/deepsea/
+%{python3_sitelib}/deepsea
 %{python3_sitelib}/deepsea-%{version}-py%{python3_version}.egg-info
-%{python3_sitelib}/deepsea-%{version}-py%{python3_version}.egg-info/*
 
 %package qa
 Summary:        DeepSea integration test scripts
