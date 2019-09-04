@@ -2,9 +2,9 @@
 DOCDIR = /usr/share/doc/packages
 VERSION ?= $(shell (git describe --tags --long --match 'v*' 2>/dev/null || echo '0.0.0') | sed -e 's/^v//' -e 's/-/+/' -e 's/-/./')
 
-DEEPSEA_DEPS=salt-api
-PYTHON_DEPS=python3-setuptools python3-click python3-tox python3-configobj
-PYTHON=python3
+SALT_API=salt-api
+PY_VER=3
+PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 suse=
@@ -23,20 +23,28 @@ USER=root
 GROUP=root
 ifeq ($(OS), centos)
 PKG_INSTALL=yum install -y
-PYTHON_DEPS=rh-python36-setuptools python36-click tox python36-configobj
+PY_VER=36
+PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click tox python${PY_VER}-configobj
 else
 ifeq ($(OS), fedora)
 PKG_INSTALL=yum install -y
 else
+ifeq ($(OS), arch)
+PKG_INSTALL=pacman -Syyu --noconfirm  && /usr/bin/pacman -S --noconfirm
+SALT_API=
+PYTHON_DEPS=python-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj
+else
 debian := $(wildcard /etc/debian_version)
 ifneq ($(strip $(debian)),)
 PKG_INSTALL=apt-get install -y
-PYTHON_DEPS=python3-setuptools python3-click tox python3-configobj
+PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click tox python${PY_VER}-configobj
+endif
 endif
 endif
 endif
 endif
 
+DEEPSEA_DEPS=${SALT_API}
 
 usage:
 	@echo "Usage:"
@@ -52,8 +60,8 @@ setup.py:
 
 pyc: setup.py
 	#make sure to create bytecode with the correct version
-	find srv/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
-	find cli/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
+	find srv/ -name '*.py' -exec python$(PY_VER) -m py_compile {} \;
+	find cli/ -name '*.py' -exec python$(PY_VER) -m py_compile {} \;
 
 copy-files:
 	# salt-master config files
@@ -968,8 +976,8 @@ copy-files:
 
 install-deps:
 	# Using '|| true' to suppress failure (packages already installed, etc)
-	$(PKG_INSTALL) $(DEEPSEA_DEPS) || true
-	$(PKG_INSTALL) $(PYTHON_DEPS) || true
+	([ -n "$(DEEPSEA_DEPS)" ] && $(PKG_INSTALL) $(DEEPSEA_DEPS)) || true
+	([ -n "$(PYTHON_DEPS)" ] && $(PKG_INSTALL) $(PYTHON_DEPS)) || true
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
@@ -978,9 +986,9 @@ install: pyc install-deps copy-files
 	chown -R $(USER) $(DESTDIR)/srv/pillar/ceph
 	# Use '|| true' to suppress some error output in corner cases
 	systemctl restart salt-master
-	systemctl restart salt-api
+	([ -n "$(SALT_API)" ] && systemctl restart $(SALT_API)) || true
 	# deepsea-cli
-	$(PYTHON) setup.py install --root=$(DESTDIR)/
+	python$(PY_VER) setup.py install --root=$(DESTDIR)/
 
 rpm: tarball
 	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
