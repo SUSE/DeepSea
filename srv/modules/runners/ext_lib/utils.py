@@ -177,9 +177,7 @@ def _remove_role(role=None, non_interactive=False):
     """ TODO: docstring """
     assert role
     already_running = LocalClient().cmd(
-        f"not I@roles:{role}",
-        f'{role}.already_running',
-        tgt_type='compound')
+        f"not I@roles:{role}", f'{role}.already_running', tgt_type='compound')
     to_remove = [k for (k, v) in already_running.items() if v]
     if not to_remove:
         print("Nothing to remove. Exiting..")
@@ -221,11 +219,23 @@ def _create_bootstrap_items():
         return False
 
 
-def _create_mgr_keyring(name):
+def _create_initial_monmap(hostname):
+    """ TODO docstring """
+    log_n_print("Creating bootstrap items..")
+    ret: str = LocalClient().cmd(
+        hostname, 'podman.create_initial_monmap', tgt_type='glob')
+    if not evaluate_module_return(ret):
+        return False
+    return ret
+
+
+def _create_mgr_keyring(hostname):
     """ TODO docstring """
     log_n_print("Creating mgr keyring..")
     ret: str = LocalClient().cmd(
-        'roles:master', 'podman.create_mgr_keyring', [name], tgt_type='pillar')
+        'roles:master',
+        'podman.create_mgr_keyring', [hostname],
+        tgt_type='pillar')
 
     if not evaluate_module_return(ret):
         return False
@@ -311,7 +321,7 @@ def ensure_permissions():
         return False
 
 
-def _distribute_bootstrap_items():
+def _distribute_bootstrap_items(hostname):
     """ TODO docstring """
     # TODO: evaluate returns
     log_n_print("Copying bootstrap items to respective minions..")
@@ -319,33 +329,40 @@ def _distribute_bootstrap_items():
     ensure_permissions()
     ensure_dirs_exist()
 
-    ret: str = LocalClient().cmd(
-        'roles:mon',
-        'cp.get_file', ['salt://ceph/bootstrap/monmap', '/var/lib/ceph/tmp/'],
-        tgt_type='pillar')
-
-    #TODO replace /var/lib/ceph/tmp with pillar variable
+    # TODO replace /var/lib/ceph/tmp with pillar variable
     # TODO: Improve evaluate_module_return func
-    if not evaluate_module_return(ret, context='cp.get_file monmap'):
-        return False
 
+    log_n_print(f"Distributing the bootstrap admin keyring to {hostname}")
     ret: str = LocalClient().cmd(
-        'roles:mon',
+        hostname,
         'cp.get_file', ['salt://ceph/bootstrap/keyring', '/var/lib/ceph/tmp/'],
-        tgt_type='pillar')
+        tgt_type='glob')
     if not evaluate_module_return(ret, context='cp.get_file keyring'):
         return False
 
     ret: str = LocalClient().cmd(
-        'roles:mon',
+        hostname,
         'cp.get_file',
         ['salt://ceph/bootstrap/ceph.keyring', '/var/lib/ceph/tmp/'],
-        tgt_type='pillar')
+        tgt_type='glob')
     if not evaluate_module_return(ret, context='cp.get_file ceph.keyring'):
         return False
 
+    log_n_print("Distributing the admin keyring to the admin nodes")
     ret: str = LocalClient().cmd(
-        'roles:mon',
+        # also distribute the admin keyring on role:admin role:master and role:mon
+        # TODO: also on role mon? actually not..o
+        'roles:admin',
+        'cp.get_file',
+        ['salt://ceph/bootstrap/ceph.client.admin.keyring', '/etc/ceph/'],
+        tgt_type='pillar')
+    if not evaluate_module_return(ret, context='cp.get_file admin.keyring'):
+        return False
+
+    log_n_print("Distributing the admin keyring to the master node")
+    ret: str = LocalClient().cmd(
+        # also distribute the admin keyring on role:admin role:master and role:mon
+        'roles:master',
         'cp.get_file',
         ['salt://ceph/bootstrap/ceph.client.admin.keyring', '/etc/ceph/'],
         tgt_type='pillar')
@@ -390,6 +407,7 @@ def is_running(minion, role_name=None, func='wait_role_up'):
         return True
     return False
 
+
 def run_and_eval(runner_name, extra_args=None, opts={}):
     # TODO: maybe supress the 'True' output from the screen
     qrunner = runner(opts)
@@ -399,10 +417,10 @@ def run_and_eval(runner_name, extra_args=None, opts={}):
 
 
 def _read_policy_cfg():
-    policy_path = LocalClient().cmd(
-        "", 'test.ping', tgt_type='compound')
+    policy_path = LocalClient().cmd("", 'test.ping', tgt_type='compound')
     with open(policy_path, 'r') as _fd:
         return _fd.read()
+
 
 def _query_master_pillar(key=None):
     assert key

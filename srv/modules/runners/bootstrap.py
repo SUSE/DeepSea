@@ -24,7 +24,10 @@ Make the time-server thing separate
 
 """
 
-policy_path = _query_master_pillar('deepsea_policy_path')
+# FIXME: master can't be contacted before policy.cfg exists, probably read from internal.yml file
+policy_path = '/srv/pillar/ceph/proposals/policy.cfg' #_query_master_pillar('deepsea_policy_path')
+proposals_dir =  '/srv/pillar/ceph/proposals'# _query_master_pillar('deepsea_proposal_dir')
+
 def _read_policy_cfg():
     with open(policy_path, 'r') as _fd:
         return _fd.read()
@@ -44,6 +47,7 @@ def initialize(non_interactive=False):
     log_n_print(
         "TODO: print a basic help thing explaining the steps and asking for a timeserver"
     )
+    return True
 
 
 def setup(non_interactive=False):
@@ -80,6 +84,8 @@ def setup(non_interactive=False):
     )
     run_and_eval("config.deploy_ceph_conf")
 
+    return True
+
 
 def core(non_interactive=False):
     # TODO: Break all(sysexit) on SIGINT
@@ -101,11 +107,14 @@ def core(non_interactive=False):
 
 
 def ceph(non_interactive=False):
-    # TODO: uncomment when done with devel
-    #initialize(non_interactive=non_interactive)
-    _query_master_pillar('deepsea_proposal_dir')
-    setup(non_interactive=non_interactive)
-    core(non_interactive=non_interactive)
+    # TODO: improve return messages
+    if not initialize(non_interactive=non_interactive):
+        return False
+    if not setup(non_interactive=non_interactive):
+        return False
+    if not core(non_interactive=non_interactive):
+        return False
+
     # TODO: When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation
     # We may keep track of the salt-key -L ('inventory') periodically
 
