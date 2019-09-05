@@ -975,18 +975,16 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 install-deps:
-	# Using '|| true' to suppress failure (packages already installed, etc)
-	([ -n "$(DEEPSEA_DEPS)" ] && $(PKG_INSTALL) $(DEEPSEA_DEPS)) || true
-	([ -n "$(PYTHON_DEPS)" ] && $(PKG_INSTALL) $(PYTHON_DEPS)) || true
+	([ -z "$(DEEPSEA_DEPS)" ] || $(PKG_INSTALL) $(DEEPSEA_DEPS))
+	([ -z "$(PYTHON_DEPS)" ] || $(PKG_INSTALL) $(PYTHON_DEPS))
 
 install: pyc install-deps copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > $(DESTDIR)/srv/pillar/ceph/deepsea_minions.sls
 	chown -R $(USER) $(DESTDIR)/srv/pillar/ceph
-	# Use '|| true' to suppress some error output in corner cases
 	systemctl restart salt-master
-	([ -n "$(SALT_API)" ] && systemctl restart $(SALT_API)) || true
+	([ -z "$(SALT_API)" ] || systemctl restart $(SALT_API))
 	# deepsea-cli
 	python$(PY_VER) setup.py install --root=$(DESTDIR)/
 
