@@ -1,4 +1,4 @@
-from ext_lib.utils import runner, prompt, log_n_print, run_and_eval, _query_master_pillar
+from ext_lib.utils import runner, prompt, log_n_print, run_and_eval, _query_master_pillar, ceph_health
 from ext_lib.hash_dir import pillar_questioneer, module_questioneer
 from pydoc import pager
 from os.path import exists
@@ -97,13 +97,14 @@ def core(non_interactive=False):
     print("Bootstrapping mgrs..")
     run_and_eval("mgr.deploy", [f'non_interactive={non_interactive}'])
 
-    run_and_eval("ceph.health")
 
-    print(
-        "Bootstrapping is complete now. Please proceed with the osd.deploy/help command."
-    )
-
-    return True
+    if ceph_health():
+        print(
+            "Bootstrapping is complete now. Please proceed with the osd.deploy/help command."
+        )
+        return True
+    print("Bootstrapping failed. TODO write a meaningful error message")
+    return False
 
 
 def ceph(non_interactive=False):

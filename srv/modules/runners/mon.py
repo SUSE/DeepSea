@@ -31,7 +31,7 @@ def deploy(bootstrap=False, non_interactive=False):
         # To feed the proper list to _deploy_role
         candidates = [mon_candidate]
     else:
-        print(f"Preparing deployment for {' '.join(candidates)}")
+        print(f"Preparing deployment for {', '.join(candidates)}")
         for candidate in candidates:
             ret = _create_mon_keyring(candidate)
             keyring_name = list(ret.values())[0]
@@ -56,9 +56,9 @@ def deploy(bootstrap=False, non_interactive=False):
         role='mon', candidates=candidates, non_interactive=non_interactive)
 
 
-def remove(non_interactive=False):
+def remove(non_interactive=False, purge=False):
     pillar_questioneer(non_interactive=non_interactive)
-    return _remove_role(role='mon', non_interactive=non_interactive)
+    return _remove_role(role='mon', non_interactive=non_interactive, purge=purge)
 
 
 def update():

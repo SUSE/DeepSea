@@ -10,7 +10,7 @@ def deploy(non_interactive=False):
     module_questioneer(non_interactive=non_interactive)
     candidates = _get_candidates(role='mgr')
     for candidate in candidates:
-        print(f"Preparing deployment for {' '.join(candidates)}")
+        print(f"Preparing deployment for {', '.join(candidates)}")
         ret = _create_mgr_keyring(candidate)
         # TODO: improve that
         keyring_name = list(ret.values())[0]
@@ -20,9 +20,9 @@ def deploy(non_interactive=False):
     return _deploy_role(role='mgr', candidates=candidates, non_interactive=non_interactive)
 
 
-def remove(non_interactive=False):
+def remove(non_interactive=False, purge=False):
     pillar_questioneer(non_interactive=non_interactive)
-    return _remove_role(role='mgr', non_interactive=non_interactive)
+    return _remove_role(role='mgr', non_interactive=non_interactive, purge=purge)
 
 
 def update():

@@ -168,7 +168,7 @@ def _is_running(role_name=None, minion=None, func='wait_role_up'):
     return running
 
 
-def _remove_role(role=None, non_interactive=False):
+def _remove_role(role=None, non_interactive=False, purge=False):
     # TODO: already_running vs is_running
     # find process id vs. systemd
     ##
@@ -176,22 +176,34 @@ def _remove_role(role=None, non_interactive=False):
     ##
     """ TODO: docstring """
     assert role
+
+    search = "not I@roles:{role}"
+
+    if purge:
+        search = "I@deepsea_minions:*"
+
     already_running = LocalClient().cmd(
-        f"not I@roles:{role}", f'{role}.already_running', tgt_type='compound')
+        search, f'{role}.already_running', tgt_type='compound')
     to_remove = [k for (k, v) in already_running.items() if v]
+
     if not to_remove:
         print("Nothing to remove. Exiting..")
         return True
+
     if prompt(
             f"""Removing role: {role} on minion {', '.join(to_remove)}
 Continue?""",
             non_interactive=non_interactive,
             default_answer=True):
+
         print(f"Removing {role} on {' '.join(to_remove)}")
+
         ret: str = LocalClient().cmd(
             to_remove,
             f'podman.remove_{role}',
+            kwarg={'purge': purge},
             tgt_type='list')
+
         if not evaluate_module_return(ret):
             return False
 
@@ -202,7 +214,8 @@ Continue?""",
         # TODO: do proper checks here:
         if all(ret):
             print(f"{role} deletion was successful.")
-            if role == 'mon':
+
+            if role == 'mon' and not purge:
                 # TODO: which roles needs ceph_conf rewrite aswell?
                 print("Updating the ceph.conf..")
                 runner().cmd('config.deploy_ceph_conf')
@@ -439,3 +452,17 @@ def _query_master_pillar(key=None):
         # TODO: really false?
         return False
     return values[0]
+
+
+def ceph_health():
+    ret: str = LocalClient().cmd(
+        'roles:master', 'podman.ceph_cli', ['health'], tgt_type='pillar')
+
+    # TODO: improve the extraction, this will eventually fail
+    status = list(ret.values())[0].strip()
+    if status == 'HEALTH_OK' or status == 'HEALTH_WARN':
+        print(f"Ceph cluster status is {status}")
+        return True
+
+    print(f"Ceph cluster status is {status}")
+    return False

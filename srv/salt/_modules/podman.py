@@ -74,7 +74,8 @@ def get_ceph_version(image):
 class Deploy(object):
     """ TODO docstring """
 
-    def __init__(self):
+    def __init__(self, purge=False):
+        self.purge = purge
         self.ceph_tmp_dir: str = self._get_ceph_tmp_dir()
         self.ceph_base_dir: str = self._get_ceph_base_dir()
         self.ceph_run_dir: str = self._get_ceph_run_dir()
@@ -465,21 +466,22 @@ class Deploy(object):
             logger.info(f'{e}')
             sys.exit(1)
 
-    def _remove_mon(self):
-        # TODO: removal of last monitor
-        CephContainer(
-            image=self.ceph_image,
-            entrypoint='ceph',
-            args=['mon', 'remove', self.hostname],
-            volume_mounts={
-                '/var/lib/ceph': '/var/lib/ceph:z',
-                '/var/run/ceph': '/var/run/ceph:z',
-                '/etc/ceph': '/etc/ceph:ro',
-                '/etc/localtime': '/etc/localtime:ro',
-                '/var/log/ceph': '/var/log/ceph:z'
-            },
-            name=f'ceph-mon-removed-{self.hostname}',
-        ).run()
+    def _remove_mon(self, purge=False):
+        """ TODO: write docstring """
+        if not self.purge:
+            CephContainer(
+                image=self.ceph_image,
+                entrypoint='ceph',
+                args=['mon', 'remove', self.hostname],
+                volume_mounts={
+                    '/var/lib/ceph': '/var/lib/ceph:z',
+                    '/var/run/ceph': '/var/run/ceph:z',
+                    '/etc/ceph': '/etc/ceph:ro',
+                    '/etc/localtime': '/etc/localtime:ro',
+                    '/var/log/ceph': '/var/log/ceph:z'
+                },
+                name=f'ceph-mon-removed-{self.hostname}',
+            ).run()
 
         check_output(
             ['systemctl', 'stop', f'ceph-mon@{self.hostname}.service'])
@@ -502,12 +504,12 @@ class Deploy(object):
         return True
 
 
-def remove_mon():
-    return Deploy()._remove_mon()
+def remove_mon(purge=False):
+    return Deploy(purge=purge)._remove_mon()
 
 
-def remove_mgr():
-    return Deploy()._remove_mgr()
+def remove_mgr(purge=False):
+    return Deploy(purge=purge)._remove_mgr()
 
 
 def get_monmap(name):
@@ -566,10 +568,12 @@ def create_bootstrap_items():
 
 
 def test_touch_file():
+    # TOOD: remove me later
     return check_output("touch test".split())
 
 
 def test_podman(passed_args):
+    # TOOD: remove me later
     return Deploy()._ceph_cli(passed_args)
 
 
