@@ -10,6 +10,7 @@ def deploy(non_interactive=False):
     module_questioneer(non_interactive=non_interactive)
     candidates = _get_candidates(role='mgr')
     for candidate in candidates:
+        print(f"Preparing deployment for {' '.join(candidates)}")
         ret = _create_mgr_keyring(candidate)
         # TODO: improve that
         keyring_name = list(ret.values())[0]

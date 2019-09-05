@@ -202,6 +202,11 @@ Continue?""",
         # TODO: do proper checks here:
         if all(ret):
             print(f"{role} deletion was successful.")
+            if role == 'mon':
+                # TODO: which roles needs ceph_conf rewrite aswell?
+                print("Updating the ceph.conf..")
+                runner().cmd('config.deploy_ceph_conf')
+
             return True
         return False
 
@@ -397,6 +402,10 @@ Continue?""",
     if not all(ret):
         print(f"{role} deployment was not successful.")
         return False
+    if role == 'mon':
+        # TODO: which roles needs ceph_conf rewrite aswell?
+        print("Updating the ceph.conf..")
+        runner().cmd('config.deploy_ceph_conf')
     return True
 
 
