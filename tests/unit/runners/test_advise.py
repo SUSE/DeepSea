@@ -13,6 +13,12 @@ class TestAdvise():
         expected = "data1.ceph: /dev/sdb, /dev/sdc\n"
         assert result == expected
 
+    def test_tidy_malformed(self):
+        report = {'data1.ceph': {'': "nothing"}}
+        result = advise._tidy('unconfigured', report)
+        expected = ""
+        assert result == expected
+
     def test_tidy_long(self):
         report = {'data1.long.domain.name': 
                    {'unconfigured': 

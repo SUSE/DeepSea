@@ -176,12 +176,16 @@ def _tidy(key, report):
     """
     line = ""
     for minion in sorted(report):
-        if report[minion][key]:
-            if len(minion) + len(", ".join(report[minion][key])) < 80:
-                line += "{}: {}\n".format(minion, ", ".join(sorted(report[minion][key])))
-            else:
-                line += "\n{}:\n  {}\n".format(minion, "\n  ".join(sorted(report[minion][key])))
+        if key in report[minion]:
+            if report[minion][key]:
+                if len(minion) + len(", ".join(report[minion][key])) < 80:
+                    line += "{}: {}\n".format(minion, ", ".join(sorted(report[minion][key])))
+                else:
+                    line += "\n{}:\n  {}\n".format(minion, "\n  ".join(sorted(report[minion][key])))
+        else:
+            log.warning("Ignoring malformed response from minion {}".format(minion))
     return line
+
 
 __func_alias__ = {
                  'help_': 'help',
