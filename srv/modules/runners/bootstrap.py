@@ -108,8 +108,8 @@ def core(non_interactive=False):
 
 def ceph(non_interactive=False):
     # TODO: improve return messages
-    if not initialize(non_interactive=non_interactive):
-        return False
+    # if not initialize(non_interactive=non_interactive):
+    #     return False
     if not setup(non_interactive=non_interactive):
         return False
     if not core(non_interactive=non_interactive):

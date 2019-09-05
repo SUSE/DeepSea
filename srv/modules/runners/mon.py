@@ -31,6 +31,7 @@ def deploy(bootstrap=False, non_interactive=False):
         # To feed the proper list to _deploy_role
         candidates = [mon_candidate]
     else:
+        print(f"Preparing deployment for {candidates}")
         for candidate in candidates:
             ret = _create_mon_keyring(candidate)
             keyring_name = list(ret.values())[0]

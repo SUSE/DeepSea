@@ -191,7 +191,6 @@ Continue?""",
         ret: str = LocalClient().cmd(
             to_remove,
             f'podman.remove_{role}',
-            ['registry.suse.de/devel/storage/6.0/images/ses/6/ceph/ceph'],
             tgt_type='list')
         if not evaluate_module_return(ret):
             return False
@@ -247,7 +246,7 @@ def _create_mon_keyring(name):
 
     # TODO: refactor keyring methods, can be only once with parameters
 
-    log_n_print("Creating mon keyring..")
+    log_n_print(f"Creating mon keyring for {name}")
     ret: str = LocalClient().cmd(
         'roles:master', 'podman.create_mon_keyring', [name], tgt_type='pillar')
 

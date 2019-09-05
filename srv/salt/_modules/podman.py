@@ -71,28 +71,6 @@ def get_ceph_version(image):
     CephContainer(image, 'ceph', ['--version']).run()
 
 
-def ceph_cli(image, passed_args):
-    # TODO: Change the way we pass ceph output up to the runner
-    try:
-        out = CephContainer(
-            image,
-            entrypoint='ceph',
-            args=shlex_split(passed_args),
-            volume_mounts={
-                '/var/lib/ceph': '/var/lib/ceph:z',
-                '/var/run/ceph': '/var/run/ceph:z',
-                '/etc/ceph': '/etc/ceph:z',
-                '/etc/localtime': '/etc/localtime:ro',
-                '/var/log/ceph': '/var/log/ceph:z'
-            },
-        ).run(out=True)
-        return out
-
-    except CalledProcessError as e:
-        logger.info(f'{e}')
-        sys.exit(1)
-
-
 class Deploy(object):
     """ TODO docstring """
 
@@ -281,15 +259,14 @@ class Deploy(object):
             image=self.ceph_image,
             entrypoint='monmaptool',
             args=shlex_split(
-                f'--create --add {self.hostname} {self.public_address} --fsid {self.fsid} {self.monmap} --clobber'
+                f'--create --add {self.hostname} {self.public_address} --fsid {self.fsid} {self.monmap_on_minion} --clobber'
             ),
             volume_mounts={
-                f'{self.ceph_bootstrap_master_dir}':
-                f'{self.ceph_bootstrap_master_dir}'
+                f'{self.ceph_tmp_dir}': f'{self.ceph_tmp_dir}'
             }).run()
 
         logger.info(f'Initial mon_map created here: {self.monmap}')
-        return self.monmap
+        return self.monmap_on_minion
 
     def _create_mon(self, uid=0, gid=0, start=True):
 
@@ -467,6 +444,71 @@ class Deploy(object):
 
         return monmap_name
 
+    def _ceph_cli(self, passed_args):
+        # TODO: Change the way we pass ceph output up to the runner
+        try:
+            out = CephContainer(
+                image=self.ceph_image,
+                entrypoint='ceph',
+                args=shlex_split(passed_args),
+                volume_mounts={
+                    '/var/lib/ceph': '/var/lib/ceph:z',
+                    '/var/run/ceph': '/var/run/ceph:z',
+                    '/etc/ceph': '/etc/ceph:z',
+                    '/etc/localtime': '/etc/localtime:ro',
+                    '/var/log/ceph': '/var/log/ceph:z'
+                },
+            ).run(out=True)
+            return out
+
+        except CalledProcessError as e:
+            logger.info(f'{e}')
+            sys.exit(1)
+
+    def _remove_mon(self):
+        # TODO: removal of last monitor
+        CephContainer(
+            image=self.ceph_image,
+            entrypoint='ceph',
+            args=['mon', 'remove', self.hostname],
+            volume_mounts={
+                '/var/lib/ceph': '/var/lib/ceph:z',
+                '/var/run/ceph': '/var/run/ceph:z',
+                '/etc/ceph': '/etc/ceph:ro',
+                '/etc/localtime': '/etc/localtime:ro',
+                '/var/log/ceph': '/var/log/ceph:z'
+            },
+            name=f'ceph-mon-removed-{self.hostname}',
+        ).run()
+
+        check_output(
+            ['systemctl', 'stop', f'ceph-mon@{self.hostname}.service'])
+        check_output(
+            ['systemctl', 'disable', f'ceph-mon@{self.hostname}.service'])
+        rmdir(f'/var/lib/ceph/mon/ceph-{self.hostname}')
+        rmfile(f'/usr/lib/systemd/system/ceph-mon@.service')
+        check_output(['systemctl', 'daemon-reload'])
+        return True
+
+    def _remove_mgr(self):
+        # TODO: make this failproof
+        check_output(
+            ['systemctl', 'stop', f'ceph-mgr@{self.hostname}.service'])
+        check_output(
+            ['systemctl', 'disable', f'ceph-mgr@{self.hostname}.service'])
+        rmdir(f'/var/lib/ceph/mgr/ceph-{self.hostname}')
+        rmfile(f'/usr/lib/systemd/system/ceph-mgr@.service')
+        check_output(['systemctl', 'daemon-reload'])
+        return True
+
+
+def remove_mon():
+    return Deploy()._remove_mon()
+
+
+def remove_mgr():
+    return Deploy()._remove_mgr()
+
 
 def get_monmap(name):
     return Deploy()._extract_mon_map(name)
@@ -518,52 +560,21 @@ def create_bootstrap_items():
             create_admin_keyring(),
             create_osd_bootstrap_keyring(),
             add_generated_keys(),
-            create_initial_monmap()
     ]):
         return True
     return False
 
 
-def remove_mon(image):
-    # TODO: removal of last monitor
-    mon_name = __grains__.get('host', '')
-    assert mon_name
-    CephContainer(
-        image=image,
-        entrypoint='ceph',
-        args=['mon', 'remove', mon_name],
-        volume_mounts={
-            '/var/lib/ceph': '/var/lib/ceph:z',
-            '/var/run/ceph': '/var/run/ceph:z',
-            '/etc/ceph': '/etc/ceph:ro',
-            '/etc/localtime': '/etc/localtime:ro',
-            '/var/log/ceph': '/var/log/ceph:z'
-        },
-        name='ceph-mon-removed',
-    ).run()
-
-    check_output(['systemctl', 'stop', f'ceph-mon@{mon_name}.service'])
-    check_output(['systemctl', 'disable', f'ceph-mon@{mon_name}.service'])
-    rmdir(f'/var/lib/ceph/mon/ceph-{mon_name}')
-    rmfile(f'/usr/lib/systemd/system/ceph-mon@.service')
-    check_output(['systemctl', 'daemon-reload'])
-    return True
+def test_touch_file():
+    return check_output("touch test".split())
 
 
-def remove_mgr(image):
-    mgr_name = __grains__.get('host', '')
-    assert mgr_name
-
-    # TODO: make this failproof
-    check_output(['systemctl', 'stop', f'ceph-mgr@{mgr_name}.service'])
-    check_output(['systemctl', 'disable', f'ceph-mgr@{mgr_name}.service'])
-    rmdir(f'/var/lib/ceph/mgr/ceph-{mgr_name}')
-    rmfile(f'/usr/lib/systemd/system/ceph-mgr@.service')
-    check_output(['systemctl', 'daemon-reload'])
-    return True
+def test_podman(passed_args):
+    return Deploy()._ceph_cli(passed_args)
 
 
-# Utils
+def ceph_cli(passed_args):
+    return Deploy()._ceph_cli(passed_args)
 
 
 def user_args(uid, gid):
@@ -575,13 +586,10 @@ def user_args(uid, gid):
     return user_args
 
 
+# TODO only exists for CephContainer class. Factor all the
+# Utils in a separate Utils class and let CephContainer inherit
 def get_hostname():
     return __salt__['grains.get']('host', '')
-
-
-def make_or_get_fsid():
-    import uuid
-    return __salt__['pillar.get']('fsid', str(uuid.uuid1()))
 
 
 def find_program(filename):

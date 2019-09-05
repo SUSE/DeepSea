@@ -10,7 +10,6 @@ def update_pillar(directory, checksum):
     local_client = salt.client.LocalClient()
     print('Updating the pillar')
 
-    # TODO use the eval_and_run method form bootstrap
     run_and_eval('config.deploy_roles')
 
     ret: str = local_client.cmd(
