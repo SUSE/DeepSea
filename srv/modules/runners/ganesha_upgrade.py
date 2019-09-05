@@ -235,6 +235,35 @@ def _check_if_fresh_install(roles):
     return True
 
 
+def _check_if_migration_needed(roles, master, nfs_pool):
+    minions_to_migrate = {}
+    local = salt.client.LocalClient()
+    for role in roles:
+        result = local.cmd('I@roles:{}'.format(role), 'pkg.info_installed',
+                           ['nfs-ganesha-ceph'], tgt_type='compound')
+        if not result:
+            raise Exception("Failed to run pkg.info_installed in ganesha minions")
+
+        for minion, res in result.items():
+            minions_to_migrate[minion] = {
+                'migrate': isinstance(res, dict) and 'nfs-ganesha-ceph' in res,
+                'role': role
+            }
+
+    for minion in [m for m, b in minions_to_migrate.items() if b['migrate']]:
+        daemon_id = local.cmd(minion, 'grains.get', ['host'])[minion]
+        res = local.cmd(master, 'ganesha.object_exists',
+                        [nfs_pool, "conf-{}".format(daemon_id)])
+        if not isinstance(res[master], bool):
+            __context__['retcode'] = 1
+            return res[master]
+        if res[master]:
+            # object exists, no need to migrate
+            minions_to_migrate[minion]['migrate'] = False
+
+    return dict([(m, b['role']) for m, b in minions_to_migrate.items() if b['migrate']])
+
+
 def validate():
     """
     Validates some pre-conditions necessary for the successful completion of
@@ -248,20 +277,21 @@ def validate():
 
     roles = __salt__['pillar.get']('ganesha_configurations', ['ganesha'])
 
-    try:
-        if _check_if_fresh_install(roles):
-            # don't do any validation, it's a fresh install
-            return True
-    except Exception as ex:
-        __context__['retcode'] = 1
-        return str(ex)
-
     master = __salt__['master.minion']()
     nfs_pool = __salt__['master.find_pool'](['cephfs', 'rgw'])
 
     if not nfs_pool:
         __context__['retcode'] = 1
         return False
+
+    try:
+        minions_to_migrate = _check_if_migration_needed(roles, master, nfs_pool)
+        if not minions_to_migrate:
+            # no minions to migrate
+            return True
+    except Exception as ex:
+        __context__['retcode'] = 1
+        return str(ex)
 
     log.info("Checking RADOS rw access of '%s' pool in '%s'", nfs_pool, master)
 
@@ -294,29 +324,34 @@ def validate():
             minions.add(minion)
 
     # verify that nfs-ganesha configs are parsable
-    for role in roles:
-        minion_conf = local.cmd('I@roles:{}'.format(role), 'cmd.run',
-                                ['cat /etc/ganesha/ganesha.conf'],
-                                tgt_type='compound')
-        for minion, raw_config in minion_conf.items():
-            if "No such file" in raw_config:
-                __context__['retcode'] = 1
-                return "No /etc/ganesha/ganesha.conf file found in {}".format(minion)
-            blocks = GaneshaConfParser(raw_config).parse()
-            log.debug("Parsed '%s' nfs-ganesha configuration: %s", minion, blocks)
-            if not blocks:
-                __context__['retcode'] = 1
-                return "Empty or unparsable NFS-Ganesha configuration"
+    for minion in minions_to_migrate.keys():
+        minion_conf = local.cmd(minion, 'cmd.run',
+                                ['cat /etc/ganesha/ganesha.conf'])
+        if not minion_conf or minion not in minion_conf:
+            __context__['retcode'] = 1
+            return "Failed to retrieve ganesha configuration from minion {}".format(minion)
+
+        raw_config = minion_conf[minion]
+        if "No such file" in raw_config:
+            __context__['retcode'] = 1
+            return "No /etc/ganesha/ganesha.conf file found in {}".format(minion)
+        blocks = GaneshaConfParser(raw_config).parse()
+        log.debug("Parsed '%s' nfs-ganesha configuration: %s", minion, blocks)
+        if not blocks:
+            __context__['retcode'] = 1
+            return "Empty or unparsable NFS-Ganesha configuration"
 
     # verify that nfs-ganesha gateways are still running
-    for role in roles:
-        result = local.cmd('I@roles:{}'.format(role),
-                           'ganesha.validate_ganesha_daemon', [],
-                           tgt_type='compound')
-        for minion, res in result.items():
-            if not isinstance(res, bool):
-                __context__['retcode'] = 1
-                return res
+    for minion in minions_to_migrate.keys():
+        result = local.cmd(minion,
+                           'ganesha.validate_ganesha_daemon', [])
+        if not result or minion not in result:
+            __context__['retcode'] = 1
+            return "Failed to validate ganesha deamon in minion {}".format(minion)
+
+        if not isinstance(result[minion], bool):
+            __context__['retcode'] = 1
+            return result[minion]
 
     return True
 
@@ -344,24 +379,25 @@ def upgrade(**kwargs):
     __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
 
     roles = __salt__['pillar.get']('ganesha_configurations', ['ganesha'])
+
+    master = __salt__['master.minion']()
+    nfs_pool = __salt__['master.find_pool'](['cephfs', 'rgw'])
+
     try:
-        if _check_if_fresh_install(roles):
-            # don't do upgrade, it's a fresh install
+        minions_to_migrate = _check_if_migration_needed(roles, master, nfs_pool)
+        if not minions_to_migrate:
+            # no minions to migrate
             return True
     except Exception as ex:
         __context__['retcode'] = 1
         return str(ex)
 
-    master = __salt__['master.minion']()
-    nfs_pool = __salt__['master.find_pool'](['cephfs', 'rgw'])
-
     local = salt.client.LocalClient()
 
     raw_configs = {}
-    for role in roles:
-        minion_conf = local.cmd('I@roles:{}'.format(role), 'cmd.run',
-                                ['cat /etc/ganesha/ganesha.conf'],
-                                tgt_type='compound')
+    for minion in minions_to_migrate.keys():
+        minion_conf = local.cmd(minion, 'cmd.run',
+                                ['cat /etc/ganesha/ganesha.conf'])
         raw_configs.update(minion_conf)
 
     daemon_config = {}
@@ -465,51 +501,50 @@ def upgrade(**kwargs):
     local.cmd(master, 'saltutil.pillar_refresh')
 
     # backup config files
-    for role in roles:
-        result = local.cmd("I@roles:{}".format(role),
+    for minion, role in minions_to_migrate.items():
+        result = local.cmd(minion,
                            "ganesha.backup_config_file",
-                           ["/etc/ganesha/ganesha.conf"],
-                           tgt_type="compound")
-        if not result:
+                           ["/etc/ganesha/ganesha.conf"])
+        if not result or minion not in result:
             __context__['retcode'] = 1
-            return "Failed to backup ganesha.conf from role '{}'".format(role)
-        for minion, res in result.items():
-            if not isinstance(res, bool):
-                __context__['retcode'] = 1
-                return res
+            return "Failed to backup ganesha.conf from minion '{}'".format(minion)
 
-            if res is False:
-                log.warning("backup of /etc/ganesha/ganesha.conf ignored in %s"
-                            " as a backup already existed", minion)
+        res = result[minion]
+        if not isinstance(res, bool):
+            __context__['retcode'] = 1
+            return res
 
-            conf_file = "/srv/salt/ceph/ganesha/cache/{}.{}.conf" \
-                        .format(role, minion_to_daemon_id[minion])
-            res = local.cmd(master, "ganesha.backup_config_file",
-                            [conf_file])
-            if not res:
-                __context__['retcode'] = 1
-                return "Failed to backup cache ganesha.conf from role '{}'" \
-                       .format(role)
-            if not isinstance(res[master], bool):
-                __context__['retcode'] = 1
-                return res[master]
-            if res[master] is False:
-                log.warning("backup of % ignored as a backup already existed",
-                            conf_file)
+        if res is False:
+            log.warning("backup of /etc/ganesha/ganesha.conf ignored in %s"
+                        " as a backup already existed", minion)
+
+        conf_file = "/srv/salt/ceph/ganesha/cache/{}.{}.conf" \
+                    .format(role, minion_to_daemon_id[minion])
+        res = local.cmd(master, "ganesha.backup_config_file",
+                        [conf_file])
+        if not res:
+            __context__['retcode'] = 1
+            return "Failed to backup cache ganesha.conf from role '{}'" \
+                   .format(role)
+        if not isinstance(res[master], bool):
+            __context__['retcode'] = 1
+            return res[master]
+        if res[master] is False:
+            log.warning("backup of % ignored as a backup already existed",
+                        conf_file)
 
     # set grains for forcing daemons to restart
     if export_blocks:
-        for role in roles:
-            result = local.cmd("I@roles:{}".format(role), "grains.set",
-                               ["restart_{}".format(role), True],
-                               tgt_type="compound")
-            if not result:
+        for minion, role in minions_to_migrate.items():
+            result = local.cmd(minion, "grains.set",
+                               ["restart_{}".format(role), True])
+            if not result or minion not in result:
                 __context__['retcode'] = 1
-                return "Failed to set restart grains."
-            for minion, res in result.items():
-                if not isinstance(res, dict):
-                    __context__['retcode'] = 1
-                    return "Failed to set restart grain in {}:\n{}" \
-                           .format(minion, res)
+                return "Failed to set restart grains in minion {}.".format(minion)
+
+            res = result[minion]
+            if not isinstance(res, dict):
+                __context__['retcode'] = 1
+                return "Failed to set restart grain in {}:\n{}".format(minion, res)
 
     return True
