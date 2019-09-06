@@ -1,6 +1,6 @@
 from ext_lib.hash_dir import pillar_questioneer, module_questioneer
 from salt.client import LocalClient
-from ext_lib.utils import _deploy_role, _remove_role, _create_bootstrap_items, _distribute_bootstrap_items, _get_candidates, _create_mon_keyring, _distribute_file, _get_monmap, run_and_eval, _create_initial_monmap
+from ext_lib.utils import _deploy_role, _remove_role, _create_bootstrap_items, _distribute_bootstrap_items, _get_candidates, _create_mon_keyring, _distribute_file, _get_monmap, run_and_eval, _create_initial_monmap, _query_master_pillar
 
 # TODO: The non_interactive passing is weird..
 # change that by abstracting to a class or a config option
@@ -22,6 +22,10 @@ def deploy(bootstrap=False, non_interactive=False):
         print("After the successful deployment, please follow-up with the regular 'deploy' operation. #TODO write better text")
         print("Picking one monitor from the list")
         mon_candidate = candidates[0]
+        # TODO: This should be reflected in the ceph.conf.
+        # currently the ceph.conf is built with the information in the pillar.
+        # Either this needs to be temporarily overwritten or we manipulate the
+        # select runner
         print(f"Bootstrapping on {mon_candidate}")
 
         _create_bootstrap_items()
@@ -36,7 +40,7 @@ def deploy(bootstrap=False, non_interactive=False):
             ret = _create_mon_keyring(candidate)
             keyring_name = list(ret.values())[0]
 
-            dest = f'/var/lib/ceph/tmp/'
+            dest = _query_master_pillar('ceph_tmp_dir')
             if not _distribute_file(
                     file_name=keyring_name, dest=dest, candidate=candidate):
                 return False
@@ -44,7 +48,6 @@ def deploy(bootstrap=False, non_interactive=False):
             ret = _get_monmap(candidate)
             monmap_name = list(ret.values())[0]
 
-            dest = f'/var/lib/ceph/tmp/'
             if not _distribute_file(
                     file_name=monmap_name,
                     dest=dest,

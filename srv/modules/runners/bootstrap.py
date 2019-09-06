@@ -25,8 +25,9 @@ Make the time-server thing separate
 """
 
 # FIXME: master can't be contacted before policy.cfg exists, probably read from internal.yml file
-policy_path = '/srv/pillar/ceph/proposals/policy.cfg' #_query_master_pillar('deepsea_policy_path')
-proposals_dir =  '/srv/pillar/ceph/proposals'# _query_master_pillar('deepsea_proposal_dir')
+proposals_dir = '/srv/pillar/ceph/proposals'  # _query_master_pillar('deepsea_proposal_dir')
+policy_path = f'{proposals_dir}/policy.cfg'  #_query_master_pillar('deepsea_policy_path')
+
 
 def _read_policy_cfg():
     with open(policy_path, 'r') as _fd:
@@ -65,7 +66,8 @@ def setup(non_interactive=False):
                 default_answer=False):
             pager(_read_policy_cfg())
             if not prompt("Do you want to continue?"):
-                return 'aborted'
+                log_n_print('Aborted..')
+                return False
     run_and_eval("config.deploy_salt_conf")
     log_n_print("Updating the pillar with your changes.")
     pillar_questioneer(non_interactive=non_interactive)
@@ -82,6 +84,10 @@ def setup(non_interactive=False):
     log_n_print(
         "TEMP: Creating and distributing the ceph.conf (will go away in further releases)"
     )
+    # FIXME: I *think* this doesn't work when more than one monitor is  defined in the pillar.
+    # It writes out a ceph.conf with more _initial_members than just the one we're deploying.
+    log_n_print("BUG: In a bootstrap, it's only possible to specify _one_ MON in the policy.cfg")
+    log_n_print("FIXME: this ^^^")
     run_and_eval("config.deploy_ceph_conf")
 
     return True
@@ -97,7 +103,6 @@ def core(non_interactive=False):
     print("Bootstrapping mgrs..")
     run_and_eval("mgr.deploy", [f'non_interactive={non_interactive}'])
 
-
     if ceph_health():
         print(
             "Bootstrapping is complete now. Please proceed with the osd.deploy/help command."
@@ -109,11 +114,14 @@ def core(non_interactive=False):
 
 def ceph(non_interactive=False):
     # TODO: improve return messages
-    # if not initialize(non_interactive=non_interactive):
-    #     return False
+    if not initialize(non_interactive=non_interactive):
+        log_n_print("Bootstrap initialization failed..")
+        return False
     if not setup(non_interactive=non_interactive):
+        log_n_print("Bootstrap setup failed..")
         return False
     if not core(non_interactive=non_interactive):
+        log_n_print("Bootstrap deployment failed..")
         return False
 
     # TODO: When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation

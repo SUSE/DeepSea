@@ -6,6 +6,8 @@ from subprocess import check_output
 import logging
 
 
+ROLE_CEPH_MON = 'mon'
+
 def master_minion():
     '''
     Load the master modules
@@ -215,7 +217,7 @@ Continue?""",
         if all(ret):
             print(f"{role} deletion was successful.")
 
-            if role == 'mon' and not purge:
+            if ROLE_CEPH_MON and not purge:
                 # TODO: which roles needs ceph_conf rewrite aswell?
                 print("Updating the ceph.conf..")
                 runner().cmd('config.deploy_ceph_conf')
@@ -224,7 +226,7 @@ Continue?""",
         return False
 
     else:
-        return 'aborted'
+        return False
 
 
 def _create_bootstrap_items():
@@ -332,6 +334,9 @@ def ensure_dirs_exist():
 
 def ensure_permissions():
     # TODO: do I need to have that in a state?
+
+    # TODO: there is file.chown .. replace it with that
+    # TODO: also there is fole.access which may need to used before
     ret: str = LocalClient().cmd(
         'roles:master', 'state.apply', ['ceph.permissions'], tgt_type='pillar')
     if not evaluate_state_return(ret):
@@ -447,6 +452,8 @@ def _query_master_pillar(key=None):
     assert key
     ret = LocalClient().cmd(
         "roles:master", 'pillar.get', [key], tgt_type='pillar')
+    if not evaluate_module_return(ret):
+        return False
     values = list(ret.values())
     if not values:
         # TODO: really false?
@@ -459,6 +466,8 @@ def ceph_health():
         'roles:master', 'podman.ceph_cli', ['health'], tgt_type='pillar')
 
     # TODO: improve the extraction, this will eventually fail
+    if not evaluate_module_return(ret):
+        return False
     status = list(ret.values())[0].strip()
     if status == 'HEALTH_OK' or status == 'HEALTH_WARN':
         print(f"Ceph cluster status is {status}")
@@ -466,3 +475,17 @@ def ceph_health():
 
     print(f"Ceph cluster status is {status}")
     return False
+
+def purge_debris():
+    # TODO: Implement this
+    # /etc/ceph
+    # /srv/pillar/ceph/global.yml
+    # /usr/lib/ceph/
+    # /srv/salt/ceph/bootstrap/*
+    # /srv/pillar/ceph/minions
+
+    # policy.cfg? No probably not
+
+    #use
+    #file.absent
+    pass

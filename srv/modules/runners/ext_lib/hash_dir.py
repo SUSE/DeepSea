@@ -18,7 +18,7 @@ def update_pillar(directory, checksum):
 
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
-    print("The pillar is up to date.")
+    print("Salt pillar is up to date.")
 
 
 def sync_modules(directory, checksum):
@@ -29,7 +29,7 @@ def sync_modules(directory, checksum):
         "*", 'saltutil.sync_modules', tgt_type='glob')
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
-    print("The modules are up to date.")
+    print("Salt modules are up to date.")
 
 
 def md5_update_from_dir(directory, hash):

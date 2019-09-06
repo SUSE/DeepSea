@@ -15,6 +15,7 @@ def deploy_core():
 
 def deploy_services(demo=False):
     """ Just an alias to salt-run services.deploy """
+    # TODO: Implement this
     print("may check for updates before")
     run_and_eval('services.deploy')
 
@@ -25,6 +26,7 @@ def deploy(demo=False):
 
 
 def purge():
+    # TODO: Implement this
     # NOT IMPLEMENTED #
     # run_and_eval('igw.remove', ['purge=True'])
     # run_and_eval('nfs.remove', ['purge=True'])
@@ -36,10 +38,12 @@ def purge():
     run_and_eval('mgr.remove', ['purge=True'])
     run_and_eval('mon.remove', ['purge=True'])
 
+    # TODO: Implement this
     # NOT IMPLEMENTED #
     # run_and_eval('monitoring.remove', ['purge=True'])
     # NOT IMPLEMENTED #
 
+    # TODO: Implement this
     # TODO: finally remove old keyrings, directories etc
 
 

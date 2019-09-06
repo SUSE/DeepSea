@@ -229,7 +229,7 @@ class DeepSeaGlobal(object):
         return False
 
 
-def deploy_salt_conf(*args):
+def deploy_salt_conf():
     ''' Creates Salt configuration '''
     if all([deploy_roles(), deploy_global()]):
         return True
