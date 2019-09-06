@@ -5,6 +5,10 @@ VERSION ?= $(shell (git describe --tags --long --match 'v*' 2>/dev/null || echo 
 SALT_API=salt-api
 PY_VER=3
 PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj
+RPMBUILD_DEPS=rpm-build
+TARBALL_DEPS=bzip2 git tar
+
+SUDO=sudo --preserve-env
 
 OS=$(shell source /etc/os-release 2>/dev/null ; echo $$ID)
 suse=
@@ -44,7 +48,7 @@ endif
 endif
 endif
 
-DEEPSEA_DEPS=${SALT_API}
+DEEPSEA_DEPS=$(SALT_API) $(PYTHON_DEPS)
 
 usage:
 	@echo "Usage:"
@@ -974,37 +978,45 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/rgw/cache || true
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
-install-deps:
-	# Using '|| true' to suppress failure (packages already installed, etc)
-	([ -n "$(DEEPSEA_DEPS)" ] && $(PKG_INSTALL) $(DEEPSEA_DEPS)) || true
-	([ -n "$(PYTHON_DEPS)" ] && $(PKG_INSTALL) $(PYTHON_DEPS)) || true
+$(DEEPSEA_DEPS):
+	([ -z "$(DEEPSEA_DEPS)" ] || $(SUDO) $(PKG_INSTALL) $(DEEPSEA_DEPS))
 
-install: pyc install-deps copy-files
+install: pyc $(DEEPSEA_DEPS) copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	chown $(USER):$(GROUP) $(DESTDIR)/etc/salt/master.d/*
 	echo "deepsea_minions: '*'" > $(DESTDIR)/srv/pillar/ceph/deepsea_minions.sls
 	chown -R $(USER) $(DESTDIR)/srv/pillar/ceph
-	# Use '|| true' to suppress some error output in corner cases
 	systemctl restart salt-master
-	([ -n "$(SALT_API)" ] && systemctl restart $(SALT_API)) || true
+	([ -z "$(SALT_API)" ] || systemctl restart $(SALT_API))
 	# deepsea-cli
 	python$(PY_VER) setup.py install --root=$(DESTDIR)/
 
-rpm: tarball
-	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > deepsea.spec
-	rpmbuild -bb deepsea.spec
+$(RPMBUILD_DEPS):
+	$(SUDO) $(PKG_INSTALL) $(RPMBUILD_DEPS)
+	$(eval RPMBUILD_REQUIRES := $(shell rpmspec -q --srpm --requires deepsea.spec.in))
+	$(SUDO) $(PKG_INSTALL) $(RPMBUILD_REQUIRES)
+
+rpm: tarball $(RPMBUILD_DEPS)
+	$(eval _SOURCEDIR := $(shell rpm -E "%{_sourcedir}"))
+	$(eval _SPECDIR := $(shell rpm -E "%{_specdir}"))
+	mkdir -p $(_SOURCEDIR) $(_SPECDIR)
+	cp deepsea-$(VERSION).tar.bz2 $(_SOURCEDIR)
+	sed '/^Version:/s/[^ ]*$$/'$(VERSION)'/' deepsea.spec.in > $(_SPECDIR)/deepsea.spec
+	rpmbuild -ba $(_SPECDIR)/deepsea.spec
+
+$(TARBALL_DEPS):
+	$(SUDO) $(PKG_INSTALL) $(TARBALL_DEPS)
 
 # Removing test dependency until resolved
-tarball:
+tarball: $(TARBALL_DEPS)
 	$(eval TEMPDIR := $(shell mktemp -d))
 	mkdir $(TEMPDIR)/deepsea-$(VERSION)
 	git archive HEAD | tar -x -C $(TEMPDIR)/deepsea-$(VERSION)
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/setup.py.in > $(TEMPDIR)/deepsea-$(VERSION)/setup.py
 	sed "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec.in > $(TEMPDIR)/deepsea-$(VERSION)/deepsea.spec
 	sed -i "s/DEVVERSION/"$(VERSION)"/" $(TEMPDIR)/deepsea-$(VERSION)/srv/modules/runners/deepsea.py
-	mkdir -p ~/rpmbuild/SOURCES
 	cp $(TEMPDIR)/deepsea-$(VERSION)/setup.py .
-	tar -cjf ~/rpmbuild/SOURCES/deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
+	tar -cjf deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
 	rm -r $(TEMPDIR)
 
 test: setup.py
@@ -1012,3 +1024,5 @@ test: setup.py
 
 lint: setup.py
 	tox -e lint
+
+.PHONY: $(DEEPSEA_DEPS) $(TARBALL_DEPS) $(RPMBUILD_DEPS)
