@@ -217,7 +217,7 @@ Continue?""",
         if all(ret):
             print(f"{role} deletion was successful.")
 
-            if ROLE_CEPH_MON and not purge:
+            if role is ROLE_CEPH_MON and not purge:
                 # TODO: which roles needs ceph_conf rewrite aswell?
                 print("Updating the ceph.conf..")
                 runner().cmd('config.deploy_ceph_conf')
