@@ -37,7 +37,8 @@ class Role(object):
         self.conf_filename = kwargs.get('conf_filename', self._role_name)
         self.conf_extension = kwargs.get('conf_extension', '.conf')
         self._conf_files = [self.conf_dir + self.conf_filename + self.conf_extension]
-        self._depends = [self]
+        self._depends = []
+        self._set_depends()
         self.rgw_configurations()
 
     @property
@@ -73,6 +74,34 @@ class Role(object):
         Returns dependency list
         """
         return self._depends
+
+    @property
+    def depends(self):
+        """
+        Getter for name attr
+        """
+        return self._depends
+
+    @depends.setter
+    def depends(self, role):
+        """
+        Setter for name attr
+        """
+        self._depends = role
+
+    def _set_depends(self):
+        """ Set dependency to self if not global """
+        if self._role_name == 'global':
+            # if the global config changed
+            # stage restart on the core services
+            self.add_dependencies(Role(role_name='mon'))
+            self.add_dependencies(Role(role_name='mgr'))
+            self.add_dependencies(Role(role_name='storage'))
+            # also stage restarts on gateways (igw is not maintained here)
+            self.add_dependencies(Role(role_name='mds'))
+            self.add_dependencies(Role(role_name='rgw'))
+        else:
+            self.depends = [self]
 
     def add_dependencies(self, role):
         """
@@ -221,21 +250,23 @@ def requires_conf_change(**kwargs):
     """
     cfg = Config(**kwargs)
     role = cfg.role
-    cluster = kwargs.get('cluster', 'ceph')
     if not isinstance(role, Role):
         raise UnknownRole
     # pylint: disable=invalid-name
     local = salt.client.LocalClient()
-    if role not in cfg.role.dependencies:
-        return "Role {} not defined".format(role.name)
-    for deps in cfg.role.dependencies:
-        if Config(role=deps).has_change():
-            search = 'I@cluster:{} and I@roles:{}'.format(cluster, role.name)
-            local.cmd(search, 'grains.setval',
-                      ["restart_{}".format(role.name), True],
-                      tgt_type="compound")
-            return True
-    return False
+
+    if Config(role=role).has_change():
+        # If role has changes, also mark it's dependencies.
+        for dep in cfg.role.dependencies:
+            search = 'I@roles:{}'.format(dep.name)
+            local.cmd(
+                search,
+                'grains.setval', ["restart_{}".format(dep.name), True],
+                tgt_type="compound")
+            log.info(f"Set restart grain for role:{dep.name}")
+        return True
+    else:
+        return False
 
 
 def rgw():
