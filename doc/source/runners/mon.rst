@@ -1,5 +1,5 @@
 ****************************
-DeepSea's Bootstrap Runner
+DeepSea's Mon Runner
 ****************************
 
 
@@ -22,17 +22,19 @@ Usage:
 #########################
 
 
-The main function for the bootstrap runner is `ceph`.
+The main function for the bootstrap runner is `deploy`.
 
-salt-run bootstrap.ceph
+salt-run mon.deploy
 
 This runner has different modes that it can run with.
 
 non_interactive: <True/False> (defaults to False)
 
 
-.. include:: authors.rst
+Also there is `remove`, `update` and ?
 
 
-/ header with version, copyright, date and projectname
-/ this is produced by sphinx when rendering the entire project.
+.. only:: man
+  .. include:: authors.rst
+  / header with version, copyright, date and projectname
+  / this is produced by sphinx when rendering the entire project.

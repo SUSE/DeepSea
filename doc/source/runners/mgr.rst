@@ -1,5 +1,5 @@
 ****************************
-DeepSea's Bootstrap Runner
+DeepSea's Mgr Runner
 ****************************
 
 
@@ -22,13 +22,16 @@ Usage:
 #########################
 
 
-The main function for the bootstrap runner is `ceph`.
+The main function for the bootstrap runner is `deploy`.
 
-salt-run bootstrap.ceph
+salt-run mgr.deploy
 
 This runner has different modes that it can run with.
 
 non_interactive: <True/False> (defaults to False)
+
+
+Also there is `remove`, `update` and ?
 
 
 .. include:: authors.rst
