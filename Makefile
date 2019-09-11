@@ -4,7 +4,8 @@ VERSION ?= $(shell (git describe --tags --long --match 'v*' 2>/dev/null || echo 
 
 SALT_API=salt-api
 PY_VER=3
-PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj
+WHEEL_BUILD_DEPS=gcc python${PY_VER}-devel
+PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj $(WHEEL_BUILD_DEPS)
 RPMBUILD_DEPS=rpm-build
 TARBALL_DEPS=bzip2 git tar
 
@@ -54,7 +55,8 @@ usage:
 	@echo "Usage:"
 	@echo -e "\tmake install\tInstall DeepSea on this host"
 	@echo -e "\tmake rpm\tBuild an RPM for installation elsewhere"
-	@echo -e "\tmake test\tRun unittests"
+	@echo -e "\tmake test\tRun unit tests"
+	@echo -e "\tmake lint\tRun lint tests"
 
 version:
 	@echo "version: "$(VERSION)
@@ -1019,10 +1021,10 @@ tarball: $(TARBALL_DEPS)
 	tar -cjf deepsea-$(VERSION).tar.bz2 -C $(TEMPDIR) .
 	rm -r $(TEMPDIR)
 
-test: setup.py
+test: $(PYTHON_DEPS) setup.py
 	tox -e py3
 
-lint: setup.py
+lint: $(PYTHON_DEPS) setup.py
 	tox -e lint
 
 .PHONY: $(DEEPSEA_DEPS) $(TARBALL_DEPS) $(RPMBUILD_DEPS)
