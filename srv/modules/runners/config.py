@@ -15,6 +15,7 @@ import yaml
 import salt.key
 import salt.client
 import salt.runner
+from salt.client import LocalClient
 from ext_lib.utils import master_minion, evaluate_state_return
 from ext_lib.network import DeepSeaNetwork
 
@@ -50,14 +51,19 @@ class DeepSeaRoles(object):
             for minion in self.minions:
                 filename = f"{self.dir}/{minion}.sls"
 
-                stripped = [role.lstrip('role-') for role in self.minions[minion]]
+                stripped = [
+                    role.lstrip('role-') for role in self.minions[minion]
+                ]
                 contents = {'roles': stripped}
                 log.info(f"Writing {filename}")
                 log.info(f"Contents {contents}")
                 try:
                     with open(filename, "w") as yml:
-                        yml.write(yaml.dump(contents, Dumper=self.dumper,
-                                  default_flow_style=False))
+                        yml.write(
+                            yaml.dump(
+                                contents,
+                                Dumper=self.dumper,
+                                default_flow_style=False))
                 except IOError as error:
                     self.error = f"Could not write {filename}: {error}"
                     return False
@@ -76,8 +82,7 @@ class DeepSeaRoles(object):
             if error.errno == errno.EACCES:
                 self.error = (
                     f"Cannot create directory {path} - verify that {self.root} "
-                    f"is owned by salt"
-                )
+                    f"is owned by salt")
         return False
 
 
@@ -101,8 +106,11 @@ class DeepSeaCustom(object):
         log.info(f"Contents {self.contents}")
         try:
             with open(filename, "w") as yml:
-                yml.write(yaml.dump(self.contents, Dumper=self.dumper,
-                          default_flow_style=False))
+                yml.write(
+                    yaml.dump(
+                        self.contents,
+                        Dumper=self.dumper,
+                        default_flow_style=False))
         except IOError as error:
             self.error = f"Could not write {filename}: {error}"
             return False
@@ -131,14 +139,14 @@ class Policy(object):
         with open(self.filename, 'r') as policy:
             try:
                 self.raw = yaml.load(policy)
-                log.info(f"Contents of {self.filename}: \n{pprint.pformat(self.raw)}")
+                log.info(
+                    f"Contents of {self.filename}: \n{pprint.pformat(self.raw)}"
+                )
                 return True
             except yaml.YAMLError as error:
-                self.error = (
-                    f"syntax error in {error.problem_mark.name} "
-                    f"on line {error.problem_mark.line} in position "
-                    f"{error.problem_mark.column}"
-                )
+                self.error = (f"syntax error in {error.problem_mark.name} "
+                              f"on line {error.problem_mark.line} in position "
+                              f"{error.problem_mark.column}")
             return False
 
     def expand(self):
@@ -149,8 +157,10 @@ class Policy(object):
             else:
                 # custom entry
                 for custom_role in self.raw[role]:
-                    self.yaml[custom_role] = self._expand(self.raw[role][custom_role])
-                self.custom[f"{role}_configurations"] = list(self.raw[role].keys())
+                    self.yaml[custom_role] = self._expand(
+                        self.raw[role][custom_role])
+                self.custom[f"{role}_configurations"] = list(
+                    self.raw[role].keys())
 
         log.info(f"Expanded contents:\n{pprint.pformat(self.yaml)}")
         if self.custom:
@@ -206,8 +216,11 @@ class DeepSeaGlobal(object):
         if self.absent():
             try:
                 with open(self.filename, "w") as yml:
-                    yml.write(yaml.dump(self.contents, Dumper=self.dumper,
-                              default_flow_style=False))
+                    yml.write(
+                        yaml.dump(
+                            self.contents,
+                            Dumper=self.dumper,
+                            default_flow_style=False))
             except IOError as error:
                 self.error = f"Could not write {self.filename}: {error}"
                 return False
@@ -216,17 +229,11 @@ class DeepSeaGlobal(object):
         return False
 
 
-def deploy(*args):
+def deploy_salt_conf():
     ''' Creates Salt configuration '''
-
-    if args and args[0] == "roles":
-        deploy_roles()
-    elif args and args[0] == "global":
-        deploy_global()
-    else:
-        deploy_roles()
-        deploy_global()
-    return ""
+    if all([deploy_roles(), deploy_global()]):
+        return True
+    return False
 
 
 def deploy_roles():
@@ -234,20 +241,20 @@ def deploy_roles():
     policy = Policy()
     if not policy.load():
         log.error(policy.error)
-        return ""
+        return False
     policy.expand()
 
     dsr = DeepSeaRoles(policy.yaml)
     dsr.invert()
     if not dsr.write():
         log.error(dsr.error)
-        return ""
+        return False
 
     dsc = DeepSeaCustom(policy.custom)
     if not dsc.write():
         log.error(dsc.error)
-        return ""
-    return ""
+        return False
+    return True
 
 
 def deploy_global():
@@ -257,26 +264,35 @@ def deploy_global():
         dsn = DeepSeaNetwork()
         if not dsn.scan():
             log.error(dsn.error)
-            return ""
+            return False
 
         dsg.networks(dsn.mgmt(), dsn.public(), dsn.cluster())
         if not dsg.write():
             log.error(dsg.error)
-            return ""
-    return ""
+            return False
+    return True
 
 
-def distribute():
+# TODO: Logically split ceph_conf and salt_conf
+# maybe in different runners even..
+def distribute_ceph_conf():
     ret = LocalClient().cmd(
-        "cluster:ceph",
+        "deepsea_minions:*",
         'state.apply', ['ceph.configuration'],
         tgt_type='pillar')
     return evaluate_state_return(ret)
 
 
-def create():
+def create_ceph_conf():
     ret = LocalClient().cmd(
         "roles:master",
         'state.apply', ['ceph.configuration.create'],
         tgt_type='pillar')
     return evaluate_state_return(ret)
+
+
+def deploy_ceph_conf():
+    """ TODO: Technically this is the wrong word.. Just keeping it consistent """
+    if all([create_ceph_conf(), distribute_ceph_conf()]):
+        return True
+    return False

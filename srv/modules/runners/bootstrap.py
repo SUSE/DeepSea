@@ -1,4 +1,4 @@
-from ext_lib.utils import runner, prompt, log_n_print
+from ext_lib.utils import runner, prompt, log_n_print, run_and_eval, _query_master_pillar, ceph_health
 from ext_lib.hash_dir import pillar_questioneer, module_questioneer
 from pydoc import pager
 from os.path import exists
@@ -16,32 +16,25 @@ def handle_ctrl_c(signal, frame):
 
 
 signal.signal(signal.SIGINT, handle_ctrl_c)
-
 """
-TODO: Make the time-server thing separate
+
+TODO:
+Make the time-server thing separate
 * SSL-certificates
+
 """
 
-proposals_dir = '/srv/pillar/ceph/proposals'
-policy_path = f'{proposals_dir}/policy.cfg'
+# FIXME: master can't be contacted before policy.cfg exists, probably read from internal.yml file
+proposals_dir = '/srv/pillar/ceph/proposals'  # _query_master_pillar('deepsea_proposal_dir')
+policy_path = f'{proposals_dir}/policy.cfg'  #_query_master_pillar('deepsea_policy_path')
 
 
-# maybe outsource
 def _read_policy_cfg():
     with open(policy_path, 'r') as _fd:
         return _fd.read()
 
 
-# outsource
-def run_and_eval(runner_name, extra_args=None):
-    # maybe supress the 'True' output from the screen
-    qrunner = runner(__opts__)
-    if not qrunner.cmd(runner_name, extra_args):
-        log_n_print(f"{runner_name} failed.")
-        raise Exception()
-
-
-def ceph(non_interactive=False):
+def initialize(non_interactive=False):
     module_questioneer(non_interactive=non_interactive)
     log_n_print(
         "TODO: check for deepsea_minions, There is a validate.deepsea_minions, check that"
@@ -55,12 +48,10 @@ def ceph(non_interactive=False):
     log_n_print(
         "TODO: print a basic help thing explaining the steps and asking for a timeserver"
     )
-    if not exists(proposals_dir):
-        log_n_print("Creating proposals directory.")
-        run_and_eval('populate.proposals')
-    else:
-        log.debug("Found a proposals directory")
+    return True
 
+
+def setup(non_interactive=False):
     if not exists(policy_path):
         log_n_print(
             f"You don't appear to have a policy.cfg. Please create it under the proposals directory '{proposals_dir}' and re-run this command"
@@ -75,12 +66,12 @@ def ceph(non_interactive=False):
                 default_answer=False):
             pager(_read_policy_cfg())
             if not prompt("Do you want to continue?"):
-                return 'aborted'
-    log_n_print("We'll now we update the pillar with the your changes.")
+                log_n_print('Aborted..')
+                return False
+    run_and_eval("config.deploy_salt_conf")
+    log_n_print("Updating the pillar with your changes.")
     pillar_questioneer(non_interactive=non_interactive)
-    log_n_print("Ok, let's verify the network settings")
-    log_n_print("This is the network configuration we detected.")
-    run_and_eval('advise.networks')
+    log_n_print("TODO: pillarquery the network interfaces")
     if prompt(
             "Do you want to adapt this setting?",
             non_interactive=non_interactive,
@@ -91,30 +82,53 @@ def ceph(non_interactive=False):
         log_n_print("We'll now we update the pillar with the your changes.")
         pillar_questioneer(non_interactive=non_interactive)
     log_n_print(
-        "TEMP: Creating the ceph.conf (will go away in further releases)")
-    run_and_eval('config.deploy')
-
-    # TODO: Break all(sysexit) on SIGINT
-    print("Bootstrapping monitors..")
-    run_and_eval('mon.deploy',
-                 [f'bootstrap=True, non_interactive={non_interactive}'])
-
-    # if the answer in mon.deploy is 'no'. It will still deploy the managers.. Handle global signals/returns
-    print("Bootstrapping mgrs..")
-    run_and_eval("mgr.deploy", [f'non_interactive={non_interactive}'])
-
-    run_and_eval("ceph.health")
-
-    print(
-        "Bootstrapping is complete now. Please proceed with the osd.deploy/help command."
+        "TEMP: Creating and distributing the ceph.conf (will go away in further releases)"
     )
+    # FIXME: I *think* this doesn't work when more than one monitor is  defined in the pillar.
+    # It writes out a ceph.conf with more _initial_members than just the one we're deploying.
+    log_n_print("BUG: In a bootstrap, it's only possible to specify _one_ MON in the policy.cfg")
+    log_n_print("FIXME: this ^^^")
+    run_and_eval("config.deploy_ceph_conf")
 
     return True
 
 
-# TODO:
-#   When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation
-#   We may keep track of the salt-key -L ('inventory')
+def core(non_interactive=False):
+    # TODO: Break all(sysexit) on SIGINT
+    print("Bootstrapping monitors..")
+    run_and_eval('mon.deploy',
+                 [f'bootstrap=True', f'non_interactive={non_interactive}'])
+
+    # FIXME: if the answer in mon.deploy is 'no'. It will still deploy the managers.. Handle global signals/returns
+    print("Bootstrapping mgrs..")
+    run_and_eval("mgr.deploy", [f'non_interactive={non_interactive}'])
+
+    if ceph_health():
+        print(
+            "Bootstrapping is complete now. Please proceed with the osd.deploy/help command."
+        )
+        return True
+    print("Bootstrapping failed. TODO write a meaningful error message")
+    return False
+
+
+def ceph(non_interactive=False):
+    # TODO: improve return messages
+    if not initialize(non_interactive=non_interactive):
+        log_n_print("Bootstrap initialization failed..")
+        return False
+    if not setup(non_interactive=non_interactive):
+        log_n_print("Bootstrap setup failed..")
+        return False
+    if not core(non_interactive=non_interactive):
+        log_n_print("Bootstrap deployment failed..")
+        return False
+
+    # TODO: When to update the /srv/pillar/ struct. Previously we did that in every stage.1 invocation
+    # We may keep track of the salt-key -L ('inventory') periodically
+
+    # TODO: return correct status
+    return True
 
 
 def cluster():
