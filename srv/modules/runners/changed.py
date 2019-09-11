@@ -39,7 +39,6 @@ class Role(object):
         self._conf_files = [self.conf_dir + self.conf_filename + self.conf_extension]
         self._depends = []
         self._set_depends()
-        self.rgw_configurations()
 
     @property
     def name(self):
@@ -97,7 +96,7 @@ class Role(object):
             self.add_dependencies(Role(role_name='mon'))
             self.add_dependencies(Role(role_name='mgr'))
             self.add_dependencies(Role(role_name='storage'))
-            # also stage restarts on gateways (igw is not maintained here)
+            # also stage restarts on gateways (igw and genesha is not maintained here)
             self.add_dependencies(Role(role_name='mds'))
             self.add_dependencies(Role(role_name='rgw'))
         else:
@@ -121,28 +120,6 @@ class Role(object):
         DEV/DEBUG
         """
         return [dep.name for dep in self.dependencies]
-
-    def rgw_configurations(self):
-        """
-        RadosGW allows custom configurations.  Include these roles with a
-        dependency on the global.conf.  Default to 'rgw' if not set.
-        """
-        # pylint: disable=redefined-outer-name
-        local = salt.client.LocalClient()
-        roles = []
-        try:
-            roles = list(local.cmd("I@roles:master", 'pillar.get',
-                                   ['rgw_configurations'],
-                                   tgt_type="compound").values())[0]
-            log.debug("Querying pillar for rgw_configurations")
-        # pylint: disable=bare-except
-        except:
-            pass
-        if not roles:
-            roles = ['rgw']
-        for role in roles:
-            if role == self.name:
-                self.add_dependencies(Role(role_name='global'))
 
 
 class Config(object):
@@ -265,8 +242,7 @@ def requires_conf_change(**kwargs):
                 tgt_type="compound")
             log.info(f"Set restart grain for role:{dep.name}")
         return True
-    else:
-        return False
+    return False
 
 
 def rgw():
