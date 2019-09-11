@@ -10,7 +10,7 @@ is expected to be created by hand currently, although the intent is to
 provide examples for different strategies.  To avoid globbing entirely
 and manually create the file in a single command, run
 
-find * -name \*.sls -o -name \*.yml | sort > policy.cfg
+find * -name "*.sls" -o -name "*.yml" | sort > policy.cfg
 
 Proceed to remove all undesired assignments or consolidate lines into
 equivalent globbing patterns.
