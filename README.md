@@ -1,24 +1,22 @@
-[![Build Status](https://travis-ci.org/SUSE/DeepSea.svg?branch=master)](https://travis-ci.org/SUSE/DeepSea)
 # DeepSea
 A collection of [Salt](https://saltstack.com/salt-open-source/) files for deploying, managing and automating [Ceph](https://ceph.com/).
 
-The goal is to manage multiple Ceph clusters with a single salt master. At this time, only a single Ceph cluster can be managed.
+The goal is to manage a Ceph cluster with a single salt master.
 
-This [diagram](deepsea.png) should explain the intended flow for the orchestration runners and related salt states.
+![deepsea mascot](https://raw.githubusercontent.com/SUSE/DeepSea/master/doc/mascot/mascot.png)
 
 ## Status
 DeepSea currently supports the following functionality:
 
 - Automatic discovery, deployment, configuration and life cycle management of Ceph clusters
-- Initial support for importing Ceph clusters deployed by other tools, e.g. using `ceph-deploy`
-- RADOS Gateway deployment (for single site deployments)
+- RADOS Gateway deployment
 - CephFS MDS deployment and CephFS creation
 - Sharing CephFS or S3 buckets via [NFS Ganesha](http://nfs-ganesha.github.io/)
-- iSCSI target management via [lrbd](https://github.com/SUSE/lrbd/)
+- iSCSI target management via ceph-iscsi [ceph-iscsi](https://github.com/ceph/ceph-iscsi)
 - Deployment and configuration of [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/) for monitoring / performance data visualization
 
 ## Get Involved
-To learn more about DeepSea, take a look at the [Wiki](https://github.com/SUSE/DeepSea/wiki).
+To learn more about DeepSea, take a look at the [Wiki](https://github.com/SUSE/DeepSea/wiki). [deprecated TODO!]
 
 There is also a dedicated mailing list [deepsea-users](http://lists.suse.com/mailman/listinfo/deepsea-users).
 If you have any questions, suggestions for improvements or any other
@@ -30,18 +28,10 @@ If you would like to contribute to DeepSea, refer to the [contribution guideline
 
 ## Developers and Admins
 For those interested in learning about some of the uses of Salt in DeepSea, see [here](https://github.com/suse/deepsea/blob/master/salt.md) for explanations and examples.
- 
+
 ## Usage
+
 You need at least a minimum of 4 nodes to be able to test and use DeepSea properly.
-
-To be able to use less than 4 nodes during the deployment stages (e.g. in a
-development/testing environment), you could set the option `DEV_ENV=true` as an
-environment variable or globally as a pillar variable in
-`/srv/pillar/ceph/stack/global.yml`. Setting `DEV_ENV` allows you to:
-
-- Deploy monitors without the presence of a `profile` directory
-- Deply a cluster with at least _one_ (instead of 3/4/3) storage/monitor/mgr
-  nodes
 
 ### Add DeepSea repo to your admin host
 
@@ -58,23 +48,17 @@ $ cd DeepSea
 $ sudo make install
 ```
 
-### Cluster Preparation 
+### Cluster Preparation
+
 The cluster deployment process has several phases. First, you need to prepare all nodes of the cluster by configuring Salt and then deploy and configure Ceph.
 
 The following procedure describes the cluster preparation in detail.
 
-Install a minimum of four machines (or define `DEV_ENV=true` either as an environment variable or a pillar variable during the deployment process) with SUSE Leap 42.3 or Tumbleweed and add the DeepSea repo to your defined "admin" node:
+Make sure that each node can resolve the host names of all other nodes.
 
-```
-# zypper ar http://download.opensuse.org/repositories/filesystems:/ceph:/luminous/openSUSE_Leap_42.3/filesystems:ceph:luminous.repo
-# zypper refresh
-```
+The Salt master needs to resolve all its Salt minions by their host names, as well as all Salt minions need to resolve the Salt master by its host name.
 
-Make sure that each node can resolve the host names of all other nodes. 
-
-The Salt master needs to resolve all its Salt minions by their host names, as well as all Salt minions need to resolve the Salt master by its host name. 
-
-If you don't have a DNS Server you could also add all hosts of your cluster to the ``/etc/hosts``` file. 
+If you don't have a DNS Server you could also add all hosts of your cluster to the ``/etc/hosts``` file.
 
 Configure, enable, and start the NTP time synchronization server on all nodes:
 
@@ -83,15 +67,9 @@ Configure, enable, and start the NTP time synchronization server on all nodes:
 # systemctl start ntpd.service
 ```
 
-Note that the Cluster deployment with DeepSea will not work with Firewall/AppArmor enabled.
-
-Check whether the AppArmor service is running and disable it on each cluster node to avoid problems:
-
-```
-# systemctl disable apparmor.service
-```
-
 Check whether the Firewall service is running and disable it on each cluster node to avoid problems:
+
+The following commands are tailored to openSUSE/SUSE. Please use the corresponding commands for your distribution.
 
 ```
 # systemctl disable SuSEfirewall2.service
@@ -211,156 +189,72 @@ Wipe the backup partition tables:
 Now you deploy and configure Ceph. Unless specified otherwise, all steps are
 mandatory.
 
-**Note: Salt Command Conventions**
 
-There are two possibilities how to run `salt-run state.orch` - one is with
-`stage.<stage number>`, the other is with a name of the stage. Both notations
-have the same impact and it is fully up to your preference which command you
-want to use. Both notations are used in the following deployment steps. So
-please choose what you prefer.
+DeepSea uses podman to deploy Ceph on the minions. Please make sure to have
+podman installed on your nodes.
+
+For openSUSE 15.1 you want to add this [repository](https://build.opensuse.org/package/show/openSUSE:Leap:15.1:Update/podman])
+
+DeepSea will try to fetch a container image specified in the internals.yml. Please edit this file and adapt this path to
+a container image of your choice (TODO: we may point to a official image from opensuse once this is released)
 
 ### Cluster Deployment
 
-#### Stage 0
-During this stage all required updates are applied and your system may be
-rebooted.
+Initially you want to get a minimal working cluster up and running. For this you execute the bootstrap runner.
+
 
 ```
-salt-run state.orch ceph.stage.0
+salt-run bootstrap.ceph
 ```
 
-or
+This command will interactively guide you through a dialogue. There is also a non-interactive mode for situations where
+you already know your requirements.
+
+You can pass it like so:
+
 
 ```
-salt-run state.orch ceph.stage.prep
+salt-run bootstrap.ceph non_interactive=True
 ```
 
-Note: If during Stage 0 the Salt master reboots to load new kernel version, you
-need to run Stage 0 again, otherwise minions will not be targeted.
+This will bring up a cluster with *one* ceph-monitor(mon) and *one* ceph-manager(mgr).
+From now on we'll use the abbreviations for these services. You can read more about these [here](https://docs.ceph.com/docs/master/start/intro/)
 
-#### Stage 1
-The discovery stage collects all hardware in your cluster and also collects
-necessary information for the Ceph configuration. The configuration fragments
-are stored in the directory `/srv/pillar/ceph/proposals`. 
+Please follow the instructions of the bootstrap runner.
 
-The data is stored in YAML format in `*.sls` or `*.yml` files.
 
-```
-salt-run state.orch ceph.stage.1
-```
-or
-```
-salt-run state.orch ceph.stage.discovery
-```
+### Interface:
 
-After the previous command finishes successfully, create a `policy.cfg` file in
-`/srv/pillar/ceph/proposals`.
+All ceph-components (ceph-mgr, ceph-mon etc) are depicted in a so-called 'salt-runner'.
 
-You can find an example in our
-[docs](https://github.com/SUSE/DeepSea/blob/master/doc/examples/policy.cfg-rolebased)
-folder. Please change the example file to fit to your needs, e.g. by changing
-`role-master/cluster/admin*.sls` to
-`role-master/cluster/$NAME_OF_YOUR_ADMIN_NODE*.sls`
+They are designed to have a consistent interface.
 
-If you need more detailed information please refer to the [Policy wiki
-page](https://github.com/SUSE/DeepSea/wiki/policy).
+The minimal set of operations are:
 
-If you need to change the cluster's network setting, edit
-`/srv/pillar/ceph/proposals/config/stack/default/ceph/cluster.yml` and adjust
-the lines starting with `cluster_network:` and `public_network:`.
+* deploy
+* remove
+* update
 
-#### Stage 2
-The configuration stage parses the `policy.cfg` file and merges the included files
-into their final form. Cluster and role related contents are placed in
-`/srv/pillar/ceph/cluster`, while Ceph specific content is placed in
-`/srv/pillar/ceph/stack/default`.
+These can be invoked using the 'dot' notaion with a prepended `salt-run` indication that it's run with the salt context.
 
-Run the following command to trigger the configuration stage:
+For the ceph-monitors it will look like this:
 
 ```
-# salt-run state.orch ceph.stage.2
-```
-or
-```
-# salt-run state.orch ceph.stage.configure
-```
+salt-run mon.deploy
 
-The configuration step may take several seconds. After the command finishes, you
-can view the pillar data for the specified minions (for example named
-`ceph_minion1`, `ceph_minion2` ...) by running:
+salt-run mon.remove
+
+salt-run mon.update
 
 ```
-# salt 'ceph_minion*' pillar.items
-```
 
-#### Stage 3
-Now you run the deployment stage. In this stage, the pillar is validated and monitors and ODS daemons are started on the storage nodes. Run the following to start the stage:
+ceph-managers(mgr) would be invoked like so:
 
 ```
-# salt-run state.orch ceph.stage.3
-```
-or
-```
-# salt-run state.orch ceph.stage.deploy
-```
+salt-run mgr.deploy
 
-The command may take several minutes. If it fails, you have to fix the issue and run the previous stages again. After the command succeeds, run the following to check the status:
+salt-run mgr.remove
+
+salt-run mgr.update
 
 ```
-# ceph -s
-```
-
-If you only want to deploy a Ceph cluster without any additional services,
-congratulations - you're done. Otherwise you have to continue with Stage 4.
-
-#### Stage 4
-The last step of the Ceph cluster deployment is the services stage. Here you
-instantiate any of the currently supported services: iSCSI Gateway, CephFS,
-RADOS Gateway, and NFS Ganesha. In this stage, the necessary pools,
-authorizing keyrings and starting services are created.
-
-To start the stage, run the following:
-
-```
-# salt-run state.orch ceph.stage.4
-```
-or
-
-```
-salt-run state.orch ceph.stage.services
-```
-
-## Test intial deployment and generating load
-Once a cluster is deployed one might want to verify functionality or run
-benchmarks to verify the cluster works as expected.
-
-In order to gain some confidence in your cluster after the inital deployment
-(stage 3) run: 
-
-```
-# salt-run state.orch ceph.benchmarks.baseline
-``` 
-
-This runs an osd benchmark on each OSD and aggregates the results. It reports
-your average OSD performance and points out OSDs that deviate from the average. 
-
-*Please note that for now the baseline benchmark assumes all uniform OSDs.*
-
-To load test CephFS run:
-
-```
-# salt-run state.orch ceph.benchmarks.cephfs
-```
-
-This requires a running MDS (deploy in stage 4) and at least on minion with the
-`client-cephfs` role. The `cephfs_benchmark` stage will then mount the CephFS
-instance on the mds-client and run a bunch of `fio` tests. See the [benchmark
-readme](srv/pillar/ceph/benchmarks/README.md) for further details.
-
-```
-# salt-run state.orch ceph.benchmarks.rbd
-```
-
-This runs fio using the RBD backend against the cluster as a whole. This
-requires at least one minion with the `benchmark-rbd` role. See the
-[benchmark readme](srv/pillar/ceph/benchmarks/README.md) for further details.
