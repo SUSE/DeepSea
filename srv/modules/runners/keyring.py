@@ -18,6 +18,7 @@ from ext_lib.network import DeepSeaNetwork
 
 log = logging.getLogger(__name__)
 
+
 def _module(cmd):
     ''' Resolve Salt target '''
     local = salt.client.LocalClient()
@@ -34,26 +35,29 @@ def _module(cmd):
         return {}
     return list(result.values())[0]
 
+
 def create(*args):
-   '''   '''
-   subcommands = { "admin": [create_adminrc],
-                   "bootstrap": [create_bootstraprc],
-                   "bad": [create_badrc],
-                   "all": [create_adminrc, create_bootstraprc]}
+    '''   '''
+    subcommands = {
+        "admin": [create_adminrc],
+        "bootstrap": [create_bootstraprc],
+        "bad": [create_badrc],
+        "all": [create_adminrc, create_bootstraprc]
+    }
 
-   if args:
-      subcommand = args[0]
-   else:
-      subcommand = "all"
+    if args:
+        subcommand = args[0]
+    else:
+        subcommand = "all"
 
-   for cmd in subcommands[subcommand]:
-       ret = cmd()
-       if ret['result']:
-           print(ret['changes']['out'])
-       else:
-           print(f"Failed: {ret['comment']}")
-           return ""
-   return ""
+    for cmd in subcommands[subcommand]:
+        ret = cmd()
+        if ret['result']:
+            print(ret['changes']['out'])
+        else:
+            print(f"Failed: {ret['comment']}")
+            return ""
+    return ""
 
 
 def _friendly(ret):
@@ -65,34 +69,33 @@ def _friendly(ret):
 
 
 def create_admin():
-   '''   '''
-   print(_friendly(create_adminrc()))
-   return ""
+    '''   '''
+    print(_friendly(create_adminrc()))
+    return ""
 
 
 def create_adminrc():
-   '''   '''
-   return(_module('keyring2.adminrc'))
+    '''   '''
+    return (_module('keyring2.adminrc'))
 
 
 def create_bootstrap():
-   '''   '''
-   print(_friendly(create_bootstraprc()))
-   return ""
+    '''   '''
+    print(_friendly(create_bootstraprc()))
+    return ""
 
 
 def create_bootstraprc():
-   '''   '''
-   return(_module('keyring2.bootstraprc'))
+    '''   '''
+    return (_module('keyring2.bootstraprc'))
 
 
 def create_bad():
-   '''   '''
-   print(_friendly(create_badrc()))
-   return ""
+    '''   '''
+    print(_friendly(create_badrc()))
+    return ""
 
 
 def create_badrc():
-   '''   '''
-   return(_module('keyring2.badrc'))
-
+    '''   '''
+    return (_module('keyring2.badrc'))

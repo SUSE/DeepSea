@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=modernize-parse-error
-
 """
 An example of structured and human friendly returns.  Additionally, ideal
 logging if we can get the packages in place.
@@ -29,14 +28,12 @@ from salt.ext.six.moves import range
 #log.addHandler(journal_handler)
 #log.setLevel(logging.INFO)
 
-
 log = logging.getLogger(__name__)
-
 
 BOOTSTRAP_DIR = "/srv/salt/ceph/bootstrap"
 
-class PodmanCmd(object):
 
+class PodmanCmd(object):
     def __init__(self, name):
         self.name = name
         self.node_name = __grains__['host']
@@ -51,6 +48,7 @@ class PodmanCmd(object):
             return "Container image not set - check `salt-call pillar.get ceph_image`"
         return ""
 
+    # yapf: disable
     def podman_base(self):
         ''' returns podman prefix command '''
         return ["/usr/bin/podman",
@@ -85,18 +83,14 @@ class PodmanCmd(object):
                "--cap", "mds", "allow *",
                "--cap", "mgr", "allow *"]
 
+    # yapf: enable
     def bad_cmd(self):
         ''' returns a command with an error '''
-        return ["/usr/bin/podman",
-               "xyz"]
+        return ["/usr/bin/podman", "xyz"]
 
     def run(self):
         ''' Executes a command '''
-        ret = { 'name': self.name,
-                'changes': {},
-                'result': False,
-                'rc': '',
-                'comment': '' }
+        ret = {'name': self.name, 'changes': {}, 'result': False, 'rc': '', 'comment': ''}
 
         err = self.check()
         if err:
@@ -164,11 +158,8 @@ def bad():
     return _friendly(badrc())
 
 
-def  badrc():
+def badrc():
     ''' runner api '''
     podman = PodmanCmd('keyring2.badrc')
     podman.cmd = podman.bad_cmd()
     return podman.run()
-
-
-
