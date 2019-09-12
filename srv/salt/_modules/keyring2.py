@@ -90,7 +90,13 @@ class PodmanCmd(object):
 
     def run(self):
         ''' Executes a command '''
-        ret = {'name': self.name, 'changes': {}, 'result': False, 'rc': '', 'comment': ''}
+        ret = {
+            'name': self.name,
+            'changes': {},
+            'result': False,
+            'rc': '',
+            'comment': ''
+        }
 
         err = self.check()
         if err:
