@@ -55,7 +55,14 @@ def _grain_host(client, minion):
     return list(client.cmd(minion, 'grains.item', ['host']).values())[0]['host']
 
 
-def minions(host=False, format='{}', **kwargs):
+def _grain_fqdn(client, minion):
+    """
+    Return the fqdn grain for a given minion
+    """
+    return list(client.cmd(minion, 'grains.item', ['fqdn']).values())[0]['fqdn']
+
+
+def minions(host=False, format='{}', fqdn=False, **kwargs):
     """
     Some targets needs to match all minions within a search criteria.
     """
@@ -83,6 +90,8 @@ def minions(host=False, format='{}', **kwargs):
     sys.stdout = _stdout
 
     if host:
+        if fqdn:
+            return sorted([format.format(_grain_fqdn(local, k)) for k in _minions.keys()])
         return sorted([format.format(_grain_host(local, k)) for k in _minions.keys()])
     return sorted([format.format(m) for m in _minions.keys()])
 
