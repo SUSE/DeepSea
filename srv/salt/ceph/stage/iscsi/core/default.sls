@@ -1,8 +1,8 @@
 
-{% set master = salt['master.minion']() %}
-
 {% set igw_minions = salt.saltutil.runner('select.minions', cluster='ceph', roles='igw') %}
 {% if igw_minions %}
+
+{% set master = salt['master.minion']() %}
 
 set igw_service_daemon pillar item:
   salt.runner:
@@ -54,6 +54,11 @@ apply igw config:
     - sls: ceph.igw.config.apply_iscsi_config
     - failhard: True
 
+check if igw config changed:
+  salt.runner:
+    - name: changed.igw
+    - failhard: True
+
 auth:
   salt.state:
     - tgt: {{ master }}
@@ -76,50 +81,6 @@ install and start ceph-iscsi in {{ igw_minion }}:
     - sls: ceph.igw
     - failhard: True
 
-wait for iscsi gateway {{ igw_minion }}:
-  salt.function:
-    - name: iscsi.wait_for_gateway
-    - tgt: {{ igw_minion }}
-    - failhard: True
-
-{% endfor %}
-
-{% set iscsi_username = pillar.get('ceph_iscsi_username', 'admin') %}
-{% set iscsi_password = pillar.get('ceph_iscsi_password', 'admin') %}
-{% set iscsi_port = pillar.get('ceph_iscsi_port', '5000') %}
-{% set iscsi_ssl = pillar.get('ceph_iscsi_ssl', False) %}
-
-{% if iscsi_ssl %}
-disable dashboard ssl verification:
-  salt.function:
-    - name: cmd.run
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - kwarg:
-        cmd: ceph dashboard set-iscsi-api-ssl-verification false
-        shell: /bin/bash
-    - failhard: True
-{% endif %}
-
-{% for igw_address in salt.saltutil.runner('select.public_addresses', roles='igw', cluster='ceph', url=True) %}
-
-{% if iscsi_ssl %}
-{% set iscsi_url = "https://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}
-{% else %}
-{% set iscsi_url = "http://" + iscsi_username + ":" + iscsi_password + "@" + igw_address + ":" + iscsi_port %}
-{% endif %}
-
-add iscsi gateway {{ igw_address }} to dashboard:
-  salt.function:
-    - name: cmd.run
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - arg:
-      - "ceph dashboard iscsi-gateway-add {{ iscsi_url }}"
-    - kwarg:
-        unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ igw_address }}:{{ iscsi_port }}"
-
 {% endfor %}
 
 {% endif %}
-

@@ -11,6 +11,7 @@ from __future__ import print_function
 import os.path
 import hashlib
 import logging
+import glob
 # pylint: disable=import-error,3rd-party-module-not-gated
 import salt.client
 
@@ -36,7 +37,7 @@ class Role(object):
         self.conf_dir = kwargs.get('conf_dir', '/srv/salt/ceph/configuration/files/ceph.conf.d/')
         self.conf_filename = kwargs.get('conf_filename', self._role_name)
         self.conf_extension = kwargs.get('conf_extension', '.conf')
-        self._conf_files = [self.conf_dir + self.conf_filename + self.conf_extension]
+        self._conf_files = glob.glob(self.conf_dir + self.conf_filename + self.conf_extension)
         self._depends = [self]
         self.rgw_configurations()
 
@@ -291,9 +292,11 @@ def client():
 def igw():
     """
     Returns whether igw configuration has changed
-    Note: ceph-iscsi configuration is not kept in DeepSea
     """
-    return False
+    return requires_conf_change(role=Role(role_name='igw',
+                                          conf_dir='/srv/salt/ceph/igw/cache/',
+                                          conf_filename="iscsi-gateway.*",
+                                          conf_extension=".cfg"))
 
 
 def config(**kwargs):

@@ -7,7 +7,7 @@ fqdn_enabled=true
 api_port = {{ pillar.get('ceph_iscsi_port', '5000') }}
 api_user = {{ pillar.get('ceph_iscsi_username', 'admin') }}
 api_password = {{ pillar.get('ceph_iscsi_password', 'admin') }}
-{% if pillar.get('ceph_iscsi_ssl', False) %}
+{% if pillar.get('ceph_iscsi_ssl', True) %}
 api_secure = true
 {% else %}
 api_secure = false

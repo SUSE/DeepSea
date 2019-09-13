@@ -14,7 +14,7 @@
         trusted_ip_list: {{ ip_addresses }}
 {% endfor %}
 
-{% if pillar.get('ceph_iscsi_ssl', False) %}
+{% if pillar.get('ceph_iscsi_ssl', True) %}
 {% if pillar.get('ceph_iscsi_ssl_cert', None) and pillar.get('ceph_iscsi_ssl_key', None) %}
 
 /srv/salt/ceph/igw/cache/tls/certs/iscsi-gateway.crt:
