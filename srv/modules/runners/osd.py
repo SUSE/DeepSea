@@ -347,7 +347,8 @@ class OSDUtil(Util):
         log.info("Executing: {}".format(cmd))
         ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
         message = list(ret.values())[0]
-        if 'Zapping successful for OSD' not in message:
+        # TODO: workaround until https://github.com/SUSE/DeepSea/issues/1747 is resolved
+        if 'Zapping:' not in message:
             log.error("Zapping the osd failed: {}".format(message))
             raise RuntimeError
         return True
