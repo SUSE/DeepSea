@@ -20,6 +20,12 @@ remove mgr:
     - tgt_type: compound
     - sls: ceph.remove.mgr
 
+remove cephfs:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.remove.cephfs
+
 drain osds:
   salt.state:
     - tgt: {{ master }}

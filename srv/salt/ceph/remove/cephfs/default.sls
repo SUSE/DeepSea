@@ -4,9 +4,9 @@ remove mds nop:
 
 {% if salt.saltutil.runner('select.minions', cluster='ceph', roles='mds') == [] %}
 
-fail mds:
+fail mds daemons:
   cmd.run:
-    - name: "ceph mds fail 0"
+    - name: "ceph fs fail cephfs"
 
 remove cephfs:
   cmd.run:

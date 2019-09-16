@@ -554,8 +554,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/igw/auth
 	install -m 644 srv/salt/ceph/remove/igw/auth/*.sls $(DESTDIR)/srv/salt/ceph/remove/igw/auth/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/mds
-	install -m 644 srv/salt/ceph/remove/mds/*.sls $(DESTDIR)/srv/salt/ceph/remove/mds/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/cephfs
+	install -m 644 srv/salt/ceph/remove/cephfs/*.sls $(DESTDIR)/srv/salt/ceph/remove/cephfs/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/destroyed
 	install -m 644 srv/salt/ceph/remove/destroyed/*.sls $(DESTDIR)/srv/salt/ceph/remove/destroyed/
 	# Renamed for deprecation
