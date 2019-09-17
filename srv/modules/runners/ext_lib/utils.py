@@ -5,8 +5,8 @@ from salt.loader import utils, minion_mods
 from subprocess import check_output
 import logging
 
-
 ROLE_CEPH_MON = 'mon'
+
 
 def master_minion():
     '''
@@ -80,6 +80,7 @@ def evaluate_module_return(job_data, context=''):
     if failed:
         return False
     return True
+
 
 
 def evaluate_state_return(job_data):
@@ -476,6 +477,7 @@ def ceph_health():
     print(f"Ceph cluster status is {status}")
     return False
 
+
 def purge_debris():
     # TODO: Implement this
     # /etc/ceph
@@ -489,3 +491,50 @@ def purge_debris():
     #use
     #file.absent
     pass
+
+def evaluate_module_return_new(job_data):
+    """
+    When do_x is called, this potentially gets a return
+    from multiple minions:
+
+    {minion1: {return_dict},
+     minion2: {return_dict}...}
+
+    This function should analyze the returns for each minion and
+    return accordingly.
+    """
+    success = True
+    for minion_id, result in job_data.items():
+        # TODO: proper logging/ replace all print with loggers etc
+        # TODO: Catch salt-transport issue.
+        # Look for Exception strings etc
+        log.debug(f"results for minion: {minion_id}")
+        [log.debug(f"{k} - {v}") for k, v in result.items()]
+        if not result.get('result'):
+            # proper logging to screen!
+            print(f"Minion {minion_id} failed with: {result.get('comment')} ")
+            success = False
+        else:
+            # proper logging to screen!
+            print(f"Minion {minion_id} succeeded with: {result.get('comment')}")
+    return success
+
+
+def do_x():
+    """ This is just a test for my local environment """
+    ret = LocalClient().cmd(
+        'roles:master', 'podman.create_initial_keyring', tgt_type='pillar')
+    if not evaluate_module_return_new(ret):
+        return (False, ret)
+    return (True, ret)
+
+
+def humanize_return(inp):
+    if inp:
+        return 'success'
+    return 'failure'
+
+
+def evaluate_runner_return(result, data):
+    if not result:
+        print(data)

@@ -5,9 +5,10 @@ import sys
 import uuid
 from distutils.spawn import find_executable
 from os.path import expanduser
-from subprocess import check_output, CalledProcessError, Popen, PIPE
+from subprocess import run, CalledProcessError, TimeoutExpired, PIPE, CompletedProcess
 from subprocess import run as subprocess_run
 from typing import List, Dict, Sequence
+from collections import namedtuple
 
 # Takes care of shell escaping way better than just .split()
 from shlex import split as shlex_split
@@ -17,6 +18,86 @@ logger = logging.getLogger(__name__)
 # TODO: add proper return codes
 # TODO: get rid of hardcoded values
 # TODO: get rid of ceph.conf
+
+
+class ReturnStruct(object):
+
+    # The location of this class is uncertain. This probably needs to
+    # be accessible for all other modules aswell.
+
+    def __init__(self, ret, func_name):
+        """
+        Accepts a return structure that can either be
+        a CompletedProcess or a dict with the necessary fields:
+
+        Open discussion on the fields.
+
+        Also pass a func_name since this is hard to guess from the data we get
+        from the return structure.
+        """
+        assert ret
+        assert func_name
+
+        if isinstance(ret, CompletedProcess):
+            ret = ret.__dict__
+        if not isinstance(ret, dict):
+            # untested
+            self.err = "Fill me with relevant error message"
+            return self
+
+        self.command = self._format_command(
+            ret.get('args', 'No command captured'))
+        self.rc = ret.get('returncode', 1)
+        self.result = False if self.rc != 0 else True
+
+        # ret poplates strings with unicode formatting.
+        # This prevents dict.get methods from falling back to
+        # defaults :/.. anyone with a solution?
+        self.out = ret.get('stdout', 'No stdout captured')
+        self.err = ret.get('stderr', 'No stderr captured')
+        self.module_name = __name__
+
+        # The retrieval of the func_name is horrible.
+        # Unfortunately python doesn't allow runtime func_name inspection.
+        # See: https://www.python.org/dev/peps/pep-3130/
+        self.func_name = func_name
+        self.comment = self._set_comment()
+        self.human_result = self.humanize_bool()
+
+    def _set_comment(self):
+        """
+        This can be situational based on what we got from the passed
+        arguments.
+        I.e. When returncode != 0 we can set the comment the commmand
+        that was executed plus the stderr if set.
+
+        This should act as something that can be output to the userfacing
+        method(runner). TODO!
+        """
+
+        # Very basic example without conditionals that may be suited for logging
+        return f"The function {self.func_name} of module {self.module_name} returned with code {self.rc}"
+
+    def _format_command(self, cmd):
+        """
+        The extracted raw_command is of type <list> as this is what subprocesses
+        expects. This is however not _too_ helpful for a human.
+        Adding a concatenated version of the command may help for debugging.
+
+        Think of c&p the command to execute it locally on the machine.
+        Not sure if this will just pollute the ouput though.. Discuss!
+        """
+        if isinstance(cmd, list):
+            return ' '.join(cmd)
+        if isinstance(cmd, str):
+            # cmd is already a string
+            return cmd
+
+    def humanize_bool(self):
+        """ Translates bool to str"""
+        if self.result:
+            return 'success'
+        return 'failure'
 
 
 class CephContainer(object):
@@ -58,13 +139,57 @@ class CephContainer(object):
     # TODO: if entrypoint == 'ceph' -> set timeout
     # --connect-timeout (in seconds)
 
-    def run(self, out=False):
-        print(' '.join(self.run_cmd))
-        # TODO improve output checks
-        ret = check_output(self.run_cmd)
-        print(ret)
-        if out:
-            return ret
+    def run(self, func_name=''):
+        """
+        I think keeping it puristic and using the tools we have is
+        a good approach. python's subprocess module offers a 'run'
+        method since p3.5 which delivers all the things we need.
+
+        https://docs.python.org/3.6/library/subprocess.html#subprocess.run
+
+        The returns from Either CalledProcessError, TimeoutExpired or CompletedProcess
+        can be translated into a consistent and unified structure:
+
+        Taking Eric's proposal here:
+
+        local:
+            changes:
+            ----------
+            out:
+                creating /srv/salt/ceph/bootstrap/ceph.client.admin.keyring
+        comment:
+        name:
+            keyring2.adminrc
+        rc:
+            0
+        result:
+            True
+
+        this was slightly adapted, see __init__ of 'ReturnStruct' class
+
+        """
+
+        try:
+            ret = run(
+                self.run_cmd,
+                stdout=PIPE,
+                stderr=PIPE,
+                # .run implements a timeout which is neat. (in seconds)
+                timeout=60,
+                # also it implements a 'check' kwarg that raises 'CalledProcessError' when
+                # the returncode is non-0
+                check=True)
+            # returns CompletedProcess that
+            # exposes: returncode, cmd(as args), stdout, stderr
+            return ReturnStruct(ret, func_name)
+        except CalledProcessError as e:
+            # exposes e. returncode, cmd, output, stdout, stderr
+            # untested
+            print(e)
+        except TimeoutExpired as e:
+            # exposes e. returncode, cmd, output, stdout, stderr
+            # untested
+            print(e)
 
 
 def get_ceph_version(image):
@@ -194,9 +319,9 @@ class Deploy(object):
             volume_mounts={
                 f'{self.ceph_bootstrap_master_dir}':
                 f'{self.ceph_bootstrap_master_dir}'
-            }).run(out=True)
+            }).run(func_name=self.create_initial_keyring.__name__)
 
-        return self.keyring
+        return ret.__dict__
 
     # TODO: improve return checks
     def create_admin_keyring(self) -> str:
