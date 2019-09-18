@@ -51,6 +51,18 @@ class RadosConn(object):
                 return False
         return True
 
+    def list_objects(self, prefix=None):
+        result = []
+        with self.rados.open_ioctx(self.pool) as ioctx:
+            ioctx.set_namespace(self.namespace)
+            objs = ioctx.list_objects()
+            for obj in objs:
+                if prefix:
+                    if not obj.key.startswith(prefix):
+                        continue
+                result.append(obj.key)
+        return result
+
     def write(self, obj, content):
         with self.rados.open_ioctx(self.pool) as ioctx:
             ioctx.set_namespace(self.namespace)
@@ -114,3 +126,24 @@ def backup_config_file(source_file_path):
     shutil.copy2(source_file_path, dest_file_path)
     os.chown(dest_file_path, uid, gid)
     return True
+
+
+def get_exports_raw(nfs_pool):
+    rados_conn = RadosConn(nfs_pool, "ganesha")
+    export_objs = rados_conn.list_objects('export-')
+    result = {}
+    for export_obj in export_objs:
+        result[export_obj] = rados_conn.read(export_obj).decode('utf-8')
+    rados_conn.close()
+    return result
+
+
+def get_gateway_conf_raw(nfs_pool, gateway_id):
+    rados_conn = RadosConn(nfs_pool, "ganesha")
+    if not rados_conn.object_exists('conf-{}'.format(gateway_id)):
+        rados_conn.close()
+        raise Exception("Object conf-{} does not exist".format(gateway_id))
+
+    result = rados_conn.read('conf-{}'.format(gateway_id)).decode('utf-8')
+    rados_conn.close()
+    return result
