@@ -7,27 +7,29 @@ prevent empty rendering:
 
 {% else %}
 
+{# create cephfs_data pool iif it doesn't exist and no fs instance exists #}
 cephfs data:
   cmd.run:
-    - name: "ceph osd pool create cephfs_data 128"
-    - unless:
-      - "rados lspools | grep -q cephfs_data"
-      - "ceph fs ls | grep -q ^name"
+    - name: "ceph osd pool create cephfs_data 256"
+    - onlyif:
+      - 'test -z "$(rados lspools | grep cephfs_data)"'
+      - 'test -z "$(ceph fs ls | grep ^name)"'
 
 cephfs data pool enable application:
   cmd.run:
-    - name: "ceph osd pool application enable cephfs cephfs_data || :"
+    - name: "ceph osd pool application enable cephfs_data cephfs || :"
 
+{# create cephfs_metadata pool iif it doesn't exist and no fs instance exists #}
 cephfs metadata:
   cmd.run:
-    - name: "ceph osd pool create cephfs_metadata 128"
-    - unless:
-      - "rados lspools | grep -q cephfs_metadata"
-      - "ceph fs ls | grep -q ^name"
+    - name: "ceph osd pool create cephfs_metadata 64"
+    - onlyif:
+      - 'test -z "$(rados lspools | grep cephfs_metadata)"'
+      - 'test -z "$(ceph fs ls | grep ^name)"'
 
 cephfs metadata pool enable application:
   cmd.run:
-    - name: "ceph osd pool application enable cephfs cephfs_metadata || :"
+    - name: "ceph osd pool application enable cephfs_metadata cephfs || :"
 
 cephfs:
   cmd.run:
