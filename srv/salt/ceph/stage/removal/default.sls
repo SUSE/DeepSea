@@ -18,6 +18,12 @@ remove mgr:
     - tgt_type: compound
     - sls: ceph.remove.mgr
 
+remove cephfs:
+  salt.state:
+    - tgt: {{ salt['pillar.get']('master_minion') }}
+    - tgt_type: compound
+    - sls: ceph.remove.mds
+
 drain osds:
   salt.state:
     - tgt: {{ salt['pillar.get']('master_minion') }}
