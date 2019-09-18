@@ -62,23 +62,44 @@ def state_apply_if(name, condition, state_name, args=None, kwargs=None):
     log.info("Checking condition: %s", condition)
 
     for cond_type, value in condition.items():
-        if not isinstance(value, dict):
-            ret['comment'] = "the value for key '{}' must be a dictionary" \
-                                .format(cond_type)
-            return ret
-        if cond_type == 'grains' or cond_type == 'pillar':
-            db = __grains__ if cond_type == 'grains' else __pillar__
-            for key, value in value.items():
-                log.info("Checking %s[%s]", db, key)
-                if key not in db:
-                    ret['comment'] = "{} do not have key '{}'".format(cond_type, key)
-                    ret['result'] = True
-                    return ret
-                if value != db[key]:
-                    ret['comment'] = "condition was not satisfied: {}[{}] != {}" \
-                                        .format(cond_type, key, value)
-                    ret['result'] = True
-                    return ret
+        if cond_type.startswith('grains') or cond_type.startswith('pillar'):
+            cond_type_arr = cond_type.split('_')
+            op = cond_type_arr[1] if len(cond_type_arr) > 1 else "exists"
+
+            if op == "exists" and not isinstance(value, dict):
+                ret['comment'] = "the value for key '{}' must be a dictionary" \
+                                    .format(cond_type)
+                return ret
+
+            if op == "notexists" and not isinstance(value, list):
+                ret['comment'] = "the value for key '{}' must be a list" \
+                                    .format(cond_type)
+                return ret
+
+            db = __grains__ if cond_type_arr[0] == 'grains' else __pillar__
+            if op == "exists":
+                for key, value in value.items():
+                    log.info("Checking %s[%s] op=%s", db, key, op)
+
+                    if key not in db:
+                        ret['comment'] = "{} does not have key '{}'".format(cond_type_arr[0], key)
+                        ret['result'] = True
+                        return ret
+                    if value != db[key]:
+                        ret['comment'] = "condition was not satisfied: {}[{}] != {}" \
+                                            .format(cond_type_arr[0], key, value)
+                        ret['result'] = True
+                        return ret
+            elif op == "notexists":
+                for key in value:
+                    if  key in db:
+                        ret['comment'] = "Key {} exists in {}".format(key, cond_type_arr[0])
+                        ret['result'] = True
+                        return ret
+            else:
+                ret['comment'] = "{} condition op={} not valid".format(cond_type_arr[0], op)
+                return ret
+
         elif cond_type == 'salt':
             for key, value in value.items():
                 log.info("Checking %s(%s)", key, value)
