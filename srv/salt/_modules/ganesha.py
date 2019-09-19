@@ -147,3 +147,8 @@ def get_gateway_conf_raw(nfs_pool, gateway_id):
     result = rados_conn.read('conf-{}'.format(gateway_id)).decode('utf-8')
     rados_conn.close()
     return result
+
+
+def object_exists(nfs_pool, obj_key):
+    rados_conn = RadosConn(nfs_pool, "ganesha")
+    return rados_conn.object_exists(obj_key)
