@@ -808,7 +808,7 @@ class Validate(Preparation):
         install only happens once.
         """
         search = __utils__['deepsea_minions.show']()
-        results = self._silent_search(search, 'pkg.info_installed')
+        results = self._silent_search(search, 'deepsea.is_pkg_installed')
 
         for minion in results:
             if isinstance(results[minion], dict) and self.package in results[minion]:

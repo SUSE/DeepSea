@@ -4,6 +4,13 @@
 
 from __future__ import absolute_import
 
+import logging
+
+from salt.exceptions import CommandExecutionError
+
+
+log = logging.getLogger(__name__)
+
 
 def show_low_sls(*states):
     result = {}
@@ -90,3 +97,19 @@ def ssl_cert_cn_wildcard():
         raise Exception("According to the 'domain' grain, the cluster does"
                         " not have a DNS domain configured")
     return "*.{}".format(domain)
+
+
+def is_pkg_installed(pkg_name):
+    try:
+        result = __salt__['pkg.info_installed'](pkg_name)
+    except CommandExecutionError as ex:
+        log.info("%s is not installed? %s", pkg_name, str(ex))
+        if str(ex).startswith('package {} is not'.format(pkg_name)):
+            __context__['retcode'] = 0
+            return {}
+
+        return str(ex)
+    log.info("Checking if %s is installed: %s", pkg_name, result)
+    if isinstance(result, dict) and pkg_name in result:
+        return result
+    return {}
