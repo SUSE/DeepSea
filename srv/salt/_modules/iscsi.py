@@ -466,6 +466,11 @@ def validate(lio_root):
                         tpg.chap_mutual_userid,
                         tpg.chap_mutual_password,
                         tpg.authenticate_target}
+            if (tpg.get_attribute('generate_node_acls') == '0' and
+              tpg.chap_userid is not None and tpg.chap_password is not None):
+                raise Exception(
+                    'Unsupported LIO configuration: concurrent ACL and TPG '
+                    'based authentication for target ({}).'.format(target.wwn))
             if tpg_auth_prev is None:
                 tpg_auth_prev = tpg_auth
             elif tpg_auth_prev != tpg_auth:
