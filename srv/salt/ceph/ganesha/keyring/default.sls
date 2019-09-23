@@ -23,13 +23,6 @@
     - makedirs: True
     - fire_event: True
 
-/etc/ceph/ceph.conf:
-  file.append:
-    - text: |
-        [client.{{ rgw_role }}.{{ role + "." +  grains['host'] }}]
-        keyring = /etc/ceph/ceph.client.{{ rgw_role }}.{{ role + "." + grains['host'] }}.keyring
-    - fire_event: True
-
 {% endif %}
 
 {% endfor %}
