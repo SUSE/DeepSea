@@ -1499,6 +1499,36 @@ def setup(**kwargs):
     return True
 
 
+def fsid():
+    local_client = salt.client.LocalClient()
+    # gotta get the master_minion...not pretty but works
+    master_minion = local_client.cmd(
+        'I@roles:master', 'pillar.get',
+        ['master_minion'], tgt_type='compound').items()[0][1]
+    result = local_client.cmd(master_minion, 'cmd.run', ['ceph fsid'],
+                              tgt_type="compound")
+    if not result:
+        log.warning('Could not execute "ceph fsid", no cluster running')
+        return True
+    running_fsid = result.items()[0][1]
+    if 'fsid' in __pillar__:
+        if __pillar__['fsid'] is None:
+            log.warning('fsid in pillar is empty, but ceph seems to be running...?')
+            return True
+    else:
+        log.warning('no fsid in pillar, but ceph seems to be running...?')
+        return True
+
+    if running_fsid != __pillar__['fsid']:
+        log.error('PROBLEM DETECTED')
+        log.error('running ceph cluster reports different fsid from pillar')
+        log.error('this will prevent you from adding new MON daemons')
+        return False
+    return True
+
+
+
+
 __func_alias__ = {
                  'help_': 'help',
                  }
