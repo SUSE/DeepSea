@@ -103,6 +103,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
 %dir /srv/salt/_modules
 %dir /srv/salt/_states
+%dir /srv/salt/_utils
 %dir /srv/modules
 %dir /srv/modules/modules
 %dir /srv/modules/runners
@@ -181,6 +182,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mgr/restart/force
 %dir /srv/salt/ceph/mgr/restart/controlled
 %dir /srv/salt/ceph/bootstrap
+%dir /srv/salt/ceph/bootstrap/dirs
+%dir /srv/salt/ceph/bootstrap/files
+%dir /srv/salt/ceph/bootstrap/keyrings
+%dir /srv/salt/ceph/bootstrap/permissions
 %dir /srv/salt/ceph/permissions
 %dir /srv/salt/ceph/migrate
 %dir /srv/salt/ceph/migrate/nodes
@@ -195,6 +200,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/mon/restart
 %dir /srv/salt/ceph/mon/restart/force
 %dir /srv/salt/ceph/mon/restart/controlled
+%dir /srv/salt/ceph/mon/service
 %dir /srv/salt/ceph/monitoring
 %dir /srv/salt/ceph/monitoring/alertmanager
 %dir /srv/salt/ceph/monitoring/alertmanager/files
@@ -473,6 +479,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 /srv/salt/_modules/*.py*
 /srv/salt/_states/*.py*
+/srv/salt/_utils/*.py*
 %config /srv/salt/ceph/permissions/*.sls
 %config /srv/salt/ceph/admin/*.sls
 %config /srv/salt/ceph/admin/files/*.j2
@@ -481,6 +488,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/apparmor/files/*
 %config /srv/salt/ceph/apparmor/files/ceph.d/*
 %config /srv/salt/ceph/apparmor/install/*
+%config /srv/salt/ceph/bootstrap/dirs/*
+%config /srv/salt/ceph/bootstrap/keyrings/*
+%config /srv/salt/ceph/bootstrap/permissions/*
 %config /srv/salt/ceph/benchmarks/*.sls
 %config /srv/salt/ceph/benchmarks/blockdev/*.sls
 %config /srv/salt/ceph/benchmarks/fs/*.sls
@@ -554,6 +564,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/mon/restart/*.sls
 %config /srv/salt/ceph/mon/restart/force/*.sls
 %config /srv/salt/ceph/mon/restart/controlled/*.sls
+%config /srv/salt/ceph/mon/service/*.sls
 %config /srv/salt/ceph/monitoring/alertmanager/*.sls
 %config /srv/salt/ceph/monitoring/alertmanager/files/*.j2
 %config /srv/salt/ceph/monitoring/grafana/*.sls

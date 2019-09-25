@@ -1,90 +1,266 @@
 # -*- coding: utf-8 -*-
-
+# pylint: disable=modernize-parse-error
 """
-Keyring collection of operations
+An example of structured and human friendly returns.  Additionally, ideal
+logging if we can get the packages in place.
 """
 
 from __future__ import absolute_import
+from __future__ import print_function
+import logging
 import os
-import struct
-import base64
-import time
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 
+# If we had python3-systemd available on SLE15SP1, then this is what I am
+# wanting.  Each entry gets logged with a timestamp as info, so debug can
+# stay debug.  This also works `journalctl -t deepsea -f`.
+#
+# from systemd.journal import JournalHandler
+#
+# log = logging.getLogger(__name__)
+# journal_handler = JournalHandler(SYSLOG_IDENTIFIER="deepsea")
+# journal_handler.setFormatter(logging.Formatter(
+#     '[%(levelname)s] %(message)s'
+# ))
+# log.addHandler(journal_handler)
+# log.setLevel(logging.INFO)
 
-def secret(filename):
-    """
-    Read the filename and return the key value.  If it does not exist,
-    generate one.
+log = logging.getLogger(__name__)
 
-    Note that if used on a file that contains multiple keys, this will
-    always return the first key.
-    """
-    if os.path.exists(filename):
-        with open(filename, 'r') as keyring:
-            for line in keyring:
-                if 'key' in line and ' = ' in line:
-                    key = line.split(' = ')[1].strip()
-                    return key
-
-    return gen_secret()
-
-
-def gen_secret():
-    """
-    Generate a valid keyring secret for Ceph
-    """
-    key = os.urandom(16)
-    header = struct.pack('<hiih', 1, int(time.time()), 0, len(key))
-    keyring = base64.b64encode(header + key)
-    return __salt__['helper.convert_out'](keyring)
+BOOTSTRAP_DIR = "/srv/salt/ceph/bootstrap"
+CEPH_AUTHTOOL = "/usr/bin/ceph-authtool"
 
 
-# pylint: disable=too-many-return-statements
-def file_(component, name=None):
-    """
-    Return the pathname to the cache directory.  This feels cleaner than
-    trying to use Jinja across different directories to retrieve a common
-    value.
-    """
-    if component == "osd":
-        return "/srv/salt/ceph/osd/cache/bootstrap.keyring"
+def _podman(name, authtool_args, **kwargs):
+    '''
+    Call podman with arguments and return desired output.  Gracefully, handle
+    exceptions.
+    '''
+    container_image = __pillar__.get('container_image', None)
+    node_name = __grains__.get('host', None)
 
-    elif component == "igw":
-        return "/srv/salt/ceph/igw/cache/ceph." +  name + ".keyring"
+    ret = __utils__['ret.returnstruct'](name)
+    if not container_image:
+        return __utils__['ret.err'](
+            ret,
+            "Container image not set - check `salt-call pillar.get container_image`"
+        )
+    if not node_name:
+        return __utils__['ret.err'](
+            ret, "Grains 'host' is empty - check `salt-call grains.get host`")
 
-    elif component == "mds":
-        return "/srv/salt/ceph/mds/cache/" + name + ".keyring"
+    # yapf: disable
+    common_args = [
+        "-e", f"CONTAINER_IMAGE={container_image}",
+        "-e", f"NODE_NAME={node_name}",
+        "-v", f"{BOOTSTRAP_DIR}:{BOOTSTRAP_DIR}",
+        "--entrypoint", f"{CEPH_AUTHTOOL}", f"{container_image}"
+    ]
+    # yapf: enable
 
-    elif component == "mgr":
-        return "/srv/salt/ceph/mgr/cache/" + name + ".keyring"
+    cmd_args = common_args + authtool_args
+    # pylint: disable=broad-except
+    try:
+        output = kwargs.get('out', None)
+        if 'output' in __opts__:
+            output = "raw"  # prevent double processing
+        ret = __salt__['podman-ng.run'](name, cmd_args)
+        return __utils__['ret.outputter'](ret, out_type=output)
+    except Exception as exc:
+        log.error(exc)
+        return {'name': name, 'result': False, 'comment': exc.args[0]}
 
-    elif component == "rgw":
-        return "/srv/salt/ceph/rgw/cache/" + name + ".keyring"
 
-    elif component == "cinder":
-        return "/srv/salt/ceph/openstack/cache/" + name + "cinder.keyring"
+def mon(**kwargs):
+    '''
+    Provide podman arguments for generating the initial mon keyring
+    '''
+    keyring = f"{BOOTSTRAP_DIR}/files/keyring"
+    # yapf: disable
+    authtool_args = [
+        "--create-keyring", keyring,
+        "--gen-key",
+        "-n", "mon.",
+        "--cap", "mon", "allow *"
+    ]
+    # yapf: enable
 
-    elif component == "cinder-backup":
-        return "/srv/salt/ceph/openstack/cache/" + name + "cinder-backup.keyring"
+    ret = _podman(kwargs['__pub_fun'], authtool_args, **kwargs)
+    _chown_salt(keyring)
+    return ret
 
-    elif component == "glance":
-        return "/srv/salt/ceph/openstack/cache/" + name + "glance.keyring"
 
-    elif component == "ganesha":
-        return "/srv/salt/ceph/ganesha/cache/" + name + ".keyring"
+def _chown_salt(keyring):
+    '''
+    Set the salt user
+    '''
+    try:
+        os.chown(keyring, 480, -1)  # salt user
+    except FileNotFoundError:
+        pass
 
-    elif component == "deepsea_cephfs_bench":
-        return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.keyring"
 
-    elif component == "deepsea_cephfs_bench_secret":
-        return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.secret"
+def admin(**kwargs):
+    '''
+    Provide podman arguments for generating the admin keyring
+    '''
+    keyring = f"{BOOTSTRAP_DIR}/files/ceph.client.admin.keyring"
+    # yapf: disable
+    authtool_args = [
+        "--create-keyring", keyring,
+        "--gen-key",
+        "-n", "client.admin",
+        "--cap", "mon", "allow *",
+        "--cap", "osd", "allow *",
+        "--cap", "mds", "allow *",
+        "--cap", "mgr", "allow *"
+    ]
+    # yapf: enable
 
-    elif component == "deepsea_rbd_bench":
-        return "/srv/salt/ceph/rbd/benchmarks/files/cache/deepsea_rbd_bench.keyring"
+    ret = _podman(kwargs['__pub_fun'], authtool_args, **kwargs)
+    _chown_salt(keyring)
+    return ret
 
-    return None
 
-__func_alias__ = {
-                 'file_': 'file',
-                 }
+def import_admin(**kwargs):
+    '''
+    Adds the admin keyring to keyring
+    (i.e. cat ceph.client.admin.keyring >> keyring)
+    '''
+    # yapf: disable
+    authtool_args = [
+        f"{BOOTSTRAP_DIR}/files/keyring",
+        "--import-keyring", f"{BOOTSTRAP_DIR}/files/ceph.client.admin.keyring"
+    ]
+    # yapf: enable
+
+    return _podman(kwargs['__pub_fun'], authtool_args, **kwargs)
+
+
+def bootstrap(**kwargs):
+    '''
+    Provide podman arguments for generating the osd bootstrap keyring
+    '''
+    keyring = f"{BOOTSTRAP_DIR}/files/ceph.keyring"
+    # yapf: disable
+    authtool_args = [
+        "--create-keyring", keyring,
+        "--gen-key",
+        "-n", "client.bootstrap-osd",
+        "--cap", "mon", "bootstrap-osd"
+    ]
+    # yapf: enable
+
+    ret = _podman(kwargs['__pub_fun'], authtool_args, **kwargs)
+    _chown_salt(keyring)
+    return ret
+
+
+def import_bootstrap(**kwargs):
+    '''
+    Adds the bootstrap keyring to keyring (i.e. cat ceph.keyring >> keyring)
+    '''
+    # yapf: disable
+    authtool_args = [
+        f"{BOOTSTRAP_DIR}/files/keyring",
+        "--import-keyring", f"{BOOTSTRAP_DIR}/files/ceph.keyring"
+    ]
+    # yapf: enable
+
+    return _podman(kwargs['__pub_fun'], authtool_args, **kwargs)
+
+
+CEPH_BIN = "/usr/bin/ceph"
+CEPH_ETC_DIR = "/etc/ceph"
+
+
+def _podman2(name, authtool_args, **kwargs):
+    '''
+    Note the duplication from _podman above with the subtle differences.
+    Those differences should be what is obvious
+    '''
+    container_image = __pillar__.get('container_image', None)
+    node_name = __grains__.get('host', None)
+
+    ret = __utils__['ret.returnstruct'](name)
+    if not container_image:
+        return __utils__['ret.err'](
+            ret,
+            "Container image not set - check `salt-call pillar.get container_image`"
+        )
+    if not node_name:
+        return __utils__['ret.err'](
+            ret, "Grains 'host' is empty - check `salt-call grains.get host`")
+
+    # yapf: disable
+    common_args = [
+        "-e", f"CONTAINER_IMAGE={container_image}",
+        "-e", f"NODE_NAME={node_name}",
+        "-v", f"{BOOTSTRAP_DIR}:{BOOTSTRAP_DIR}",
+        "-v", f"{CEPH_ETC_DIR}:{CEPH_ETC_DIR}",
+        "--entrypoint", f"{CEPH_BIN}", f"{container_image}"
+    ]
+    # yapf: enable
+
+    cmd_args = common_args + authtool_args
+    try:
+        output = kwargs.get('out', None)
+        if 'output' in __opts__:
+            output = "raw"  # prevent double processing
+        ret = __salt__['podman-ng.run'](name, cmd_args)
+        return __utils__['ret.outputter'](ret, out_type=output)
+    except Exception as exc:
+        log.error(exc)
+        return {'name': name, 'result': False, 'comment': exc.args[0]}
+
+
+def mgr(name, **kwargs):
+    '''
+    Provide podman arguments for generating a named mgr keyring
+    '''
+    keyring = f"{BOOTSTRAP_DIR}/files/mgr-{name}.keyring"
+    # yapf: disable
+    authtool_args = [
+        "auth", "get-or-create", f"mgr.{name}",
+        "mon", "'allow profile mgr'",
+        "osd", "'allow *'",
+        "mds", "'allow *'",
+        "-o", keyring
+    ]
+    # yapf: enable
+
+    ret = _podman2(kwargs['__pub_fun'], authtool_args, **kwargs)
+    _chown_salt(keyring)
+    return ret
+
+
+def import_all(**kwargs):
+    '''
+    Do nearly identical steps need a wrapper?
+    '''
+    import_admin(**kwargs)
+    import_bootstrap(**kwargs)
+
+
+def setup(**kwargs):
+    '''
+    Simple wrapper for grouping all the functions of this module.
+    '''
+    steps = {
+        mon: 'mon',
+        bootstrap: 'bootstrap',
+        admin: 'admin',
+        import_bootstrap: 'import_bootstrap',
+        import_admin: 'import_admin'
+    }
+
+    for step in steps:
+        ret = step(out='yaml', __pub_fun=f"keyring.{steps[step]}")
+        if not ret['result']:
+            return ret
+
+    return {
+        'name': kwargs['__pub_fun'],
+        'result': True,
+        'comment': "Creation and import of keyrings completed"
+    }

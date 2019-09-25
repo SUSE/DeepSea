@@ -1,0 +1,15 @@
+[Unit]
+Description=Ceph Monitor
+After=network.target
+[Service]
+EnvironmentFile=-/etc/environment
+ExecStartPre=-/usr/bin/podman rm ceph-mon-%i
+ExecStart={{ salt['mon.cmd']() }}
+ExecStop=-/usr/bin/podman stop ceph-mon-%i
+ExecStopPost=-/bin/rm -f /var/run/ceph/ceph-mon.%i.asok
+Restart=always
+RestartSec=10s
+TimeoutStartSec=120
+TimeoutStopSec=15
+[Install]
+WantedBy=multi-user.target

@@ -224,6 +224,9 @@ copy-files:
 	# state modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_states
 	install -m 644 srv/salt/_states/*.py* $(DESTDIR)/srv/salt/_states/
+	# utils
+	install -d -m 755 $(DESTDIR)/srv/salt/_utils
+	install -m 644 srv/salt/_utils/*.py* $(DESTDIR)/srv/salt/_utils/
 	# state files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/admin
 	install -m 644 srv/salt/ceph/admin/*.sls $(DESTDIR)/srv/salt/ceph/admin/
@@ -236,6 +239,13 @@ copy-files:
 	install -m 644 srv/salt/ceph/permissions/*.sls $(DESTDIR)/srv/salt/ceph/permissions
 	# state files bootstrap
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/bootstrap
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/bootstrap/files
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/bootstrap/dirs
+	install -m 644 srv/salt/ceph/bootstrap/dirs/*.sls $(DESTDIR)/srv/salt/ceph/bootstrap/dirs/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/bootstrap/keyrings
+	install -m 644 srv/salt/ceph/bootstrap/keyrings/*.sls $(DESTDIR)/srv/salt/ceph/bootstrap/keyrings/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/bootstrap/permissions
+	install -m 644 srv/salt/ceph/bootstrap/permissions/*.sls $(DESTDIR)/srv/salt/ceph/bootstrap/permissions/
 	# state files apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/apparmor/files
@@ -407,6 +417,8 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
 	install -m 644 srv/salt/ceph/mon/restart/controlled/default.sls $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
 	install -m 644 srv/salt/ceph/mon/restart/controlled/init.sls $(DESTDIR)/srv/salt/ceph/mon/restart/controlled
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mon/service
+	install -m 644 srv/salt/ceph/mon/service/*.sls $(DESTDIR)/srv/salt/ceph/mon/service/
 	# state files - monitoring
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/monitoring/alertmanager
