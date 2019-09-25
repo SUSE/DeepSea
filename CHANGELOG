@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Sep 25 04:42:26 UTC 2019 - Tim Serong <tserong@suse.com>
+
+- Version 0.10.0
+- First version targeting containerized ceph deployments (based on "next" branch)
+
+-------------------------------------------------------------------
 Wed Jul 31 09:50:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.23
