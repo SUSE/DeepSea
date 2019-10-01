@@ -30,8 +30,10 @@ class TestChanged():
     @patch('os.path.exists', new=f_os.path.exists)
     @patch('builtins.open', new=f_open)
     @patch('srv.modules.runners.changed.hashlib')
-    def test_create_checksum(self, hashlib_mock, cfg, role):
+    @patch('glob.glob')
+    def test_create_checksum(self, glob_mock, hashlib_mock, cfg, role):
         fs.CreateFile("{}/{}".format(conf_dir, 'rgw.conf'), contents="foo=bar")
+        glob_mock.return_value = ["{}/{}".format(conf_dir, 'rgw.conf')]
         cfg = cfg(role=role(role_name='rgw'))
         ret = cfg.create_checksum()
         assert isinstance(ret, MagicMock) is True
