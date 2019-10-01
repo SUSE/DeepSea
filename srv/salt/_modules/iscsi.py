@@ -9,6 +9,7 @@ This module allows to query information about iSCSI targets served by a gateway
 # pylint: disable=too-many-nested-blocks,missing-docstring,invalid-name
 from __future__ import absolute_import
 
+import configparser
 import datetime
 import glob
 import json
@@ -19,7 +20,6 @@ import time
 
 import requests
 from salt.exceptions import CommandExecutionError
-import netaddr
 
 try:
     from rtslib_fb.root import RTSRoot
@@ -550,6 +550,26 @@ def is_pkg_installed(pkg_name):
     return isinstance(result, dict) and pkg_name in result
 
 
+def _gateway_url():
+    """
+    This method returns the base URL to contact ceph-iscsi REST API by
+    reading the gateway configuration in /etc/ceph/iscsi-gateway.cfg
+    """
+    config = configparser.ConfigParser()
+    res = config.read('/etc/ceph/iscsi-gateway.cfg')
+    if not res:
+        # could not find gateway config
+        return None
+    username = config['config']['api_user']
+    password = config['config']['api_password']
+    port = config['config']['api_port']
+    ssl = config['config']['api_secure'] in ['True', 'true', '1', 'yes']
+    address = __salt__['grains.get']('fqdn')
+
+    return "http{}://{}:{}@{}:{}".format("s" if ssl else "", username,
+                                         password, address, port)
+
+
 def wait_for_gateway():
     """
     This method waits for a ceph-iscsi gateway to be ready for accepting
@@ -562,18 +582,7 @@ def wait_for_gateway():
     Otherwise we should wait because applying an LIO configuration might
     take several minutes.
     """
-    username = __pillar__.get('ceph_iscsi_username', 'admin')
-    password = __pillar__.get('ceph_iscsi_password', 'admin')
-    port = __pillar__.get('ceph_iscsi_port', '5000')
-    ssl = __pillar__.get('ceph_iscsi_ssl', False)
-    address = __salt__['public.address']()
-
-    if netaddr.valid_ipv6(address) is True:
-        address = "[{}]".format(address)
-
-    url = "http{}://{}:{}@{}:{}/api/_ping" \
-          .format("s" if ssl else "", username,
-                  password, address, port)
+    url = "{}/api/_ping".format(_gateway_url())
 
     while True:
         try:
@@ -585,8 +594,10 @@ def wait_for_gateway():
             if res.status_code in [200, 503]:
                 log.info("Gateway is now available")
                 return True
+            else:
+                log.warning("Gateway not yet available: status_code=%s", res.status_code)
         except requests.RequestException as ex:
-            log.info("Gateway not yet available: %s", str(ex))
+            log.warning("Gateway not yet available: %s", str(ex))
         time.sleep(5)
 
 
