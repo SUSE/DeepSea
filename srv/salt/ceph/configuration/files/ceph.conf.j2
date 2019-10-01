@@ -54,3 +54,13 @@ ip_version = ipv6
 
 [client]
 {% include "ceph/configuration/files/ceph.conf.d/client.conf" ignore missing %}
+
+{% for role in salt['pillar.get']('ganesha_configurations', [ 'ganesha' ]) %}
+{% for host in salt.saltutil.runner('select.minions', cluster='ceph', roles=role, host=True) %}
+{% set rgw_role = salt['rgw.configuration'](role) %}
+{% if rgw_role %}
+[client.{{ rgw_role }}.{{ role + "." +  host }}]
+    keyring = /etc/ceph/ceph.client.{{ rgw_role }}.{{ role + "." + host }}.keyring
+{% endif %}
+{% endfor %}
+{% endfor %}
