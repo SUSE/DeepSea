@@ -467,7 +467,7 @@ def validate(lio_root):
                         tpg.chap_mutual_password,
                         tpg.authenticate_target}
             if (tpg.get_attribute('generate_node_acls') == '0' and
-              tpg.chap_userid is not None and tpg.chap_password is not None):
+                    tpg.chap_userid is not None and tpg.chap_password is not None):
                 raise Exception(
                     'Unsupported LIO configuration: concurrent ACL and TPG '
                     'based authentication for target ({}).'.format(target.wwn))
@@ -479,8 +479,8 @@ def validate(lio_root):
                     'differ between TPGs for target ({}). Switch lrbd to target'
                     'based authentication to proceed.'.format(target.wwn))
             if tpg_acls_prev is None:
-                tpg_acls_prev = tpg.node_acls
-            elif tpg_acls_prev != tpg.node_acls:
+                tpg_acls_prev = list(tpg.node_acls)
+            elif tpg_acls_prev != list(tpg.node_acls):
                 raise Exception(
                     'Unsupported LIO configuration: ACL settings '
                     'differ between TPGs for target ({}). Switch lrbd to target'
