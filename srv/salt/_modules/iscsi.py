@@ -176,7 +176,7 @@ class CephIscsiConfig(object):
                                'mutual_username': '',
                                'mutual_password': '',
                                'mutual_password_encryption_enabled': False},
-            "version": 9,
+            "version": 11,
             "epoch": 0,
             "created": now,
             "updated": now
@@ -193,13 +193,32 @@ class CephIscsiConfig(object):
         if target_iqn not in self.config['targets']:
             self.config['targets'][target_iqn] = {
                 'created': now,
-                'disks': [],
+                'disks': {},
                 'acl_enabled': acl_enabled,
                 'clients': {},
                 'portals': {},
                 'groups': {},
                 'controls': target_controls
              }
+
+    def add_target_auth(self, target_iqn,
+                        userid, password, mutual_userid,
+                        mutual_password):
+        log.debug('Adding target auth for %s', target_iqn)
+        auth = {
+                    'username': userid,
+                    'password': password,
+                    'password_encryption_enabled': False,
+                    'mutual_username': mutual_userid,
+                    'mutual_password': mutual_password,
+                    'mutual_password_encryption_enabled': False
+        }
+        target_config = self.config['targets'][target_iqn]
+        if 'auth' in target_config.keys():
+            if target_config['auth'] != auth:
+                raise Exception("{} auth settings not uniform across all TPGs".format(target_iqn))
+        else:
+            target_config['auth'] = auth
 
     def _get_controls(self, pool, image):
         backstore_object_name = '{}-{}'.format(pool, image)
@@ -291,13 +310,16 @@ class CephIscsiConfig(object):
                 owner = portal_name
         return owner
 
-    def add_disk(self, target_iqn, pool, image, wwn):
+    def add_disk(self, target_iqn, pool, image, wwn, tpg_lun_id):
         log.debug('Adding disk %s / %s / %s / %s', target_iqn, pool, image, wwn)
         now = CephIscsiConfig._get_time()
         disk_id = '{}/{}'.format(pool, image)
         if disk_id in self.config['disks']:
-            if disk_id not in self.config['targets'][target_iqn]['disks']:
+            if disk_id not in self.config['targets'][target_iqn]['disks'].keys():
                 raise Exception("Disk {} cannot be exported by multiple targets".format(disk_id))
+            # backstore config already exists. sanity check for matching wwn
+            if self.config['disks'][disk_id]['wwn'] != wwn:
+                raise Exception("Duplicate backstore for {} with differing wwn".format(disk_id))
             return
         owner = self._get_owner(target_iqn)
         self.config['disks'][disk_id] = {
@@ -311,7 +333,16 @@ class CephIscsiConfig(object):
             'pool_id': self.cluster.get_pool_id(pool),
             'wwn': wwn
         }
-        self.config['targets'][target_iqn]['disks'].append(disk_id)
+        for disk_k, disk_v in self.config['targets'][target_iqn]['disks'].items():
+            if disk_k == disk_id:
+                if disk_v['lun_id'] != tpg_lun_id:
+                    raise Exception("disk {} has differing LUN".format(disk_id))
+                log.debug('%s already exists with matching LUN', disk_id)
+                return
+            if disk_v['lun_id'] == tpg_lun_id:
+                raise Exception("disks {} and {} have clashing LUN {}".format(
+                                disk_id, disk_k, tpg_lun_id))
+        self.config['targets'][target_iqn]['disks'][disk_id] = {'lun_id': tpg_lun_id}
         self.config['gateways'][owner]['active_luns'] += 1
 
     def add_client(self, target_iqn, client_iqn):
@@ -425,20 +456,60 @@ def validate(lio_root):
     """
     targets_by_disk = {}
     for target in lio_root.targets:
+        tpg_auth_prev = None
+        tpg_acls_prev = None
         for tpg in target.tpgs:
+            tpg_auth = {tpg.get_attribute('generate_node_acls'),
+                        tpg.get_attribute('authentication'),
+                        tpg.chap_userid,
+                        tpg.chap_password,
+                        tpg.chap_mutual_userid,
+                        tpg.chap_mutual_password,
+                        tpg.authenticate_target}
+            if (tpg.get_attribute('generate_node_acls') == '0' and
+                    tpg.chap_userid is not None and tpg.chap_password is not None):
+                raise Exception(
+                    'Unsupported LIO configuration: concurrent ACL and TPG '
+                    'based authentication for target ({}).'.format(target.wwn))
+            if tpg_auth_prev is None:
+                tpg_auth_prev = tpg_auth
+            elif tpg_auth_prev != tpg_auth:
+                raise Exception(
+                    'Unsupported LIO configuration: Authentication settings '
+                    'differ between TPGs for target ({}). Switch lrbd to target'
+                    'based authentication to proceed.'.format(target.wwn))
+            if tpg_acls_prev is None:
+                tpg_acls_prev = list(tpg.node_acls)
+            elif tpg_acls_prev != list(tpg.node_acls):
+                raise Exception(
+                    'Unsupported LIO configuration: ACL settings '
+                    'differ between TPGs for target ({}). Switch lrbd to target'
+                    'based authentication to proceed.'.format(target.wwn))
             for lun in tpg.luns:
                 udev_path_list = lun.storage_object.udev_path.split('/')
                 pool = udev_path_list[len(udev_path_list) - 2]
                 image = udev_path_list[len(udev_path_list) - 1]
                 disk_id = '{}/{}'.format(pool, image)
+                disk_details = {
+                        'target_iqn': target.wwn,
+                        'lun_id': lun.lun
+                }
                 if disk_id not in targets_by_disk:
-                    targets_by_disk[disk_id] = []
-                if target.wwn not in targets_by_disk[disk_id]:
-                    targets_by_disk[disk_id].append(target.wwn)
-                if len(targets_by_disk[disk_id]) > 1:
+                    targets_by_disk[disk_id] = disk_details
+                    continue
+                if targets_by_disk[disk_id]['target_iqn'] != disk_details['target_iqn']:
                     raise Exception(
-                        'Unsupported LIO configuration: Disk {} belongs to more than one '
-                        'target ({})'.format(disk_id, targets_by_disk[disk_id]))
+                        'Unsupported LIO configuration: Disk {} belongs to more '
+                        'than one target ({} and {}). Remove duplicate lrbd '
+                        'export to proceed.'.format(
+                            disk_id, targets_by_disk[disk_id]['target_iqn'],
+                            disk_details['target_iqn']))
+                if targets_by_disk[disk_id]['lun_id'] != disk_details['lun_id']:
+                    raise Exception(
+                        'Unsupported LIO configuration: Disk {} LUN differs '
+                        'between target ({}) TPGs. Configure uniform lrbd LUN '
+                        'IDs to proceed.'.format(
+                            disk_id, disk_details['target_iqn']))
 
 
 def generate_config(lio_root, pool_name):
@@ -467,6 +538,11 @@ def generate_config(lio_root, pool_name):
             ceph_iscsi_config.add_target(target.wwn, acl_enabled, target_controls)
             for tpg in target.tpgs:
                 log.info('Processing tpg - %s', tpg)
+                ceph_iscsi_config.add_target_auth(target.wwn,
+                                                  tpg.chap_userid,
+                                                  tpg.chap_password,
+                                                  tpg.chap_mutual_userid,
+                                                  tpg.chap_mutual_password)
                 for network_portal in tpg.network_portals:
                     portal_name = _get_portal_name(network_portal.ip_address)
                     if portal_name:
@@ -479,7 +555,8 @@ def generate_config(lio_root, pool_name):
                         pool = udev_path_list[len(udev_path_list) - 2]
                         image = udev_path_list[len(udev_path_list) - 1]
                         disks_by_lun[lun.lun] = (pool, image)
-                        ceph_iscsi_config.add_disk(target.wwn, pool, image, lun.storage_object.wwn)
+                        ceph_iscsi_config.add_disk(target.wwn, pool, image,
+                                                   lun.storage_object.wwn, lun.lun)
                     for node_acl in tpg.node_acls:
                         ceph_iscsi_config.add_client(target.wwn, node_acl.node_wwn)
                         userid = node_acl.chap_userid
