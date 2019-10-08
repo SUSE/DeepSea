@@ -77,12 +77,47 @@ class UpgradeValidation(object):
         """
         Check if the automated upgrade is supported
         """
-        msg = """
-                ************** PLEASE READ ***************
-                The automated upgrade is currently not supported.
-                Please refer to the official documentation.
-                ******************************************"""
-        return False, msg
+        __opts__ = salt.config.client_config('/etc/salt/master')
+        __grains__ = salt.loader.grains(__opts__)
+        __opts__['grains'] = __grains__
+        __utils__ = salt.loader.utils(__opts__)
+        __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+
+        os_codename, _, ceph_version = __utils__['status.get_sys_versions']()
+
+        os_codenames = set(os_codename.values())
+        if len(os_codenames) > 1:
+            msg = """
+    ************** PLEASE READ ***************
+    The automated upgrade is not supported when
+    there are mixed operating system versions:
+      - {}
+    ******************************************""".format("\n      - ".join(os_codenames))
+            return False, msg
+
+        nautilus_base = version.parse('14.0.0-0-g0000000000')
+        octopus_base = version.parse('15.0.0-0-g0000000000')
+        invalid_versions = []
+        for version_string in set(ceph_version.values()):
+            match = re.match(r'ceph version ([^\s]+)', version_string)
+            if match:
+                this_version = version.parse(match.group(1))
+            else:
+                this_version = version.parse(version_string)
+            if this_version < nautilus_base or this_version >= octopus_base:
+                invalid_versions.append(str(this_version))
+        if invalid_versions:
+            msg = """
+    ************** PLEASE READ ***************
+    The automated upgrade is only supported when
+    all nodes are running Ceph Nautilus (14.x).
+    Other Ceph versions are currently present:
+      - {}
+    ******************************************""".format("\n      - ".join(invalid_versions))
+            return False, msg
+
+        # Only one OS version, and all ceph versions are Nautilus-ish, we're good.
+        return True, ""
 
 
 def help_():
