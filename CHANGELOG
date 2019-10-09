@@ -1,4 +1,29 @@
 -------------------------------------------------------------------
+Wed Oct 09 13:04:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.25
+- lrbd to ceph-iscsi upgrade fixes (bsc#1145617, bsc#1145618)
+- ganesha: update ceph.conf in stage 3 instead of 4 (bsc#1150643)
+- Add status function to advise on upgrade order
+- iscsi: SSL enabled deployment by default (bsc#1134536)
+- stage 0: don't show failure in CLI when checking for missing packages (bsc#1137973)
+- ganesha: don't run the upgrade on fresh nodes (bsc#1148405)
+- Add remove option to the ping to remove multiple ip interface
+- iscsi: fix iscsi restart before upgrade to ceph-iscsi (bsc#1136066)
+- ganesha: report runner to give support info about nfs-ganesha
+- Prevent IOLoop error by calling Salt modules correctly (bnc#1123257)
+- Handle the apparmor disabled at boot scenario (bnc#1149405)
+
+-------------------------------------------------------------------
+Wed Aug 15 11:51:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.24
+- Added data tag in cephdisks/dg for filestore OSDs (bsc#1145600)
+- conf: rgw: drop rgw dns name configurable
+- Evacutate OSDs simultaneously when removing OSDs (bsc#1141285)
+- flip logic for /available/ disks filtering
+
+-------------------------------------------------------------------
 Wed Jul 31 09:50:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.23
