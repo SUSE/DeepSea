@@ -46,11 +46,10 @@ def replace(**kwargs):
             for candidate in candidates:
                 log.debug("candidate: {}".format(candidate))
                 if re.match(candidate, package):
-                    caller = salt.client.Caller()
                     log.info("Removing: {}".format(candidate))
-                    ret = caller.cmd('pkg.remove', candidate)
+                    ret = __salt__['pkg.remove'](candidate)
                     log.info("Installing: {}".format(kernel))
-                    ret = caller.cmd('pkg.install', kernel)
+                    ret = __salt__['pkg.install'](kernel)
                     log.debug("ret: {}".format(ret))
                     return ret
         else:
