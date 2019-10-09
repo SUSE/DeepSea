@@ -1,4 +1,16 @@
 -------------------------------------------------------------------
+Wed Oct 09 10:11:00 UTC 2019 - jschmid@suse.com
+
+- Version: 0.8.13
+- Prevent IOLoop error by calling Salt modules correctly (bsc#1123257)
+- Restrict lsof to ceph user (performs better on some servers (bsc#1139168)
+- use ceph fs fail command to bring down MDS daemons before remove (bsc#1149530)
+- fix pool creation prerequisite (bsc#1149557)
+- Report malformed responses from misbehaving minions (bnc#1145945)
+- Remove igw_config setting during purge (bsc#1112247)
+- iscsi: stop restart sequence when one iscsi gw fails to restart (bsc#1143679)
+
+-------------------------------------------------------------------
 Thu Aug 15 16:27:00 UTC 2019 - jschmid@suse.com
 
 - Version: 0.8.12
