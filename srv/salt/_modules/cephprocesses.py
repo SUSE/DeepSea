@@ -173,7 +173,12 @@ def _process_map():
     Create a map of processes that have deleted files.
     """
     procs = []
-    proc1 = Popen(shlex.split('lsof '), stdout=PIPE)
+    try:
+      _ = pwd.getpwnam('ceph')
+    except KeyError:
+      return procs
+
+    proc1 = Popen(shlex.split('lsof -uceph'), stdout=PIPE)
     # pylint: disable=line-too-long
     proc2 = Popen(shlex.split("awk 'BEGIN {IGNORECASE = 1} /deleted/ {print $1 \" \" $2 \" \" $4}'"),
                   stdin=proc1.stdout, stdout=PIPE, stderr=PIPE)
