@@ -376,30 +376,35 @@ class OSDWeight(object):
         """
         i = 0
         last_pgs = 0
+        msg = "unexpected error"
+        fmt_msg = "osd.{} has {} PGs remaining"
+
         while i < self.settings['timeout']/self.settings['delay']:
-            rc, msg = self.osd_safe_to_destroy()
+            rc, out = self.osd_safe_to_destroy()
             if rc == 0:
-                ret = "osd.{} is safe to destroy".format(self.osd_id)
-                log.info(ret)
-                return ret
+                msg = "osd.{} is safe to destroy".format(self.osd_id)
+                log.info(msg)
+                return msg
+
             entry = self.osd_df()
-            if 'pgs' in entry:
-                if entry['pgs'] == 0:
-                    log.warning("osd.{} has {} PGs remaining but {}".
-                                format(self.osd_id, entry['pgs'], msg))
-                else:
-                    log.warning("osd.{} has {} PGs remaining".format(self.osd_id, entry['pgs']))
-                    if last_pgs != entry['pgs']:
-                        # Making progress, reset countdown
-                        i = 0
-                        last_pgs = entry['pgs']
+            pgs = entry.get('pgs')
+
+            if pgs is None:
+                msg = "osd.{} does not exist. {}".format(self.osd_id, out)
             else:
-                msg = "osd.{} does not exist {}".format(self.osd_id, msg)
-                log.warning(msg)
+                msg = fmt_msg.format(self.osd_id, pgs)
+                if pgs == 0:
+                    msg = "{}, but {}".format(msg, out)
+                elif last_pgs != pgs:
+                    # Making progress, reset countdown
+                    i = 0
+                    last_pgs = pgs
+
+            log.warning(msg)
             i += 1
             time.sleep(self.settings['delay'])
 
-        msg = "Timeout expired - OSD {} has {} PGs remaining".format(self.osd_id, last_pgs)
+        msg = "Timeout expired - " + msg
         log.error(msg)
         return msg
 
