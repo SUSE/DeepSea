@@ -221,6 +221,8 @@ copy-files:
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_modules
 	install -m 644 srv/salt/_modules/*.py* $(DESTDIR)/srv/salt/_modules/
+	install -d -m 755 $(DESTDIR)/srv/salt/_modules/ext_lib
+	install -m 644 srv/salt/_modules/ext_lib/*.py* $(DESTDIR)/srv/salt/_modules/ext_lib/
 	# state modules
 	install -d -m 755 $(DESTDIR)/srv/salt/_states
 	install -m 644 srv/salt/_states/*.py* $(DESTDIR)/srv/salt/_states/
