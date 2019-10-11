@@ -1,90 +1,26 @@
 # -*- coding: utf-8 -*-
+""" Calls out to ceph-daemon to generate keyrings """
 
-"""
-Keyring collection of operations
-"""
-
-from __future__ import absolute_import
-import os
-import struct
-import base64
-import time
-# pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
+from ext_lib.utils import _run_cmd
 
 
-def secret(filename):
-    """
-    Read the filename and return the key value.  If it does not exist,
-    generate one.
+def mon(hostname):
+    # Whatever the syntax will be
+    cmd = f"echo ceph-daemon --image foo create mon keyring for {hostname}"
 
-    Note that if used on a file that contains multiple keys, this will
-    always return the first key.
-    """
-    if os.path.exists(filename):
-        with open(filename, 'r') as keyring:
-            for line in keyring:
-                if 'key' in line and ' = ' in line:
-                    key = line.split(' = ')[1].strip()
-                    return key
-
-    return gen_secret()
+    ret = _run_cmd(
+        cmd, func_name=mon.__name__, module_name='keyring', hostname=hostname)
+    return ret.__dict__
 
 
-def gen_secret():
-    """
-    Generate a valid keyring secret for Ceph
-    """
-    key = os.urandom(16)
-    header = struct.pack('<hiih', 1, int(time.time()), 0, len(key))
-    keyring = base64.b64encode(header + key)
-    return __salt__['helper.convert_out'](keyring)
+def mon_failure(hostname):
+    # Whatever the syntax will be
+    cmd = f"ceph-daemon --image foo create mon keyring for {hostname}"
 
-
-# pylint: disable=too-many-return-statements
-def file_(component, name=None):
-    """
-    Return the pathname to the cache directory.  This feels cleaner than
-    trying to use Jinja across different directories to retrieve a common
-    value.
-    """
-    if component == "osd":
-        return "/srv/salt/ceph/osd/cache/bootstrap.keyring"
-
-    elif component == "igw":
-        return "/srv/salt/ceph/igw/cache/ceph." +  name + ".keyring"
-
-    elif component == "mds":
-        return "/srv/salt/ceph/mds/cache/" + name + ".keyring"
-
-    elif component == "mgr":
-        return "/srv/salt/ceph/mgr/cache/" + name + ".keyring"
-
-    elif component == "rgw":
-        return "/srv/salt/ceph/rgw/cache/" + name + ".keyring"
-
-    elif component == "cinder":
-        return "/srv/salt/ceph/openstack/cache/" + name + "cinder.keyring"
-
-    elif component == "cinder-backup":
-        return "/srv/salt/ceph/openstack/cache/" + name + "cinder-backup.keyring"
-
-    elif component == "glance":
-        return "/srv/salt/ceph/openstack/cache/" + name + "glance.keyring"
-
-    elif component == "ganesha":
-        return "/srv/salt/ceph/ganesha/cache/" + name + ".keyring"
-
-    elif component == "deepsea_cephfs_bench":
-        return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.keyring"
-
-    elif component == "deepsea_cephfs_bench_secret":
-        return "/srv/salt/ceph/cephfs/benchmarks/files/cache/deepsea_cephfs_bench.secret"
-
-    elif component == "deepsea_rbd_bench":
-        return "/srv/salt/ceph/rbd/benchmarks/files/cache/deepsea_rbd_bench.keyring"
-
-    return None
-
-__func_alias__ = {
-                 'file_': 'file',
-                 }
+    ret = _run_cmd(
+        cmd,
+        func_name=mon_failure.__name__,
+        # get the module_name dynamically
+        module_name='keyring',
+        hostname=hostname)
+    return ret.__dict__
