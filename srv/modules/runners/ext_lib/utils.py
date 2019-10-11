@@ -2,11 +2,12 @@ from salt.client import LocalClient
 from salt.runner import RunnerClient
 from salt.config import client_config
 from salt.loader import utils, minion_mods
-from subprocess import check_output
+from .validator import evaluate_module_return, evaluate_state_return
+from .exceptions import ModuleException, RunnerException
 import logging
 
-
 ROLE_CEPH_MON = 'mon'
+
 
 def master_minion():
     '''
@@ -26,7 +27,7 @@ def runner(opts=None):
     log.debug("Initializing runner")
     runner = RunnerClient(opts)
     __master_opts__ = client_config("/etc/salt/master")
-    __master_opts__['quiet'] = False
+    __master_opts__['quiet'] = True
     qrunner = RunnerClient(__master_opts__)
     return qrunner
 
@@ -38,8 +39,9 @@ def cluster_minions():
     Move select.py in this realm (/ext_lib) and make it python-import consumable
     """
     log.debug("Searching for cluster_minions")
+    # client = salt.client.get_local_client(__opts__['conf_file'])
     potentials = LocalClient().cmd(
-        "I@deepsea_minions:*", 'test.ping', tgt_type='compound')
+        "I@deepsea_minions:*", 'test.true', tgt_type='compound')
     minions = list()
     for k, v in potentials.items():
         if v:
@@ -67,63 +69,6 @@ def prompt(message,
         prompt(message, options=options)
 
 
-def evaluate_module_return(job_data, context=''):
-    failed = False
-    for minion_id, result in job_data.items():
-        log.debug(f"results for job on minion: {minion_id} is: {result}")
-        if not result:
-            print(
-                f"Module call failed on {minion_id} with {result if result else 'n/a'} and context: {context}"
-            )
-            failed = True
-
-    if failed:
-        return False
-    return True
-
-
-def evaluate_state_return(job_data):
-    """ TODO """
-    # does log.x actually log in the salt log? I don't think so..
-    failed = False
-    for minion_id, job_data in job_data.items():
-        log.debug(f"{job_data} ran on {minion_id}")
-        if isinstance(job_data, list):
-            # if a _STATE_ is not available, salt returns a list with an error in idx0
-            # thanks salt for staying consistent..
-            log_n_print(job_data)
-            return False
-        if isinstance(job_data, str):
-            # In this case, it's a _MODULE_ that salt can't find..
-            # again, thanks salt for staying consistent..
-            log_n_print(job_data)
-            return False
-
-        for jid, metadata in job_data.items():
-            log.debug(f"Job {jid} run under: {metadata.get('name', 'n/a')}")
-            log.debug(
-                f"Job {jid } was successful: {metadata.get('result', False)}")
-            if not metadata.get('result', False):
-                log.debug(
-                    f"Job {metadata.get('name', 'n/a')} failed on minion: {minion_id}"
-                )
-                print(
-                    f"Job {metadata.get('name', 'n/a')} failed on minion: {minion_id}"
-                )
-                failed = True
-    if failed:
-        return False
-    return True
-
-
-def log_n_print(message):
-    """ TODO: docstring """
-    # TODO: I assume I have to pass a context logger to this function when invoked from a salt_module
-    # this lib is not executed with the salt context, hence no logging will end up in the salt-master logs
-    log.debug(message)
-    print(message)
-
-
 def _get_candidates(role=None):
     """ TODO: docstring """
 
@@ -149,7 +94,7 @@ def _is_running(role_name=None, minion=None, func='wait_role_up'):
     running = True
     if minion:
         search = minion
-    log_n_print("Checking if processes are running. This may take a while..")
+    print("Checking if processes are running. This may take a while..")
     minions_return = LocalClient().cmd(
         search,
         f'cephprocesses.{func}', [f"role={role_name}"],
@@ -157,134 +102,17 @@ def _is_running(role_name=None, minion=None, func='wait_role_up'):
     for minion, status in minions_return.items():
         # TODO: Refactor the 'wait_role_down' function. This is horrible
         if status:
-            log_n_print(f"role-{role_name} is running on {minion}")
-            log_n_print(
+            print(f"role-{role_name} is running on {minion}")
+            print(
                 f"This is showing the wrong status for role deletion currently"
             )
         if not status:
-            log_n_print(
+            print(
                 f"This is showing the wrong status for role deletion currently"
             )
-            log_n_print(f"role-{role_name} is *NOT* running on {minion}")
+            print(f"role-{role_name} is *NOT* running on {minion}")
             running = False
     return running
-
-
-def _remove_role(role=None, non_interactive=False, purge=False):
-    # TODO: already_running vs is_running
-    # find process id vs. systemd
-    ##
-    ## There is mon ok-to-rm, ok-to-stop, ok-to-add-offline
-    ##
-    """ TODO: docstring """
-    assert role
-
-    search = "not I@roles:{role}"
-
-    if purge:
-        search = "I@deepsea_minions:*"
-
-    already_running = LocalClient().cmd(
-        search, f'{role}.already_running', tgt_type='compound')
-    to_remove = [k for (k, v) in already_running.items() if v]
-
-    if not to_remove:
-        print("Nothing to remove. Exiting..")
-        return True
-
-    if prompt(
-            f"""Removing role: {role} on minion {', '.join(to_remove)}
-Continue?""",
-            non_interactive=non_interactive,
-            default_answer=True):
-
-        print(f"Removing {role} on {' '.join(to_remove)}")
-
-        ret: str = LocalClient().cmd(
-            to_remove,
-            f'podman.remove_{role}',
-            kwarg={'purge': purge},
-            tgt_type='list')
-
-        if not evaluate_module_return(ret):
-            return False
-
-        ret = [
-            is_running(minion, role_name=role, func='wait_role_down')
-            for minion in to_remove
-        ]
-        # TODO: do proper checks here:
-        if all(ret):
-            print(f"{role} deletion was successful.")
-
-            if role is ROLE_CEPH_MON and not purge:
-                # TODO: which roles needs ceph_conf rewrite aswell?
-                print("Updating the ceph.conf..")
-                runner().cmd('config.deploy_ceph_conf')
-
-            return True
-        return False
-
-    else:
-        return False
-
-
-def _create_bootstrap_items():
-    """ TODO docstring """
-    log_n_print("Creating bootstrap items..")
-    ret: str = LocalClient().cmd(
-        'roles:master', 'podman.create_bootstrap_items', tgt_type='pillar')
-    if not evaluate_module_return(ret):
-        return False
-
-
-def _create_initial_monmap(hostname):
-    """ TODO docstring """
-    log_n_print("Creating bootstrap items..")
-    ret: str = LocalClient().cmd(
-        hostname, 'podman.create_initial_monmap', tgt_type='glob')
-    if not evaluate_module_return(ret):
-        return False
-    return ret
-
-
-def _create_mgr_keyring(hostname):
-    """ TODO docstring """
-    log_n_print("Creating mgr keyring..")
-    ret: str = LocalClient().cmd(
-        'roles:master',
-        'podman.create_mgr_keyring', [hostname],
-        tgt_type='pillar')
-
-    if not evaluate_module_return(ret):
-        return False
-    return ret
-
-
-def _create_mon_keyring(name):
-    """ TODO docstring """
-
-    # TODO: refactor keyring methods, can be only once with parameters
-
-    log_n_print(f"Creating mon keyring for {name}")
-    ret: str = LocalClient().cmd(
-        'roles:master', 'podman.create_mon_keyring', [name], tgt_type='pillar')
-
-    if not evaluate_module_return(ret):
-        return False
-    return ret
-
-
-def _get_monmap(name):
-    """ TODO docstring """
-
-    log_n_print(f"Retrieving monmap for {name}..")
-    ret: str = LocalClient().cmd(
-        'roles:master', 'podman.get_monmap', [name], tgt_type='pillar')
-
-    if not evaluate_module_return(ret):
-        return False
-    return ret
 
 
 def _distribute_file(file_name='',
@@ -297,7 +125,6 @@ def _distribute_file(file_name='',
     assert dest
 
     ensure_permissions()
-    ensure_dirs_exist()
 
     print(f"Distributing file: {file_name} to {candidate}")
 
@@ -321,17 +148,6 @@ def _distribute_file(file_name='',
     return True
 
 
-def ensure_dirs_exist():
-    ret: str = LocalClient().cmd(
-        # TODO: 1) don't rely on podman to create dirs
-        # TODO: 2) Change targeting from * to individual roles
-        '*',
-        'podman.ensure_dirs_exist',
-        tgt_type='glob')
-    if not evaluate_module_return(ret, context='ensure_dirs_exist'):
-        return False
-
-
 def ensure_permissions():
     # TODO: do I need to have that in a state?
 
@@ -346,15 +162,14 @@ def ensure_permissions():
 def _distribute_bootstrap_items(hostname):
     """ TODO docstring """
     # TODO: evaluate returns
-    log_n_print("Copying bootstrap items to respective minions..")
+    print("Copying bootstrap items to respective minions..")
 
     ensure_permissions()
-    ensure_dirs_exist()
 
     # TODO replace /var/lib/ceph/tmp with pillar variable
     # TODO: Improve evaluate_module_return func
 
-    log_n_print(f"Distributing the bootstrap admin keyring to {hostname}")
+    print(f"Distributing the bootstrap admin keyring to {hostname}")
     ret: str = LocalClient().cmd(
         hostname,
         'cp.get_file', ['salt://ceph/bootstrap/keyring', '/var/lib/ceph/tmp/'],
@@ -370,7 +185,7 @@ def _distribute_bootstrap_items(hostname):
     if not evaluate_module_return(ret, context='cp.get_file ceph.keyring'):
         return False
 
-    log_n_print("Distributing the admin keyring to the admin nodes")
+    print("Distributing the admin keyring to the admin nodes")
     ret: str = LocalClient().cmd(
         # also distribute the admin keyring on role:admin role:master and role:mon
         # TODO: also on role mon? actually not..o
@@ -381,7 +196,7 @@ def _distribute_bootstrap_items(hostname):
     if not evaluate_module_return(ret, context='cp.get_file admin.keyring'):
         return False
 
-    log_n_print("Distributing the admin keyring to the master node")
+    print("Distributing the admin keyring to the master node")
     ret: str = LocalClient().cmd(
         # also distribute the admin keyring on role:admin role:master and role:mon
         'roles:master',
@@ -392,41 +207,6 @@ def _distribute_bootstrap_items(hostname):
         return False
 
 
-def _deploy_role(role=None, candidates=[], non_interactive=False):
-    assert role
-    if not candidates:
-        print(f"No candidates for a {role} deployment found")
-        return True
-
-    if not prompt(
-            f"""These minions will be {role}s: {', '.join(candidates)}
-Continue?""",
-            non_interactive=non_interactive,
-            default_answer=True):
-        print("Aborted..")
-        return False
-
-    print("Deploying..")
-    ret: str = LocalClient().cmd(
-        candidates, f'podman.create_{role}', tgt_type='list')
-
-    if not evaluate_module_return(ret):
-        return False
-
-    # TODO: query in a loop with a timeout
-    # TODO: Isn't that what we have in cephproceses.wait?
-    # TODO: Check that.
-    ret = [is_running(minion, role_name=role) for minion in candidates]
-    if not all(ret):
-        print(f"{role} deployment was not successful.")
-        return False
-    if role == 'mon':
-        # TODO: which roles needs ceph_conf rewrite aswell?
-        print("Updating the ceph.conf..")
-        runner().cmd('config.deploy_ceph_conf')
-    return True
-
-
 def is_running(minion, role_name=None, func='wait_role_up'):
     assert role_name
     if _is_running(role_name=role_name, minion=minion, func=func):
@@ -434,58 +214,20 @@ def is_running(minion, role_name=None, func='wait_role_up'):
     return False
 
 
-def run_and_eval(runner_name, extra_args=None, opts={}):
-    # TODO: maybe supress the 'True' output from the screen
-    qrunner = runner(opts)
-    if not qrunner.cmd(runner_name, extra_args):
-        log_n_print(f"{runner_name} failed.")
-        raise Exception()
+def humanize_return(inp):
+    if inp:
+        return 'success'
+    return 'failure'
 
 
-def _read_policy_cfg():
-    policy_path = LocalClient().cmd("", 'test.ping', tgt_type='compound')
-    with open(policy_path, 'r') as _fd:
-        return _fd.read()
-
-
-def _query_master_pillar(key=None):
-    assert key
-    ret = LocalClient().cmd(
-        "roles:master", 'pillar.get', [key], tgt_type='pillar')
-    if not evaluate_module_return(ret):
-        return False
-    values = list(ret.values())
-    if not values:
-        # TODO: really false?
-        return False
-    return values[0]
-
-
-def ceph_health():
-    ret: str = LocalClient().cmd(
-        'roles:master', 'podman.ceph_cli', ['health'], tgt_type='pillar')
-
-    # TODO: improve the extraction, this will eventually fail
-    if not evaluate_module_return(ret):
-        return False
-    status = list(ret.values())[0].strip()
-    if status == 'HEALTH_OK' or status == 'HEALTH_WARN':
-        print(f"Ceph cluster status is {status}")
-        return True
-
-    print(f"Ceph cluster status is {status}")
-    return False
-
-def purge_debris():
-    # TODO: Implement this
-    # /etc/ceph
-    # /srv/pillar/ceph/global.yml
-    # /usr/lib/ceph/
-    # /srv/salt/ceph/bootstrap/*
-    # /srv/pillar/ceph/minions
-
-    # policy.cfg? No probably not
-
-    #use
-    #file.absent
-    pass
+def exec_runner(cmd, cmd_args):
+    # This must always include `machine=True` to get
+    # a tuple as return
+    ret = runner().cmd(cmd, cmd_args)
+    if isinstance(ret, tuple):
+        return ret
+    if isinstance(ret, str):
+        # We may be a bit more specific and search for *which* Exception was raised.
+        if ret.startswith('Exception occurred in runner'):
+            raise RunnerException(cmd)
+    #TODO else
