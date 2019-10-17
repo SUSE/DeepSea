@@ -102,6 +102,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/fio
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
 %dir /srv/salt/_modules
+%dir /srv/salt/_modules/ext_lib
 %dir /srv/salt/_states
 %dir /srv/modules
 %dir /srv/modules/modules
@@ -472,6 +473,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config(noreplace) %attr(-, salt, salt) /srv/pillar/ceph/disk_led.sls
 %config %attr(-, salt, salt) /srv/pillar/ceph/stack/stack.cfg
 /srv/salt/_modules/*.py*
+/srv/salt/_modules/ext_lib/*.py*
 /srv/salt/_states/*.py*
 %config /srv/salt/ceph/permissions/*.sls
 %config /srv/salt/ceph/admin/*.sls
