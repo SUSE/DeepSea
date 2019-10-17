@@ -8,7 +8,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import logging
 import json
-import time
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.runner
@@ -101,6 +100,7 @@ class OSDUtil(Util):
         self.osd_state = self._get_osd_state()
         self.force: bool = kwargs.get('force', False)
         self.operation: str = kwargs.get('operation', 'None')
+        self.retries: int = kwargs.get('retries', 60)  # ~1 hour
         self.osd_metadata = self.get_osd_metadata()
 
     def vacate(self):
@@ -201,8 +201,8 @@ class OSDUtil(Util):
 
         if not self.force:
             print("Checking if OSD can be destroyed")
-            self._is_empty()
-
+            if self._wait_until_empty() is False:
+                return False
         try:
             self._mark_osd('out')
         except OSDNotFound:
@@ -272,40 +272,25 @@ class OSDUtil(Util):
         # No point in checking messages
         return True
 
-    def _is_empty(self):
-        """ Remote call to osd.py to wait until and osd is empty"""
-        log.info("Waiting for osd {} to empty".format(self.osd_id))
-        ret = self.local.cmd(
-            Util.master_minion(),
-            'osd.wait_until_empty', [self.osd_id],
-            tgt_type="glob")
-        message = list(ret.values())[0]
-        return self._wait_loop(self._is_empty, message)
-
-    def _wait_loop(self, func, message):
-        """
-        Wait for OSDs to be 'safe-to-destroy'
-        """
+    def _wait_until_empty(self):
+        """ Wait for roughly an hour until the osd is empty"""
         print("Waiting for ceph to catch up.")
-        time.sleep(3)
-        counter = 50
-        while True and counter >= 0:
-            if message is True:
-                break
-            elif message.startswith("Timeout expired"):
-                print("  {}\nRetrying...".format(message))
-                log.debug(message)
-                time.sleep(3)
-                log.debug("Trying again for {} times.".format(counter))
-                counter -= 1
-                message = func()
-            elif message.startswith("osd.{} is safe to destroy".format(
+        counter = 0
+        while counter < self.retries:
+            if counter > 0:
+                print("Retrying...")
+            log.info("Waiting for osd {} to empty".format(self.osd_id))
+            ret = self.local.cmd(
+                Util.master_minion(),
+                'osd.wait_until_empty', [self.osd_id],
+                tgt_type="glob")
+            message = list(ret.values())[0]
+            print(message)
+            if message.startswith("osd.{} is safe to destroy".format(
                     self.osd_id)):
-                print(message)
                 return True
-            else:
-                print("Unexpected return: {}".format(message))
-                break
+            counter += 1
+        return False
 
     def recover_osd_state(self):
         """ Wrapper method to recover the previous osd_state after a rollback """
