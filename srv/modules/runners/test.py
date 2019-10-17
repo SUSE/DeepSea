@@ -1,6 +1,7 @@
 from ext_lib.utils import humanize_return, exec_runner
 from ext_lib.exceptions import RunnerException, ModuleException
 from ext_lib.operation import exec_module
+from ext_lib.decorators import catches
 """
 This is an example runner function that calls one minion-module internally.
 
@@ -64,76 +65,45 @@ finally:
 """
 
 
+@catches(ModuleException)
 def good(non_interactive=False, called_by_runner=False, called_by_orch=False):
-    try:
-        result, data = exec_module(
-            module='keyring',
-            function='mon',
-            target='roles:master',
-            arguments=['admin'])
+    results = list()
 
-        result, data = exec_module(
-            module='keyring',
-            function='mon_failure',
-            target='roles:mon',
-            arguments=['admin'])
+    result, data = exec_module(
+        module='keyring',
+        function='mon',
+        target='roles:master',
+        arguments=['admin'])
 
-        # TODO: If we have more than one module, we need to aggregate the information of result, data
+    results.append(result)
 
-    except ModuleException as e:
-        if called_by_orch:
-            return e.output_for_orchestrator()
+    result, data = exec_module(
+        module='keyring',
+        function='mon',
+        target='roles:mon',
+        arguments=['admin'])
 
-        if called_by_runner:
-            raise
-        print(
-            e.output_for_human()
-        )
-        return humanize_return(e.result)
-    else:
-        if called_by_runner:
-            # This needs an aggregated result from the TODO above
-            return result, data
-        elif called_by_orch:
-            # what does the orchestrator expect. We can pass whatever we need here
-            return result, data
-        else:
-            return humanize_return(result)
+    # maybe we should collect the 'data' var aswell..
+    results.append(result)
+
+    # TODO: have success returns for orch and runners aswell.
+    return humanize_return(all(results))
 
 
+@catches(ModuleException)
 def bad(called_by_runner=False, called_by_orch=False):
     # This is a module call behind the scene
 
-    try:
-        result, data = exec_module(
-            module='keyring',
-            function='mon_failure',
-            target='roles:mon',
-            arguments=['admin'])
-
-        # TODO: If we have more than one module, we need to aggregate the information of result, data
-
-    except ModuleException as e:
-        if called_by_orch:
-            return e.output_for_orchestrator()
-
-        elif called_by_runner:
-            raise
-        else:
-            print(
-                e.output_for_human()
-            )
-        return humanize_return(e.result)
-    else:
-        if called_by_runner:
-            # This needs an aggregated result from the TODO above
-            return result, data
-        if called_by_orch:
-            # what does the orchestrator expect. We can pass whatever we need here
-            return result, data
-        return humanize_return(result)
+    result, data = exec_module(
+        module='keyring',
+        function='mon_failure',
+        target='roles:mon',
+        arguments=['admin'])
+        # TODO:
+        # kwargs implementation is missing
 
 
+@catches(RunnerException)
 def runner_calls_runner(called_by_runner=False, called_by_orch=False):
     """
     Temporarily going with 'called_by_runner' kwargs ..
@@ -142,46 +112,13 @@ def runner_calls_runner(called_by_runner=False, called_by_orch=False):
     """
     # This is a runner that calls a module behind the scene
 
-    try:
-        result, data = exec_runner('test.good', ['called_by_runner=True'])
-        result, data = exec_runner('test.bad', ['called_by_runner=True'])
-        result, data = exec_runner('test.good', ['called_by_runner=True'])
-    except RunnerException as e:
-        if called_by_orch:
-            return e.output_for_orchestrator()
-        elif called_by_runner:
-            raise
-        else:
-            print(e.output_for_human())
-        return humanize_return(False)
-    else:
-        if called_by_runner:
-            # This needs an aggregated result from the TODO above
-            return result, data
-        if called_by_orch:
-            # what does the orchestrator expect. We can pass whatever we need here
-            return result, data
-        return humanize_return(result)
+    #                                        this can be offloaded to exec_runner
+    result, data = exec_runner('test.good', ['called_by_runner=True'])
+    result, data = exec_runner('test.bad', ['called_by_runner=True'])
+    result, data = exec_runner('test.good', ['called_by_runner=True'])
 
-
+@catches(RunnerException)
 def runner_calls_runner_calls_runner(called_by_runner=False,
                                      called_by_orch=False):
-    try:
-        result, data = exec_runner('test.runner_calls_runner',
-                                   ['called_by_runner=True'])
-    except RunnerException as e:
-        # TODO: abstract -> handle_runner_exception(e)
-        if called_by_orch:
-            return f"Caught an Exception in runner <{e.cmd}>"
-        elif called_by_runner:
-            raise
-        else:
-            print(f"Caught an Exception in runner <{e.cmd}>")
-        return humanize_return(False)
-    else:
-        if called_by_runner:
-            return result, data
-        if called_by_orch:
-            # what does the orchestrator expect. We can pass whatever we need here
-            return result, data
-        return humanize_return(result)
+    result, data = exec_runner('test.runner_calls_runner',
+                                ['called_by_runner=True'])
