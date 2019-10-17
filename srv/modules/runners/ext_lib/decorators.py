@@ -36,12 +36,13 @@ def catches(catch=None, called_by_orch=False, called_by_runner=False):
         @wraps(f)
         def newfunc(*a, **kw):
             try:
-                return f(*a, **kw)
+                results = f(*a, **kw)
             except catch as e:
 
                 # TODO: eval
                 if os.environ.get('IS_THIS_SOMETHING_FOR_US?'):
                     raise
+
                 if isinstance(e, RunnerException) or isinstance(
                         e, ModuleException):
                     if kw.get('called_by_orch', called_by_orch):
@@ -52,15 +53,22 @@ def catches(catch=None, called_by_orch=False, called_by_runner=False):
                         print(e.output_for_human())
                     return humanize_return(False)
 
+                # if we don't know what the Exceptions are
+                # we should just raise them
+                raise
+
             else:
                 if kw.get('called_by_runner', called_by_runner):
                     # This needs an aggregated result from the TODO above
-                    return result, data
+                    return results
                 if kw.get('called_by_orch', called_by_orch):
                     # what does the orchestrator expect. We can pass whatever we need here
-                    return result, data
+                    return results
 
-                return humanize_return(result)
+                return humanize_return(all(results))
+
+            finally:
+                pass
 
         return newfunc
 
