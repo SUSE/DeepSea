@@ -2,6 +2,8 @@ from ext_lib.utils import humanize_return, exec_runner
 from ext_lib.exceptions import RunnerException, ModuleException
 from ext_lib.operation import exec_module
 from ext_lib.decorators import catches
+from ext_lib.doc import doc_template
+import pydoc
 """
 This is an example runner function that calls one minion-module internally.
 
@@ -127,7 +129,61 @@ def runner_calls_runner(called_by_runner=False, called_by_orch=False):
 
     return results
 
+
 @catches(RunnerException)
-def runner_calls_runner_calls_runner(called_by_runner=False,
-                                     called_by_orch=False):
+def runner_calls_runner_calls_runner(called_by_runner=False, called_by_orch=False):
     result, data = exec_runner('test.runner_calls_runner')
+
+
+def help():
+    """ Foo """
+
+    title = "An example runner (test.py)"
+
+    description = """
+This is a dummy description
+over multiple lines. And it goes on and on and on.
+
+    More linebreaks, but with a indentation"""
+
+    functions = """
+This runner exposes:
+
+good:
+    A dummy function that yields success.
+    It accepts the following parameters.
+
+    non_interactive: <bool> (defaults: False)
+    called_by_orch: <bool> (defaults: False)
+    called_by_runner: <bool> (defaults: False)
+
+bad:
+    A dummy function that yields failure.
+    It accepts the following parameters.
+
+    non_interactive: <bool>
+    called_by_orch: <bool>
+    called_by_runner: <bool>
+
+runner_calls_runner:
+    A dummy function calls another runner.
+    It accepts the following parameters.
+
+    non_interactive: <bool>
+    called_by_orch: <bool>
+    called_by_runner: <bool>
+    """
+
+    example = """
+salt-run test.good
+salt-run test.good non_interactive=True
+salt-run test.bad
+salt-run test.runner_calls_runner
+"""
+
+    _doc = doc_template.format(
+        title=title,
+        description=description,
+        functions=functions,
+        example=example)
+    pydoc.pager(_doc)  # replace with deepsea.<component>
