@@ -144,6 +144,38 @@ class HealthStatusCheck(HealthCheck):
         time.sleep(self.settings['delay'])
 
 
+class OSDInCheck(HealthCheck):
+    """
+    Subclass for checking the "in" status of all osds
+    """
+
+    def __init__(self, **kwargs):
+        kwargs.update({'nohealthcheck': True})
+        super(OSDInCheck, self).__init__(**kwargs)
+
+    def wait(self):
+        """
+        Poll until the status "matches" the specificed number of checks.
+        """
+        cmd = json.dumps({"prefix": "osd dump", "format": "json"})
+
+        def success(dump):
+            if 'osds' not in dump:
+                log.error("osd dump missing 'osds' key")
+                return False
+
+            for entry in dump['osds']:
+                if 'in' not in entry:
+                    log.error("entry {} missing 'in' key".format(pprint.pformat(entry)))
+                    return False
+
+                if entry['in'] == 0:
+                    return False
+            return True
+
+        return self._wait(cmd, success)
+
+
 def just(**kwargs):
     """
     Wait for the delay
@@ -166,6 +198,14 @@ def until_mds(**kwargs):
     """
     fscheck = FsStatusCheck(**kwargs)
     fscheck.wait_for_healthy_mds()
+
+
+def until_all_osds_in(**kwargs):
+    """
+    Wait until all OSDs are in
+    """
+    osdcheck = OSDInCheck(**kwargs)
+    return osdcheck.wait()
 
 
 def out(**kwargs):

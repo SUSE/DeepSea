@@ -396,6 +396,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/wait/4hours/until/OK
 %dir /srv/salt/ceph/wait/until
 %dir /srv/salt/ceph/wait/until/OK
+%dir /srv/salt/ceph/wait/until/all_osds_in
 %dir /srv/salt/ceph/wait/until/expired
 %dir /srv/salt/ceph/wait/until/expired/30sec
 %dir /srv/salt/ceph/warning
@@ -704,6 +705,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/wait/2hours/until/OK/*.sls
 %config /srv/salt/ceph/wait/4hours/until/OK/*.sls
 %config /srv/salt/ceph/wait/until/OK/*.sls
+%config /srv/salt/ceph/wait/until/all_osds_in/*.sls
 %config /srv/salt/ceph/wait/until/expired/30sec/*.sls
 %config /srv/salt/ceph/warning/*.sls
 %config /srv/salt/ceph/warning/noout/*.sls

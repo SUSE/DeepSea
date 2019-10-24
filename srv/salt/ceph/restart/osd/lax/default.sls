@@ -21,4 +21,11 @@
         - sls: ceph.osd.restart
         - failhard: True
 
+    wait for osds to be "in" Ceph on {{ host }}:
+      salt.state:
+        - tgt: {{ master }}
+        - tgt_type: compound
+        - sls: ceph.wait.until.all_osds_in
+        - failhard: True
+
 {% endfor %}
