@@ -220,14 +220,22 @@ def humanize_return(inp):
     return 'failure'
 
 
-def exec_runner(cmd, cmd_args):
+def exec_runner(cmd, cmd_args=[], failhard=True):
     # This must always include `machine=True` to get
     # a tuple as return
+    cmd_args.append('called_by_runner=True')
+
     ret = runner().cmd(cmd, cmd_args)
-    if isinstance(ret, tuple):
+    if isinstance(ret, list):
+        # we get a list of return values back [True, True]
+        # pretty useless at that point..
         return ret
     if isinstance(ret, str):
         # We may be a bit more specific and search for *which* Exception was raised.
         if ret.startswith('Exception occurred in runner'):
-            raise RunnerException(cmd)
+            if failhard:
+                raise RunnerException(cmd)
+            # TODO:
+            # What to do in the failhard=False case?
+            pass
     #TODO else

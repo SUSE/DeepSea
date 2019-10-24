@@ -10,10 +10,10 @@ class ModuleException(Exception):
         ]
 
     def output_for_orchestrator(self):
-        return f"Caught an Exception while running <dummy>."
+        return f"Caught an Exception while running <dummy>.(ment for orchestrator)"
 
     def output_for_human(self):
-        return f"Caught an Exception while running <dummy>."
+        return f"Caught an Exception while running <dummy>.(ment for a human)"
 
     def __str__(self):
         return f"Insert some nice data from self.data : {self.result}"
@@ -28,7 +28,7 @@ class RunnerException(Exception):
         self.msg = msg or 'Default error message'
 
     def output_for_orchestrator(self):
-        return f"Caught an Exception in runner {self.cmd}"
+        return f"Caught an Exception in runner {self.cmd} (ment for orchestrator)"
 
     def output_for_human(self):
-        return f"Caught an Exception in runner {self.cmd}"
+        return f"Caught an Exception in runner {self.cmd} (ment for a human)"
