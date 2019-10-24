@@ -1,5 +1,5 @@
-from ext_lib.utils import humanize_return, exec_runner
-from ext_lib.exceptions import RunnerException, ModuleException
+from ext_lib.utils import humanize_return, exec_runner, prompt
+from ext_lib.exceptions import RunnerException, ModuleException, NoMinionsFound, AbortedByUser
 from ext_lib.operation import exec_module
 from ext_lib.decorators import catches
 from ext_lib.doc import doc_template
@@ -47,29 +47,16 @@ provide useful information we have to pass detailed returnstrucutres or meaninfu
 up the stack.
 
 
-
-
-
-
-Choosing this design, we have the benefit of a structured way of writing runners
-independent of their inner workings. Runners would follow a similar theme.
-Their composition stays the same.
-
-try:
-    <tuple> = func()
-
-except Module/RunnerException:
-    handle_exception()
-
-finally:
-    return <based_on_context[orch, runner, human]>
-
 """
 
 
-@catches(ModuleException)
+@catches((ModuleException, NoMinionsFound, AbortedByUser))
 def good(non_interactive=False, called_by_runner=False, called_by_orch=False):
     results = list()
+
+    prompt(
+        "This is a dummy prompt to make things interactive.",
+        non_interactive=non_interactive)
 
     result, data = exec_module(
         module='keyring',
@@ -91,25 +78,30 @@ def good(non_interactive=False, called_by_runner=False, called_by_orch=False):
     return results
 
 
-@catches(ModuleException)
-def bad(called_by_runner=False, called_by_orch=False):
+@catches((ModuleException, NoMinionsFound, AbortedByUser))
+def bad(non_interactive=False, called_by_runner=False, called_by_orch=False):
     results = list()
 
+    prompt(
+        "This is a dummy prompt to make things interactive.",
+        non_interactive=non_interactive)
 
     result, data = exec_module(
         module='keyring',
         function='mon_failure',
         target='roles:mon',
         arguments=['admin'])
-        # TODO:
-        # kwargs implementation is missing
+    # TODO:
+    # kwargs implementation is missing
     results.append(result)
 
     return results
 
 
 @catches(RunnerException)
-def runner_calls_runner(called_by_runner=False, called_by_orch=False):
+def runner_calls_runner(non_interactive=False,
+                        called_by_runner=False,
+                        called_by_orch=False):
     """
     Temporarily going with 'called_by_runner' kwargs ..
     Not happy with that at all, but I didn't figure out
@@ -118,21 +110,22 @@ def runner_calls_runner(called_by_runner=False, called_by_orch=False):
     # This is a runner that calls a module behind the scene
 
     results = list()
-
-    #                                        this can be offloaded to exec_runner
-    result, data = exec_runner('test.good')
+    result, data = exec_runner('test.good', non_interactive=non_interactive)
     results.append(result)
-    result, data = exec_runner('test.bad')
+    result, data = exec_runner('test.bad', non_interactive=non_interactive)
     results.append(result)
-    result, data = exec_runner('test.good')
+    # This musn't be executed, failhard defaults to True
+    result, data = exec_runner('test.good', non_interactive=non_interactive)
     results.append(result)
 
     return results
 
 
-@catches(RunnerException)
-def runner_calls_runner_calls_runner(called_by_runner=False, called_by_orch=False):
-    result, data = exec_runner('test.runner_calls_runner')
+def runner_calls_runner_calls_runner(non_interactive=False,
+                                     called_by_runner=False,
+                                     called_by_orch=False):
+    result, data = exec_runner(
+        'test.runner_calls_runner', non_interactive=non_interactive)
 
 
 def help():

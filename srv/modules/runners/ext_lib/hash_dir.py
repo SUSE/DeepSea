@@ -3,18 +3,23 @@ import os
 from pathlib import Path
 import salt.client
 import logging
-from .utils import prompt, run_and_eval
+from .utils import prompt, exec_runner
 
 
 def update_pillar(directory, checksum):
     local_client = salt.client.LocalClient()
     print('Updating the pillar')
 
-    run_and_eval('config.deploy_roles')
+    # TODO: eval return
+    result = exec_runner('config.deploy_roles')
 
     ret: str = local_client.cmd(
         # TODO: target deepsea_minions
-        "*", 'saltutil.refresh_pillar', tgt_type='glob')
+        "*",
+        'saltutil.refresh_pillar',
+        tgt_type='glob')
+
+
 
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
@@ -26,7 +31,9 @@ def sync_modules(directory, checksum):
     print('Updating the modules')
     ret: str = local_client.cmd(
         # TODO: target deepsea_minions
-        "*", 'saltutil.sync_modules', tgt_type='glob')
+        "*",
+        'saltutil.sync_modules',
+        tgt_type='glob')
     print("Updating the directory's checksum")
     update_md5(directory, checksum)
     print("Salt modules are up to date.")
@@ -84,7 +91,7 @@ def minion_modules_have_changes(directory, checksum_path):
     return False
 
 
-def pillar_questioneer(non_interactive=False):
+def pillar_questioneer(non_interactive=False, **kwargs):
     directory = '/srv/pillar/ceph'
     checksum_path = f'{directory}/.md5.save'
     if pillar_has_changes(directory, checksum_path):
@@ -101,7 +108,7 @@ def pillar_questioneer(non_interactive=False):
             )
 
 
-def module_questioneer(non_interactive=False):
+def module_questioneer(non_interactive=False, **kwargs):
     directory = '/srv/salt/_modules'
     checksum_path = '/srv/salt/ceph/.modules.md5.save'
     if minion_modules_have_changes(directory, checksum_path):

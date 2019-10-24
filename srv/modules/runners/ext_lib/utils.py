@@ -3,7 +3,7 @@ from salt.runner import RunnerClient
 from salt.config import client_config
 from salt.loader import utils, minion_mods
 from .validator import evaluate_module_return, evaluate_state_return
-from .exceptions import ModuleException, RunnerException
+from .exceptions import ModuleException, RunnerException, AbortedByUser
 import logging
 
 ROLE_CEPH_MON = 'mon'
@@ -63,7 +63,7 @@ def prompt(message,
     if answer.lower() == 'y' or answer.lower() == 'Y':
         return True
     elif answer.lower() == 'n' or answer.lower() == 'N':
-        return False
+        raise AbortedByUser(answer)
     else:
         answer = input(f"You typed {answer}. We accept {options}")
         prompt(message, options=options)
@@ -220,10 +220,11 @@ def humanize_return(inp):
     return 'failure'
 
 
-def exec_runner(cmd, cmd_args=[], failhard=True):
-    # This must always include `machine=True` to get
+def exec_runner(cmd, cmd_args=[], non_interactive=False, failhard=True):
+    # This must always include `called_by_runner=True` to get
     # a tuple as return
     cmd_args.append('called_by_runner=True')
+    cmd_args.append(f'non_interactive={non_interactive}')
 
     ret = runner().cmd(cmd, cmd_args)
     if isinstance(ret, list):
@@ -231,7 +232,7 @@ def exec_runner(cmd, cmd_args=[], failhard=True):
         # pretty useless at that point..
         return ret
     if isinstance(ret, str):
-        # We may be a bit more specific and search for *which* Exception was raised.
+        # TODO: We may be a bit more specific and search for *which* Exception was raised.
         if ret.startswith('Exception occurred in runner'):
             if failhard:
                 raise RunnerException(cmd)
