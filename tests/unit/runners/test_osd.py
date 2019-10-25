@@ -22,6 +22,7 @@ class TestOSDUtil():
                               lambda x, osd_id: None):
                 c = osd_module.OSDUtil('1')
                 c.osd_id = '1'
+                c.osd_list = ['1']
                 c.host = "dummy_host"
                 c.host_osds = {c.host: ['1', '2', '3', '4', '5']}
                 c.osd_state = dict(_in=osd_in, out=osd_out)
@@ -36,56 +37,6 @@ class TestOSDUtil():
 
         return make_sample_data
 
-    @pytest.mark.parametrize("force", [True, False])
-    @patch('srv.modules.runners.osd.OSDUtil._lvm_zap', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._delete_grain', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._mark_destroyed', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._is_empty', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._service', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._mark_osd', autospec=True)
-    def test_replace(self, mark_osd_mock, service_mock, is_empty_mock,
-                     mark_destoryed_mock, delete_grain_mock, lvm_zap_mock,
-                     force, test_fix):
-        """
-        Doesn't is_empty if force=True
-        """
-        operation = 'replace'
-        force = force
-        test_fix = test_fix(operation=operation, force=force)
-        test_fix.replace()
-        test_fix._mark_osd.assert_called_once_with(test_fix, 'out')
-        test_fix._service.assert_called_with(test_fix, 'stop')
-        test_fix._service.assert_any_call(test_fix, 'disable')
-        if not force:
-            test_fix._is_empty.assert_called_once_with(test_fix)
-            test_fix._mark_destroyed.assert_called_once_with(test_fix)
-            test_fix._delete_grain.assert_called_once_with(test_fix)
-
-    @pytest.mark.parametrize("force", [True, False])
-    @patch('srv.modules.runners.osd.OSDUtil._lvm_zap', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._delete_grain', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._purge_osd', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._empty_osd', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._service', autospec=True)
-    @patch('srv.modules.runners.osd.OSDUtil._mark_osd', autospec=True)
-    def test_remove(self, mark_osd_mock, service_mock, is_empty_mock,
-                    purge_osd_mock, delete_grain_mock, lvm_zap_mock, force,
-                    test_fix):
-        """
-        Doesn't empty if force=True
-        """
-        operation = 'remove'
-        force = force
-        test_fix = test_fix(operation=operation, force=force)
-        test_fix.remove()
-        test_fix._mark_osd.assert_called_once_with(test_fix, 'out')
-        test_fix._service.assert_called_with(test_fix, 'stop')
-        test_fix._service.assert_any_call(test_fix, 'disable')
-        if not force:
-            test_fix._empty_osd.assert_called_once_with(test_fix)
-        test_fix._purge_osd.assert_called_once_with(test_fix)
-        test_fix._delete_grain.assert_called_once_with(test_fix)
-
     def test_delete_grain(self, test_fix):
         test_fix = test_fix()
         test_fix._delete_grain()
@@ -98,91 +49,60 @@ class TestOSDUtil():
         'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
-    @patch(
-        'srv.modules.runners.osd.OSDUtil._wait_loop',
-        autospec=True,
-        return_value=True)
-    def test_is_empty(self, wait_loop, master_minion, test_fix):
+    def test_vacate_1(self, master_minion, test_fix):
         test_fix = test_fix()
-        test_fix._is_empty()
+        test_fix.local.cmd = Mock(return_value={'master_minion': {'1': ''}})
+        result = test_fix.vacate()
         test_fix.local.cmd.assert_called_once_with(
             "master_minion",
-            "osd.wait_until_empty", [test_fix.osd_id],
+            "osd.vacate", test_fix.osd_list,
             tgt_type='glob')
-        assert wait_loop.called is True
+        assert result == ['1']
 
     @patch(
         'srv.modules.runners.osd.Util.master_minion',
         autospec=True,
         return_value="master_minion")
-    @patch(
-        'srv.modules.runners.osd.OSDUtil._wait_loop',
-        autospec=True,
-        return_value=True)
-    def test_empty_osd(self, wait_loop, master_minion, test_fix):
+    def test_vacate_2(self, master_minion, test_fix):
         test_fix = test_fix()
-        test_fix._empty_osd()
+        test_fix.local.cmd = Mock(return_value={'master_minion': {'1': 'Error'}})
+        result = test_fix.vacate()
         test_fix.local.cmd.assert_called_once_with(
-            "master_minion", "osd.empty", [test_fix.osd_id], tgt_type='glob')
-        assert wait_loop.called is True
+            "master_minion",
+            "osd.vacate", test_fix.osd_list,
+            tgt_type='glob')
+        assert result == []
 
     @patch(
-        'srv.modules.runners.osd.time.sleep', autospec=True, return_value=True)
-    def test_wait_loop_1(self, time_mock, test_fix):
+        'srv.modules.runners.osd.Util.master_minion',
+        autospec=True,
+        return_value="master_minion")
+    def test_wait_loop_1(self, master_minion, test_fix):
         """
-        Message starts with Timeout expired
-        expect func() to be called.
-        func returns unexpected return output bogus
-        """
-        test_fix = test_fix()
-        test_func = Mock(return_value="Unexpected return")
-        ret = test_fix._wait_loop(test_func, 'Timeout expired')
-        test_func.assert_called_once()
-        assert ret is None  # it breaks (as in continue/break)
-
-    @patch(
-        'srv.modules.runners.osd.time.sleep', autospec=True, return_value=True)
-    def test_wait_loop_2(self, time_mock, test_fix):
-        """
-        Message starts with Timeout expired
-        expect func() to be called.
-        func returns with osd.1 is safe to destroy
+        When module returns safe-to-destroy, return successfully
         """
         test_fix = test_fix()
-        test_func = Mock(return_value="osd.1 is safe to destroy")
-        ret = test_fix._wait_loop(test_func, 'Timeout expired')
-        test_func.assert_called_once()
+        test_fix.osd_id = 0
+        test_fix.retries = 1
+        test_fix.local.cmd = Mock(return_value={'master_minion': 'osd.0 is safe to destroy'})
+        ret = test_fix._wait_until_empty()
         assert ret is True
 
     @patch(
-        'srv.modules.runners.osd.time.sleep', autospec=True, return_value=True)
-    def test_wait_loop_3(self, time_mock, test_fix):
+        'srv.modules.runners.osd.Util.master_minion',
+        autospec=True,
+        return_value="master_minion")
+    def test_wait_loop_2(self, master_minion, test_fix):
         """
-        Message starts with Timeout expired
-        expect func() to be called.
-        func returns with Timeout again
-        expect to call func() recursively until counter is hit.
+        When retries are exhausted, fail
         """
         test_fix = test_fix()
-        test_func = Mock(return_value="Timeout expired")
-        ret = test_fix._wait_loop(test_func, 'Timeout expired')
-        test_func.call_count == 51
-        assert ret is None
+        test_fix.osd_id = 0
+        test_fix.retries = 1
+        test_fix.local.cmd = Mock(return_value={'master_minion': 'Timeout expired - osd.0 has 181 PGs remaining'})
+        ret = test_fix._wait_until_empty()
+        assert ret is False
 
-    @patch(
-        'srv.modules.runners.osd.time.sleep', autospec=True, return_value=True)
-    def test_wait_loop_4(self, time_mock, test_fix):
-        """
-        Message starts with Timeout expired
-        expect func() to be called.
-        func returns True
-        expect to break immediately
-        """
-        test_fix = test_fix()
-        test_func = Mock(return_value=True)
-        ret = test_fix._wait_loop(test_func, 'Timeout expired')
-        test_func.call_count == 0
-        assert ret is None
 
     @patch('srv.modules.runners.osd.OSDUtil._mark_osd', autospec=True)
     @patch(

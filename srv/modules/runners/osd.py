@@ -8,10 +8,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 import logging
 import json
-import time
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.runner
+from salt.ext.six.moves import map
 
 log = logging.getLogger(__name__)
 
@@ -90,16 +90,58 @@ class OSDUtil(Util):
     """ Util class for OSD handling """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, osd_id, **kwargs):
+    def __init__(self, *args, **kwargs):
         Util.__init__(self)
-        self.osd_id = int(osd_id)
+        self.osd_id = int(args[0])
+        self.osd_list = args
         self.local = Util.local
         self.host_osds = self._host_osds()
         self.host = self._find_host()
         self.osd_state = self._get_osd_state()
         self.force: bool = kwargs.get('force', False)
         self.operation: str = kwargs.get('operation', 'None')
+        self.retries: int = kwargs.get('retries', 60)  # ~1 hour
         self.osd_metadata = self.get_osd_metadata()
+
+    def vacate(self):
+        """ Remote call to osd.py to set the weight to zero"""
+        osds = f", ".join(map(str, self.osd_list))
+        if self.force:
+            log.warning(f"Not emptying OSD {osds}")
+            return self.osd_list
+
+        print(f"Emptying osd {osds}")
+        ret = self.local.cmd(
+            Util.master_minion(),
+            'osd.vacate',
+            self.osd_list,
+            tgt_type="glob")
+        results = ret[Util.master_minion()]
+
+        osd_list = []
+        for osd_id in results:
+            if results[osd_id] == "":
+                osd_list.append(osd_id)
+            else:
+                log.error(f"Skipping OSD {osd_id}: {results[osd_id]}")
+        return osd_list
+
+    def restore_weights(self):
+        """ Remote call to osd.py to set the weight to zero"""
+        osds = f", ".join(map(str, self.osd_list))
+
+        print(f"Restoring weights of osd {osds}")
+        ret = self.local.cmd(
+            Util.master_minion(),
+            'osd.restore_weights',
+            self.osd_list,
+            tgt_type="glob")
+        results = ret[Util.master_minion()]
+
+        for osd_id in results:
+            if results[osd_id] is not True:
+                log.error(f"OSD {osd_id}: {results[osd_id]}")
+        return ""
 
     def get_osd_metadata(self) -> dict:
         """ Get metadata for OSD """
@@ -157,6 +199,10 @@ class OSDUtil(Util):
             log.error("No host found")
             return False
 
+        if not self.force:
+            print("Checking if OSD can be destroyed")
+            if self._wait_until_empty() is False:
+                return False
         try:
             self._mark_osd('out')
         except OSDNotFound:
@@ -180,25 +226,6 @@ class OSDUtil(Util):
             self._service('enable')
             self._service('start')
             return False
-
-        # This needs to be done for removal.
-        # For a replacement operation we just set
-        # the out/destroyed and wait with is_empty
-        if not self.force and self.operation == 'remove':
-            try:
-                print("Draining the OSD")
-                self._empty_osd()
-            except RuntimeError:
-                log.error("Encoutered issue while purging osd")
-                log.warning("Attempting rollback to previous state")
-                self.recover_osd_state()
-                self._service('enable')
-                self._service('start')
-                return False
-
-        if self.operation == 'replace' and not self.force:
-            print("Checking if OSD can be destroyed")
-            self._is_empty()
 
         try:
             if self.operation == 'remove':
@@ -245,51 +272,25 @@ class OSDUtil(Util):
         # No point in checking messages
         return True
 
-    def _is_empty(self):
-        """ Remote call to osd.py to wait until and osd is empty"""
-        log.info("Waiting for osd {} to empty".format(self.osd_id))
-        ret = self.local.cmd(
-            Util.master_minion(),
-            'osd.wait_until_empty', [self.osd_id],
-            tgt_type="glob")
-        message = list(ret.values())[0]
-        return self._wait_loop(self._is_empty, message)
-
-    def _empty_osd(self):
-        """ Remote call to osd.py to drain a osd """
-        log.info("Emptying osd {}".format(self.osd_id))
-        ret = self.local.cmd(
-            Util.master_minion(),
-            'osd.empty',
-            [self.osd_id],  # **kwargs
-            tgt_type="glob")
-        message = list(ret.values())[0]
-        return self._wait_loop(self._is_empty, message)
-
-    def _wait_loop(self, func, message):
-        """
-        Wait for OSDs to be 'safe-to-destroy'
-        """
+    def _wait_until_empty(self):
+        """ Wait for roughly an hour until the osd is empty"""
         print("Waiting for ceph to catch up.")
-        time.sleep(3)
-        counter = 50
-        while True and counter >= 0:
-            if message is True:
-                break
-            elif message.startswith("Timeout expired"):
-                print("  {}\nRetrying...".format(message))
-                log.debug(message)
-                time.sleep(3)
-                log.debug("Trying again for {} times.".format(counter))
-                counter -= 1
-                message = func()
-            elif message.startswith("osd.{} is safe to destroy".format(
+        counter = 0
+        while counter < self.retries:
+            if counter > 0:
+                print("Retrying...")
+            log.info("Waiting for osd {} to empty".format(self.osd_id))
+            ret = self.local.cmd(
+                Util.master_minion(),
+                'osd.wait_until_empty', [self.osd_id],
+                tgt_type="glob")
+            message = list(ret.values())[0]
+            print(message)
+            if message.startswith("osd.{} is safe to destroy".format(
                     self.osd_id)):
-                print(message)
                 return True
-            else:
-                print("Unexpected return: {}".format(message))
-                break
+            counter += 1
+        return False
 
     def recover_osd_state(self):
         """ Wrapper method to recover the previous osd_state after a rollback """
@@ -492,6 +493,7 @@ def remove(*args, **kwargs):
     if not osd_list:
         return False
     pre_check(osd_list, kwargs.get('force', False))
+    osd_list = OSDUtil(*osd_list, **kwargs).vacate()
     for osd_id in osd_list:
         osd_obj = OSDUtil(osd_id, **kwargs)
         _rc = osd_obj.remove()
@@ -513,6 +515,7 @@ def replace(*args, **kwargs):
     if not osd_list:
         return False
     pre_check(osd_list, kwargs.get('force', False))
+    osd_list = OSDUtil(*osd_list, **kwargs).vacate()
     for osd_id in osd_list:
         osd_obj = OSDUtil(osd_id, **kwargs)
         _rc = osd_obj.replace()
@@ -523,6 +526,7 @@ def replace(*args, **kwargs):
                 'model': osd_obj.model_for_osd
             }
         })
+    osd_list = OSDUtil(*osd_list, **kwargs).restore_weights()
     return results
 
 

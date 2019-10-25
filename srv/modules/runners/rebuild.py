@@ -23,8 +23,10 @@ def help_():
     usage = ('salt-run rebuild.node [TARGET...]\n'
              'salt-run rebuild.nodes [TARGET...]:\n'
              '    Removes and deploys OSDs\n\n'
-             'salt-run rebuild.identical [TARGET...]:\n'
-             '    Removes and deploys OSDs with same IDs\n\n'
+             'salt-run rebuild.nodes force=True [TARGET...]:\n'
+             '    Removes without emptying and deploys OSDs\n\n'
+             'salt-run rebuild.nodes preserve_ids=True [TARGET...]:\n'
+             '    Removes and deploys OSDs with the same IDs\n\n'
              'salt-run rebuild.check [TARGET...]:\n'
              '    Checks available space\n\n'
              '\n\n'
@@ -64,9 +66,12 @@ class Rebuild(object):
         __master_opts__['quiet'] = True
         self.qrunner = salt.runner.RunnerClient(__master_opts__)
         self.minions = self._minions(*args)
-        self.operation = kwargs.get('operation', 'osd.remove')
-        self.aggressive = kwargs.get('aggressive', False)
+        self.kwargs = kwargs
         self.skipped = []
+        if 'preserve_ids' in kwargs and kwargs['preserve_ids']:
+            self.operation = 'osd.replace'
+        else:
+            self.operation = 'osd.remove'
 
     def _minions(self, *args):
         """ Return expanded Salt target """
@@ -141,7 +146,7 @@ class Rebuild(object):
         """ Return safety setting"""
         return self.qrunner.cmd('disengage.check')
 
-    def _check_return(self, ret, minion):
+    def _check_failed(self, ret, minion):
         """ Check for failures """
         if isinstance(ret, str) or not all(ret.values()):
             log.error("Failed to remove OSD(s)... skipping {}".format(minion))
@@ -151,10 +156,10 @@ class Rebuild(object):
 
     def _check_deploy(self, deploy_ret, minion):
         """ Check for failures """
-        log.debug(deploy_ret)
+        log.info(deploy_ret)
         for ret in deploy_ret:
             if minion in ret:
-                if ret[minion][0] != 0:
+                if ret[minion][0][0] != 0:
                     pprint.pprint(ret[minion])
                     self.skipped.append(minion)
 
@@ -164,22 +169,6 @@ class Rebuild(object):
             print("The following minions were skipped:\n{}".format("\n".join(self.skipped)),
                   "\n\nResolve any issues and run\n",
                   "salt-run rebuild.nodes {}".format(" ".join(self.skipped)))
-
-    def _aggressive(self, osds, minion):
-        """ Delegate list to a single call """
-        osd_ret = self.runner.cmd(self.operation, osds)
-        log.debug("osd_ret: {}".format(osd_ret))
-
-        return self._check_return(osd_ret, minion)
-
-    def _check_each(self, osds, minion):
-        """ Wait between removal of each OSD """
-        for osd in osds:
-            osd_ret = self.runner.cmd(self.operation, [osd])
-            if self._check_return(osd_ret, minion):
-                return True
-            self._busy_wait()
-        return False
 
     def run(self, checkonly=False):
         """
@@ -206,12 +195,10 @@ class Rebuild(object):
                     continue
 
                 self._busy_wait()
-                if self.aggressive:
-                    if self._aggressive(osds, minion):
-                        continue
-                else:
-                    if self._check_each(osds, minion):
-                        continue
+                osd_ret = self.runner.cmd(self.operation, osds, kwarg=self.kwargs)
+                log.info("osd_ret: {}".format(osd_ret))
+                if self._check_failed(osd_ret, minion):
+                    continue
 
             deploy_ret = self.runner.cmd('disks.deploy', kwarg={'target': minion})
             self._check_deploy(deploy_ret, minion)
@@ -219,14 +206,9 @@ class Rebuild(object):
         return ""
 
 
-def identical(*args):
-    """ Rebuild the minions provided, keep the same OSD IDs """
-    return node(*args, operation='osd.replace')
-
-
-def aggressive(*args):
-    """ Rebuild the minions provided, may see HEALTH_ERR """
-    return node(*args, aggressive=True)
+def nodes(*args, **kwargs):
+    """ Rebuild the minions provided """
+    return node(*args, **kwargs)
 
 
 def node(*args, **kwargs):
@@ -254,6 +236,4 @@ def check(*args):
 # pylint: disable=duplicate-key
 __func_alias__ = {
                  'help_': 'help',
-                 'node': 'nodes',
-                 'node': 'node',
                  }

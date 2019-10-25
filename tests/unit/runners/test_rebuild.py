@@ -197,39 +197,39 @@ class TestRebuild():
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
     @patch('salt.runner.Runner', autospec=True)
     @patch('salt.client.LocalClient', autospec=True)
-    def test_check_return(self, localclient, runner, mm):
+    def test_check_failed(self, localclient, runner, mm):
         rebuild.__opts__ = {}
 
         rr = rebuild.Rebuild(['data*.ceph'])
 
         ret = {0: True, 1:True}
-        result = rr._check_return(ret, 'data1.ceph')
+        result = rr._check_failed(ret, 'data1.ceph')
         assert result == False
         assert rr.skipped == []
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
     @patch('salt.runner.Runner', autospec=True)
     @patch('salt.client.LocalClient', autospec=True)
-    def test_check_return_finds_failure(self, localclient, runner, mm):
+    def test_check_failed_finds_failure(self, localclient, runner, mm):
         rebuild.__opts__ = {}
 
         rr = rebuild.Rebuild(['data*.ceph'])
 
         ret = {0: False, 1:True}
-        result = rr._check_return(ret, 'data1.ceph')
+        result = rr._check_failed(ret, 'data1.ceph')
         assert result == True
         assert rr.skipped == ['data1.ceph']
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
     @patch('salt.runner.Runner', autospec=True)
     @patch('salt.client.LocalClient', autospec=True)
-    def test_check_return_finds_error(self, localclient, runner, mm):
+    def test_check_failed_finds_error(self, localclient, runner, mm):
         rebuild.__opts__ = {}
 
         rr = rebuild.Rebuild(['data*.ceph'])
 
         ret = "An error message"
-        result = rr._check_return(ret, 'data1.ceph')
+        result = rr._check_failed(ret, 'data1.ceph')
         assert result == True
         assert rr.skipped == ['data1.ceph']
 
@@ -250,8 +250,8 @@ class TestRebuild():
         rr._busy_wait = mock.Mock()
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = False
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = False
         rr._skipped_summary = mock.Mock()
 
         result = rr.run()
@@ -259,7 +259,7 @@ class TestRebuild():
         assert rr._osd_list.called
         assert rr.safe.called
         assert rr.runner.cmd.called
-        assert rr._check_return.called
+        assert rr._check_failed.called
         assert rr._skipped_summary.called
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
@@ -279,16 +279,16 @@ class TestRebuild():
         rr._busy_wait = mock.Mock()
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = False
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = False
         rr._skipped_summary = mock.Mock()
 
         result = rr.run()
         assert result == ""
         assert rr._osd_list.call_count == 2
         assert rr.safe.call_count == 2
-        assert rr.runner.cmd.call_count == 6
-        assert rr._check_return.call_count == 4
+        assert rr.runner.cmd.call_count == 4
+        assert rr._check_failed.call_count == 2
         assert rr._skipped_summary.called
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
@@ -307,8 +307,8 @@ class TestRebuild():
         rr.safe.return_value = True
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = False
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = False
         rr._skipped_summary = mock.Mock()
 
         result = rr.run(checkonly=True)
@@ -316,7 +316,7 @@ class TestRebuild():
         assert rr._osd_list.called
         assert rr.safe.called
         assert rr.runner.cmd.called is False
-        assert rr._check_return.called is False
+        assert rr._check_failed.called is False
         assert rr._skipped_summary.called
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
@@ -335,8 +335,8 @@ class TestRebuild():
         rr.safe.return_value = True
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = False
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = False
         rr._skipped_summary = mock.Mock()
 
         result = rr.run()
@@ -344,7 +344,7 @@ class TestRebuild():
         assert rr._osd_list.called is False
         assert rr.safe.called is False
         assert rr.runner.cmd.called is False
-        assert rr._check_return.called is False
+        assert rr._check_failed.called is False
         assert rr._skipped_summary.called is False
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
@@ -363,8 +363,8 @@ class TestRebuild():
         rr.safe.return_value = True
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = False
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = False
         rr._skipped_summary = mock.Mock()
 
         result = rr.run()
@@ -372,7 +372,7 @@ class TestRebuild():
         assert rr._osd_list.called
         assert rr.safe.called is False
         assert rr.runner.cmd.called
-        assert rr._check_return.called is False
+        assert rr._check_failed.called is False
         assert rr._skipped_summary.called
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
@@ -391,8 +391,8 @@ class TestRebuild():
         rr.safe.return_value = False
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = False
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = False
         rr._skipped_summary = mock.Mock()
 
         result = rr.run()
@@ -400,7 +400,7 @@ class TestRebuild():
         assert rr._osd_list.called
         assert rr.safe.called
         assert rr.runner.cmd.called is False
-        assert rr._check_return.called is False
+        assert rr._check_failed.called is False
         assert rr._skipped_summary.called is False
 
     @patch('srv.modules.runners.rebuild.master_minion', autospec=True)
@@ -420,8 +420,8 @@ class TestRebuild():
         rr._busy_wait = mock.Mock()
         rr.runner.cmd = mock.Mock()
         rr.runner.cmd.return_value = {}
-        rr._check_return = mock.Mock()
-        rr._check_return.return_value = True
+        rr._check_failed = mock.Mock()
+        rr._check_failed.return_value = True
         rr._skipped_summary = mock.Mock()
 
         result = rr.run()
@@ -429,7 +429,7 @@ class TestRebuild():
         assert rr._osd_list.called
         assert rr.safe.called
         assert rr.runner.cmd.called
-        assert rr._check_return.called
+        assert rr._check_failed.called
         assert rr._skipped_summary.called
 
 
