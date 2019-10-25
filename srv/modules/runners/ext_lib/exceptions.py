@@ -19,6 +19,49 @@ class ModuleException(Exception):
         return f"Insert some nice data from self.data : {self.result}"
 
 
+class AbortedByUser(Exception):
+
+    def __init__(self, answer):
+        self.answer =  answer
+
+    def __repr__(self):
+        return f"Aborted by user with answer {self.answer}"
+
+class NoMinionsFound(Exception):
+    def __init__(self, result, target, module, function, tgt_type):
+        self.result = result
+        self.target = target
+        self.module = module
+        self.function = function
+        self.tgt_type = tgt_type
+
+    def _prefix(self):
+        if self.tgt_type == 'pillar':
+            return "-I"
+        if self.tgt_type == 'compound':
+            return ""
+        if self.tgt_type == 'grain':
+            return "-G"
+
+    @property
+    def guide(self):
+        return f"""
+This is usally due to a wrong pillar configuration. Please verify if
+the targeted role is assigned to any hosts. Verify it with:
+
+salt {self._prefix()} {self.target} test.true
+        """
+
+    def output_for_orchestrator(self):
+        return f"{self.module}.{self.function} failed. Can't find minions assigned to role {self.target} (ment for orchestrator)"
+
+    def output_for_human(self):
+        return f"{self.module}.{self.function} failed. Can't find minions assigned to role {self.target} (ment for human)\n{self.guide}"
+
+    def __str__(self):
+        return f"NoMinionsFound<{self.target}>"
+
+
 class RunnerException(Exception):
     """ Runner command failed """
 

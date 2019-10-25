@@ -236,8 +236,9 @@ def deploy_salt_conf():
     return False
 
 
-def deploy_roles():
+def deploy_roles(**kwargs):
     ''' Creates role assignments '''
+
     policy = Policy()
     if not policy.load():
         log.error(policy.error)
@@ -257,7 +258,7 @@ def deploy_roles():
     return True
 
 
-def deploy_global():
+def deploy_global(**kwargs):
     ''' Creates initial global configuration '''
     dsg = DeepSeaGlobal()
     if dsg.absent():
