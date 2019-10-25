@@ -52,8 +52,8 @@ setup.py:
 
 pyc: setup.py
 	#make sure to create bytecode with the correct version
-	find srv/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
-	find cli/ -name '*.py' -exec $(PYTHON) -m py_compile {} \;
+	find srv/ -name '*.py' -exec $(PYTHON) -m py_compile {} +
+	find cli/ -name '*.py' -exec $(PYTHON) -m py_compile {} +
 
 copy-files:
 	# salt-master config files
