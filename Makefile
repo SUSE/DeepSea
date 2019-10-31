@@ -984,7 +984,7 @@ copy-files:
 	-chown $(USER):$(GROUP) $(DESTDIR)/srv/salt/ceph/configuration/files/ceph.conf.checksum || true
 
 $(DEEPSEA_DEPS):
-	([ -z "$(DEEPSEA_DEPS)" ] || $(SUDO) $(PKG_INSTALL) $(DEEPSEA_DEPS))
+	([ -z "$(DEEPSEA_DEPS)" ] || $(PKG_QUERY) $(DEEPSEA_DEPS)>/dev/null || $(SUDO) $(PKG_INSTALL) $(DEEPSEA_DEPS))
 
 install: pyc $(DEEPSEA_DEPS) copy-files
 	sed -i '/^sharedsecret: /s!{{ shared_secret }}!'`cat /proc/sys/kernel/random/uuid`'!' $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
