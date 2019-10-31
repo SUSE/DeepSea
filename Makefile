@@ -21,25 +21,30 @@ endif
 ifeq ($(suse), yes)
 USER=salt
 GROUP=salt
+PKG_QUERY=rpm -q
 PKG_INSTALL=zypper -n install
 else
 USER=root
 GROUP=root
 ifeq ($(OS), centos)
+PKG_QUERY=rpm -q
 PKG_INSTALL=yum install -y
 PY_VER=36
 PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click tox python${PY_VER}-configobj
 else
 ifeq ($(OS), fedora)
+PKG_QUERY=rpm -q
 PKG_INSTALL=yum install -y
 else
 ifeq ($(OS), arch)
+PKG_QUERY=/bin/false
 PKG_INSTALL=pacman -Syyu --noconfirm  && /usr/bin/pacman -S --noconfirm
 SALT_API=
 PYTHON_DEPS=python-setuptools python${PY_VER}-click python${PY_VER}-tox python${PY_VER}-configobj
 else
 debian := $(wildcard /etc/debian_version)
 ifneq ($(strip $(debian)),)
+PKG_QUERY=dpkg -s
 PKG_INSTALL=apt-get install -y
 PYTHON_DEPS=python${PY_VER}-setuptools python${PY_VER}-click tox python${PY_VER}-configobj
 endif
@@ -992,9 +997,9 @@ install: pyc $(DEEPSEA_DEPS) copy-files
 	python$(PY_VER) setup.py install --root=$(DESTDIR)/
 
 $(RPMBUILD_DEPS):
-	$(SUDO) $(PKG_INSTALL) $(RPMBUILD_DEPS)
+	$(PKG_QUERY) $(RPMBUILD_DEPS)>/dev/null || $(SUDO) $(PKG_INSTALL) $(RPMBUILD_DEPS)
 	$(eval RPMBUILD_REQUIRES := $(shell rpmspec -q --srpm --requires deepsea.spec.in))
-	$(SUDO) $(PKG_INSTALL) $(RPMBUILD_REQUIRES)
+	$(PKG_QUERY) $(RPMBUILD_REQUIRES)>/dev/null || $(SUDO) $(PKG_INSTALL) $(RPMBUILD_REQUIRES)
 
 rpm: tarball $(RPMBUILD_DEPS)
 	$(eval _SOURCEDIR := $(shell rpm -E "%{_sourcedir}"))
@@ -1005,7 +1010,7 @@ rpm: tarball $(RPMBUILD_DEPS)
 	rpmbuild -ba $(_SPECDIR)/deepsea.spec
 
 $(TARBALL_DEPS):
-	$(SUDO) $(PKG_INSTALL) $(TARBALL_DEPS)
+	$(PKG_QUERY) $(TARBALL_DEPS)>/dev/null || $(SUDO) $(PKG_INSTALL) $(TARBALL_DEPS)
 
 # Removing test dependency until resolved
 tarball: $(TARBALL_DEPS)
