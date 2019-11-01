@@ -1,11 +1,11 @@
 
 {% set node = salt.saltutil.runner('select.first', roles='storage') %}
-{% set label = "f2tob3" %}
+{% set label = "partitions" %}
 
 Check environment {{ label }}:
   salt.state:
     - tgt: {{ node }}
-    - sls: ceph.tests.migrate.check4
+    - sls: ceph.tests.migrate.check2
     - failhard: True
 
 Remove OSDs {{ label }}:
@@ -22,38 +22,37 @@ Initialize OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.init_osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore2') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore') }}
        
 Save reset checklist {{ label }}:
   salt.runner:
     - name: smoketests.checklist
     - arg:
         - {{ node }}
-        - 'filestore2'
+        - 'bluestore'
 
 Check reset OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.check_osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore2') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore') }}
     - failhard: True
 
 Migrate {{ label }}:
-  salt.state:
-    - tgt: {{ node }}
-    - sls: ceph.redeploy.osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore3') }}
+  salt.runner:
+    - name: disks.deploy
 
 Save checklist {{ label }}:
   salt.runner:
     - name: smoketests.checklist
     - arg:
         - {{ node }}
-        - 'bluestore3'
+        - 'filestore'
 
 Check OSDs {{ label }}:
   salt.state:
     - tgt: {{ node }}
     - sls: ceph.tests.migrate.check_osds
-    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='bluestore3') }}
+    - pillar: {{ salt.saltutil.runner('smoketests.pillar', minion=node, configuration='filestore') }}
+
 
