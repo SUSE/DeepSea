@@ -158,6 +158,7 @@ def check(cluster, fail_on_warning=True, **kwargs):
     _check.report()
 
     if _check.warnings and fail_on_warning:
+        __context__['retcode'] = 1
         return False
     return True
 

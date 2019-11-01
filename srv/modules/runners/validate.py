@@ -1419,6 +1419,7 @@ def pillar(cluster=None, printer=None, **kwargs):
     valid.report()
 
     if valid.errors:
+        __context__['retcode'] = 1
         return False
 
     return True
