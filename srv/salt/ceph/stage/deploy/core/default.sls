@@ -1,33 +1,17 @@
 {% set master = salt['master.minion']() %}
 
-{% set FAIL_ON_WARNING = salt['pillar.get']('FAIL_ON_WARNING', 'True') %}
+ready check:
+  salt.runner:
+    - name: ready.check
+      kwarg:
+        cluster: 'ceph'
+        fail_on_warning: {{ pillar.get('FAIL_ON_WARNING', 'True') }}
 
-{% if salt['saltutil.runner']('ready.check', cluster='ceph', fail_on_warning=FAIL_ON_WARNING)  == False %}
-ready check failed:
-  salt.state:
-    - name: "Fail on Warning is True"
-    - tgt: {{ master }}
-    - failhard: True
-
-{% endif %}
-
-{# Salt orchestrate ignores return codes of other salt runners. #}
-#validate:
-#  salt.runner:
-#    - name: validate.pillar
-
-{# Until return codes fail correctly and the above can be uncommented, #}
-{# rely on the side effect of the runner printing its output and failing #}
-{# on a bogus state #}
-{% if salt['saltutil.runner']('validate.pillar', cluster='ceph') == False %}
-validate failed:
-  salt.state:
-    - name: just.exit
-    - tgt: {{ master }}
-    - failhard: True
-
-{% endif %}
-
+validate:
+  salt.runner:
+    - name: validate.pillar
+      kwarg:
+        cluster: 'ceph'
 
 {% if salt['pillar.get']('time_service') != "disabled" %}
 time:
