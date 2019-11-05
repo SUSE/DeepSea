@@ -9,17 +9,17 @@ safety is engaged:
 
 {% endif %}
 
-reset master configuration:
-  salt.state:
-    - tgt: {{ master }}
-    - tgt_type: compound
-    - sls: ceph.reset
-
 terminate ceph osds:
   salt.runner:
     - name: osd.remove
     - arg: ['I@roles:storage']
     - force: True
+
+reset master configuration:
+  salt.state:
+    - tgt: {{ master }}
+    - tgt_type: compound
+    - sls: ceph.reset
 
 rescind roles:
   salt.state:
