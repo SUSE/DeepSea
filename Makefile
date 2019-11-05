@@ -156,18 +156,6 @@ copy-files:
 	install -m 644 srv/salt/ceph/functests/1node/orchestrator/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/orchestrator
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
 	install -m 644 srv/salt/ceph/functests/1node/quiescent/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/quiescent
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore2
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore2
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore3
-	install -m 644 srv/salt/ceph/functests/1node/migrate/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate
-	install -m 644 srv/salt/ceph/functests/1node/migrate/filestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore
-	install -m 644 srv/salt/ceph/functests/1node/migrate/filestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/filestore2
-	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore
-	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore2/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore2
-	install -m 644 srv/salt/ceph/functests/1node/migrate/bluestore3/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/migrate/bluestore3
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/replace
 	install -m 644 srv/salt/ceph/functests/1node/replace/*.sls $(DESTDIR)/srv/salt/ceph/functests/1node/replace
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/functests/1node/remove
@@ -391,14 +379,6 @@ copy-files:
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/salt-api/files
 	install -m 644 srv/salt/ceph/salt-api/files/*.conf* $(DESTDIR)/srv/salt/ceph/salt-api/files
 
-	# state files - migrate
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/osds
-	install -m 644 srv/salt/ceph/migrate/osds/*.sls $(DESTDIR)/srv/salt/ceph/migrate/osds/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/nodes
-	install -m 644 srv/salt/ceph/migrate/nodes/*.sls $(DESTDIR)/srv/salt/ceph/migrate/nodes/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/migrate/policy
-	install -m 644 srv/salt/ceph/migrate/policy/*.sls $(DESTDIR)/srv/salt/ceph/migrate/policy/
 	# state files - mines
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/mines
 	install -m 644 srv/salt/ceph/mines/*.sls $(DESTDIR)/srv/salt/ceph/mines/
@@ -548,13 +528,6 @@ copy-files:
 	# state files - refresh
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/refresh
 	install -m 644 srv/salt/ceph/refresh/*.sls $(DESTDIR)/srv/salt/ceph/refresh/
-	# state files - redeploy
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy/osds
-	install -m 644 srv/salt/ceph/redeploy/osds/*.sls $(DESTDIR)/srv/salt/ceph/redeploy/osds/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy/nodes
-	install -m 644 srv/salt/ceph/redeploy/nodes/*.sls $(DESTDIR)/srv/salt/ceph/redeploy/nodes/
-	install -d -m 755 $(DESTDIR)/srv/salt/ceph/redeploy/nodes
 	# state files - remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/remove/igw/auth
