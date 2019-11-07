@@ -80,6 +80,7 @@ copy-files:
 	install -m 644 etc/salt/master.d/output.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 600 etc/salt/master.d/eauth.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 644 etc/salt/master.d/salt-api.conf $(DESTDIR)/etc/salt/master.d/
+	install -m 600 etc/salt/master.d/logging.conf $(DESTDIR)/etc/salt/master.d/
 	install -m 600 srv/salt/ceph/salt-api/files/sharedsecret.conf.j2 $(DESTDIR)/etc/salt/master.d/sharedsecret.conf
 	# tests
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tests/keyrings
