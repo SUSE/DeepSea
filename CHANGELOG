@@ -1,4 +1,19 @@
 -------------------------------------------------------------------
+Fri Nov 15 12:04:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.26
+- srv/salt/ceph/purge: Changed order of runner calls (bsc#1150168)
+- Simplify management of tuned (bsc#1142416)
+- Split output to console and Salt log (SES-813)
+- Added data tag in cephdisks/dg for filestore OSDs (bsc#1145600)
+- Remove recursion, add custom retries (bsc#1154096)
+- Evacutate OSDs simultaneously when removing OSDs (bsc#1154096)
+- 'make pyc' target should fail if unable to compile
+- 'rebuild' functional tests require 3 nodes
+- Fix debug line spelling mistake
+- Fix error msg handling during salt-run rebuild.node (bsc#1141282)
+
+-------------------------------------------------------------------
 Wed Oct 09 13:04:34 UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.25
