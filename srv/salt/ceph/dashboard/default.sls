@@ -83,7 +83,8 @@ set dashboard password grain:
         - cmd: set username and password
 
 # configure grafana
-{% set grafana_minion = salt.saltutil.runner('select.one_minion', cluster='ceph', roles='grafana') %}
+{% set grafana_default = salt.saltutil.runner('select.one_minion', cluster='ceph', roles='grafana') %}
+{% set grafana_minion = salt['pillar.get']('GRAFANA_MINION', grafana_default) %}
 {% if grafana_minion %}
 set dashboard grafana url:
   cmd.run:
