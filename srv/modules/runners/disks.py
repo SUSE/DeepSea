@@ -6,12 +6,13 @@ Internally this will be called 'DriveGroups'
 """
 
 from __future__ import absolute_import
-import logging
 import json
 import yaml
 import salt.client
+import tee
 
-log = logging.getLogger(__name__)
+
+log = tee.console(__name__)
 
 USAGE = """
 
@@ -140,7 +141,7 @@ class DriveGroups(object):
         """ Call minion modules to get matching disks """
         ret: list = list()
         for dg_name, dg_values in self.drive_groups.items():
-            print("Found DriveGroup <{}>".format(dg_name))
+            log.info("Found DriveGroup <{}>".format(dg_name))
             dgo = DriveGroup(dg_name, dg_values)
             if self.target:
                 target = self.target
@@ -169,7 +170,7 @@ class DriveGroups(object):
             command_name = alias
         log.debug("Calling {}.{} on compound target {}".format(
             module, command_name, target))
-        print("Calling {}.{} on compound target {}".format(
+        log.info("Calling {}.{} on compound target {}".format(
             module, command_name, target))
         ret: str = self.local_client.cmd(
             target,
