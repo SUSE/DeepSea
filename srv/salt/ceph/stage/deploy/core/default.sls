@@ -148,26 +148,28 @@ deploy osds:
     - name: disks.deploy
     - failhard: True
 
-mgr tuned:
+latency tuned:
   salt.state:
-    - tgt: 'I@roles:mgr and I@cluster:ceph'
+    - tgt: '( I@roles:mgr or I@roles:mon ) and I@cluster:ceph'
     - tgt_type: compound
-    - sls: ceph.tuned.mgr
+    - sls: ceph.tuned.latency
     - failhard: True
 
-mon tuned:
-  salt.state:
-    - tgt: 'I@roles:mon and I@cluster:ceph'
-    - tgt_type: compound
-    - sls: ceph.tuned.mon
-    - failhard: True
+{% set deepsea_minions = salt['saltutil.runner']('deepsea_minions.matches') %}
+{% set mons = salt['saltutil.runner']('select.minions', roles='mon') %}
+{% set mgrs = salt['saltutil.runner']('select.minions', roles='mgr') %}
 
-osd tuned:
+{% set throughput_minions = deepsea_minions | difference(mons) | difference(mgrs) | join(',') %}
+
+
+{% if throughput_minions != "" %}
+throughput tuned:
   salt.state:
-    - tgt: 'I@roles:storage and I@cluster:ceph'
+    - tgt: 'not ( I@roles:mgr or I@roles:mon ) and I@cluster:ceph'
     - tgt_type: compound
-    - sls: ceph.tuned.osd
+    - sls: ceph.tuned.throughput
     - failhard: True
+{% endif %}
 
 pools:
   salt.state:
