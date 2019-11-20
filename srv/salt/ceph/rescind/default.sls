@@ -5,5 +5,6 @@ include:
 {% if role not in salt['pillar.get']('roles', []) %}
 - .{{ role }}
 {% endif %}
+- .crash
 {% endfor %}
 
