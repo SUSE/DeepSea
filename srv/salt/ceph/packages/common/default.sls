@@ -20,7 +20,6 @@ stage prep dependencies suse:
       - pciutils
       - gptfdisk
       - python3-boto
-      - python3-rados
       - python3-netaddr
       - iperf
       - lsof
@@ -33,6 +32,11 @@ stage prep dependencies suse:
       - ceph
     - fire_event: True
     - refresh: True
+
+stage prep dependencies suse:
+  pkg.installed:
+    - pkgs:
+      - python3-rados
 
 {% elif os == 'Ubuntu' %}
 
