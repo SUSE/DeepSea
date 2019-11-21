@@ -6,15 +6,15 @@ Runner to remove and replace osds
 
 from __future__ import absolute_import
 from __future__ import print_function
-import logging
 import json
-import time
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.runner
 from salt.ext.six.moves import map
+import tee
 
-log = logging.getLogger(__name__)
+
+log = tee.console(__name__)
 
 
 def help_():
@@ -101,6 +101,7 @@ class OSDUtil(Util):
         self.osd_state = self._get_osd_state()
         self.force: bool = kwargs.get('force', False)
         self.operation: str = kwargs.get('operation', 'None')
+        self.retries: int = kwargs.get('retries', 60)  # ~1 hour
         self.osd_metadata = self.get_osd_metadata()
 
     def vacate(self):
@@ -171,7 +172,7 @@ class OSDUtil(Util):
         3) ceph osd destroy $id --yes-i-really-mean-it
         4) ceph-volume lvm zap --osd-id $id
         """
-        print("Preparing replacement of osd {} on host {}".format(
+        log.info("Preparing replacement of osd {} on host {}".format(
             self.osd_id, self.host))
         return self._call()
 
@@ -185,7 +186,7 @@ class OSDUtil(Util):
         5) zap doesn't destroy the partition -> find the associated partitions and
            call `ceph-volume lvm zap <device>` (optional)
         """
-        print("Removing osd {} on host {}".format(self.osd_id, self.host))
+        log.info("Removing osd {} on host {}".format(self.osd_id, self.host))
         return self._call()
 
     # pylint: disable=too-many-return-statements
@@ -200,9 +201,9 @@ class OSDUtil(Util):
             return False
 
         if not self.force:
-            print("Checking if OSD can be destroyed")
-            self._is_empty()
-
+            log.info("Checking if OSD can be destroyed")
+            if self._wait_until_empty() is False:
+                return False
         try:
             self._mark_osd('out')
         except OSDNotFound:
@@ -229,10 +230,10 @@ class OSDUtil(Util):
 
         try:
             if self.operation == 'remove':
-                print("Purging from the crushmap")
+                log.info("Purging from the crushmap")
                 self._purge_osd()
             elif self.operation == 'replace':
-                print("Marking OSD 'destroyed'")
+                log.info("Marking OSD 'destroyed'")
                 self._mark_destroyed()
             else:
                 raise RuntimeError("Unknown operation: {}".format(
@@ -265,47 +266,32 @@ class OSDUtil(Util):
 
     def _delete_grain(self):
         """ Delete grains after removing an OSD (if grain is still present) """
-        log.info("Deleting grain for osd {}".format(self.osd_id))
+        log.debug("Deleting grain for osd {}".format(self.osd_id))
         self.local.cmd(
             self.host, 'osd.delete_grain', [self.osd_id], tgt_type="glob")
         # There is no handling of returncodes in delete_grain whatsoever..
         # No point in checking messages
         return True
 
-    def _is_empty(self):
-        """ Remote call to osd.py to wait until and osd is empty"""
-        log.info("Waiting for osd {} to empty".format(self.osd_id))
-        ret = self.local.cmd(
-            Util.master_minion(),
-            'osd.wait_until_empty', [self.osd_id],
-            tgt_type="glob")
-        message = list(ret.values())[0]
-        return self._wait_loop(self._is_empty, message)
-
-    def _wait_loop(self, func, message):
-        """
-        Wait for OSDs to be 'safe-to-destroy'
-        """
+    def _wait_until_empty(self):
+        """ Wait for roughly an hour until the osd is empty"""
         print("Waiting for ceph to catch up.")
-        time.sleep(3)
-        counter = 50
-        while True and counter >= 0:
-            if message is True:
-                break
-            elif message.startswith("Timeout expired"):
-                print("  {}\nRetrying...".format(message))
-                log.debug(message)
-                time.sleep(3)
-                log.debug("Trying again for {} times.".format(counter))
-                counter -= 1
-                message = func()
-            elif message.startswith("osd.{} is safe to destroy".format(
+        counter = 0
+        while counter < self.retries:
+            if counter > 0:
+                log.info("Retrying...")
+            log.info("Waiting for osd {} to empty".format(self.osd_id))
+            ret = self.local.cmd(
+                Util.master_minion(),
+                'osd.wait_until_empty', [self.osd_id],
+                tgt_type="glob")
+            message = list(ret.values())[0]
+            log.info(message)
+            if message.startswith("osd.{} is safe to destroy".format(
                     self.osd_id)):
-                print(message)
                 return True
-            else:
-                print("Unexpected return: {}".format(message))
-                break
+            counter += 1
+        return False
 
     def recover_osd_state(self):
         """ Wrapper method to recover the previous osd_state after a rollback """
@@ -318,7 +304,7 @@ class OSDUtil(Util):
     def _get_osd_state(self):
         """ Method to get the current osd_state """
         cmd = 'ceph osd dump --format=json'
-        log.info("Executing: {}".format(cmd))
+        log.debug("Executing: {}".format(cmd))
         ret = self.local.cmd(
             Util.master_minion(), "cmd.run", [cmd], tgt_type="glob")
         message = list(ret.values())[0]
@@ -344,7 +330,7 @@ class OSDUtil(Util):
         # That means we have to find devices by osd_id first
 
         cmd = 'ceph-volume lvm zap --osd-id {} --destroy'.format(self.osd_id)
-        log.info("Executing: {}".format(cmd))
+        log.debug("Executing: {}".format(cmd))
         ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
         message = list(ret.values())[0]
         if 'Zapping successful for OSD' not in message:
@@ -355,7 +341,7 @@ class OSDUtil(Util):
     def _mark_destroyed(self):
         """ Mark an osd destroyed """
         cmd = "ceph osd destroy {} --yes-i-really-mean-it".format(self.osd_id)
-        log.info("Executing: {}".format(cmd))
+        log.debug("Executing: {}".format(cmd))
         ret = self.local.cmd(
             Util.master_minion(),
             "cmd.run",
@@ -372,7 +358,7 @@ class OSDUtil(Util):
     def _purge_osd(self):
         """ Purge an osd """
         cmd = "ceph osd purge {} --yes-i-really-mean-it".format(self.osd_id)
-        log.info("Executing: {}".format(cmd))
+        log.debug("Executing: {}".format(cmd))
         ret = self.local.cmd(
             Util.master_minion(),
             "cmd.run",
@@ -387,7 +373,7 @@ class OSDUtil(Util):
 
     def _service(self, action):
         """ Wrapper to start/stop a systemd unit """
-        log.info("Calling service.{} on {}".format(action, self.osd_id))
+        log.debug("Calling service.{} on {}".format(action, self.osd_id))
         ret = self.local.cmd(
             self.host,
             'service.{}'.format(action), ['ceph-osd@{}'.format(self.osd_id)],
@@ -402,7 +388,7 @@ class OSDUtil(Util):
     def _mark_osd(self, state):
         """ Mark a osd out/in """
         cmd = "ceph osd {} {}".format(state, self.osd_id)
-        log.info("Running command {}".format(cmd))
+        log.debug("Running command {}".format(cmd))
         ret = self.local.cmd(
             Util.master_minion(),
             "cmd.run",
@@ -411,7 +397,7 @@ class OSDUtil(Util):
         )
         message = list(ret.values())[0]
         if message.startswith('marked'):
-            log.info("Marking osd {} - {} -".format(self.osd_id, state))
+            log.debug("Marking osd {} - {} -".format(self.osd_id, state))
         elif message.startswith('osd.{} is already {}'.format(
                 self.osd_id, state)):
             log.info(message)
