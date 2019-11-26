@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Wed Nov 26 11:26:00 UTC 2019 - jschmid@suse.com
+
+- Version: 0.8.14
+- util: Simplify management of tuned (bsc#1140723)
+- cli: terminal_outputter: fix simple output when printing state exception
+- cli: fix simple outputter when printing stage exception
+- osd: Check that all OSDs are "in" during restart (bsc#1153310)
+
+-------------------------------------------------------------------
 Wed Oct 09 10:11:00 UTC 2019 - jschmid@suse.com
 
 - Version: 0.8.13
