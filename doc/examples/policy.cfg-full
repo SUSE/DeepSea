@@ -1,0 +1,61 @@
+## Cluster Assignment
+cluster-ceph/cluster/*.sls
+
+## Roles
+# ADMIN
+role-master/cluster/admin*.sls
+role-admin/cluster/admin*.sls
+
+# Monitoring
+role-prometheus/cluster/admin*.sls
+role-grafana/cluster/admin*.sls
+
+# MON
+role-mon/cluster/mon*.sls
+
+# MGR (mgrs are usually colocated with mons)
+role-mgr/cluster/mon*.sls
+
+# MDS
+role-mds/cluster/mds*.sls
+
+# IGW
+role-igw/cluster/igw*.sls
+
+# RGW
+role-rgw/cluster/rgw*.sls
+
+# NFS
+role-ganesha/cluster/ganesha*.sls
+
+# BENCHMARKS
+
+# benchmark-blockdev
+role-benchmark-blockdev/cluster/benchmark-blockdev*.sls
+
+# benchmark-fs
+role-benchmark-fs/cluster/benchmark-fs*.sls
+
+# benchmark-rbd
+role-benchmark-rbd/cluster/benchmark-rbd*.sls
+
+# CLIENTS
+
+# client-cephfs
+role-client-cephfs/cluster/client-cephfs*.sls
+
+# client-iscsi
+role-client-iscsi/cluster/client-iscsi*.sls
+
+# client-nfs
+role-client-nfs/cluster/client-nfs*.sls
+
+# client-radosgw
+role-client-radosgw/cluster/client-radosgw*.sls
+
+# COMMON
+config/stack/default/global.yml
+config/stack/default/ceph/cluster.yml
+
+# Storage
+role-storage/cluster/data*.sls
