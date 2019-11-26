@@ -91,6 +91,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %{_bindir}/deepsea
 %{python_sitelib}/deepsea/
 %{python_sitelib}/deepsea-%{version}-py%{python_version}.egg-info
+/srv/modules/modules/*.py*
 /srv/modules/pillar/stack.py*
 %dir /srv/modules/runners
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
@@ -362,13 +363,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/time/ntp
 %dir /srv/salt/ceph/time/ntp/files
 %dir /srv/salt/ceph/tuned
-%dir /srv/salt/ceph/tuned/mgr
-%dir /srv/salt/ceph/tuned/mon
-%dir /srv/salt/ceph/tuned/osd
+%dir /srv/salt/ceph/tuned/latency
+%dir /srv/salt/ceph/tuned/throughput
+%dir /srv/salt/ceph/tuned/off
 %dir /srv/salt/ceph/tuned/files
-%dir /srv/salt/ceph/tuned/files/ceph-mgr
-%dir /srv/salt/ceph/tuned/files/ceph-mon
-%dir /srv/salt/ceph/tuned/files/ceph-osd
 %dir /srv/salt/ceph/maintenance
 %dir /srv/salt/ceph/maintenance/upgrade
 %dir /srv/salt/ceph/maintenance/noout
@@ -678,12 +676,11 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/time/*.sls
 %config /srv/salt/ceph/time/ntp/*.sls
 %config /srv/salt/ceph/time/ntp/files/*.j2
-%config /srv/salt/ceph/tuned/mgr/*.sls
-%config /srv/salt/ceph/tuned/mon/*.sls
-%config /srv/salt/ceph/tuned/osd/*.sls
-%config /srv/salt/ceph/tuned/files/ceph-mgr/tuned.conf
-%config /srv/salt/ceph/tuned/files/ceph-mon/tuned.conf
-%config /srv/salt/ceph/tuned/files/ceph-osd/tuned.conf
+%config /srv/salt/ceph/tuned/latency/*.sls
+%config /srv/salt/ceph/tuned/throughput/*.sls
+%config /srv/salt/ceph/tuned/off/*.sls
+%config /srv/salt/ceph/tuned/files/latency.conf
+%config /srv/salt/ceph/tuned/files/throughput.conf
 %config /srv/salt/ceph/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls
