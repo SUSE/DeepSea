@@ -101,6 +101,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/fio
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks/templates
 %dir /srv/modules
+%dir /srv/modules/modules
 %dir /srv/modules/pillar
 %dir /srv/salt/_modules
 %dir /srv/salt/_states
