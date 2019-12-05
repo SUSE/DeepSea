@@ -82,7 +82,7 @@ class Util(object):
                     'The minion function caused an exception'):
                 log.error(osd_metadata)
                 return dict()
-        if isinstance(osd_metadata, list):
+        if isinstance(osd_metadata, list) and osd_metadata:
             return osd_metadata[0]
         return dict()
 
