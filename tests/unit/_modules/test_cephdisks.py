@@ -19,6 +19,7 @@ def test_fix():
                 c.devices = DeviceFactory(dict(pieces=1)).produce()
             c.device = SimpleDevice
             c.root_disk = '/dev/sda'
+            c.raid_devices = set([])
             return c
 
     return make_sample_data
@@ -45,6 +46,7 @@ class TestInventory(object):
     def test_osd_list(self):
         pass
 
+
     @patch(
         "srv.salt._modules.cephdisks.open",
         new_callable=mock_open,
@@ -70,6 +72,24 @@ class TestInventory(object):
     def test_find_root_disk_vnme(self, open_mock, test_fix):
         ret = test_fix()._find_root_disk()
         assert ret is None
+
+    @patch('srv.salt._modules.cephdisks.Popen')
+    def test_find_raid_dev(self, po, test_fix):
+        po.return_value.communicate.return_value = (b'md126 : active raid1 sdb1[0] sdd1[1]\nmd127 : active raid0 sdb2[0] sdd2[1]\n', '')
+        ret = test_fix()._find_raid_devices()
+        assert ret == set({'/dev/sdb', '/dev/sdd'})
+
+    @patch('srv.salt._modules.cephdisks.Popen')
+    def test_find_raid_dev_empty(self, po, test_fix):
+        po.return_value.communicate.return_value = (b'', '')
+        ret = test_fix()._find_raid_devices()
+        assert ret == set([])
+
+    @patch('srv.salt._modules.cephdisks.Popen')
+    def test_find_raid_nvme(self, po, test_fix):
+        po.return_value.communicate.return_value = (b'md126 : active raid1 nvme0n1p1[0] nvme0n1p2[1]\nmd127 : active raid0 sdb2[0] sdd2[1]\n', '')
+        ret = test_fix()._find_raid_devices()
+        assert ret == set({'/dev/sdb', '/dev/nvme0n1', '/dev/sdd'})
 
     def test_is_cdrom(self, test_fix):
         inv = test_fix()
