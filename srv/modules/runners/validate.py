@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import logging
 import ipaddress
+import socket
 import json
 import os
 from os.path import dirname
@@ -292,6 +293,27 @@ class Validate(Preparation):
         """
         if self.in_dev_env:
             self.passed['DEV_ENV'] = "True"
+
+    def unresolved(self):
+        """
+        Check for unresolved addresses
+        """
+        __opts__ = salt.config.client_config('/etc/salt/master')
+        __grains__ = salt.loader.grains(__opts__)
+        failing = []
+        for protocol in ['ipv4', 'ipv6']:
+            for address in __grains__[protocol]:
+                # pylint: disable=bare-except
+                try:
+                    socket.gethostbyaddr(address)
+                except:
+                    failing.append(address)
+        if failing:
+            self.warnings['unresolved'] = (
+                 ", ".join(failing) +
+                 "  - Consider adding these to /etc/hosts\n")
+        else:
+            self.passed['unresolved'] = "valid"
 
     def fsid(self):
         """
@@ -1485,6 +1507,7 @@ def setup(**kwargs):
         valid.report()
         return True
     valid = Validate("setup", search_pillar=True, printer=printer)
+    valid.unresolved()
     valid.deepsea_minions()
     valid.master_minion()
     valid.ceph_version()
