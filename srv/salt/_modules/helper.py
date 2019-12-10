@@ -48,18 +48,20 @@ def run(cmd, shell=False):
         shell = True
 
     log.info("executing: {cmd}".format(cmd=cmd))
-    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=shell)
-    _stdout = convert_out(proc.stdout.read())
-    _stdout = _stdout.rstrip()
+    _stdout = ''
+    _stderr = ''
+    try:
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=shell)
+        _stdout, _stderr = proc.communicate()
+        _stdout = convert_out(_stdout).rstrip()
+        _stderr = convert_out(_stderr).rstrip()
+        _retcode = proc.wait()
+    except OSError as erroro:
+        log.info("""
+execution of {cmd} failed with error {errno}: {reason}
+        """.format(cmd=cmd, errno=erroro.errno, reason=erroro.strerror))
+        _retcode = 127
 
-    _stderr = convert_out(proc.stderr.read())
-    _stderr = _stderr.rstrip()
-
-    _retcode = proc.wait()
-    log.debug("returncode of {cmd}: {rc}".format(cmd=cmd, rc=_retcode))
-
-    log.debug("""stdout of {cmd}:
-{out}""".format(cmd=cmd, out=pprint.pformat(_stdout)))
-    log.debug("""stderr of {cmd}:
-{out}""".format(cmd=cmd, out=pprint.pformat(_stderr)))
+    log.debug("""stdout of {cmd}: {out}""".format(cmd=cmd, out=pprint.pformat(_stdout)))
+    log.debug("""stderr of {cmd}: {out}""".format(cmd=cmd, out=pprint.pformat(_stderr)))
     return _retcode, _stdout, _stderr
