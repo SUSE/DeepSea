@@ -409,6 +409,50 @@ class OSDWeight(object):
         return msg
 
 
+# pylint: disable=too-few-public-methods
+class OSDCrush(object):
+    """
+    Query various osd crush commands
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Initialize settings, connect to Ceph cluster
+        """
+        self.settings = {
+            'conf': "/etc/ceph/ceph.conf",
+            'timeout': 120,
+            'keyring': '/etc/ceph/ceph.client.admin.keyring',
+            'client': 'client.admin',
+            'delay': 12
+        }
+        self.settings.update(kwargs)
+        log.debug("settings: {}".format(pprint.pformat(self.settings)))
+        self.cluster = rados.Rados(conffile=self.settings['conf'],
+                                   conf=dict(keyring=self.settings['keyring']),
+                                   name=self.settings['client'])
+        try:
+            self.cluster.connect()
+        except Exception as error:
+            raise RuntimeError("connection error: {}".format(error))
+
+    def alg(self):
+        """
+        Returns a dict of algorithms and list of buckets
+        """
+        cmd = json.dumps({"prefix": "osd crush dump", "format": "json"})
+        _, output, _ = self.cluster.mon_command(cmd, b'', timeout=6)
+        output = json.loads(output.decode())
+        log.debug(pprint.pformat(output))
+        algorithms = {}
+        try:
+            for bucket in output['buckets']:
+                algorithms.setdefault(bucket['alg'], []).append(bucket['name'])
+        except KeyError:
+            pass
+        return algorithms
+
+
 class CephPGs(object):
     """
     Query PG states and pause until all are active+clean
@@ -666,6 +710,15 @@ def wait_until_empty(osd_id, **kwargs):
     OSDDevices()
     osdw = OSDWeight(osd_id, **settings)
     return osdw.wait()
+
+
+def alg(**kwargs):
+    """
+    Return the algorithms and buckets
+    """
+    settings = _settings(**kwargs)
+    osdc = OSDCrush(**settings)
+    return osdc.alg()
 
 
 class OSDDevices(object):

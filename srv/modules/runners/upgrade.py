@@ -84,6 +84,27 @@ class UpgradeValidation(object):
                 ******************************************"""
         return False, msg
 
+    def deprecated_straw(self):
+        """
+        Check if the straw algorithm is still in use
+        """
+        search = "I@roles:master"
+        algs = self.local.cmd(search, 'osd.alg', [], tgt_type="compound")
+        result = list(algs.values())[0]
+        if 'straw' in result:
+            msg = """
+                ************** PLEASE READ ***************
+                The following buckets are configured using
+                the deprecated straw algorithm.
+
+                {}
+
+                Run `ceph osd crush set-all-straw-buckets-to-straw2`
+                ******************************************
+                """.format(", ".join(result['straw']))
+            return False, msg
+        return True, ""
+
 
 def help_():
     """
@@ -103,7 +124,8 @@ def check():
     """
     uvo = UpgradeValidation()
     checks = [uvo.is_master_standalone,
-              uvo.is_supported]  # , uvo.colocated_services]
+              uvo.is_supported,
+              uvo.deprecated_straw]  # , uvo.colocated_services]
     for chk in checks:
         ret, msg = chk()
         if not ret:
