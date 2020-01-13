@@ -46,7 +46,6 @@ class TestInventory(object):
     def test_osd_list(self):
         pass
 
-
     @patch(
         "srv.salt._modules.cephdisks.open",
         new_callable=mock_open,
@@ -94,6 +93,10 @@ class TestInventory(object):
     def test_is_cdrom(self, test_fix):
         inv = test_fix()
         assert inv._is_cdrom('/dev/sr0') is True
+
+    def test_is_mdraid(self, test_fix):
+        inv = test_fix()
+        assert inv._is_mdraid('/dev/md127') is True
 
     def test_is_cdrom_10(self, test_fix):
         inv = test_fix()
@@ -219,6 +222,15 @@ class TestInventory(object):
         inv = test_fix(conf)
         ret = inv.filter_()
         assert len(ret) == 1
+
+    def test_filter_mdraid(self, test_fix):
+        conf = dict(
+            pieces=1,
+            device_config=dict(
+                path='/dev/md127'))
+        inv = test_fix(conf)
+        ret = inv.filter_()
+        assert len(ret) == 0
 
     @pytest.mark.skip(reason="Offloaded to ceph-volume")
     def test_find_by_osd_id(self):
