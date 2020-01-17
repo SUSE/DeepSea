@@ -178,6 +178,13 @@ class Inventory(object):
             return True
         return False
 
+    @staticmethod
+    def _is_mdraid(path: str) -> bool:
+        """ Always skip software raid setups """
+        if path.split('/')[-1].startswith('md'):
+            return True
+        return False
+
     def _has_sufficient_size(self, size: float) -> bool:
         """ Skip disks that are small than a defined threshold """
         # due to: todo http://tracker.ceph.com/issues/40776
@@ -235,13 +242,20 @@ class Inventory(object):
             if self._is_cdrom(dev.path):
                 log.debug(f"Skipping disk <{dev.path}> due to <cdrom> filter")
                 continue
+
+            if self._is_mdraid(dev.path):
+                log.debug(f"Skipping disk <{dev.path}> due to <mdraid> filter")
+                continue
+
             if self._is_rbd(dev.path):
                 log.debug(f"Skipping disk <{dev.path}> due to <rbd> filter")
                 continue
+
             if not self._has_sufficient_size(dev.size):
                 log.debug(
                     f"Skipping disk <{dev.path}> due to <too_small> filter")
                 continue
+
             # due to: todo http://tracker.ceph.com/issues/40799
             if dev.is_mapper and dev.is_encrypted:
                 log.debug(
