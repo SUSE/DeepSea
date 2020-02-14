@@ -120,7 +120,7 @@ class CephIscsiConfig(object):
         "emulate_dpo": 1,
         "emulate_fua_read": 1,
         "emulate_fua_write": 1,
-        "emulate_model_alias": 1,
+        "emulate_model_alias": 0,
         "emulate_pr": 1,
         "emulate_rest_reord": 0,
         "emulate_tas": 1,
@@ -140,7 +140,7 @@ class CephIscsiConfig(object):
         "queue_depth": 256,
         "unmap_granularity": 8192,
         "unmap_granularity_alignment": 0,
-        "unmap_zeroes_data": 8192
+        "unmap_zeroes_data": 0
     }
 
     target_controls_defaults = {
