@@ -55,18 +55,7 @@ class TestOSDInstanceMethods():
         pass
 
     @mock.patch('srv.salt._modules.osd.glob')
-    def test_list_(self, glob):
-        glob.return_value.glob = []
-        osd.__grains__ = {'ceph': {'foo': 'mocked_grain'}}
-        ret = osd.list_()
-        glob.glob.assert_called_once()
-        glob.glob.assert_called_with('/var/lib/ceph/osd/*/fsid')
-        assert 'foo' in ret
-        assert type(ret) is list
-        osd.__grains__ = {}
-
-    @mock.patch('srv.salt._modules.osd.glob')
-    def test_list_no_grains(self, glob):
+    def test_list(self, glob):
         glob.return_value.glob = []
         ret = osd.list_()
         glob.glob.assert_called_once()

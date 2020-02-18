@@ -148,14 +148,7 @@ def list_():
     mounted = [path.split('-')[1][:-5]
                for path in glob.glob("/var/lib/ceph/osd/*/fsid") if '-' in path]
     log.info("mounted osds {}".format(mounted))
-    # the 'ceph' grain will disappear over time.
-    # the 'remove osd' operation will remove the grain
-    # but the disks.deploy function will not add new a new one
-    if 'ceph' in __grains__:
-        grains = list(__grains__['ceph'].keys())
-    else:
-        grains = []
-    return list(set(mounted + grains))
+    return mounted
 
 
 def rescinded():
