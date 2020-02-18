@@ -26,8 +26,7 @@ sync time:
     - fire_event: True
 
 start ntp:
-  service.running:
-    - name: ntpd
-    - enable: True
+  cmd.run:
+    - name: "systemctl enable ntpd.service && systemctl start ntpd.service"
 {% endif %}
 
