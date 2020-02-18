@@ -89,6 +89,7 @@ disable =
   W0141,
   W1202,
   W8470,
+  W8410,
   C0330,
   I0011,
   I0012,
@@ -105,6 +106,7 @@ disable =
 # W0142 (star-args)
 # W1202 (logging-format-interpolation)
 # W8470 (resource-leakage)
+# W8410 (3rd-party-module-not-gated)
 # Convention
 # C0330 (bad-continuation)
 # Other
