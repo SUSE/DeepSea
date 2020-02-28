@@ -334,7 +334,7 @@ class TestValidation():
         validator.ceph_updates()
         assert len(validator.errors) == 0
         assert len(validator.warnings) == 1
-        assert "On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
+        assert "One or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
 
     @patch('salt.client.LocalClient', autospec=True)
     def test_ceph_updates_1(self, mock_localclient):
@@ -374,7 +374,7 @@ class TestValidation():
         validator.ceph_updates()
         assert len(validator.errors) == 0
         assert len(validator.warnings) == 2
-        assert "On or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
+        assert "One or more of your minions have updates pending that might cause ceph-daemons to restart. This might extend the duration of this Stage depending on your cluster size." in validator.warnings['ceph_updates'][0]
         assert "Experienced trouble refreshing the repositories" in validator.warnings['refresh_repos'][0]
 
     @patch('salt.client.LocalClient', autospec=True)

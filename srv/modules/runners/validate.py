@@ -1096,7 +1096,7 @@ class Validate(Preparation):
             self.passed['ceph_updates'] = "valid"
         else:
             # pylint: disable=line-too-long
-            msg = ("On or more of your minions have updates pending "
+            msg = ("One or more of your minions have updates pending "
                    "that might cause ceph-daemons to restart. "
                    "This might extend the duration of this "
                    "Stage depending on your cluster size. "
