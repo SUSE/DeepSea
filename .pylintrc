@@ -59,7 +59,28 @@ allowed-3rd-party-modules = msgpack,
   libcloud,
   zmq,
   pytest,
-  pytestsalt
+  pytestsalt,  
+  hashlib,
+  shlex,
+  struct,
+  base64,
+  logging,
+  multiprocessing.dummy,
+  multiprocessing,
+  socket,
+  typing,
+  xml.etree.ElementTree, 
+  shutil,  
+  pprint,
+  os,
+  os.path,
+  re,
+  glob,
+  subprocess,
+  collections,
+  json,
+  logging,
+  xml
 
 [MESSAGES CONTROL]
 # Only show warnings with the listed confidence levels. Leave empty to show
@@ -89,6 +110,7 @@ disable =
   W0141,
   W1202,
   W8470,
+  W8410,
   C0330,
   I0011,
   I0012,
@@ -105,6 +127,7 @@ disable =
 # W0142 (star-args)
 # W1202 (logging-format-interpolation)
 # W8470 (resource-leakage)
+# W8410 (3rd-party-module-not-gated)
 # Convention
 # C0330 (bad-continuation)
 # Other
