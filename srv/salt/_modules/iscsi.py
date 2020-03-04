@@ -239,8 +239,10 @@ class CephIscsiConfig(object):
                         '(Each attr must have the same value for all disks in the targets) - '
                         'Check attr {} on {}'.format(attr, path))
                 if str(self.controls_defaults[attr]) != content:
-                    if isinstance(content, int):
+                    try:
                         content = int(content)
+                    except ValueError:
+                        pass
                     controls_overrides[attr] = content
         return controls_overrides
 
