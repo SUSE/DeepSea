@@ -143,8 +143,21 @@ def iperf(cluster=None, exclude=None, remove=None, output=None, **kwargs):
         p_result = _create_client(public_addresses)
         _create_server(cluster_addresses)
         c_result = _create_client(cluster_addresses)
-        p_sort = _add_unit(sorted(list(p_result.items()),
+        p_valid = {}
+        for address in p_result:
+            if isinstance(p_result[address], float) or isinstance(p_result[address], int):
+                p_valid.update({address: p_result[address]})
+            else:
+                log.error("Failure: {}".format(p_result[address]))
+        p_sort = _add_unit(sorted(list(p_valid.items()),
                                   key=operator.itemgetter(1), reverse=True))
+
+        c_valid = {}
+        for address in c_result:
+            if isinstance(c_result[address], float) or isinstance(c_result[address], int):
+                c_valid.update({address: c_result[address]})
+            else:
+                log.error("Failure: {}".format(c_result[address]))
         c_sort = _add_unit(sorted(list(c_result.items()),
                                   key=operator.itemgetter(1), reverse=True))
 
