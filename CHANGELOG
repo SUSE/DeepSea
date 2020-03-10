@@ -1,4 +1,18 @@
 -------------------------------------------------------------------
+Tue Mar 10 12:35:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.28
+- Correct spelling typo (bsc#1154489)
+- Validate iperf results from modules (bsc#1164869)
+- Do not rely on isinstance (bsc#1164571)
+- Create disabled files to simplify removal instructions (SES-769)
+- Fix iSCSI default values
+- Grains are not used by ceph-volume (bsc#1160172)
+- cephdisks: exclude mdraid devices (bsc#1158196)
+- Add upgrade check for `straw` algorithm (SES-356)
+- use non-blocking i/o with .wait (bsc#1158184)
+
+-------------------------------------------------------------------
 Fri Dec 18 15:41:00  UTC 2019 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.27
