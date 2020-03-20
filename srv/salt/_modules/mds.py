@@ -11,12 +11,15 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def get_name(host):
+def get_name(host, i=0):
     """
     In most cases we use the hostname of the machine as the MDS name. However
     MDS names must not start with a digit, so filter those out and prefix them
     with "mds.".
     """
+    name = host
     if host[0].isdigit():
-        return 'mds.{}'.format(host)
-    return host
+        name = 'mds.{}'.format(name)
+    if i != 0:
+        name = '{}-{}'.format(name, i + 1)
+    return name
