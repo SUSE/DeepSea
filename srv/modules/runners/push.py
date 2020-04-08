@@ -51,11 +51,9 @@ import glob
 import logging
 import re
 import shutil
-import sys
 import yaml
-sys.path.append('/srv/modules/pillar')
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin,wrong-import-position
-from stack import _merge_dict
+from salt.pillar.stack import _merge_dict
 
 
 log = logging.getLogger(__name__)

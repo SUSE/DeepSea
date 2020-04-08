@@ -95,7 +95,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 
 %files
 %defattr(-,root,root,-)
-/srv/modules/pillar/stack.py*
 %dir %attr(0755, salt, salt) /srv/pillar/ceph
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/stack
 %dir %attr(0755, salt, salt) /srv/pillar/ceph/benchmarks
@@ -108,7 +107,6 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/modules/modules
 %dir /srv/modules/runners
 %dir /srv/modules/utils/
-%dir /srv/modules/pillar
 %dir %attr(0755, salt, salt) /srv/salt/ceph
 %dir /srv/salt/ceph/admin
 %dir %attr(0700, salt, salt) /srv/salt/ceph/admin/cache
