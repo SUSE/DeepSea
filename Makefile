@@ -177,9 +177,6 @@ copy-files:
 	# pillar
 	install -d -m 755 $(DESTDIR)$(DOCDIR)/deepsea/pillar
 	install -m 644 doc/pillar/* $(DESTDIR)$(DOCDIR)/deepsea/pillar/
-	# stacky.py (included in salt 2016.3)
-	install -d -m 755 $(DESTDIR)/srv/modules/pillar
-	install -m 644 srv/modules/pillar/stack.py $(DESTDIR)/srv/modules/pillar/
 	# modules
 	install -d -m 755 $(DESTDIR)/srv/modules/modules
 	install -m 644 srv/modules/modules/*.py* $(DESTDIR)/srv/modules/modules/
