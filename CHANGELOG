@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Apr 23 11:05:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.29
+- Use salt's stack.py (bsc#1167571)
+
+-------------------------------------------------------------------
 Tue Mar 10 12:35:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.28
