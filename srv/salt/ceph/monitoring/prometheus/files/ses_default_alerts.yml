@@ -125,8 +125,10 @@ groups:
             Node {{ $labels.instance }} experiences packet errors > 1
             packet/s on interface {{ $lables.device }}
       # predict fs fillup times
-      - alert: storage filling
-        expr: ((node_filesystem_free - node_filesystem_size) / deriv(node_filesystem_free[2d]) <= 5) > 0
+      - alert: storage filling up
+        expr: |
+          predict_linear(node_filesystem_free[2d], 3600 * 24 * 5) *
+          on(instance) group_left(nodename) node_uname_info < 0
         labels:
           severity: warning
           type: ses_default
@@ -144,7 +146,9 @@ groups:
         annotations:
           description: Pool {{ $labels.pool }} at 90% capacity or over
       - alert: pool filling up
-        expr: (-ceph_pool_used_bytes / deriv(ceph_pool_available_bytes[2d]) <= 5 ) > 0
+        expr: |
+            predict_linear(ceph_pool_used_bytes[2d], 3600 * 24 * 5) >=
+            ceph_pool_available_bytes
         labels:
           severity: warning
           type: ses_default
