@@ -216,6 +216,7 @@ class OSDUtil(Util):
         try:
             self._service('disable')
             self._service('stop')
+            self._mark_osd('down')
             # The original implementation
             # pkilled (& -9 -f'd ) the osd-process
             # including a double check with pgrep
