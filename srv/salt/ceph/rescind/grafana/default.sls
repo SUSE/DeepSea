@@ -21,10 +21,12 @@ grafana:
     - name: grafana
     - fire_event: true
 
+{% if 'mgr' not in salt['pillar.get']('roles') %}
 ceph grafana dashboard:
   pkg.removed:
     - name: ceph-grafana-dashboards
     - fire_event: true
+{% endif %}
 
 /etc/grafana/provisioning/datasources/ses_datasource.yaml:
   file.absent
