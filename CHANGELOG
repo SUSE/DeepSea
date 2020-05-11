@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue May 11 16:02:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
+
+- Version: 0.9.30
+- osd: forcefully mark an osd as down after stopping the service (bsc#1171451)
+
+-------------------------------------------------------------------
 Tue Apr 23 11:05:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.29
