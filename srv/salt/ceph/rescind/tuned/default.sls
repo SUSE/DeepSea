@@ -4,8 +4,7 @@ prevent empty rendering:
 
 {% set roles = salt['pillar.get']('roles') %}
 
-{% if 'storage' not in roles and 'mon' not in roles and
-        'mgr' not in roles %}
+{% if roles == [] %}
 
 uninstall tuned:
   pkg.removed:
