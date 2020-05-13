@@ -767,6 +767,12 @@ class DriveGroup(object):
             for disk in self.disks:
                 log.debug("Processing disk {}".format(disk.get('path')))
                 # continue criterias
+                if not disk.get('available'):
+                    log.debug(
+                        "Ignoring disk {}. Disk is not available".format(
+                            disk.get('path')))
+                    continue
+
                 if not _filter.is_matchable:
                     log.debug(
                         "Ignoring disk {}. Filter is not matchable".format(
