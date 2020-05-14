@@ -10,6 +10,12 @@ validate failed:
 
 {% endif %}
 
+sync:
+  salt.state:
+    - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+    - tgt_type: compound
+    - sls: ceph.sync
+
 push proposals:
   salt.runner:
     - name: push.proposal
