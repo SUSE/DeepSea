@@ -17,10 +17,19 @@ log = logging.getLogger(__name__)
 try:
     # pylint: disable=unused-import
     from ceph_volume.util.device import Device
+    from ceph_volume.util.disk import blkid
 except ModuleNotFoundError:
     log.debug("Could not load ceph_volume. Make sure to install ceph")
 except ImportError:
     log.debug("Could not load ceph_volume. Make sure to install ceph")
+
+try:
+    blkid
+except NameError:
+    # pylint: disable=function-redefined, unused-argument
+    def blkid(path):
+        """ stub for tests """
+        return {}
 
 USAGE = """
 
@@ -767,6 +776,11 @@ class DriveGroup(object):
             for disk in self.disks:
                 log.debug("Processing disk {}".format(disk.get('path')))
                 # continue criterias
+                if self._has_gpt(disk):
+                    log.debug(
+                        "Ignoring disk {}. GPT headers present".format(
+                            disk.get('path')))
+                    continue
                 if not _filter.is_matchable:
                     log.debug(
                         "Ignoring disk {}. Filter is not matchable".format(
@@ -801,6 +815,13 @@ class DriveGroup(object):
         # return sorted([x.get('path') for x in devices])
         return sorted([x for x in devices],
                       key=lambda dev: dev.get('path', ''))
+
+    @staticmethod
+    def _has_gpt(disk: dict) -> bool:
+        """ Check for GPT headers
+        """
+        blkid_dict = blkid(disk.get('path'))
+        return 'PTTYPE' in blkid_dict and blkid_dict['PTTYPE'] == 'gpt'
 
     @staticmethod
     def _has_mandatory_idents(disk: dict) -> bool:
