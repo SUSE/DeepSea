@@ -252,6 +252,14 @@ def report(**kwargs):
     return DriveGroups(**kwargs).call_out('deploy', alias='report')
 
 
+def inventory(**kwargs):
+    """ Get the OSD deployment report """
+    ret = report(**kwargs)
+    ignored = DriveGroups(**kwargs).call_out('ignored')
+    ret.extend(ignored)
+    return ret
+
+
 def help_():
     """ Help/Usage class
     """
