@@ -1299,6 +1299,7 @@ Please make sure to have more/equal wal_devices than db_devices"""
             return self.ret.get('errors')
 
         def chunks(seq, size):
+            # TODO: This is probably not needed anymore with https://github.com/ceph/ceph/pull/34740
             """ Splits a sequence in evenly sized chunks"""
             return (seq[i::size] for i in range(size))
 
@@ -1435,12 +1436,12 @@ def list_(**kwargs):
 
 def c_v_commands(**kwargs):
     """ User facing ceph-volume command call """
-    return Output(**kwargs, cephdisks_mode='unused').generate_c_v_commands()
+    return Output(**kwargs, cephdisks_mode='all').generate_c_v_commands()
 
 
 def deploy(**kwargs):
     """ User facing deploy call """
-    return Output(**kwargs, cephdisks_mode='unused').deploy()
+    return Output(**kwargs, cephdisks_mode='all').deploy()
 
 
 def _help():
