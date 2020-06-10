@@ -239,6 +239,63 @@ def status():
     return ""
 
 
+def ceph_salt_config():
+    """
+    Generate minimal JSON suitable for import into ceph-salt, based on DeepSea
+    configration.  Call via `salt-run upgrade.ceph_salt_config --out=json`
+    """
+    config = {
+        'minions': {
+            'all': [],
+            'admin': [],
+            'cephadm': []
+        },
+        'bootstrap_minion': None,
+        'bootstrap_mon_ip': None,
+        'dashboard': {
+            # These values are just so the display gives an indication of what's
+            # really going to happen when the user runs `ceph-salt config ls`
+            # (the dashboard won't be reconfigured during an upgrade)
+            'username': 'USE EXISTING',
+            'password': 'USE EXISTING',
+            'password_update_required': False
+        },
+        'time_server': {
+            'enabled': True,
+            'external_time_servers': ['pool.ntp.org'],
+            'server_host': '',
+            'subnet': None
+        }
+    }
+
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    master_minion = __salt__['master.minion']()
+
+    runner = salt.runner.RunnerClient(__opts__)
+    mon_ips = dict(runner.cmd('select.public_addresses',
+                              ['cluster=ceph', 'roles=mon', 'tuples=True'], print_event=False))
+
+    local = salt.client.LocalClient()
+    roles = local.cmd("I@cluster:ceph", 'pillar.get', ['roles'], tgt_type="compound")
+
+    for node in sorted(roles):
+        config['minions']['all'].append(node)
+        config['minions']['cephadm'].append(node)
+        if 'master' in roles[node] or 'admin' in roles[node]:
+            config['minions']['admin'].append(node)
+        if not config['bootstrap_minion'] and 'mon' in roles[node]:
+            config['bootstrap_minion'] = node
+            config['bootstrap_mon_ip'] = mon_ips[node]
+
+    config['time_server']['server_host'] = list(
+        local.cmd(master_minion, 'pillar.get', ['time_server']).items())[0][1]
+
+    return config
+
 __func_alias__ = {
     'help_': 'help',
 }
