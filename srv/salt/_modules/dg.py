@@ -1298,11 +1298,6 @@ Please make sure to have more/equal wal_devices than db_devices"""
         if self._find_conflicts():
             return self.ret.get('errors')
 
-        def chunks(seq, size):
-            # TODO: This is probably not needed anymore with https://github.com/ceph/ceph/pull/34740
-            """ Splits a sequence in evenly sized chunks"""
-            return (seq[i::size] for i in range(size))
-
         if self.dgo.format == 'filestore':
             cmd = "ceph-volume lvm batch"
 
@@ -1335,54 +1330,36 @@ Please make sure to have more/equal wal_devices than db_devices"""
 
         if self.dgo.format == 'bluestore':
 
-            chunks_wal_devices = list(chunks(wal_devices, len(db_devices)))
-            chunks_db_devices = list(chunks(db_devices, len(db_devices)))
-            chunks_data_devices = list(chunks(data_devices, len(db_devices)))
+            cmd = "ceph-volume lvm batch --no-auto"
 
-            commands = []
+            cmd += " {}".format(" ".join(data_devices))
 
-            for i in range(0, len(db_devices)):
-                cmd = "ceph-volume lvm batch --no-auto"
-                cmd += " {}".format(" ".join(chunks_data_devices[i]))
-                cmd += " --db-devices {}".format(" ".join(
-                    chunks_db_devices[i]))
-                if chunks_wal_devices[i]:
-                    cmd += " --wal-devices {}".format(" ".join(
-                        chunks_wal_devices[i]))
-                commands.append(cmd)
+            if db_devices:
+                cmd += " --db-devices {}".format(" ".join(db_devices))
+            if wal_devices:
+                cmd += " --wal-devices {}".format(" ".join(wal_devices))
 
-            if not db_devices:
-                cmd = "ceph-volume lvm batch --no-auto {}".format(
-                    " ".join(data_devices))
-                commands.append(cmd)
+            if self.dry_run:
+                cmd += " --report"
+            else:
+                cmd += " --yes"
 
-            # pylint: disable=consider-using-enumerate
-            for i in range(0, len(commands)):
-                if self.dry_run:
-                    commands[i] += " --report"
-                else:
-                    commands[i] += " --yes"
-                # how is that working now? That might get
-                # passed multiple times.. How is c-v reacting
-                if appendix:
-                    commands[i] += appendix
+            if appendix:
+                cmd += appendix
 
-                if self.dgo.encryption:
-                    commands[i] += " --dmcrypt"
+            if self.dgo.encryption:
+                cmd += " --dmcrypt"
 
-                if self.dgo.block_wal_size:
-                    commands[i] += " --block-wal-size {}".format(
-                        self.dgo.block_wal_size)
+            if self.dgo.block_wal_size:
+                cmd += " --block-wal-size {}".format(self.dgo.block_wal_size)
 
-                if self.dgo.block_db_size:
-                    commands[i] += " --block-db-size {}".format(
-                        self.dgo.block_db_size)
+            if self.dgo.block_db_size:
+                cmd += " --block-db-size {}".format(self.dgo.block_db_size)
 
-                if self.dgo.osds_per_device:
-                    commands[i] += " --osds-per-device {}".format(
-                        self.dgo.osds_per_device)
+            if self.dgo.osds_per_device:
+                cmd += " --osds-per-device {}".format(self.dgo.osds_per_device)
 
-            return commands
+            return [cmd]
 
     def _check_for_old_profiles(self):
         """ Check if old profiles are present. Do not deploy if present """
