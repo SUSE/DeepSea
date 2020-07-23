@@ -1,6 +1,7 @@
 install node exporter package:
   pkg.installed:
     - name: golang-github-prometheus-node_exporter
+    - version: 0.14.0
     - refresh: True
     - fire_event: True
 
