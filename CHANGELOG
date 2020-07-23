@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jul 23 17:07:00 UTC 2020 - jschmid@suse.com
+
+- Version: 0.8.15
+- monitoring: prevent installation of node_exporter update due to LTTS (bsc#1174292)
+
+-------------------------------------------------------------------
 Wed Nov 26 11:26:00 UTC 2019 - jschmid@suse.com
 
 - Version: 0.8.14
