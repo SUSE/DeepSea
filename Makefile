@@ -244,6 +244,15 @@ copy-files:
 	install -m 644 srv/salt/ceph/cephfs/benchmarks/*.sls $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files
 	install -m 644 srv/salt/ceph/cephfs/benchmarks/files/keyring.j2 $(DESTDIR)/srv/salt/ceph/cephfs/benchmarks/files/
+	# state files crash
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/crash
+	install -m 644 srv/salt/ceph/crash/*.sls $(DESTDIR)/srv/salt/ceph/crash/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/crash/auth
+	install -m 644 srv/salt/ceph/crash/auth/*.sls $(DESTDIR)/srv/salt/ceph/crash/auth/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/crash/key
+	install -m 644 srv/salt/ceph/crash/key/*.sls $(DESTDIR)/srv/salt/ceph/crash/key/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/crash/files
+	install -m 644 srv/salt/ceph/crash/files/*.j2 $(DESTDIR)/srv/salt/ceph/crash/files/
 	# state files tools
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/tools/fio
 	install -m 644 srv/salt/ceph/tools/fio/*.sls $(DESTDIR)/srv/salt/ceph/tools/fio
@@ -566,6 +575,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/rescind/admin/*.sls $(DESTDIR)/srv/salt/ceph/rescind/admin/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/configuration
 	install -m 644 srv/salt/ceph/rescind/configuration/*.sls $(DESTDIR)/srv/salt/ceph/rescind/configuration/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/crash
+	install -m 644 srv/salt/ceph/rescind/crash/*.sls $(DESTDIR)/srv/salt/ceph/rescind/crash/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi
 	install -m 644 srv/salt/ceph/rescind/client-iscsi/*.sls $(DESTDIR)/srv/salt/ceph/rescind/client-iscsi/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/rescind/ganesha

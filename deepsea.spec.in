@@ -122,6 +122,9 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/cephfs
 %dir /srv/salt/ceph/cephfs/benchmarks
 %dir /srv/salt/ceph/cephfs/benchmarks/files
+%dir /srv/salt/ceph/crash
+%dir /srv/salt/ceph/crash/auth
+%dir /srv/salt/ceph/crash/key
 %dir /srv/salt/ceph/metapackage
 %dir /srv/salt/ceph/dashboard
 %dir /srv/salt/ceph/salt-api
@@ -270,6 +273,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/rescind/admin
 %dir /srv/salt/ceph/rescind/alertmanager
 %dir /srv/salt/ceph/rescind/configuration
+%dir /srv/salt/ceph/rescind/crash
 %dir /srv/salt/ceph/rescind/client-cephfs
 %dir /srv/salt/ceph/rescind/client-iscsi
 %dir /srv/salt/ceph/rescind/client-nfs
@@ -476,6 +480,10 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/benchmarks/fs/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/*.sls
 %config /srv/salt/ceph/cephfs/benchmarks/files/keyring.j2
+%config /srv/salt/ceph/crash/*.sls
+%config /srv/salt/ceph/crash/auth/*.sls
+%config /srv/salt/ceph/crash/files/*.j2
+%config /srv/salt/ceph/crash/key/*.sls
 %config /srv/salt/ceph/metapackage/*.sls
 %config /srv/salt/ceph/dashboard/*.sls
 %config /srv/salt/ceph/salt-api/*.sls
@@ -615,6 +623,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/rescind/admin/*.sls
 %config /srv/salt/ceph/rescind/alertmanager/*.sls
 %config /srv/salt/ceph/rescind/configuration/*.sls
+%config /srv/salt/ceph/rescind/crash/*.sls
 %config /srv/salt/ceph/rescind/client-iscsi/*.sls
 %config /srv/salt/ceph/rescind/client-cephfs/*.sls
 %config /srv/salt/ceph/rescind/client-nfs/*.sls

@@ -38,7 +38,7 @@ install ceph packages:
     - sls: ceph.packages
     - failhard: True
 
-{% for role in [ 'admin', 'osd', 'mon', 'mgr', 'igw', 'mds', 'rgw', 'ganesha'] %}
+{% for role in [ 'admin', 'osd', 'mon', 'mgr', 'igw', 'mds', 'rgw', 'ganesha', 'crash'] %}
 {{ role }} key:
   salt.state:
     - tgt: {{ master }}
