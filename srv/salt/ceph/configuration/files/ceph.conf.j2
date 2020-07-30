@@ -12,12 +12,6 @@ public_network = {{ salt['pillar.get']('public_network') }}
 cluster_network = {{ salt['pillar.get']('cluster_network') }}
 ms_bind_msgr2 = false
 
-# enable old ceph health format in the json output. This fixes the
-# ceph_exporter. This option will only stay until the prometheus plugin takes
-# over
-mon_health_preluminous_compat = true
-mon health preluminous compat warning = false
-
 {% set ipv6=salt['public.ipv6']() %}
 {% if ipv6 %}
 ms bind ipv4 = {{ salt['public.ipv4']() | lower }}
