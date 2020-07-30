@@ -100,6 +100,18 @@ mgrs:
     - sls: ceph.mgr
     - failhard: True
 
+crash auth:
+  salt.state:
+    - tgt: {{ master }}
+    - sls: ceph.crash.auth
+
+crash:
+  salt.state:
+    - tgt: 'I@cluster:ceph'
+    - tgt_type: compound
+    - sls: ceph.crash
+    - failhard: True
+
 install ca cert in mgr minions:
   salt.state:
     - tgt: 'I@roles:mgr and I@cluster:ceph'

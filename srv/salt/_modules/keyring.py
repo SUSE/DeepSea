@@ -56,6 +56,9 @@ def file_(component, name=None):
     elif component == "mds":
         return "/srv/salt/ceph/mds/cache/" + name + ".keyring"
 
+    elif component == "crash":
+        return "/srv/salt/ceph/crash/cache/ceph.client.crash.keyring"
+
     elif component == "mgr":
         return "/srv/salt/ceph/mgr/cache/" + name + ".keyring"
 
