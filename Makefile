@@ -294,6 +294,8 @@ copy-files:
 	install -m 644 srv/salt/ceph/ganesha/keyring/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/keyring/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/install
 	install -m 644 srv/salt/ceph/ganesha/install/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/install/
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/pool
+	install -m 644 srv/salt/ceph/ganesha/pool/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/pool/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/service
 	install -m 644 srv/salt/ceph/ganesha/service/*.sls $(DESTDIR)/srv/salt/ceph/ganesha/service/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/ganesha/restart

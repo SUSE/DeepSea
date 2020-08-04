@@ -2,8 +2,8 @@
 
 create {{ host }} daemon rados object:
   cmd.run:
-    - name: "POOL=`salt-call --out=json deepsea.find_pool '[\"cephfs\", \"rgw\"]' 2>/dev/null | jq -r .local` && rados -p $POOL -N ganesha create conf-{{ host }}"
-    - unless: "POOL=`salt-call --out=json deepsea.find_pool '[\"cephfs\", \"rgw\"]' 2>/dev/null | jq -r .local` && rados -p $POOL -N ganesha ls | grep -q ^conf-{{ host }}$"
+    - name: "rados -p ganesha_config -N ganesha create conf-{{ host }}"
+    - unless: "rados -p $POOL -N ganesha ls | grep -q ^conf-{{ host }}$"
     - fire_event: True
 
 {% endfor %}
