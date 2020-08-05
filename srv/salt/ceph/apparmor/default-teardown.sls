@@ -7,6 +7,8 @@ aa-teardown:
   cmd.run:
     - onlyif:
       - which aa-teardown
+    - onfail:
+      - test: apparmor
 
 stop apparmor:
   service.dead:
