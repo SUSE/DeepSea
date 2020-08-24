@@ -17,10 +17,19 @@ log = logging.getLogger(__name__)
 try:
     # pylint: disable=unused-import
     from ceph_volume.util.device import Device
+    from ceph_volume.util.disk import blkid
 except ModuleNotFoundError:
     log.debug("Could not load ceph_volume. Make sure to install ceph")
 except ImportError:
     log.debug("Could not load ceph_volume. Make sure to install ceph")
+
+try:
+    blkid
+except NameError:
+    # pylint: disable=function-redefined, unused-argument
+    def blkid(path):
+        """ stub for tests """
+        return {}
 
 USAGE = """
 
@@ -552,6 +561,7 @@ class DriveGroup(object):
         self._disks = Inventory(cephdisks_mode=cephdisks_mode).disks
         self._wal_devices = None
         self._db_devices = None
+        self._ignored_devices = {}
         self.prop = namedtuple("Property", 'ident can_have_osds devices')
 
     @property
@@ -712,6 +722,13 @@ class DriveGroup(object):
             devices=self.journal_devices)
 
     @property
+    def ignored_devices(self) -> dict:
+        """
+        Ignored devices
+        """
+        return self._ignored_devices
+
+    @property
     def disks(self) -> list:
         """
         Disks found in the inventory
@@ -767,27 +784,27 @@ class DriveGroup(object):
             for disk in self.disks:
                 log.debug("Processing disk {}".format(disk.get('path')))
                 # continue criterias
+                if not disk.get('available'):
+                    self.ignore(disk, "Disk is not available")
+                    continue
+                if self._has_gpt(disk):
+                    self.ignore(disk, "GPT headers present")
+                    continue
                 if not _filter.is_matchable:
-                    log.debug(
-                        "Ignoring disk {}. Filter is not matchable".format(
-                            disk.get('path')))
+                    self.ignore(disk, "Filter is not matchable")
                     continue
 
                 if not _filter.matcher.compare(disk):
-                    log.debug("Ignoring disk {}. Filter did not match".format(
-                        disk.get('path')))
+                    self.ignore(disk, "Filter did not match")
                     continue
 
                 if not self._has_mandatory_idents(disk):
-                    log.debug(
-                        "Ignoring disk {}. Missing mandatory idents".format(
-                            disk.get('path')))
+                    self.ignore(disk, "Missing mandantory idents")
                     continue
 
                 if self._limit_reached(device_filter, len(devices),
                                        disk.get('path')):
-                    log.debug("Ignoring disk {}. Limit reached".format(
-                        disk.get('path')))
+                    self.ignore(disk, "Limit reached")
                     continue
 
                 if disk not in devices:
@@ -801,6 +818,21 @@ class DriveGroup(object):
         # return sorted([x.get('path') for x in devices])
         return sorted([x for x in devices],
                       key=lambda dev: dev.get('path', ''))
+
+    def ignore(self, disk: dict, msg: str):
+        """ Track ignored devices
+        """
+        _path = disk.get('path')
+        msg = "Ignoring disk {}. {}".format(_path, msg)
+        self._ignored_devices[_path] = msg
+        log.debug(msg)
+
+    @staticmethod
+    def _has_gpt(disk: dict) -> bool:
+        """ Check for GPT headers
+        """
+        blkid_dict = blkid(disk.get('path'))
+        return 'PTTYPE' in blkid_dict and blkid_dict['PTTYPE'] == 'gpt'
 
     @staticmethod
     def _has_mandatory_idents(disk: dict) -> bool:
@@ -1146,6 +1178,7 @@ class Output(object):
         self.db_device_props = self.dgo.db_device_properties
         self.wal_device_props = self.dgo.wal_device_properties
         self.journal_device_props = self.dgo.journal_device_properties
+        self.ignored_devices = self.dgo.ignored_devices
 
         self._pre_check()
 
@@ -1263,6 +1296,14 @@ Please make sure to have more/equal wal_devices than db_devices"""
         if self.ret.get('errors', {}):
             return True
         return False
+
+    def generate_ignored_devices(self) -> str:
+        """ Generate list of ignored devices """
+        _report = "Device {} Reason\n".format(" "*40)
+        _report += "-"*80 + "\n"
+        for device in sorted(self.ignored_devices):
+            _report += "{} {} {}\n".format(device, " "*20, self.ignored_devices[device])
+        return _report
 
     def generate_annotated_report(self) -> dict:
         """ Generate a annotated report based on group properties """
@@ -1431,6 +1472,11 @@ def list_(**kwargs):
     for a function.
     """
     return report(**kwargs)
+
+
+def ignored(**kwargs):
+    """ Included ignored reasons """
+    return Output(**kwargs, cephdisks_mode='all').generate_ignored_devices()
 
 
 def c_v_commands(**kwargs):
