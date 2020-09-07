@@ -14,6 +14,7 @@ rule_files:
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: 'ceph-mgr'
+    honor_labels: true
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:ceph', '10s')|yaml }}
     file_sd_configs:
       - files: [ '/etc/prometheus/SUSE/scrape_configs/ceph/mgr_exporter.yml' ]
