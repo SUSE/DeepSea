@@ -148,6 +148,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/ganesha/restart
 %dir /srv/salt/ceph/ganesha/restart/force
 %dir /srv/salt/ceph/ganesha/restart/controlled
+%dir /srv/salt/ceph/ganesha/pool
 %dir /srv/salt/ceph/ganesha/service
 %dir /srv/salt/ceph/igw
 %dir %attr(0700, salt, salt) /srv/salt/ceph/igw/cache
@@ -511,6 +512,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/ganesha/restart/*.sls
 %config /srv/salt/ceph/ganesha/restart/force/*.sls
 %config /srv/salt/ceph/ganesha/restart/controlled/*.sls
+%config /srv/salt/ceph/ganesha/pool/*.sls
 %config /srv/salt/ceph/ganesha/service/*.sls
 %config /srv/salt/ceph/igw/*.sls
 %config /srv/salt/ceph/igw/files/*.j2

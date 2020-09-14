@@ -42,3 +42,9 @@ def find_pool(applications, preferred_pool=None):
     master = minion()
     return local.cmd(master, 'deepsea.find_pool',
                      [applications, preferred_pool])[master]
+
+def ganesha_namespace():
+    import salt.client
+    local = salt.client.LocalClient()
+    master = minion()
+    return local.cmd(master, 'cmd.run', ['ceph dashboard get-ganesha-clusters-rados-pool-namespace'])[master]
