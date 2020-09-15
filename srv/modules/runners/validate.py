@@ -706,7 +706,25 @@ class Validate(Preparation):
 
         self._set_pass_status('fqdn')
 
-    # pylint: disable=line-too-long
+    def domain(self):
+        """
+        Verify that the domain grain exists
+        """
+        for minion_id in self.grains.keys():
+            domain = self.grains[minion_id]['domain']
+            fqdn = self.grains[minion_id]['fqdn']
+            msg = f"""
+In order to determine a `domain` which is required for some features in DeepSea you need to set-up the FQDN properly.
+Example:
+A device with the hostname `myhost` in the parent domain example.com has the fully qualified domain name myhost.example.com. The FQDN uniquely distinguishes the device from any other hosts called myhost in other domains.
+
+Please make sure 'hostname --fqdn' returns an FQDN, for example, myhost.example.com
+Your currently configured FQDN is: <$fqdn>
+ """
+            if not domain:
+                self.errors.setdefault('domain', []).append(msg)
+        self._set_pass_status('domain')
+
     def openattic(self):
         """
         Check for incompatible issues for openATTIC
@@ -1416,6 +1434,7 @@ def pillar(cluster=None, printer=None, **kwargs):
     valid.pool_creation()
     valid.time_server()
     valid.fqdn()
+    valid.domain()
     valid.report()
 
     if valid.errors:
