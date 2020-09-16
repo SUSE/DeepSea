@@ -467,7 +467,10 @@ def _remove_minion_exclude(addresses, remove_subnet_list):
         r"([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])" +
         r"(\/([0-9]|[1-2][0-9]|3[0-2]))$")
     log.debug("_remove_minion_exclude: removing {} ".format(remove_subnet_list))
-    remove_subnets = remove_subnet_list.split(",")
+    if remove_subnet_list:
+        remove_subnets = remove_subnet_list.split(",")
+    else:
+        remove_subnets = []
     remove_list = []
     for subnet in remove_subnets:
         if pattern_ipcidr.match(subnet):
