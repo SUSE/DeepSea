@@ -12,6 +12,7 @@ import salt.client
 import salt.utils.error
 from packaging import version
 import json
+import yaml
 
 
 class UpgradeValidation(object):
@@ -105,6 +106,32 @@ class UpgradeValidation(object):
                 """.format(", ".join(result['straw']))
             return False, msg
         return True, ""
+
+
+class OrigDriveGroup:
+
+    def migrate(self, data, storage_hosts=[]):
+        self.__setattr__('service_type', 'osd')
+        self.__setattr__('filter_logic', 'OR')
+        for name, spec in data.items():
+            self.__setattr__('service_id', name)
+            for k, v in spec.items():
+                self.__setattr__(k, v, storage_hosts)
+
+    def __setattr__(self, key, value, storage_hosts=[]):
+        if key == 'format' and value not in ['bluestore']:
+            raise Exception('Only <bluestore> is supported.')
+        if key == 'target':
+            if value == 'I@roles:storage':
+                self.__dict__['placement'] = dict(hosts=storage_hosts)
+            else:
+                self.__dict__['placement'] = dict(host_pattern=value)
+            return
+        # more known restrictions & changes go here
+        self.__dict__[key] = value
+
+    def to_yaml(self):
+        return yaml.safe_dump(self.__dict__)
 
 
 def help_():
@@ -343,6 +370,76 @@ def ceph_salt_config():
 
     return json.dumps(config, indent=4)
 
+
+def generate_service_specs():
+    """
+    Generate service specs suitable for applying to the ceph orchestrator,
+    based on DeepSea configuration.  This includes mon, mgr, osd, crash,
+    node-exporter, prometheus, grafana and alertmanager.
+    Call via `salt-run upgrade.generate_service_specs > specs.yaml`
+    """
+
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+
+    # There's always a crash daemon (previously deployed automatically by ceph)
+    # and node exporter (deployed automatically by deepsea on all nodes)
+    service_specs = [
+        {
+            'service_type': 'crash',
+            'placement': {
+                'host_pattern': '*'
+            }
+        },
+        {
+            'service_type': 'node-exporter',
+            'placement': {
+                'host_pattern': '*'
+            }
+        }
+    ]
+
+    local = salt.client.LocalClient()
+    roles = local.cmd("I@cluster:ceph", 'pillar.get', ['roles'], tgt_type="compound")
+
+    # Lifted from srv/modules/runners/select.py
+    def _grain_host(client, minion):
+        return list(client.cmd(minion, 'grains.item', ['host']).values())[0]['host']
+
+    for service_type in ['mon', 'mgr', 'prometheus', 'grafana']:
+        hosts = [_grain_host(local, node) for node in roles if service_type in roles[node]]
+        if not hosts:
+            # It's possible (although unlikely) that some roles don't exist, thus match
+            # no hosts.  In this case, there's no point generating a service spec.
+            continue
+        hosts.sort()
+        service_specs.append({
+            'service_type': service_type,
+            'placement': {
+                'hosts': hosts
+            }
+        })
+        # Irritating special case to handle alertmanager, which DS configures to run
+        # on the same host(s) as prometheus by default
+        if service_type == 'prometheus':
+            service_specs.append({
+                'service_type': 'alertmanager',
+                'placement': {
+                    'hosts': hosts
+                }
+            })
+
+    storage_hosts = [_grain_host(local, node) for node in roles if 'storage' in roles[node]];
+    with open('/srv/salt/ceph/configuration/files/drive_groups.yml', 'r') as fd:
+        for dg in yaml.safe_load_all(fd):
+            dg_o = OrigDriveGroup()
+            dg_o.migrate(dg, storage_hosts)
+            service_specs.append(dg_o.__dict__)
+
+    return "\n---\n".join(yaml.safe_dump(service).strip() for service in service_specs)
 
 
 __func_alias__ = {
