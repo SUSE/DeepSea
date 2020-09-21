@@ -411,6 +411,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/maintenance/upgrade/report
 %dir /srv/salt/ceph/maintenance/upgrade/cleanup
 %dir /srv/salt/ceph/upgrade
+%dir /srv/salt/ceph/upgrade/ses7
+%dir /srv/salt/ceph/upgrade/ses7/files
 %dir /srv/salt/ceph/updates
 %dir /srv/salt/ceph/updates/master
 %dir /srv/salt/ceph/updates/salt
@@ -756,6 +758,8 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %config /srv/salt/ceph/tuned/files/latency.conf
 %config /srv/salt/ceph/tuned/files/throughput.conf
 %config /srv/salt/ceph/upgrade/*.sls
+%config /srv/salt/ceph/upgrade/ses7/*.sls
+%config /srv/salt/ceph/upgrade/ses7/files/*.j2
 %config /srv/salt/ceph/maintenance/noout/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/*.sls
 %config /srv/salt/ceph/maintenance/upgrade/master/*.sls

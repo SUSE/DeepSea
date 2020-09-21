@@ -1,0 +1,22 @@
+{% set registries = salt['pillar.get']('ses7_container_registries', []) -%}
+# This file was created by DeepSea. Changes to this file might be overwritten
+
+# For more information on this configuration file, see containers-registries.conf(5)
+
+# An array of host[:port] registries to try when pulling an unqualified image, in order
+unqualified-search-registries = ["docker.io"]
+
+{% for reg in registries %}
+[[registry]]
+{% if reg.prefix is defined %}
+prefix = "{{ reg.prefix }}"
+{% endif %}
+location = "{{ reg.location }}"
+{% if reg.insecure is defined %}
+insecure = {{ '{}'.format(reg.insecure) | lower }}
+{% endif %}
+{% if reg.blocked is defined %}
+blocked = {{ '{}'.format(reg.blocked) | lower }}
+{% endif %}
+{% endfor %}
+
