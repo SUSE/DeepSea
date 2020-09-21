@@ -1,3 +1,15 @@
+{% set require_osd_release = salt['osd.require_osd_release']() %}
+{% if require_osd_release and require_osd_release != 'nautilus' %}
+require_osd_release is not nautilus:
+  test.fail_without_changes:
+    - name: |
+        'require-osd-release' is currently '{{ require_osd_release }}',
+        but must be set to 'nautilus' before upgrading to SES 7.
+        Please run `ceph osd require-osd-release nautilus` to fix this
+        before proceeding further.
+    - failhard: True
+{% endif %}
+
 {% if grains.get('oscodename', '') != 'SUSE Linux Enterprise Server 15 SP2' %}
 
 not running sle 15 sp2:

@@ -172,7 +172,7 @@ def _sort_nodes_by_role(nodes, roles):
     actually figure out what roles are assigned to each node in the nodes list.
     """
     nodes_sorted = []
-    for role in ['master', 'mon', 'mgr', 'mds', 'storage', 'rgw', 'igw', 'ganesha']:
+    for role in ['master', 'mon', 'mgr', 'storage', 'mds', 'rgw', 'igw', 'ganesha']:
         role_nodes = [node for node in roles if role in roles[node] and node in nodes]
         role_nodes.sort()
         nodes_sorted.extend([node for node in role_nodes if node not in nodes_sorted])
@@ -217,13 +217,62 @@ def status():
     __opts__['grains'] = __grains__
     __utils__ = salt.loader.utils(__opts__)
     __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    master_minion = __salt__['master.minion']()
 
-    os_codename, _, ceph_version = __utils__['status.get_sys_versions']()
+    local = salt.client.LocalClient()
+
     # os_codename and ceph_version are pretty strings, e.g.:
     # - SUSE Linux Enterprise Server 15 SP1
     # - ceph version 14.2.1-468-g994fd9e0cc (994fd9e0cc[...]) nautilus (stable)
     # (Unless a node is down, in which case they'll be "Unknown (node down?)"
     # or "Not installed" if Ceph is not installed yet)
+    os_codename, _, ceph_version = __utils__['status.get_sys_versions']()
+
+    # Following is possibly a slightly obscure test.  We want to run a bunch of pre-upgrade
+    # checks when upgrading from SES6->7, but, this upgrade runner could also be invoked
+    # on a system which is part way through a SES5->6 upgrade, in which case some nodes
+    # would be SLE 12 SP3 and some would be SLE 15 SP1.  So, we check if there's any oses
+    # that aren't a variant on SLE 15 (or are down/Unkown).  If the list is empty, we
+    # assume we're on a SLE 15 SP1 or SP2 base, and can sensibly run the SES6->7 checks.
+    non_sle_15 = [os for os in set(os_codename.values())
+                    if not os.startswith("SUSE Linux Enterprise Server 15")
+                    and not os.startswith("Unknown")]
+    if len(non_sle_15) == 0:
+        require_osd_release = list(local.cmd(master_minion, 'osd.require_osd_release', []).items())[0][1]
+        if require_osd_release[0] < 'n':
+            print("'require-osd-release' is currently '{}', but must be set to 'nautilus'".format(require_osd_release))
+            print("before upgrading to SES 7.  Please run `ceph osd require-osd-release nautilus`")
+            print("to fix this before proceeding further.")
+            print("")
+
+        filestore_osds = list(local.cmd(master_minion, 'cmd.run',
+            ["ceph osd metadata | jq '.[] | select(.osd_objectstore == \"filestore\") | .id'"]).items())[0][1].split()
+        if filestore_osds:
+            print("The following OSDs are using FileStore:")
+            print("  {}".format(', '.join(filestore_osds)))
+            print("All FileStore OSDs must be converted to BlueStore before upgrading to SES 7.")
+            print("")
+
+        filesystems = list(local.cmd(master_minion, 'cmd.run',
+            ["ceph fs ls --format=json|jq -r '.[][\"name\"]'"]).items())[0][1].split()
+        if filesystems:
+            for fs in filesystems:
+                max_mds = int(list(local.cmd(master_minion, 'cmd.run',
+                    ["ceph fs get {}|awk '/max_mds/ {{print $2}}'".format(fs)]).items())[0][1])
+                if max_mds > 1:
+                    print("The '{}' filesystem has {} MDS daemons.".format(fs, max_mds))
+                    print("Before upgrading MDS daemons, reduce the number of ranks to 1 by running")
+                    print("`ceph fs set {} max_mds 1`".format(fs))
+                    print("")
+            up_standbys = int(list(local.cmd(master_minion, 'cmd.run',
+                ["ceph status --format=json-pretty|jq -r '.[\"fsmap\"][\"up:standby\"]'"]).items())[0][1])
+            if up_standbys > 0:
+                if up_standbys > 1:
+                    print("There are {} standby MDS daemons running.".format(up_standbys))
+                else:
+                    print("There is 1 standby MDS daemon running.")
+                print("All standby MDS daemons must to be stopped prior to upgrading them.")
+                print("")
 
     if len(set(os_codename.values())) == 1 and len(set(ceph_version.values())) == 1:
         # OS version and ceph version are the same across the whole cluster
@@ -231,7 +280,7 @@ def status():
         print("  ceph: {}".format(next(iter(ceph_version.values()))))
         print("  os: {}".format(next(iter(os_codename.values()))))
         print("")
-        return True
+        return ""
 
     # We've got different versions of base OS, or ceph, or both, so we need:
     # - all the roles, to provide advice on what next to upgrade
@@ -244,7 +293,6 @@ def status():
     if down_nodes:
         search += " and not ( {} )".format("or ".join(down_nodes))
 
-    local = salt.client.LocalClient()
     roles = local.cmd(search, 'pillar.get', ['roles'], tgt_type="compound")
 
     os_release = local.cmd(search, 'grains.get', ['osrelease'], tgt_type="compound")
