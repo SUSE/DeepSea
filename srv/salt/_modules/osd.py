@@ -714,6 +714,33 @@ def alg(**kwargs):
     return osdc.alg()
 
 
+def require_osd_release(**kwargs):
+    """
+    Return the require_osd_release setting
+    """
+    require_osd_release = None
+    settings = {
+        'conf': "/etc/ceph/ceph.conf",
+        'keyring': '/etc/ceph/ceph.client.admin.keyring',
+        'client': 'client.admin',
+    }
+    settings.update(_settings(**kwargs))
+    log.debug("settings: {}".format(pprint.pformat(settings)))
+    try:
+        cluster = rados.Rados(conffile=settings['conf'],
+                              conf=dict(keyring=settings['keyring']),
+                              name=settings['client'])
+        cluster.connect()
+        cmd = json.dumps({"prefix": "osd dump", "format": "json"})
+        _, output, _ = cluster.mon_command(cmd, b'', timeout=6)
+        output = json.loads(output)
+        require_osd_release = output['require_osd_release']
+    except Exception as error:
+        log.error("Couldn't get require_osd_release: {}".format(error))
+
+    return require_osd_release
+
+
 class OSDDevices(object):
     """
     Gather the partitions for an OSD

@@ -794,6 +794,10 @@ copy-files:
 	# state files - update
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade
 	install -m 644 srv/salt/ceph/upgrade/*.sls $(DESTDIR)/srv/salt/ceph/upgrade
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade/ses7
+	install -m 644 srv/salt/ceph/upgrade/ses7/*.sls $(DESTDIR)/srv/salt/ceph/upgrade/ses7
+	install -d -m 755 $(DESTDIR)/srv/salt/ceph/upgrade/ses7/files
+	install -m 644 srv/salt/ceph/upgrade/ses7/files/*.j2 $(DESTDIR)/srv/salt/ceph/upgrade/ses7/files
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates
 	install -m 644 srv/salt/ceph/updates/*.sls $(DESTDIR)/srv/salt/ceph/updates/
 	install -d -m 755 $(DESTDIR)/srv/salt/ceph/updates/restart
