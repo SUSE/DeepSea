@@ -124,6 +124,7 @@ systemctl try-restart salt-api > /dev/null 2>&1 || :
 %dir /srv/salt/ceph/cephfs/benchmarks/files
 %dir /srv/salt/ceph/crash
 %dir /srv/salt/ceph/crash/auth
+%dir /srv/salt/ceph/crash/files
 %dir /srv/salt/ceph/crash/key
 %dir /srv/salt/ceph/metapackage
 %dir /srv/salt/ceph/dashboard
