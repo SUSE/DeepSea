@@ -1,4 +1,24 @@
 -------------------------------------------------------------------
+Wed Oct 07 10:29:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
+
+- runners/upgrade: Add SES6->7 pre-upgrade checks
+- runners/upgrade: Add generate_service_specs function
+- Add ceph.upgrade.ses7.adopt state
+- spec: Add /srv/salt/ceph/crash/files directory
+- runners/upgrade: Add ceph_salt_config function
+- Fix case where remove_subnet_list is None
+- validate: check if domain grain is set
+- Add dedicated ganesha_config pool for dashboard (bsc#1172689)
+- fix many-to-many not allowed in Grafana dashboard (bsc#1175585)
+- aa-teardown can fail if apparmor is disabled on the boot command line  
+- Create and distribute keyring for ceph-crash (bsc#1174004)
+- ceph.conf: remove the mon_health_preluminous_compat settings (bsc#1174545)
+- Ignore disks with GPT headers or unavailable 
+- Sync salt dynamic modules (bsc#1170752)
+- Only remove tuned when a minion has no roles (bsc#1170491)
+- Do not remove ceph-grafana-dashboards on mgr nodes (bsc#1168359)
+
+-------------------------------------------------------------------
 Tue May 11 16:02:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.30
