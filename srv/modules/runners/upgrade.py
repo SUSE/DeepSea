@@ -367,8 +367,8 @@ def ceph_salt_config():
             'password_update_required': False
         },
         'time_server': {
-            'enabled': True,
-            'external_time_servers': ['pool.ntp.org'],
+            'enabled': False,
+            'external_time_servers': []
         }
     }
 
@@ -394,17 +394,6 @@ def ceph_salt_config():
         if not config['bootstrap_minion'] and 'mon' in roles[node]:
             config['bootstrap_minion'] = node
             config['bootstrap_mon_ip'] = mon_ips[node]
-
-    if list(local.cmd(master_minion, 'pillar.get', ['time_init']).items())[0][1] == "disabled":
-        config['time_server']['enabled'] = False
-    else:
-        time_server = list(local.cmd(master_minion, 'pillar.get', ['time_server']).items())[0][1]
-        if type(time_server) is list:
-            # This is a bit sketchy, but ceph-salt currently (2020-09-23)
-            # only allows single time servers, and in any case the user still
-            # has to review the ceph-salt config before applying it.
-            time_server = time_server[0]
-        config['time_server']['server_host'] = time_server
 
     container_image = list(
         local.cmd(master_minion, 'pillar.get', ['ses7_container_image']).items())[0][1]
