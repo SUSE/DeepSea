@@ -65,7 +65,7 @@ adopt ceph daemons:
         for DAEMON in $(cephadm ls|jq -r '.[] | select(.style=="legacy") | .name'); do
             case $DAEMON in
                 mon*|mgr*|osd*)
-                    cephadm --image {{ ses7_container_image }} adopt --skip-pull --style legacy --force-start --name $DAEMON
+                    cephadm --image {{ ses7_container_image }} adopt --container-init --skip-pull --style legacy --force-start --name $DAEMON
                     ;;
             esac
         done
