@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Oct 21 15:25:00  UTC 2020 - Jan Fajerski <jfajerski@suse.com>
+
+- Version: 0.9.32
+- drop workarounds for old ceph-volume lvm batch command
+
+-------------------------------------------------------------------
 Tue Oct 20 13:20:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.32
