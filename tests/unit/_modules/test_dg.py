@@ -803,32 +803,25 @@ class TestDriveGroup(object):
         test_fix = test_fix()
 
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
-        assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 5000000000 --block-db-size 10000000000']
+        assert ret == ['ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 5000000000 --block-db-size 10000000000']
 
     def test_c_v_commands_bluestore_osds_per_device(self, test_fix, inventory):
         inventory()
         test_fix = test_fix(osds_per_device=3)
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
-        assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 5000000000 --block-db-size 10000000000 --osds-per-device 3'
-        ]
+        assert ret == ['ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm --yes --dmcrypt --block-wal-size 5000000000 --block-db-size 10000000000 --osds-per-device 3']
 
     def test_c_v_commands_filestore_osds_per_device(self, test_fix, inventory):
         inventory()
         test_fix = test_fix(disk_format='filestore', osds_per_device='3')
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
-        assert ret == [
-            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 5000000000 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt --osds-per-device 3'
-        ]
+        assert ret == ['ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 5000000000 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt --osds-per-device 3']
 
     def test_c_v_commands_filestore(self, test_fix, inventory):
         inventory()
         test_fix = test_fix(disk_format='filestore')
         ret = dg.c_v_commands(filter_args=test_fix.filter_args)
-        assert ret == [
-            'ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 5000000000 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt'
-        ]
+        assert ret == ['ceph-volume lvm batch /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --journal-size 5000000000 --journal-devices /dev/sdl /dev/sdm --filestore --yes --dmcrypt']
 
     def test_c_v_commands_external_db(self, test_fix, inventory):
         inventory()
@@ -840,10 +833,7 @@ class TestDriveGroup(object):
                 'rotational': '0'
             }
         })
-        assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdd /dev/sdf /dev/sdh /dev/sdj --db-devices /dev/sdl --yes',
-            'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --yes'
-        ]
+        assert ret == ['ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --db-devices /dev/sdl /dev/sdm --yes']
 
     def test_c_v_commands_external_wal_only(self, test_fix, inventory):
         inventory(wal_devices=2, db_devices=0)
@@ -877,10 +867,8 @@ class TestDriveGroup(object):
                     'limit': 2
                 }
             })
-        assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdd /dev/sdf /dev/sdh /dev/sdj --db-devices /dev/sdl --wal-devices /dev/sdn --yes',
-            'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --wal-devices /dev/sdo --yes'
-        ]
+        assert ret == ['ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --db-devices /dev/sdl /dev/sdm --wal-devices /dev/sdn /dev/sdo --yes']
+
 
     def test_c_v_commands_external_2_dbs_and_2_wals_osds_per_device(
             self, test_fix, inventory):
@@ -901,10 +889,8 @@ class TestDriveGroup(object):
                 },
                 'osds_per_device': '3',
             })
-        assert ret == [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdd /dev/sdf /dev/sdh /dev/sdj --db-devices /dev/sdl --wal-devices /dev/sdn --yes --osds-per-device 3',
-            'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --wal-devices /dev/sdo --yes --osds-per-device 3'
-        ]
+        assert ret == ['ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --db-devices /dev/sdl /dev/sdm --wal-devices /dev/sdn /dev/sdo --yes --osds-per-device 3']
+
 
     def test_c_v_commands_external_2_dbs_and_3_wals(self, test_fix, inventory):
         inventory(db_devices=2, wal_devices=3)
@@ -922,10 +908,8 @@ class TestDriveGroup(object):
                     'limit': 3
                 }
             })
-        assert [
-            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdd /dev/sdf /dev/sdh /dev/sdj --db-devices /dev/sdl --wal-devices /dev/sdn /dev/sdp --yes',
-            'ceph-volume lvm batch --no-auto /dev/sdc /dev/sde /dev/sdg /dev/sdi /dev/sdk --db-devices /dev/sdm --wal-devices /dev/sdo --yes'
-        ] == ret
+        assert ret == [
+            'ceph-volume lvm batch --no-auto /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk --db-devices /dev/sdl /dev/sdm --wal-devices /dev/sdn /dev/sdo /dev/sdp --yes']
 
     def test_c_v_commands_1TB_size_match(self, test_fix, inventory):
         inventory(

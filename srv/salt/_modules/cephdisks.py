@@ -27,7 +27,7 @@ def load_ceph_volume_devices():
     """
     try:
         from ceph_volume.util.device import Devices
-        return Devices()
+        return Devices(filter_for_batch=True)
     except ImportError:
         log.error("Could not import from ceph_volume.util.device.")
 
@@ -52,8 +52,6 @@ class Inventory(object):
         self.kwargs: dict = kwargs
         self.devices = load_ceph_volume_devices().devices
         self.device = load_ceph_volume_device()
-        self.root_disk = self._find_root_disk()
-        self.raid_devices = self._find_raid_devices()
 
     @property
     def exclude_available(self) -> bool:
@@ -71,11 +69,6 @@ class Inventory(object):
         # This also returns disks that are marked as
         # 'destroyed' is that valid?
         return self.kwargs.get('exclude_used_by_ceph', False)
-
-    @property
-    def exclude_root_disk(self) -> bool:
-        """ The root_disk filter """
-        return self.kwargs.get('exclude_root_disk', True)
 
     @property
     def _min_osd_size(self) -> float:
@@ -105,66 +98,6 @@ class Inventory(object):
         return osd_ids
 
     @staticmethod
-    # pylint: disable=inconsistent-return-statements
-    def _find_root_disk() -> str:
-        """ Return the root disk of a device set """
-        with open('/proc/mounts', 'rb') as _fd:
-            for _line in _fd.readlines():
-                line = _line.decode()
-                mount_point = line.split(' ')[1]
-                if mount_point == '/':
-                    device_path_full = line.split(' ')[0]
-                    device_ident = device_path_full.split('/')[-1]
-                    if device_ident.startswith('nvme'):
-                        # nvme partitions are nvme0n1p1,p2,p3..
-                        return re.sub(r'p\d+$', '', device_path_full)
-                    return re.sub(r'\d+$', '', device_path_full)
-
-    @staticmethod
-    def _raid_may_exist():
-        """ If /proc/mdstat is populated or mdadm is installed we may have RAID configured"""
-        if os.path.exists('/proc/mdstat') and which('mdadm'):
-            return True
-        return False
-
-    def _find_raid_devices(self) -> set:
-        """ Detect devices that are part of a raid configuration """
-        if not self._raid_may_exist:
-            return set([])
-
-        proc1 = Popen(split('grep md /proc/mdstat'), stdout=PIPE, stderr=PIPE)
-        out, _ = proc1.communicate()
-        if isinstance(out, bytes):
-            out = out.decode('utf-8')
-
-        def _find_disk_name(disk: str) -> str:
-            """ takes malformed/annotated disk ident and returns the
-                sanitized form.
-            """
-            if disk.startswith('nvme'):
-                return '/dev/{}'.format(re.sub(r'p\d+$', '', disk))
-            return '/dev/{}'.format(re.sub(r'\d+$', '', disk))
-
-        dev_list = []
-        md_raid_list = out.split('\n')
-        for raid in md_raid_list:
-            # example out: 'md126 : active raid1 sdb1[0] sdd1[1]'
-            try:
-                # example out: list of 'sdd1[1]' -> sdd1
-                unformatted_dev = [x.split('[')[0] for x in raid.split(' ') if x.endswith(']')]
-                # example out: list of 'sdd1' -> /dev/sdd
-                devices = [_find_disk_name(x) for x in unformatted_dev]
-            except (AttributeError, ValueError, IndexError):
-                log.info("""
- Experienced issues while parsing /proc/mdstat. This is probably a bug and should be reported.
-                         """)
-                log.info('Output of mdstat: {}'.format(out))
-                devices = []
-            log.info('Found associated raid devices: {}'.format(devices))
-            dev_list.extend(devices)
-        return set(dev_list)
-
-    @staticmethod
     def _is_cdrom(path: str) -> bool:
         """ Always skip cdrom """
         if path.split('/')[-1].startswith('sr'):
@@ -175,13 +108,6 @@ class Inventory(object):
     def _is_rbd(path: str) -> bool:
         """ Always skip rbd """
         if path.split('/')[-1].startswith('rbd'):
-            return True
-        return False
-
-    @staticmethod
-    def _is_mdraid(path: str) -> bool:
-        """ Always skip software raid setups """
-        if path.split('/')[-1].startswith('md'):
             return True
         return False
 
@@ -198,21 +124,6 @@ class Inventory(object):
         """
         devs: list = list()
         for dev in self.devices:
-
-            # Apply customizable filters
-            if dev.path in self.raid_devices:
-                log.debug(
-                    f"Skipping disk <{dev.path}> due to <raid_disk_member> filter"
-                )
-                continue
-
-            if self.exclude_root_disk:
-                # exclude the root (/) disk
-                if self.root_disk == dev.path:
-                    log.debug(
-                        f"Skipping disk <{dev.path}> due to <root_disk> filter"
-                    )
-                    continue
 
             if self.exclude_cephdisk_member:
                 # exclude disks that are used by cephdisk
@@ -241,10 +152,6 @@ class Inventory(object):
             # Apply non-customizable filters
             if self._is_cdrom(dev.path):
                 log.debug(f"Skipping disk <{dev.path}> due to <cdrom> filter")
-                continue
-
-            if self._is_mdraid(dev.path):
-                log.debug(f"Skipping disk <{dev.path}> due to <mdraid> filter")
                 continue
 
             if self._is_rbd(dev.path):
@@ -332,7 +239,6 @@ def all_(**kwargs):
     """ List all devices regardless of used or not
     also exclude root disk by default
     """
-    kwargs.update(dict(exclude_root_disk=True))
     return [x.json_report() for x in Inventory(**kwargs).filter_()]
 
 
