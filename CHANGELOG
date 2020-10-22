@@ -9,7 +9,7 @@ Tue Oct 20 13:20:00  UTC 2020 - Joshua Schmid <jschmid@suse.com>
 
 - Version: 0.9.32
 - Pass --container-init to `cephadm adopt` (bsc#1177588)
-- runners/upgrade: Add SES6->7 pre-upgrade checksss --container-init to `cephadm adopt` (bsc#1177588)
+- runners/upgrade: Add SES6->7 pre-upgrade checks
 - mds: add rescind for multiple mds per host (bsc#1164142)
 - mds: add option to manage multiple MDS per host (bsc#1164142)
 
