@@ -48,7 +48,7 @@ Requires:       python3-boto
 Requires:       python3-configobj
 Requires:       python3-netaddr
 Requires:       python3-packaging
-Requires:       python3-rados
+Requires:       python3-rados >= 14.2.13
 Requires:       python3-six
 Requires:       salt-api
 Requires:       salt-master
