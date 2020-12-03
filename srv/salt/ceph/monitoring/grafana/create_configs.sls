@@ -10,7 +10,7 @@
 
 /srv/salt/ceph/monitoring/grafana/cache/tls/certs/grafana.crt:
   file.managed:
-    - source: {{ pillar['monitoring:grafana:ssl_cert'] }}
+    - source: {{ salt['pillar.get']('monitoring:grafana:ssl_cert') }}
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
     - mode: 600
@@ -19,7 +19,7 @@
 
 /srv/salt/ceph/monitoring/grafana/cache/tls/certs/grafana.key:
   file.managed:
-    - source: {{ pillar['monitoring:grafana:ssl_key'] }}
+    - source: {{ salt['pillar.get']('monitoring:grafana:ssl_key') }}
     - user: {{ salt['deepsea.user']() }}
     - group: {{ salt['deepsea.group']() }}
     - mode: 600
