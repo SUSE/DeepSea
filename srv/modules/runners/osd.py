@@ -335,6 +335,24 @@ class OSDUtil(Util):
         ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
         message = list(ret.values())[0]
         if 'Zapping successful for OSD' not in message:
+            log.info("Zapping by osd_id failed, attempting to zap devices "
+                     "listed in /etc/ceph/osd/{}.*.json".format(self.osd_id))
+            self._try_simple_zap()
+        return True
+
+    def _try_simple_zap(self):
+        """
+        Remote call to minion to zap devices listed by c-v simple scan output
+        """
+        simple_scan_json = 'cat /etc/ceph/osd/{}-*.json'.format(self.osd_id)
+        cmd = simple_scan_json + (' | jq \'.block.path,.data.path,'
+                                  '.["block.db"].path,.["block.wal"].path\''
+                                  ' | xargs -r readlink -e '
+                                  '| xargs ceph-volume lvm zap --destroy')
+        log.debug("Executing: {}".format(cmd))
+        ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
+        message = list(ret.values())[0]
+        if 'Zapping successful for' not in message:
             log.error("Zapping the osd failed: {}".format(message))
             raise RuntimeError
         return True
