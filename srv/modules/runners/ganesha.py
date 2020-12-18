@@ -36,7 +36,7 @@ def report():
         return "No minions found with ganesha role"
 
     master = __salt__['master.minion']()
-    nfs_pool = __salt__['master.find_pool'](['cephfs', 'rgw'])
+    nfs_pool = 'ganesha_config'
 
     rep = {}
     rep['configuration'] = {'pool': nfs_pool, 'namespace': 'ganesha'}
