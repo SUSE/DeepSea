@@ -13,6 +13,11 @@ rule_files:
 
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  {% for config in salt['pillar.get']('monitoring:prometheus:custom_scrape_configs', {}) %}
+  {%- for key, value in config.items() %}
+  {%- if loop.first %}- {% else %}  {% endif %}{{- key }}: {{ value | json}}
+  {% endfor %}
+  {%- endfor -%}
   - job_name: 'ceph-mgr'
     honor_labels: true
     scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:ceph', '10s')|yaml }}
