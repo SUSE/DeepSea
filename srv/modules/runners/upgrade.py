@@ -349,8 +349,6 @@ def ceph_salt_config():
             'admin': [],
             'cephadm': []
         },
-        'bootstrap_minion': None,
-        'bootstrap_mon_ip': None,
         'container': {
             'registries_enabled': True,
             'registries': [],
@@ -391,9 +389,6 @@ def ceph_salt_config():
         config['minions']['cephadm'].append(node)
         if 'master' in roles[node] or 'admin' in roles[node]:
             config['minions']['admin'].append(node)
-        if not config['bootstrap_minion'] and 'mon' in roles[node]:
-            config['bootstrap_minion'] = node
-            config['bootstrap_mon_ip'] = mon_ips[node]
 
     container_image = list(
         local.cmd(master_minion, 'pillar.get', ['ses7_container_image']).items())[0][1]
