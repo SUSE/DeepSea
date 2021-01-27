@@ -3,9 +3,10 @@ update salt:
     - pkgs:
       - salt-minion 
     - dist-upgrade: True
+    - failhard: True
 
 restart salt-minion:
-  module.run:
-    - name: service.restart
-    - m_name: salt-minion
-
+  cmd.run:
+    - name: "salt-call service.restart salt-minion"
+    - bg: True
+    - failhard: True
