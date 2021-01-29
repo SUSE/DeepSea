@@ -52,7 +52,7 @@ ceph-prometheus-alerts:
       - service: prometheus
 
 {% for rule_file in salt['pillar.get']('monitoring:prometheus:rule_files', []) %}
-{% set file_name = salt['cmd.shell']("basename" + rule_file) %}
+{% set file_name = salt['cmd.shell']("basename " + rule_file) %}
 /etc/prometheus/SUSE/custom_rules/{{ file_name }}:
   file.managed:
     - source: {{ rule_file }}

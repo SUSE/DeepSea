@@ -64,12 +64,12 @@ scrape_configs:
       {%- endfor %}
     {%- endif %}
   - job_name: 'node-exporter'
-    scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:node', '10s')|yaml }}
+    scrape_interval: {{ salt['pillar.get']('monitoring:prometheus:scrape_interval:node_exporter', '10s')|yaml }}
     file_sd_configs:
       - files: [ '/etc/prometheus/SUSE/scrape_configs/node_exporter/*.yml' ]
-    {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:node', False) %}
+    {%- if salt['pillar.get']('monitoring:prometheus:relabel_config:node_exporter', False) %}
     relabel_configs:
-      {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:node', []) %}
+      {%- for label in salt['pillar.get']('monitoring:prometheus:relabel_config:node_exporter', []) %}
         {%- if label.source_labels is string %}
           {%- set label_list = label.source_labels.split(',') %}
         {%- elif label.source_labels is list %}
@@ -87,9 +87,9 @@ scrape_configs:
         {%- endif %}
       {%- endfor %}
     {%- endif %}
-    {%- if salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', False) %}
-    metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', [])|yaml }}
-      {%- for label in salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node', []) %}
+    {%- if salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node_exporter', False) %}
+    metric_relabel_configs: {{ salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node_exporter', [])|yaml }}
+      {%- for label in salt['pillar.get']('monitoring:prometheus:metric_relabel_config:node_exporter', []) %}
       - action: {{ label.get('action', 'replace') }}
         {%- if label.get('source_labels') %}
           {%- if label.source_labels is string %}
