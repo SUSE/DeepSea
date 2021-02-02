@@ -1,7 +1,28 @@
 -------------------------------------------------------------------
+Tue Feb  2 07:40:03 UTC 2021 - Tim Serong <tserong@suse.com>
+
+- Version: 0.9.34
+- Use correct pool when checking for rados config object
+- spec: declare incompatibility with ceph < 14.2.13
+- rgw/dashboard: use rgw_frontend_ssl_port in SSL scenario
+  (bsc#1178355)
+- Fix setting custom Grafana certificates and Prometheus CLI flags
+  (bsc#1179581)
+- spec: Make deepsea-cli require deepsea
+- ganesha: use ganesha_config pool in ganesha.report (bsc#1179621)
+- monitoring: fix node_exporter overrides in prometheus.yml
+  (bsc#1179029)
+- ceph.conf: don't disable msgr2 (bsc#1180594)
+- monitoring: enable custom scrape configurations (bsc#1179029)
+- runners/upgrade: drop bootstrap_minion and bootstrap_mon_ip
+  (bsc#1180960)
+- ceph.updates.salt: restart salt-minion.service with bg=True
+  (bsc#1181099)
+
+-------------------------------------------------------------------
 Tue Oct 21 15:25:00  UTC 2020 - Jan Fajerski <jfajerski@suse.com>
 
-- Version: 0.9.32
+- Version: 0.9.33
 - drop workarounds for old ceph-volume lvm batch command
 
 -------------------------------------------------------------------
