@@ -7,12 +7,14 @@ Verify that an automated upgrade is possible
 from __future__ import absolute_import
 from __future__ import print_function
 import re
+from typing import Iterable, List
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.error
 from packaging import version
 import json
 import yaml
+
 
 
 class UpgradeValidation(object):
@@ -110,13 +112,12 @@ class UpgradeValidation(object):
 
 class OrigDriveGroup:
 
-    def migrate(self, data, storage_hosts=[]):
+    def migrate(self, name, spec, storage_hosts=[]):
         self.__setattr__('service_type', 'osd')
         self.__setattr__('filter_logic', 'OR')
-        for name, spec in data.items():
-            self.__setattr__('service_id', name)
-            for k, v in spec.items():
-                self.__setattr__(k, v, storage_hosts)
+        self.__setattr__('service_id', name)
+        for k, v in spec.items():
+            self.__setattr__(k, v, storage_hosts)
 
     def __setattr__(self, key, value, storage_hosts=[]):
         if key == 'format' and value not in ['bluestore']:
@@ -132,6 +133,14 @@ class OrigDriveGroup:
 
     def to_yaml(self):
         return yaml.safe_dump(self.__dict__)
+
+
+def upgrade_orig_drive_group(old_dgs: List[dict], storage_hosts) -> Iterable[dict]:
+    for dg in old_dgs:
+        for name, spec in dg.items():
+            dg_o = OrigDriveGroup()
+            dg_o.migrate(name, spec, storage_hosts)
+            yield dg_o.__dict__
 
 
 def help_():
@@ -466,10 +475,8 @@ def generate_service_specs():
 
     storage_hosts = [_grain_host(local, node) for node in roles if 'storage' in roles[node]];
     with open('/srv/salt/ceph/configuration/files/drive_groups.yml', 'r') as fd:
-        for dg in yaml.safe_load_all(fd):
-            dg_o = OrigDriveGroup()
-            dg_o.migrate(dg, storage_hosts)
-            service_specs.append(dg_o.__dict__)
+        new = upgrade_orig_drive_group(yaml.safe_load_all(fd), storage_hosts)
+        service_specs.extend(new)
 
     return "\n---\n".join(yaml.safe_dump(service).strip() for service in service_specs)
 
