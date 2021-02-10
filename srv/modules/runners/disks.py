@@ -120,7 +120,7 @@ class DriveGroups(object):
     def _load_drive_group_file(self) -> str:
         """ Load the drive_group file """
         with open(self.drive_groups_path, 'r') as _fd:
-            return yaml.load(_fd)
+            return yaml.safe_load(_fd)
 
     def _get_drive_groups(self) -> dict:
         """ Get the drive Group specs"""

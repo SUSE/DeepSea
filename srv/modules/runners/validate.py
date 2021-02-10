@@ -966,7 +966,7 @@ Your currently configured FQDN is: <$fqdn>
                 continue
             with open(filename, 'r') as stream:
                 try:
-                    log.debug(yaml.load(stream))
+                    log.debug(yaml.safe_load(stream))
                 except yaml.YAMLError as exc:
                     # pylint: disable=no-member
                     pmark = exc.problem_mark
@@ -1191,7 +1191,7 @@ class ConfigCheck(object):
         """
         with open(self.map_file, 'r') as _fd:
             try:
-                return yaml.load(_fd)
+                return yaml.safe_load(_fd)
             except yaml.YAMLError:
                 log.error('Could not read {}'.format(self.map_file))
 

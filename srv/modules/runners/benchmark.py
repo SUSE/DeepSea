@@ -127,7 +127,7 @@ class Fio(object):
     def _get_job_parameters(self, job_spec, job_log_dir, client):
         with open('{}/{}'.format(self.bench_dir, job_spec, 'r')) as yml:
             try:
-                job = yaml.load(yml)
+                job = yaml.safe_load(yml)
             except YAMLError as error:
                 log.error('Error parsing job spec in file {}/fio/{}'.format(self.bench_dir, job_spec))
                 log.error(error)
@@ -176,7 +176,7 @@ def __parse_and_set_dirs(kwargs):
 def __parse_collection(collection_file):
     with open(collection_file, 'r') as yml:
         try:
-            return yaml.load(yml)
+            return yaml.safe_load(yml)
         except YAMLError as error:
             log.error('Error parsing collection {}:'.format(collection_file))
             log.error(error)
