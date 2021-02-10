@@ -8,14 +8,14 @@ various configuration files to control service restarts.
 
 from __future__ import absolute_import
 from __future__ import print_function
-import os.path
+import os
 import hashlib
 import logging
 import glob
+import sys
 # pylint: disable=import-error,3rd-party-module-not-gated
 import salt.client
 
-__opts__ = salt.config.client_config('/etc/salt/master')
 log = logging.getLogger(__name__)
 
 
@@ -38,8 +38,6 @@ class Role(object):
         self.conf_filename = kwargs.get('conf_filename', self._role_name)
         self.conf_extension = kwargs.get('conf_extension', '.conf')
         self._conf_files = glob.glob(self.conf_dir + self.conf_filename + self.conf_extension)
-        self._depends = [self]
-        self.rgw_configurations()
 
     @property
     def name(self):
@@ -68,70 +66,20 @@ class Role(object):
         """
         self._conf_files.append(conf_file)
 
-    @property
-    def dependencies(self):
-        """
-        Returns dependency list
-        """
-        return self._depends
-
-    def add_dependencies(self, role):
-        """
-        Adds Role to list of dependencies
-        """
-        if isinstance(role, list):
-            # also if the containting items are instance of Role
-            self._depends.extend(role)
-        elif isinstance(role, Role):
-            self._depends.append(role)
-        else:
-            raise UnknownRole
-
-    def dependencies_unwrapped(self):
-        """
-        Return a list of human readable names of Roles
-        DEV/DEBUG
-        """
-        return [dep.name for dep in self.dependencies]
-
-    def rgw_configurations(self):
-        """
-        RadosGW allows custom configurations.  Include these roles with a
-        dependency on the global.conf.  Default to 'rgw' if not set.
-        """
-        # pylint: disable=redefined-outer-name
-        local = salt.client.LocalClient()
-        roles = []
-        try:
-            roles = list(local.cmd("I@roles:master", 'pillar.get',
-                                   ['rgw_configurations'],
-                                   tgt_type="compound").values())[0]
-            log.debug("Querying pillar for rgw_configurations")
-        # pylint: disable=bare-except
-        except:
-            pass
-        if not roles:
-            roles = ['rgw']
-        for role in roles:
-            if role == self.name:
-                self.add_dependencies(Role(role_name='global'))
-
 
 class Config(object):
     """
-    Tracks the configuration files, related dependencies and checksums
+    Tracks the configuration files and checksums
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, role):
         """
         Initialize locations for configuration files
         """
-        self.role = kwargs.get('role')
+        self.role = role
         self.base_dir = '/srv/salt/ceph/configuration/files/'
         self.checksum_dir = self.base_dir + 'ceph.conf.checksum/'
         self.checksum_file = self.checksum_dir + self.role.conf_filename + self.role.conf_extension
-        log.debug("dependencies of role {}: {}".format(self.role.name,
-                                                       self.role.dependencies_unwrapped()))
 
     def create_checksum(self):
         """
@@ -177,7 +125,8 @@ class Config(object):
 
     def has_change(self):
         """
-        Compare md5s and return status
+        Compare md5s and return status, and also write out new checksum if
+        the state has changed.  This is NOT idempotent!
         """
         log.info("Checking role {}".format(self.role.name))
         previous_cs = self.read_checksum()
@@ -195,118 +144,65 @@ class Config(object):
         return False
 
 
-def help_():
+def any():
     """
-    Usage
+    Checks whether any configuration has changed, and if it has, sets the
+    various restart grains appropriately, then returns True, otherwise
+    returns False.
     """
-    usage = ('salt-run changed.requires_conf_change role:\n'
-             'salt-run changed.config name=role:\n\n'
-             '    Checks whether the user configured files for the named role has changed\n'
-             '\n\n'
-             'salt-run changed.rgw:\n'
-             'salt-run changed.mds:\n'
-             'salt-run changed.osd:\n'
-             'salt-run changed.mon:\n'
-             'salt-run changed.global:\n'
-             'salt-run changed.client:\n\n'
-             '    Shortcuts for many roles\n'
-             '\n\n')
-    print(usage)
-    return ""
+    __opts__ = salt.config.client_config('/etc/salt/master')
+    __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    master_minion = __salt__['master.minion']()
 
+    # roles_to_check is a complete list of all possible roles that could exist,
+    # that might have config changes.
+    roles_to_check = [
+        Role(role_name='mon'),
+        Role(role_name='mgr'),
+        Role(role_name='mds'),
+        Role(role_name='storage', conf_filename='osd'),
+        Role(role_name='client'),
+        Role(role_name='igw', conf_dir='/srv/salt/ceph/igw/cache/',
+                              conf_filename="iscsi-gateway.*",
+                              conf_extension=".cfg"),
+    ]
 
-def requires_conf_change(**kwargs):
-    """
-    If any of the dependent roles received a change
-    in the its config, retrun True
-    """
-    cfg = Config(**kwargs)
-    role = cfg.role
-    cluster = kwargs.get('cluster', 'ceph')
-    if not isinstance(role, Role):
-        raise UnknownRole
-    # pylint: disable=invalid-name
     local = salt.client.LocalClient()
-    if role not in cfg.role.dependencies:
-        return "Role {} not defined".format(role.name)
-    for deps in cfg.role.dependencies:
-        if Config(role=deps).has_change():
-            search = 'I@cluster:{} and I@roles:{}'.format(cluster, role.name)
-            local.cmd(search, 'grains.setval',
-                      ["restart_{}".format(role.name), True],
-                      tgt_type="compound")
-            return True
-    return False
+    rgw_roles = list(local.cmd(master_minion, 'pillar.get', ['rgw_configurations']).items())[0][1]
+    if not rgw_roles:
+        rgw_roles = ['rgw']
+    for role in rgw_roles:
+        roles_to_check.append(Role(role_name=role))
 
+    # grains_to_set is the actual set of restart grains we want to set, based
+    # on what configuration has actually changed.
+    grains_to_set = set()
 
-def rgw():
-    """
-    Returns whether RadosGW configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='rgw'))
+    # In the case where only individual config files are changed, we just add
+    # only those changed roles to grains_to_set...
+    for role in roles_to_check:
+        if Config(role).has_change():
+            grains_to_set.add(role.name)
 
+    # ...but if the global config has changed, we go ahead and add every
+    # possible role to grains_to_set, so all daemons get restarted if the
+    # global config has changed.
+    if Config(Role(role_name='global')).has_change():
+        for role in roles_to_check:
+            grains_to_set.add(role.name)
 
-def mds():
-    """
-    Returns whether CephFS configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='mds'))
+    if not grains_to_set:
+        return False
 
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+    for role in grains_to_set:
+        log.info("Setting restart_{} grain".format(role))
+        search = 'I@cluster:ceph and I@roles:{}'.format(role)
+        local.cmd(search, 'grains.setval', ["restart_{}".format(role), True], tgt_type="compound")
+    sys.stdout = _stdout
 
-def osd():
-    """
-    Returns whether OSD configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='storage',
-                                          conf_filename='osd'))
-
-
-def mon():
-    """
-    Returns whether monitor configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='mon'))
-
-
-def mgr():
-    """
-    Returns whether monitor configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='mgr'))
-
-
-def global_():
-    """
-    Returns whether the global configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='global'))
-
-
-def client():
-    """
-    Returns whether the client configuration changed
-    """
-    return requires_conf_change(role=Role(role_name='client'))
-
-
-def igw():
-    """
-    Returns whether igw configuration has changed
-    """
-    return requires_conf_change(role=Role(role_name='igw',
-                                          conf_dir='/srv/salt/ceph/igw/cache/',
-                                          conf_filename="iscsi-gateway.*",
-                                          conf_extension=".cfg"))
-
-
-def config(**kwargs):
-    """
-    Returns whether the configuration of the specified role changed
-    """
-    return requires_conf_change(role=Role(**kwargs))
-
-
-__func_alias__ = {
-                  'global_': 'global',
-                  'help_': 'help'
-                 }
+    return True

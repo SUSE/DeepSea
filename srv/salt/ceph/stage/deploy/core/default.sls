@@ -11,6 +11,11 @@ ready check failed:
 
 {% endif %}
 
+{# This checks for config file changes and sets restart grains if necessary   #}
+{# (the config_has_changed value is unused, but is necessary in order for the #}
+{# runner to actually be invoked in this context) #}
+{% set config_has_changed = salt['saltutil.runner']('changed.any') %}
+
 {# Salt orchestrate ignores return codes of other salt runners. #}
 #validate:
 #  salt.runner:
@@ -55,18 +60,6 @@ configuration:
     - tgt: 'I@cluster:ceph'
     - tgt_type: compound
     - sls: ceph.configuration
-
-# this gets pre-parsed anyways.. maybe put this ontop
-# replace with changed.all runner
-{% set ret_mon = salt.saltutil.runner('changed.mon') %}
-{% set ret_osd = salt['saltutil.runner']('changed.osd') %}
-{% set ret_mgr = salt['saltutil.runner']('changed.mgr') %}
-{% for config in salt['pillar.get']('rgw_configurations', [ 'rgw' ]) %}
-{% set ret_rgw_conf = salt.saltutil.runner('changed.config', role_name=config) %}
-{% endfor %}
-{% set ret_client = salt['saltutil.runner']('changed.client') %}
-{% set ret_global = salt['saltutil.runner']('changed.global') %}
-{% set ret_mds = salt['saltutil.runner']('changed.mds') %}
 
 admin:
   salt.state:
