@@ -54,9 +54,9 @@ apply igw config:
     - sls: ceph.igw.config.apply_iscsi_config
     - failhard: True
 
-check if igw config changed:
+check if any config changed:
   salt.runner:
-    - name: changed.igw
+    - name: changed.any
     - failhard: True
 
 auth:
