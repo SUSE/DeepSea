@@ -1,11 +1,11 @@
 configure dashboard rgw access key:
   cmd.run:
-    - name: "ceph dashboard set-rgw-api-access-key $(radosgw-admin user info --uid=admin | jq -r .keys[0].access_key)"
+    - name: "echo -n $(radosgw-admin user info --uid=admin | jq -r .keys[0].access_key) | ceph dashboard set-rgw-api-access-key -i -"
     - fire_event: True
 
 configure dashboard rgw secret key:
   cmd.run:
-    - name: "ceph dashboard set-rgw-api-secret-key $(radosgw-admin user info --uid=admin | jq -r .keys[0].secret_key)"
+    - name: "echo -n $(radosgw-admin user info --uid=admin | jq -r .keys[0].secret_key) | ceph dashboard set-rgw-api-secret-key -i -"
     - fire_event: True
 
 {% set rgw_init = pillar.get('rgw_init', 'default') %}
