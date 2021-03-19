@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Fri Mar 19 05:17:40 UTC 2021 - Tim Serong <tserong@suse.com>
+
+- Version: 0.9.35
+- osd: add method to zap simple osds (bsc#1178657, bsc#1178216)
+- upgrade to cephadm: fix Drive Group generation (bsc#1181665)
+- Rework config change detection to handle global.conf correctly (bsc#1181183)
+- Replace yaml.load() with yaml.safe_load()
+- Use -i to pass credentials to `ceph dashboard` commands (bsc#1183600)
+
+-------------------------------------------------------------------
 Tue Feb  2 07:40:03 UTC 2021 - Tim Serong <tserong@suse.com>
 
 - Version: 0.9.34
