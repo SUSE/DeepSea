@@ -29,7 +29,7 @@ add iscsi gateway {{ igw_address }} to dashboard:
     - tgt: {{ master }}
     - tgt_type: compound
     - arg:
-      - "ceph dashboard iscsi-gateway-add {{ iscsi_url }}"
+      - "echo -n {{ iscsi_url }} | ceph dashboard iscsi-gateway-add -i -"
     - kwarg:
         unless: ceph dashboard iscsi-gateway-list | jq .gateways | grep -q "{{ igw_address }}:{{ iscsi_port }}"
 

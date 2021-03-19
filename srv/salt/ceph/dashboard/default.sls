@@ -70,7 +70,7 @@ dashboard user exists:
 set username and password:
   cmd.run:
     # This command is printed although the 'onchange' statement evaluates as true. This might cause confusion.
-    - name: ceph dashboard ac-user-create {{ dashboard_user }} {{ dashboard_pw }} administrator
+    - name: "echo -n {{ dashboard_pw }} | ceph dashboard ac-user-create {{ dashboard_user }} -i - administrator"
     - onchanges:
         - cmd: dashboard user exists
 
