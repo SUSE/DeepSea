@@ -784,9 +784,6 @@ class DriveGroup(object):
             for disk in self.disks:
                 log.debug("Processing disk {}".format(disk.get('path')))
                 # continue criterias
-                if not disk.get('available'):
-                    self.ignore(disk, "Disk is not available")
-                    continue
                 if self._has_gpt(disk):
                     self.ignore(disk, "GPT headers present")
                     continue
