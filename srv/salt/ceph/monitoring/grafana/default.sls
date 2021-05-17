@@ -89,6 +89,8 @@ add mgr dashboard config section:
           cert_key: /etc/grafana/grafana.key
         users:
           default_theme: light
+        security:
+          allow_embedding: true
 
 grafana-server:
   service.running:
