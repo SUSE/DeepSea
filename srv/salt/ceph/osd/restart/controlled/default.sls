@@ -15,6 +15,12 @@ wait on processes after processing osd.{{ id }}:
     - fire_event: True
     - failhard: True
 
+ensure osd.{{ id }} is active:
+  module.run:
+    - name: osd.wait_until_available
+    - osd_id: {{ id }}
+    - failhard: True
+
 {% endfor %}
 
 unset storage restart grain:
