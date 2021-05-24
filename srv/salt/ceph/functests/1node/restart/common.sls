@@ -52,7 +52,7 @@ distribute ceph.conf {{ service }}:
     - tgt_type: compound
     - sls: ceph.configuration
 
-check changes:
+check {{ service }} changes:
   salt.runner:
     - name: changed.any
 
@@ -89,7 +89,7 @@ redistribute ceph.conf {{ service }}:
     - tgt_type: compound
     - sls: ceph.configuration
 
-check changes again:
+check {{ service }} changes again:
   salt.runner:
     - name: changed.any
 
