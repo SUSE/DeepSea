@@ -10,9 +10,9 @@
 
     check if all processes are still running on {{ host }} after restarting mdss:
       salt.state:
-        - tgt: '{{ salt['pillar.get']('deepsea_minions') }}'
+        - tgt: 'I@roles:mds'
         - tgt_type: compound
-        - sls: ceph.processes
+        - sls: ceph.processes.mds
         - failhard: True
 
     restarting mds on {{ host }}:
