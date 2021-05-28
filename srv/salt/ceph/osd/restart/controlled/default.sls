@@ -31,6 +31,14 @@ unset storage restart grain:
     - key: restart_storage
     - val: False
 
+{% set osd_restart_delay = salt['pillar.get']('osd_restart_delay', 0) %}
+{% if osd_restart_delay %}
+delay after restarting osds:
+  module.run:
+    - name: test.sleep
+    - length: {{ osd_restart_delay }}
+{% endif %}
+
 {% else %}
 
 osdrestart.noop:
