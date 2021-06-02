@@ -38,9 +38,6 @@ cephadm:
       - cephadm
       - podman
 
-# TODO: may need to support authenticated registries. For more details see:
-# - https://github.com/ceph/ceph-salt/pull/277
-# - https://tracker.ceph.com/issues/44886
 /etc/containers/registries.conf:
   file.managed:
     - source:
@@ -52,6 +49,18 @@ cephadm:
     - makedirs: True
     - backup: minion
     - failhard: True
+
+{% set auth = salt['pillar.get']('ses7_container_registry_auth', {}) %}
+{% if auth %}
+login to registry:
+  cmd.run:
+    - name: |
+        cephadm registry-login \
+        --registry-url {{ auth.get('registry') }} \
+        --registry-username {{ auth.get('username') }} \
+        --registry-password {{ auth.get('password') }}
+    - failhard: True
+{% endif %}
 
 pull ceph container image:
   cmd.run:
