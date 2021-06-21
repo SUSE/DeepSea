@@ -540,7 +540,7 @@ class Validate(object):
     def _ntp_check(self, server):
         """
         """
-        result = self._popen([ '/usr/sbin/sntp', '-t', '1', server ])
+        result = self._popen([ '/usr/sbin/sntp', server ])
         for line in result[0]:
             if re.search(r'{}'.format(server), line):
                 if re.search(r'no.*response', line):
