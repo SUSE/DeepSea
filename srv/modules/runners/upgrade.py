@@ -360,7 +360,6 @@ def ceph_salt_config():
         },
         'container': {
             'registries_enabled': True,
-            'registries': [],
             'images': {
                 'ceph': 'registry.suse.com/ses/7/ceph/ceph'
             }
@@ -408,6 +407,11 @@ def ceph_salt_config():
         local.cmd(master_minion, 'pillar.get', ['ses7_container_registries']).items())[0][1]
     if container_registries:
         config['container']['registries'] = container_registries
+
+    container_auth = list(
+        local.cmd(master_minion, 'pillar.get', ['ses7_container_registry_auth']).items())[0][1]
+    if container_auth:
+        config['container']['auth'] = container_auth
 
     return json.dumps(config, indent=4)
 
