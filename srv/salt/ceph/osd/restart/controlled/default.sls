@@ -1,5 +1,6 @@
 {% if salt['cephprocesses.need_restart'](role='storage') == True %}
-{% for id in salt['osd.list']() %}
+{% set osd_list = salt['osd.list']() %}
+{% for id in osd_list %}
 restart osd {{ id }}:
   cmd.run:
     - name: "systemctl restart ceph-osd@{{ id }}.service"
@@ -14,7 +15,14 @@ wait on processes after processing osd.{{ id }}:
         'roles': ["storage"]
     - fire_event: True
     - failhard: True
+{% endfor %}
 
+{% for id in osd_list %}
+ensure osd.{{ id }} is active:
+  module.run:
+    - name: osd.wait_until_available
+    - osd_id: {{ id }}
+    - failhard: True
 {% endfor %}
 
 unset storage restart grain:
@@ -22,6 +30,14 @@ unset storage restart grain:
     - name: grains.setval
     - key: restart_storage
     - val: False
+
+{% set osd_restart_delay = salt['pillar.get']('osd_restart_delay', 0) %}
+{% if osd_restart_delay %}
+delay after restarting osds:
+  module.run:
+    - name: test.sleep
+    - length: {{ osd_restart_delay }}
+{% endif %}
 
 {% else %}
 

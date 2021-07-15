@@ -977,6 +977,20 @@ def takeover():
     return True
 
 
+def wait_until_available(osd_id):
+    """Wait slightly over a minute for an OSD to become available (use e.g. after restarting)"""
+    timeout=0.5
+    while timeout < 60:
+        _, stdout, _ = __salt__['helper.run']("ceph daemon osd.{} status 2>/dev/null | jq -r .state".format(osd_id))
+        if stdout == "active":
+            log.info("OSD {} is now active (timeout: {})".format(osd_id, timeout))
+            return True
+        time.sleep(timeout)
+        timeout *= 2
+    log.error("OSD {} not active after {} seconds".format(osd_id, timeout))
+    return False
+
+
 __func_alias__ = {
                 'list_': 'list',
                 }
