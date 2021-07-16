@@ -1,4 +1,16 @@
 -------------------------------------------------------------------
+Fri Jul 16 13:12:40 UTC 2021 - Stefen Allen <sallen@suse.com>
+
+- Version: 0.9.36
+- Allow embedding of Grafana graphs (bsc#1186131)
+- Wait for OSDs to be active after restarting (bsc#1185422)
+- qa: functests/1node/restart: fix changed.any check
+- mds/restart: only check MDS processes (not all processes)
+- dg: include unavailable disks (bsc#1181725)
+- upgrade: Add ability to specify registry credentials (bsc#1181095)
+- Fix no UCST response after 1 second when validating time server
+
+-------------------------------------------------------------------
 Fri Mar 19 05:17:40 UTC 2021 - Tim Serong <tserong@suse.com>
 
 - Version: 0.9.35
@@ -12,7 +24,7 @@ Fri Mar 19 05:17:40 UTC 2021 - Tim Serong <tserong@suse.com>
 Tue Feb  2 07:40:03 UTC 2021 - Tim Serong <tserong@suse.com>
 
 - Version: 0.9.34
-- Use correct pool when checking for rados config object
+- Use correct pool when checking for rados config object (bsc#1178016)
 - spec: declare incompatibility with ceph < 14.2.13
 - rgw/dashboard: use rgw_frontend_ssl_port in SSL scenario
   (bsc#1178355)
