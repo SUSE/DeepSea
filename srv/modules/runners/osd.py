@@ -459,13 +459,19 @@ def ok_to_stop_osds(osd_list):
         tgt_type="glob",
     )
     message = list(ret.values())[0]
-    if 'are ok to stop without reducing availability' in message:
-        return True
-    else:
-        print(
-            "You are about to remove OSD(s) that would result in degraded PGs. Stopping"
-        )
-        raise NotOkToStop(message)
+    try:
+        # ceph 14.2.22 gives something like:
+        # {"ok_to_stop":true,"osds":[0],"num_ok_pgs":98,"num_not_ok_pgs":0,"ok_become_degraded": [...]}
+        ok_to_stop = json.loads(message)
+        if ok_to_stop['ok_to_stop']:
+            return True
+    except ValueError:
+        # `ceph osd ok-to-stop` output isn't parseable JSON, fall back to
+        # checking the status string we'd expect from ceph < v14.2.22
+        if 'are ok to stop without reducing availability' in message:
+            return True
+    print("You are about to remove OSD(s) that would result in degraded PGs. Stopping")
+    raise NotOkToStop(message)
 
 
 def pre_check(osd_list, force):
