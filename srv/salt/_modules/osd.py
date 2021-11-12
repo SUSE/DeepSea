@@ -978,17 +978,36 @@ def takeover():
 
 
 def wait_until_available(osd_id):
-    """Wait slightly over a minute for an OSD to become available (use e.g. after restarting)"""
-    timeout=0.5
-    while timeout < 60:
-        _, stdout, _ = __salt__['helper.run']("ceph daemon osd.{} status 2>/dev/null | jq -r .state".format(osd_id))
+    """Wait for an OSD to become available (use e.g. after restarting)"""
+    # This will return immediately if the OSD is already active.  If it's
+    # not active, it will sleep in a loop and retry the check periodically
+    # until a timeout is exceeded.  In order to return quickly for OSDs
+    # that start quickly, the first sleep is 1 second, then 2 seconds,
+    # then 4, 8, 16, 32, but after that it reverts to sleeping 60 seconds
+    # per iteration.  The default timeout is 600 seconds (10 minutes).
+    timeout = __pillar__.get('osd_available_timeout', 600)
+    delay = 0.5
+    start = time.monotonic()
+    while True:
+        duration = int(time.monotonic() - start)
+
+        _, stdout, _ = __salt__['helper.run'](
+            "ceph daemon osd.{} status 2>/dev/null | jq -r .state".format(osd_id)
+        )
         if stdout == "active":
-            log.info("OSD {} is now active (timeout: {})".format(osd_id, timeout))
+            log.info("OSD {} is now active (waited {} seconds)".format(osd_id, duration))
             return True
-        time.sleep(timeout)
-        timeout *= 2
-    log.error("OSD {} not active after {} seconds".format(osd_id, timeout))
-    return False
+
+        if duration > timeout:
+            log.error(
+                "OSD {} not active after {} seconds (timeout of {} exceeded)".format(
+                    osd_id, duration, timeout
+                )
+            )
+            return False
+
+        delay = min(delay * 2, 60)
+        time.sleep(delay)
 
 
 __func_alias__ = {
