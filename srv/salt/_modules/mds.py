@@ -28,6 +28,7 @@ def get_name(host, i=0):
 
 
 def get_local_daemon_count():
+    # pylint: disable=missing-docstring,invalid-name
     p = '/var/lib/ceph/mds/'
     dirs = [d for d in listdir(p) if isdir('{}/{}'.format(p, d)) and
             isfile('{}/{}/keyring'.format(p, d))]
