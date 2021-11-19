@@ -719,7 +719,7 @@ Example:
 A device with the hostname `myhost` in the parent domain example.com has the fully qualified domain name myhost.example.com. The FQDN uniquely distinguishes the device from any other hosts called myhost in other domains.
 
 Please make sure 'hostname --fqdn' returns an FQDN, for example, myhost.example.com
-Your currently configured FQDN is: <$fqdn>
+Your currently configured FQDN is: <{fqdn}>
  """
             if not domain:
                 self.errors.setdefault('domain', []).append(msg)
@@ -1037,6 +1037,7 @@ Your currently configured FQDN is: <$fqdn>
         btrfs.  Skip checks if subvolume state is disabled.
         """
         for node in self.data:
+            # pylint: disable=line-too-long
             if 'subvolume_init' in self.data[node] and self.data[node]['subvolume_init'] == "disabled":
                 self.skipped['subvolume'] = "skipping"
                 return

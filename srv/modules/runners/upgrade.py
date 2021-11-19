@@ -8,13 +8,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 import re
 from typing import Iterable, List
+import json
 # pylint: disable=import-error,3rd-party-module-not-gated,redefined-builtin
 import salt.client
 import salt.utils.error
-from packaging import version
-import json
 import yaml
-
+from packaging import version
 
 
 class UpgradeValidation(object):
@@ -111,15 +110,21 @@ class UpgradeValidation(object):
 
 
 class OrigDriveGroup:
+    # pylint: disable=missing-docstring
 
-    def migrate(self, name, spec, storage_hosts=[]):
+    def migrate(self, name, spec, storage_hosts=None):
+        if storage_hosts is None:
+            storage_hosts = []
         self.__setattr__('service_type', 'osd')
         self.__setattr__('filter_logic', 'OR')
         self.__setattr__('service_id', name)
+        # pylint: disable=invalid-name
         for k, v in spec.items():
             self.__setattr__(k, v, storage_hosts)
 
-    def __setattr__(self, key, value, storage_hosts=[]):
+    def __setattr__(self, key, value, storage_hosts=None):
+        if storage_hosts is None:
+            storage_hosts = []
         if key == 'format' and value not in ['bluestore']:
             raise Exception('Only <bluestore> is supported.')
         if key == 'target':
@@ -136,6 +141,7 @@ class OrigDriveGroup:
 
 
 def upgrade_orig_drive_group(old_dgs: List[dict], storage_hosts) -> Iterable[dict]:
+    # pylint: disable=invalid-name,missing-docstring
     for dg in old_dgs:
         for name, spec in dg.items():
             dg_o = OrigDriveGroup()
@@ -243,38 +249,52 @@ def status():
     # would be SLE 12 SP3 and some would be SLE 15 SP1.  So, we check if there's any oses
     # that aren't a variant on SLE 15 (or are down/Unkown).  If the list is empty, we
     # assume we're on a SLE 15 SP1 or SP2 base, and can sensibly run the SES6->7 checks.
-    non_sle_15 = [os for os in set(os_codename.values())
-                    if not os.startswith("SUSE Linux Enterprise Server 15")
-                    and not os.startswith("Unknown")]
+    non_sle_15 = [
+        os for os in set(os_codename.values())
+        if not os.startswith("SUSE Linux Enterprise Server 15")
+        and not os.startswith("Unknown")
+    ]
+    # It's easier to understand "if len(non_sle_15) == 0" than "if not non_sle_15"
+    # pylint: disable=len-as-condition
     if len(non_sle_15) == 0:
-        require_osd_release = list(local.cmd(master_minion, 'osd.require_osd_release', []).items())[0][1]
+        require_osd_release = list(local.cmd(
+            master_minion, 'osd.require_osd_release', []
+        ).items())[0][1]
         if require_osd_release[0] < 'n':
-            print("'require-osd-release' is currently '{}', but must be set to 'nautilus'".format(require_osd_release))
+            print("'require-osd-release' is currently '{}', but must be set to 'nautilus'".format(
+                require_osd_release
+            ))
             print("before upgrading to SES 7.  Please run `ceph osd require-osd-release nautilus`")
             print("to fix this before proceeding further.")
             print("")
 
-        filestore_osds = list(local.cmd(master_minion, 'cmd.run',
-            ["ceph osd metadata | jq '.[] | select(.osd_objectstore == \"filestore\") | .id'"]).items())[0][1].split()
+        filestore_osds = list(local.cmd(master_minion, 'cmd.run', [
+            "ceph osd metadata | jq '.[] | select(.osd_objectstore == \"filestore\") | .id'"
+        ]).items())[0][1].split()
         if filestore_osds:
             print("The following OSDs are using FileStore:")
             print("  {}".format(', '.join(filestore_osds)))
             print("All FileStore OSDs must be converted to BlueStore before upgrading to SES 7.")
             print("")
 
-        filesystems = list(local.cmd(master_minion, 'cmd.run',
-            ["ceph fs ls --format=json|jq -r '.[][\"name\"]'"]).items())[0][1].split()
+        filesystems = list(local.cmd(master_minion, 'cmd.run', [
+            "ceph fs ls --format=json|jq -r '.[][\"name\"]'"
+        ]).items())[0][1].split()
         if filesystems:
+            # pylint: disable=invalid-name
             for fs in filesystems:
-                max_mds = int(list(local.cmd(master_minion, 'cmd.run',
-                    ["ceph fs get {}|awk '/max_mds/ {{print $2}}'".format(fs)]).items())[0][1])
+                max_mds = int(list(local.cmd(master_minion, 'cmd.run', [
+                    "ceph fs get {}|awk '/max_mds/ {{print $2}}'".format(fs)
+                ]).items())[0][1])
                 if max_mds > 1:
+                    # pylint: disable=line-too-long
                     print("The '{}' filesystem has {} MDS daemons.".format(fs, max_mds))
                     print("Before upgrading MDS daemons, reduce the number of ranks to 1 by running")
                     print("`ceph fs set {} max_mds 1`".format(fs))
                     print("")
-            up_standbys = int(list(local.cmd(master_minion, 'cmd.run',
-                ["ceph status --format=json-pretty|jq -r '.[\"fsmap\"][\"up:standby\"]'"]).items())[0][1])
+            up_standbys = int(list(local.cmd(master_minion, 'cmd.run', [
+                "ceph status --format=json-pretty|jq -r '.[\"fsmap\"][\"up:standby\"]'"
+            ]).items())[0][1])
             if up_standbys > 0:
                 if up_standbys > 1:
                     print("There are {} standby MDS daemons running.".format(up_standbys))
@@ -385,10 +405,6 @@ def ceph_salt_config():
     __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
     master_minion = __salt__['master.minion']()
 
-    runner = salt.runner.RunnerClient(__opts__)
-    mon_ips = dict(runner.cmd('select.public_addresses',
-                              ['cluster=ceph', 'roles=mon', 'tuples=True'], print_event=False))
-
     local = salt.client.LocalClient()
     roles = local.cmd("I@cluster:ceph", 'pillar.get', ['roles'], tgt_type="compound")
 
@@ -452,6 +468,7 @@ def generate_service_specs():
 
     # Lifted from srv/modules/runners/select.py
     def _grain_host(client, minion):
+        # pylint: disable=missing-docstring
         return list(client.cmd(minion, 'grains.item', ['host']).values())[0]['host']
 
     for service_type in ['mon', 'mgr', 'prometheus', 'grafana']:
@@ -477,7 +494,8 @@ def generate_service_specs():
                 }
             })
 
-    storage_hosts = [_grain_host(local, node) for node in roles if 'storage' in roles[node]];
+    storage_hosts = [_grain_host(local, node) for node in roles if 'storage' in roles[node]]
+    # pylint: disable=invalid-name
     with open('/srv/salt/ceph/configuration/files/drive_groups.yml', 'r') as fd:
         new = upgrade_orig_drive_group(yaml.safe_load_all(fd), storage_hosts)
         service_specs.extend(new)

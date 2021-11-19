@@ -461,7 +461,13 @@ def ok_to_stop_osds(osd_list):
     message = list(ret.values())[0]
     try:
         # ceph 14.2.22 gives something like:
-        # {"ok_to_stop":true,"osds":[0],"num_ok_pgs":98,"num_not_ok_pgs":0,"ok_become_degraded": [...]}
+        # {
+        #   "ok_to_stop": true,
+        #   "osds": [0],
+        #   "num_ok_pgs": 98,
+        #   "num_not_ok_pgs": 0,
+        #   "ok_become_degraded": [...]
+        #  }
         ok_to_stop = json.loads(message)
         if ok_to_stop['ok_to_stop']:
             return True

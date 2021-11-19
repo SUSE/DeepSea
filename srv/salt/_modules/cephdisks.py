@@ -6,15 +6,6 @@ Query ceph-volume's API for devices on the node
 
 from __future__ import absolute_import
 import logging
-import re
-import os
-from subprocess import Popen, PIPE
-from shlex import split
-
-try:
-    from salt.utils.path import which
-except ImportError:
-    from distutils.spawn import which
 # pytest: disable=import-error
 log = logging.getLogger(__name__)
 

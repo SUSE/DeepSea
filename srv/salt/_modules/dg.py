@@ -1319,6 +1319,7 @@ Please make sure to have more/equal wal_devices than db_devices"""
         """ Property that lists 'destroyed' osds """
         return self.destroyed_osds_map.get(__grains__.get('host', ''), list())
 
+    # pylint: disable=inconsistent-return-statements
     def generate_c_v_commands(self):
         """ Generate ceph-volume commands based on the DriveGroup filters """
         data_devices = [x.get('path') for x in self.data_device_props.devices]

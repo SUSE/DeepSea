@@ -718,7 +718,7 @@ def require_osd_release(**kwargs):
     """
     Return the require_osd_release setting
     """
-    require_osd_release = None
+    osd_release = None
     settings = {
         'conf': "/etc/ceph/ceph.conf",
         'keyring': '/etc/ceph/ceph.client.admin.keyring',
@@ -734,11 +734,12 @@ def require_osd_release(**kwargs):
         cmd = json.dumps({"prefix": "osd dump", "format": "json"})
         _, output, _ = cluster.mon_command(cmd, b'', timeout=6)
         output = json.loads(output)
-        require_osd_release = output['require_osd_release']
+        osd_release = output['require_osd_release']
+    # pylint: disable=broad-except
     except Exception as error:
         log.error("Couldn't get require_osd_release: {}".format(error))
 
-    return require_osd_release
+    return osd_release
 
 
 class OSDDevices(object):

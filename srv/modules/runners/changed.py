@@ -145,6 +145,7 @@ class Config(object):
 
 
 def any():
+    # pylint: disable=redefined-builtin
     """
     Checks whether any configuration has changed, and if it has, sets the
     various restart grains appropriately, then returns True, otherwise
@@ -165,9 +166,12 @@ def any():
         Role(role_name='mds'),
         Role(role_name='storage', conf_filename='osd'),
         Role(role_name='client'),
-        Role(role_name='igw', conf_dir='/srv/salt/ceph/igw/cache/',
-                              conf_filename="iscsi-gateway.*",
-                              conf_extension=".cfg"),
+        Role(
+            role_name='igw',
+            conf_dir='/srv/salt/ceph/igw/cache/',
+            conf_filename="iscsi-gateway.*",
+            conf_extension=".cfg"
+        ),
     ]
 
     local = salt.client.LocalClient()
