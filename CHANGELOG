@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Nov 26 06:46:54 UTC 2021 - Tim Serong <tserong@suse.com>
+
+- Version: 0.9.37
+- Bump OSD available timeout to 10mins, make it configurable (bsc#1192520)
+
+-------------------------------------------------------------------
 Fri Jul 16 13:12:40 UTC 2021 - Stefen Allen <sallen@suse.com>
 
 - Version: 0.9.36
