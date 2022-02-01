@@ -191,6 +191,13 @@ def _sort_nodes_by_role(nodes, roles):
         role_nodes = [node for node in roles if role in roles[node] and node in nodes]
         role_nodes.sort()
         nodes_sorted.extend([node for node in role_nodes if node not in nodes_sorted])
+    # It's possible that there are nodes which don't have any of the above
+    # roles (for example if prometheus and/or grafana are installed on a node
+    # by themselves), in which case those nodes won't be in nodes_sorted yet,
+    # so we need to add them on at the end.
+    other_nodes = [node for node in nodes if node not in nodes_sorted]
+    other_nodes.sort()
+    nodes_sorted.extend(other_nodes)
     return nodes_sorted
 
 
@@ -213,12 +220,16 @@ def _print_nodes_to_upgrade(releases, newest, roles):
         print("  {} (assigned roles: {})".format(node, ", ".join(roles[node])))
     print("")
 
-    print("Nodes running older software versions must be upgraded in the following order:")
-    i = 1
-    for node in nodes_to_upgrade:
-        print("{:4}: {} (assigned roles: {})".format(i, node, ", ".join(roles[node])))
-        i += 1
-    print("")
+    # It's possible for nodes_to_upgrade to be empty in the edge case where some
+    # node(s) is/are down.  In that case, don't list them here (they'll be printed
+    # out later)
+    if nodes_to_upgrade:
+        print("Nodes running older software versions must be upgraded in the following order:")
+        i = 1
+        for node in nodes_to_upgrade:
+            print("{:4}: {} (assigned roles: {})".format(i, node, ", ".join(roles[node])))
+            i += 1
+        print("")
 
 
 def status():
