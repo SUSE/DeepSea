@@ -330,30 +330,85 @@ class OSDUtil(Util):
         # calling the /device however is fine.
         # That means we have to find devices by osd_id first
 
-        cmd = 'ceph-volume lvm zap --osd-id {} --destroy'.format(self.osd_id)
+        cmd = "ceph-volume lvm zap --osd-id {} --destroy".format(self.osd_id)
         log.debug("Executing: {}".format(cmd))
         ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
         message = list(ret.values())[0]
         if 'Zapping successful for OSD' not in message:
             log.info("Zapping by osd_id failed, attempting to zap devices "
-                     "listed in /etc/ceph/osd/{}.*.json".format(self.osd_id))
+                     "listed by ceph-volume raw list")
             self._try_simple_zap()
         return True
+
+    def _raw_zap(self, device):
+        """ Zaps a raw device """
+        zap_cmd = "ceph-volume lvm zap --destroy " + device
+        log.debug("Executing: {}".format(zap_cmd))
+        ret = self.local.cmd(self.host, "cmd.run", [zap_cmd], tgt_type="glob")
+        message = list(ret.values())[0]
+        if "Zapping successful" not in message:
+            log.error("Zapping raw by osd_id failed: {}".format(message))
+            return False
+        return True
+
+    def _number_partitions(self, device_root_name):
+        """ Gets the number of partitions in a device """
+        nb_partitions_cmd = "grep -c {}[1-9] /proc/partitions".format(device_root_name)
+        log.debug("Getting number of partitions of device {}".format(device_root_name))
+        ret = self.local.cmd(self.host, "cmd.run", [nb_partitions_cmd], tgt_type="glob")
+        message = list(ret.values())[0]
+        if not message.isdigit():
+            log.error("Error getting number of partitions of device {0},"
+                      " unexpected output: {1}".format(device_root_name, message))
+            raise RuntimeError
+        return int(message)
+
+    def _zap_partition(self, volume_info):
+        """ Zaps a partition given the info obtained with lsblk -no TYPE,PKNAME,PATH """
+        ret_values = volume_info.split()
+        if len(ret_values) != 3:
+            log.error("Unexpected output received from lsblk: {}".format(volume_info))
+            return False
+        if not self._raw_zap(ret_values[2]):
+            return False
+        nb_partitions = self._number_partitions(ret_values[1])
+        if nb_partitions == 0:
+            parent_device = "/dev/" + ret_values[1]
+            return self._raw_zap(parent_device)
+        else:
+            log.info("Device {0} has still {1} partitions."
+                     " Not zapping the whole device...".format(ret_values[1], nb_partitions))
+        return True
+
+    def _zap_disk(self, volume_info):
+        """ Zaps a disk given the info obtained with lsblk -no TYPE,PKNAME,PATH """
+        ret_values = volume_info.split()
+        if len(ret_values) != 2:
+            log.error("Unexpected output received from lsblk: {}".format(volume_info))
+            return False
+        return self._raw_zap(ret_values[1])
 
     def _try_simple_zap(self):
         """
         Remote call to minion to zap devices listed by c-v simple scan output
         """
-        simple_scan_json = 'cat /etc/ceph/osd/{}-*.json'.format(self.osd_id)
-        cmd = simple_scan_json + (' | jq \'.block.path,.data.path,'
-                                  '.["block.db"].path,.["block.wal"].path\''
-                                  ' | xargs -r readlink -e '
-                                  '| xargs ceph-volume lvm zap --destroy')
-        log.debug("Executing: {}".format(cmd))
-        ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
-        message = list(ret.values())[0]
-        if 'Zapping successful for' not in message:
-            log.error("Zapping the osd failed: {}".format(message))
+        ceph_volume_scan = ("ceph-volume raw list | "
+                            "jq \'.\"{}\".device\' | "
+                            "xargs -r readlink -e | "
+                            "xargs lsblk -no TYPE,PKNAME,PATH".format(self.osd_id))
+        log.debug("Executing: {}".format(ceph_volume_scan))
+        ret = self.local.cmd(self.host, "cmd.run", [ceph_volume_scan], tgt_type="glob")
+        volume_type = list(ret.values())[0]
+        if "part" in volume_type:
+            log.info("Device is a raw partition...")
+            if not self._zap_partition(volume_type):
+                raise RuntimeError
+        elif "disk" in volume_type:
+            log.info("Device is a disk...")
+            if not self._zap_disk(volume_type):
+                raise RuntimeError
+        else:
+            log.error("Not a disk or partition: {}".format(volume_type))
             raise RuntimeError
         return True
 
