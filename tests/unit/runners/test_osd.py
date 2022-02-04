@@ -1,5 +1,5 @@
 import pytest
-from mock import patch, Mock
+from mock import patch, Mock, call
 from srv.modules.runners import osd as osd_module
 
 
@@ -153,6 +153,194 @@ class TestOSDUtil():
         test_fix.local.cmd.return_value = {'node': 'Nope, some error'}
         with pytest.raises(RuntimeError):
             test_fix._lvm_zap()
+
+    def test_try_simple_zap(self, test_fix):
+        test_fix = test_fix()
+        def cmds_side_effect(*args, **kwargs):
+            assert len(args) == 3
+            assert args[0] == "dummy_host"
+            assert args[1] == "cmd.run"
+            cmd_run_args = args[2]
+            assert len(cmd_run_args) == 1
+            cmd_run = cmd_run_args[0]
+
+            if cmd_run.endswith('xargs lsblk -no PKNAME | uniq'):
+                return { 'node': 'vdb\nvdc\nvdd' }
+            elif cmd_run.endswith('ceph-volume lvm zap --destroy'):
+                return { 'node': 'Zapping successful for OSD {}'.format(test_fix.osd_id) }
+            elif cmd_run.endswith('[1-9] /proc/partitions'):
+                return { 'node': '2' }
+            elif 'grep -c' in cmd_run:
+                return { 'node': '2' }
+        test_fix.local.cmd.side_effect = cmds_side_effect
+        assert test_fix._try_simple_zap() == True
+        expected_calls = [
+                            call("dummy_host",
+                                 "cmd.run", 
+                                 [ ("cat /etc/ceph/osd/{}-*.json | "
+                                             "jq '.block.path,.data.path,"
+                                             ".[\"block.db\"].path,.[\"block.wal\"].path' | "
+                                             "xargs -r readlink -e | "
+                                             "xargs lsblk -no PKNAME | "
+                                             "uniq").format(test_fix.osd_id)
+                                 ],
+                                 tgt_type='glob'
+                                ),
+                            call("dummy_host",
+                                 "cmd.run", 
+                                 [ ("cat /etc/ceph/osd/{}-*.json | "
+                                             "jq '.block.path,.data.path,"
+                                             ".[\"block.db\"].path,.[\"block.wal\"].path' | "
+                                             "xargs -r readlink -e | "
+                                             "xargs ceph-volume lvm zap --destroy").format(test_fix.osd_id)
+                                 ],
+                                 tgt_type='glob'
+                                ),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdb[1-9] /proc/partitions") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdc[1-9] /proc/partitions") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdd[1-9] /proc/partitions") ],
+                                 tgt_type='glob')
+                         ]
+        assert expected_calls == test_fix.local.cmd.mock_calls
+
+    def test_try_simple_zap_zaps_1_parent_disk(self, test_fix):
+        test_fix = test_fix()
+        def cmds_side_effect(*args, **kwargs):
+            assert len(args) == 3
+            assert args[0] == "dummy_host"
+            assert args[1] == "cmd.run"
+            cmd_run_args = args[2]
+            assert len(cmd_run_args) == 1
+            cmd_run = cmd_run_args[0]
+
+            if cmd_run.endswith('xargs lsblk -no PKNAME | uniq'):
+                return { 'node': 'vdb\nvdc\nvdd' }
+            elif cmd_run.endswith('ceph-volume lvm zap --destroy'):
+                return { 'node': 'Zapping successful for OSD {}'.format(test_fix.osd_id) }
+            elif cmd_run.endswith('vdb[1-9] /proc/partitions'):
+                return { 'node': '2' }
+            elif cmd_run.endswith('vdc[1-9] /proc/partitions'):
+                return { 'node': '0' }
+            elif cmd_run.endswith('vdd[1-9] /proc/partitions'):
+                return { 'node': '2' }
+            elif 'grep -c' in cmd_run:
+                return { 'node': '2' }
+            elif cmd_run.endswith('--destroy /dev/vdc'):
+                return { 'node': 'Zapping successful ' }
+        test_fix.local.cmd.side_effect = cmds_side_effect
+        assert test_fix._try_simple_zap() == True
+        expected_calls = [
+                            call("dummy_host",
+                                 "cmd.run", 
+                                 [ ("cat /etc/ceph/osd/{}-*.json | "
+                                             "jq '.block.path,.data.path,"
+                                             ".[\"block.db\"].path,.[\"block.wal\"].path' | "
+                                             "xargs -r readlink -e | "
+                                             "xargs lsblk -no PKNAME | "
+                                             "uniq").format(test_fix.osd_id)
+                                 ],
+                                 tgt_type='glob'
+                                ),
+                            call("dummy_host",
+                                 "cmd.run", 
+                                 [ ("cat /etc/ceph/osd/{}-*.json | "
+                                             "jq '.block.path,.data.path,"
+                                             ".[\"block.db\"].path,.[\"block.wal\"].path' | "
+                                             "xargs -r readlink -e | "
+                                             "xargs ceph-volume lvm zap --destroy").format(test_fix.osd_id)
+                                 ],
+                                 tgt_type='glob'
+                                ),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdb[1-9] /proc/partitions") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdc[1-9] /proc/partitions") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("ceph-volume lvm zap --destroy /dev/vdc") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdd[1-9] /proc/partitions") ],
+                                 tgt_type='glob')
+                         ]
+        assert expected_calls == test_fix.local.cmd.mock_calls
+
+    def test_try_simple_zap_error_zap_parent_disk(self, test_fix):
+        test_fix = test_fix()
+        def cmds_side_effect(*args, **kwargs):
+            assert len(args) == 3
+            assert args[0] == "dummy_host"
+            assert args[1] == "cmd.run"
+            cmd_run_args = args[2]
+            assert len(cmd_run_args) == 1
+            cmd_run = cmd_run_args[0]
+
+            if cmd_run.endswith('xargs lsblk -no PKNAME | uniq'):
+                return { 'node': 'vdb\nvdc\nvdd' }
+            elif cmd_run.endswith('ceph-volume lvm zap --destroy'):
+                return { 'node': 'Zapping successful for OSD {}'.format(test_fix.osd_id) }
+            elif cmd_run.endswith('vdb[1-9] /proc/partitions'):
+                return { 'node': '2' }
+            elif cmd_run.endswith('vdc[1-9] /proc/partitions'):
+                return { 'node': '0' }
+            elif cmd_run.endswith('vdd[1-9] /proc/partitions'):
+                return { 'node': '2' }
+            elif 'grep -c' in cmd_run:
+                return { 'node': '2' }
+            elif cmd_run.endswith('--destroy /dev/vdc'):
+                return { 'node': 'Some error' }
+        test_fix.local.cmd.side_effect = cmds_side_effect
+        assert test_fix._try_simple_zap() == False
+        expected_calls = [
+                            call("dummy_host",
+                                 "cmd.run", 
+                                 [ ("cat /etc/ceph/osd/{}-*.json | "
+                                             "jq '.block.path,.data.path,"
+                                             ".[\"block.db\"].path,.[\"block.wal\"].path' | "
+                                             "xargs -r readlink -e | "
+                                             "xargs lsblk -no PKNAME | "
+                                             "uniq").format(test_fix.osd_id)
+                                 ],
+                                 tgt_type='glob'
+                                ),
+                            call("dummy_host",
+                                 "cmd.run", 
+                                 [ ("cat /etc/ceph/osd/{}-*.json | "
+                                             "jq '.block.path,.data.path,"
+                                             ".[\"block.db\"].path,.[\"block.wal\"].path' | "
+                                             "xargs -r readlink -e | "
+                                             "xargs ceph-volume lvm zap --destroy").format(test_fix.osd_id)
+                                 ],
+                                 tgt_type='glob'
+                                ),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdb[1-9] /proc/partitions") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdc[1-9] /proc/partitions") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("ceph-volume lvm zap --destroy /dev/vdc") ],
+                                 tgt_type='glob'),
+                            call("dummy_host",
+                                 "cmd.run", [ ("grep -c vdd[1-9] /proc/partitions") ],
+                                 tgt_type='glob')
+                         ]
+        assert expected_calls == test_fix.local.cmd.mock_calls
+
+    @patch('srv.modules.runners.osd.OSDUtil._try_simple_zap', autospec=True)
+    def test_lvm_zap_fail_calls_try_simple_zap(self, try_simple_zap, test_fix):
+        test_fix = test_fix()
+        test_fix.local.cmd.return_value = {'node': 'Nope, some error'}
+
+        test_fix._lvm_zap()
+        test_fix._try_simple_zap.assert_called_once_with(test_fix)
 
     @patch(
         'srv.modules.runners.osd.Util.master_minion',

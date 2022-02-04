@@ -344,6 +344,7 @@ class OSDUtil(Util):
         """
         Remote call to minion to zap devices listed by c-v simple scan output
         """
+        parent_devices = self._get_osd_parent_devices()
         simple_scan_json = 'cat /etc/ceph/osd/{}-*.json'.format(self.osd_id)
         cmd = simple_scan_json + (' | jq \'.block.path,.data.path,'
                                   '.["block.db"].path,.["block.wal"].path\''
@@ -355,7 +356,53 @@ class OSDUtil(Util):
         if 'Zapping successful for' not in message:
             log.error("Zapping the osd failed: {}".format(message))
             raise RuntimeError
+        ret_code = True
+        for disk_name in parent_devices:
+            if self._get_nb_disk_partitions(disk_name) == 0:
+                parent_device_path = "/dev/" + disk_name
+                log.info("Trying to zap disk {}, as it has 0 partitions".format(parent_device_path))
+                if not self._zap_disk(parent_device_path):
+                    ret_code = False
+        return ret_code
+
+    def _get_osd_parent_devices(self):
+        """
+        returns the list of parent devices used by the osd partitions
+        """
+        simple_scan_json = 'cat /etc/ceph/osd/{}-*.json'.format(self.osd_id)
+        cmd = simple_scan_json + (' | jq \'.block.path,.data.path,'
+                                  '.["block.db"].path,.["block.wal"].path\''
+                                  ' | xargs -r readlink -e | '
+                                  'xargs lsblk -no PKNAME | '
+                                  'uniq')
+        log.debug("Executing: {}".format(cmd))
+        ret = self.local.cmd(self.host, "cmd.run", [cmd], tgt_type="glob")
+        message = list(ret.values())[0]
+        return message.split('\n')
+
+    def _zap_disk(self, device):
+        """ Zaps a raw device """
+        zap_cmd = "ceph-volume lvm zap --destroy " + device
+        log.debug("Executing: {}".format(zap_cmd))
+        ret = self.local.cmd(self.host, "cmd.run", [zap_cmd], tgt_type="glob")
+        message = list(ret.values())[0]
+        if "Zapping successful" not in message:
+            log.error("Zapping raw by osd_id failed: {}".format(message))
+            return False
+        log.info(message)
         return True
+
+    def _get_nb_disk_partitions(self, device_root_name):
+        """ Gets the number of partitions in a device """
+        nb_partitions_cmd = "grep -c {}[1-9] /proc/partitions".format(device_root_name)
+        log.debug("Getting number of partitions of device {}".format(device_root_name))
+        ret = self.local.cmd(self.host, "cmd.run", [nb_partitions_cmd], tgt_type="glob")
+        message = list(ret.values())[0]
+        if not message.isdigit():
+            log.error("Error getting number of partitions of device {0},"
+                      " unexpected output: {1}".format(device_root_name, message))
+            raise RuntimeError
+        return int(message)
 
     def _mark_destroyed(self):
         """ Mark an osd destroyed """
