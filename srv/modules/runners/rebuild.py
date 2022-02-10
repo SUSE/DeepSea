@@ -135,8 +135,11 @@ class Rebuild(object):
             quiescent = self.local.cmd(self.master_minion,
                                        'osd.ceph_quiescent', [], tgt_type="compound")
             log.debug("quiescent: {}".format(quiescent))
-            if self.master_minion in quiescent and quiescent[self.master_minion] is True:
-                break
+            if self.master_minion in quiescent:
+                if quiescent[self.master_minion]["result"] is True:
+                    break
+                else:
+                    log.warning(quiescent[self.master_minion]["message"])
             print("Waiting for PGs to recover...")
             time.sleep(delay)
             if delay < 60:

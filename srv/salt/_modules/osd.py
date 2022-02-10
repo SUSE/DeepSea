@@ -485,10 +485,16 @@ class CephPGs(object):
             current = self.pg_states()
             if not current:
                 log.warning("PGs are not present")
-                return False
+                return {"result": False, "message": "PGs are not present"}
             if len(current) == 1 and current[0]['name'] == 'active+clean':
                 log.warning("PGs are active+clean")
-                return True
+                return {"result": True, "message": "PGs are active+clean"}
+            if any('scrub' in item['name'] for item in current):
+                message = ("PGs are scrubbing, "
+                           "disable scrubbing and retry.")
+                log.warning(message)
+            else:
+                message = "PGs states: " + str(current)
             log.warning("Waiting on active+clean {}".format(pprint.pformat(current)))
             if self._pg_value(last) != self._pg_value(current):
                 # Making progress - reset counter
@@ -502,7 +508,8 @@ class CephPGs(object):
             time.sleep(self.settings['delay'])
 
         log.error("Timeout expired waiting on active+clean")
-        raise RuntimeError("Timeout expired waiting on active+clean")
+        return {"result": False,
+                "message": "Timeout expired waiting on active+clean: " + message}
 
     # pylint: disable=no-self-use
     def _pg_value(self, entries):

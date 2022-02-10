@@ -2,6 +2,7 @@ from pyfakefs import fake_filesystem as fake_fs
 from pyfakefs import fake_filesystem_glob as fake_glob
 import os
 import pytest
+import logging
 import sys
 sys.path.insert(0, 'srv/salt/_modules')
 import tempfile
@@ -299,3 +300,137 @@ class TestOSDWeight():
             osdw.settings = {'timeout': 2, 'delay': 1, 'osd_id': 0}
             ret = osdw.wait()
             assert ostd.call_count == 2
+
+class TestCephPGs():
+    """
+    This class contains a set of functions that test srv.salt._modules.osd.CephPGs
+    """
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog):
+        self.caplog = caplog
+
+    def get_ceph_pgs(self):
+        cephpgs = osd.CephPGs()
+        cephpgs.settings = { 'conf': "/etc/ceph/ceph.conf",
+                                'timeout': 0.4,
+                                'keyring': '/etc/ceph/ceph.client.admin.keyring',
+                                'client': 'client.admin',
+                                'delay': 0.2
+                            }
+        cephpgs.pg_states = mock.Mock()
+        return cephpgs
+
+    def test_message_when_scrubbing(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            cephpgs.pg_states.return_value = [ { "name":"active+clean+scrubbing+deep","num":128 } ]
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is False
+            assert result['message'] == ("Timeout expired waiting on active+clean: "
+                                         "PGs are scrubbing, "
+                                         "disable scrubbing and retry.")
+
+            scrubbing_messages = [x for x in self.caplog.records if 'PGs are scrubbing' in x.message]
+            # timeout is 0.4 and delay is 0.2. That means 2 iterations should be executed
+            assert len(scrubbing_messages) == 2
+            for message in scrubbing_messages:
+                assert message.levelno == logging.WARNING
+
+    def test_message_when_active_clean(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            cephpgs.pg_states.return_value = [ { "name":"active+clean","num":128 } ]
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is True
+            assert result['message'] == ("PGs are active+clean")
+
+    def test_message_when_unexpected_message(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            cephpgs.pg_states.return_value = [ { "name":"This is not expected","num":128 } ]
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is False
+            assert result['message'] == ("Timeout expired waiting on active+clean: "
+                                         "PGs states: [{'name': 'This is not expected', 'num': 128}]")
+
+    def test_message_when_no_pgs(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            cephpgs.pg_states.return_value = None
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is False
+            assert result['message'] == ("PGs are not present")
+
+    def test_message_first_scrubbing_then_error(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            class PGStates(object):
+                def __init__(self, *fns):
+                    self.fs = iter(fns)
+                def __call__(self, *args, **kwargs):
+                    f = next(self.fs)
+                    return f(*args, **kwargs)
+            def scrubbing():
+                return [ { "name":"active+clean+scrubbing+deep","num":128 } ]
+            def other_error():
+                return [ { "name":"something_else","num":128 } ]
+            cephpgs.pg_states.side_effect = PGStates(scrubbing, other_error)
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is False
+            assert result['message'] == ("Timeout expired waiting on active+clean: "
+                                         "PGs states: [{'name': 'something_else', 'num': 128}]")
+            log_messages = [rec for rec in self.caplog.records if 'PGs are scrubbing' in rec.message]
+            assert len(log_messages) == 1
+
+    def test_message_when_more_than_1_line_scrubbing(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            cephpgs.pg_states.return_value = [ { "name":"active+clean+scrubbing+deep","num":28 },
+                                               { "name":"active+clean","num":50 },
+                                               { "name":"active+clean+scrubbing","num":50 }]
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is False
+            assert result['message'] == ("Timeout expired waiting on active+clean: "
+                                         "PGs are scrubbing, "
+                                         "disable scrubbing and retry.")
+            scrubbing_messages = [x for x in self.caplog.records if 'PGs are scrubbing' in x.message]
+            # timeout is 0.4 and delay is 0.2.
+            # That means 2 iterations should be executed.
+            assert len(scrubbing_messages) == 2
+            for message in scrubbing_messages:
+                assert message.levelno == logging.WARNING
+
+    def test_message_more_than_1_line_no_scrubbing(self):
+        with patch.object(osd.CephPGs, "__init__", lambda self: None):
+            cephpgs = self.get_ceph_pgs()
+            cephpgs.pg_states.return_value = [ { "name":"not-expected-1","num":28 },
+                                               { "name":"active+clean","num":50 },
+                                               { "name":"not-expected-2","num":50 }]
+            result = cephpgs.quiescent()
+            assert isinstance(result, dict)
+            assert 'result' in result
+            assert 'message' in result
+            assert result['result'] is False
+            assert result['message'] == ("Timeout expired waiting on active+clean: "
+                                         "PGs states: [{'name': 'not-expected-1', 'num': 28}, {'name': 'active+clean', 'num': 50}, {'name': 'not-expected-2', 'num': 50}]")
+
+            scrubbing_messages = [x for x in self.caplog.records if 'PGs are scrubbing' in x.message]
+            assert len(scrubbing_messages) == 0
