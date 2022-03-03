@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Mar  3 08:15:37 UTC 2022 - Tim Serong <tserong@suse.com>
+
+- Version: 0.9.38
+- Show extra info when PGs take too long to be in active+clean state (bsc#1194807)
+- Zap disks when there are no partitions (bsc#1194807)
+- Ensure upgrade.status lists nodes with non-ceph roles (bsc#1195366)
+
+-------------------------------------------------------------------
 Fri Nov 26 06:46:54 UTC 2021 - Tim Serong <tserong@suse.com>
 
 - Version: 0.9.37
