@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 25 04:20:43 UTC 2022 - Tim Serong <tserong@suse.com>
+
+- Version: 0.9.39
+- Update ceph.upgrade.ses7.adopt for SES 7.1 (bsc#1197503)
+
+-------------------------------------------------------------------
 Thu Mar  3 08:15:37 UTC 2022 - Tim Serong <tserong@suse.com>
 
 - Version: 0.9.38
