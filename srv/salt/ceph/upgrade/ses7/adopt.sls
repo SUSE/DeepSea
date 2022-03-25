@@ -10,12 +10,12 @@ require_osd_release is not nautilus:
     - failhard: True
 {% endif %}
 
-{% if grains.get('oscodename', '') != 'SUSE Linux Enterprise Server 15 SP2' %}
+{% if grains.get('oscodename', '') != 'SUSE Linux Enterprise Server 15 SP3' %}
 
-not running sle 15 sp2:
+not running sle 15 sp3:
   test.fail_without_changes:
     - name: |
-        This host is not running SUSE Linux Enterprise Server 15 SP2.
+        This host is not running SUSE Linux Enterprise Server 15 SP3.
         Please upgrade the operating system first, before running the adopt process.
     - failhard: True
 
@@ -25,12 +25,12 @@ not running sle 15 sp2:
 # if someone runs `zypper dup` with both SES6 and SES7 repos available, they'll
 # potentially still have ceph nautilus installed, which we really don't want).
 # TODO: figure out how to print a friendly error message in this case
-ceph must be octopus if installed:
+ceph must be pacific if installed:
   cmd.run:
-    - name: "[ ! -x /usr/bin/ceph ] || ceph --version | grep -q 'ceph version 15'"
+    - name: "[ ! -x /usr/bin/ceph ] || ceph --version | grep -q 'ceph version 16'"
     - failhard: True
 
-{% set ses7_container_image = salt['pillar.get']('ses7_container_image', 'registry.suse.com/ses/7/ceph/ceph') %}
+{% set ses7_container_image = salt['pillar.get']('ses7_container_image', 'registry.suse.com/ses/7.1/ceph/ceph') %}
 
 cephadm:
   pkg.installed:
