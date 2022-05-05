@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu May  5 08:53:25 UTC 2022 - Tim Serong <tserong@suse.com>
+
+- Version 0.9.40
+- Take drivegroup targets into account for rebuild.node (bsc#1198929)
+- Allow rebuild.node on empty clusters with no PGs
+
+-------------------------------------------------------------------
 Fri Mar 25 04:20:43 UTC 2022 - Tim Serong <tserong@suse.com>
 
 - Version: 0.9.39
