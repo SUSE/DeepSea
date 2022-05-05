@@ -370,7 +370,7 @@ class TestCephPGs():
             assert isinstance(result, dict)
             assert 'result' in result
             assert 'message' in result
-            assert result['result'] is False
+            assert result['result'] is True
             assert result['message'] == ("PGs are not present")
 
     def test_message_first_scrubbing_then_error(self):

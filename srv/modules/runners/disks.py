@@ -144,7 +144,7 @@ class DriveGroups(object):
             log.info("Found DriveGroup <{}>".format(dg_name))
             dgo = DriveGroup(dg_name, dg_values)
             if self.target:
-                target = self.target
+                target = f"( {dgo.target()} ) and ( {self.target} )"
             else:
                 target = dgo.target()
             ret.append(
