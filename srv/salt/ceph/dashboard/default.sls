@@ -1,5 +1,5 @@
 {% set dashboard_user = salt['pillar.get']('dashboard_user', 'admin') %}
-{% set dashboard_pw = salt['pillar.get']('dashboard_password', salt['grains.get']('dashboard_creds:' ~ dashboard_user , salt['random.get_str'](10))) %}
+{% set dashboard_pw = salt['pillar.get']('dashboard_password', salt['grains.get']('dashboard_creds:' ~ dashboard_user , salt['random.get_str'](10,punctuation=False))) %}
 {% set dashboard_ssl = salt['pillar.get']('dashboard_ssl', True) %}
 {% set dashboard_ssl_cert = salt['pillar.get']('dashboard_ssl_cert', None) %}
 {% set dashboard_ssl_key = salt['pillar.get']('dashboard_ssl_key', None) %}
